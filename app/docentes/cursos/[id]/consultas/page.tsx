@@ -37,19 +37,27 @@ export default async function TeacherCourseInquiriesPage(props: { params: Promis
           <div className="flex flex-wrap items-center gap-3 mb-8">
             <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
             <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-              Consultas
+              Foro de Consultas
             </span>
             <span className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)]">
               {course.title}
             </span>
           </div>
           <h1 className="text-4xl md:text-6xl font-headline tracking-tight text-[var(--color-on-surface)] mb-6 leading-tight">
-            Consultas de los Estudiantes
+            Foro de Consultas
           </h1>
           <p className="text-[var(--color-on-surface-variant)] text-lg md:text-xl leading-relaxed">
-            Revisa y responde las dudas de los estudiantes para este curso.
+            Revisa y responde las dudas de los estudiantes o inicia una nueva consulta para este curso.
           </p>
         </div>
+
+        <Link 
+          href={`/docentes/cursos/${course.id}/consultas/nueva`}
+          className="flex items-center gap-2 px-8 py-4 bg-[var(--color-primary)] text-[var(--color-on-primary)] rounded-full hover:bg-[var(--color-primary)]/90 transition-colors font-bold shadow-[0_0_30px_var(--color-primary)]/30 w-full md:w-auto justify-center"
+        >
+          <span className="material-symbols-outlined text-[20px]">add</span>
+          <span>Nueva Consulta</span>
+        </Link>
       </header>
 
       <div className="grid grid-cols-1 gap-6">

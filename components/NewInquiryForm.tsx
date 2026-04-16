@@ -8,9 +8,10 @@ import { Class } from "@/types";
 interface NewInquiryFormProps {
   courseId: string;
   classes: Class[];
+  basePath: string;
 }
 
-export default function NewInquiryForm({ courseId, classes }: NewInquiryFormProps) {
+export default function NewInquiryForm({ courseId, classes, basePath }: NewInquiryFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -38,7 +39,7 @@ export default function NewInquiryForm({ courseId, classes }: NewInquiryFormProp
     setIsLoading(false);
 
     if (result.success) {
-      router.push(`/estudiantes/cursos/${courseId}/consultas`);
+      router.push(basePath);
       router.refresh();
     } else {
       setError(result.error || "Ocurrió un error al crear la consulta.");
