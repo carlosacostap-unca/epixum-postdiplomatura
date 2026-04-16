@@ -4,6 +4,7 @@ import { Link as LinkType } from "@/types";
 import { getResourceDownloadUrl, deleteLink } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import LinkForm from "@/components/LinkForm";
 
 interface ResourceListProps {
   links: LinkType[];
@@ -13,6 +14,7 @@ interface ResourceListProps {
 export default function ResourceList({ links, classId }: ResourceListProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingLink, setEditingLink] = useState<LinkType | null>(null);
 
   const isFileResource = (link: LinkType) => {
     return link.type === 'file' || 
@@ -104,6 +106,17 @@ export default function ResourceList({ links, classId }: ResourceListProps) {
             
             <div className="flex items-center gap-2 pl-4 border-l border-[var(--color-outline-variant)]">
               <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setEditingLink(link);
+                }}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-on-surface-variant)] hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] transition-colors"
+                title="Editar recurso"
+              >
+                <span className="material-symbols-outlined text-[18px]">edit</span>
+              </button>
+              <button 
                 onClick={(e) => handleDelete(e, link.id)}
                 disabled={deletingId === link.id}
                 className="w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-on-surface-variant)] hover:bg-[var(--color-error)]/10 hover:text-[var(--color-error)] transition-colors disabled:opacity-50"
@@ -119,6 +132,12 @@ export default function ResourceList({ links, classId }: ResourceListProps) {
           </div>
         ))}
       </div>
+
+      {editingLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <LinkForm classId={classId} link={editingLink} onClose={() => setEditingLink(null)} />
+        </div>
+      )}
     </section>
   );
 }
