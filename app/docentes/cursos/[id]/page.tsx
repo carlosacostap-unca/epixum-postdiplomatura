@@ -2,8 +2,7 @@ import { getCourse, getClassesByCourse } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import FormattedDate from "@/components/FormattedDate";
 
 export default async function TeacherCourseManagementPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -131,12 +130,12 @@ export default async function TeacherCourseManagementPage(props: { params: Promi
                     <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-[var(--color-on-surface-variant)]">
                       <div className="flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-                        <span>{c.date ? format(new Date(c.date), "EEEE d 'de' MMMM", { locale: es }) : 'Sin fecha programada'}</span>
+                        <span>{c.date ? <FormattedDate date={c.date} /> : 'Sin fecha programada'}</span>
                       </div>
                       {c.date && (
                         <div className="flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-[16px]">schedule</span>
-                          <span>{format(new Date(c.date), "HH:mm", { locale: es })} hs</span>
+                          <span><FormattedDate date={c.date} options={{ hour: '2-digit', minute: '2-digit' }} /> hs</span>
                         </div>
                       )}
                     </div>

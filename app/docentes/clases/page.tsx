@@ -121,7 +121,7 @@ export default async function DocenteClasesPage() {
                               </td>
                               <td className="px-8 py-6">
                                 <div className="text-base text-[var(--color-on-surface-variant)]">
-                                  {cls.date ? <FormattedDate date={cls.date} /> : 'Sin fecha'}
+                                  {cls.date ? <FormattedDate date={cls.date} showTime={true} /> : 'Sin fecha'}
                                 </div>
                               </td>
                               <td className="px-8 py-6 text-right">

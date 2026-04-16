@@ -2,8 +2,7 @@ import { getCourse, getClass, getLinks } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import FormattedDate from "@/components/FormattedDate";
 import StudentResourceList from "./StudentResourceList";
 
 export const dynamic = 'force-dynamic';
@@ -65,7 +64,7 @@ export default async function EstudianteClassPage(props: { params: Promise<{ id:
               <div className="flex items-center gap-2 bg-[var(--color-surface-container-low)] px-4 py-2 rounded-full border border-[var(--color-outline-variant)]">
                 <span className="material-symbols-outlined text-[18px] text-[var(--color-primary)]">calendar_today</span>
                 <span className="font-medium text-sm">
-                  {classData.date ? format(new Date(classData.date), "EEEE d 'de' MMMM", { locale: es }) : 'Sin fecha'}
+                  {classData.date ? <FormattedDate date={classData.date} /> : 'Sin fecha'}
                 </span>
               </div>
               
@@ -73,7 +72,7 @@ export default async function EstudianteClassPage(props: { params: Promise<{ id:
                 <div className="flex items-center gap-2 bg-[var(--color-surface-container-low)] px-4 py-2 rounded-full border border-[var(--color-outline-variant)]">
                   <span className="material-symbols-outlined text-[18px] text-[var(--color-primary)]">schedule</span>
                   <span className="font-medium text-sm">
-                    {format(new Date(classData.date), "HH:mm", { locale: es })} hs
+                    <FormattedDate date={classData.date} options={{ hour: '2-digit', minute: '2-digit' }} /> hs
                   </span>
                 </div>
               )}
