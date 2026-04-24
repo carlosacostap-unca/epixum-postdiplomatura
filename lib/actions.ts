@@ -314,6 +314,7 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
       description,
       dueDate: dateObj,
       systemPrompt: systemPrompt || "",
+      course: courseId,
     };
     
     // Create the assignment
@@ -599,6 +600,98 @@ export async function createDelivery(formData: FormData) {
   }
 }
 
+export async function createDeliveryWithFiles(assignmentId: string, courseId: string, files: { name: string; url: string }[]) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+
+  if (!user || user.role !== 'estudiante') {
+    return { success: false, error: 'No autorizado: Solo estudiantes pueden entregar' };
+  }
+
+  if (!assignmentId || files.length === 0) {
+    return { success: false, error: 'Se requiere el TP y al menos un archivo' };
+  }
+
+  try {
+    const assignment = await pb.collection('assignments').getOne(assignmentId);
+    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+      return { success: false, error: 'El plazo de entrega ha finalizado' };
+    }
+
+    const repositoryUrl = JSON.stringify(files);
+    await pb.collection('deliveries').create({
+      assignment: assignmentId,
+      student: user.id,
+      repositoryUrl,
+    });
+
+    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
+    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to create delivery with files:', error);
+    if (String(error).includes('unique')) {
+      return { success: false, error: 'Ya enviaste una entrega para este trabajo práctico' };
+    }
+    return { success: false, error: 'Error al guardar la entrega' };
+  }
+}
+
+export async function updateDeliveryWithFiles(deliveryId: string, courseId: string, assignmentId: string, files: { name: string; url: string }[]) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+
+  if (!user || user.role !== 'estudiante') {
+    return { success: false, error: 'No autorizado' };
+  }
+
+  if (files.length === 0) {
+    return { success: false, error: 'Debes adjuntar al menos un archivo' };
+  }
+
+  try {
+    const delivery = await pb.collection('deliveries').getOne(deliveryId);
+    if (delivery.student !== user.id) {
+      return { success: false, error: 'No autorizado' };
+    }
+    const assignment = await pb.collection('assignments').getOne(delivery.assignment);
+    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+      return { success: false, error: 'El plazo de entrega ha finalizado' };
+    }
+
+    await pb.collection('deliveries').update(deliveryId, {
+      repositoryUrl: JSON.stringify(files),
+    });
+
+    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
+    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update delivery with files:', error);
+    return { success: false, error: 'Error al actualizar la entrega' };
+  }
+}
+
+export async function getDeliveryFileDownloadUrl(fileUrl: string) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+  if (!user) return { success: false, error: 'No autorizado' };
+
+  try {
+    let key = fileUrl;
+    if (fileUrl.startsWith('http')) {
+      const urlObj = new URL(fileUrl);
+      key = decodeURIComponent(urlObj.pathname.split('/').pop() || '');
+    }
+    if (!key) return { success: false, error: 'Clave de archivo inválida' };
+    const downloadUrl = await getPresignedDownloadUrl(key);
+    return { success: true, url: downloadUrl };
+  } catch (error) {
+    console.error('Failed to get file download URL:', error);
+    return { success: false, error: 'Error al obtener el enlace de descarga' };
+  }
+}
+
 export async function updateDelivery(deliveryId: string, formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
@@ -665,6 +758,9 @@ export async function updateDeliveryEvaluation(deliveryId: string, grade: number
     
     revalidatePath(`/assignments/${delivery.assignment}`);
     revalidatePath(`/assignments/${delivery.assignment}/deliveries/${deliveryId}`);
+    // Revalidate course-scoped TP pages
+    revalidatePath('/docentes', 'layout');
+    revalidatePath('/estudiantes', 'layout');
     return { success: true };
   } catch (error) {
     console.error('Failed to update delivery evaluation:', error);

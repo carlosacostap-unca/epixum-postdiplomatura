@@ -1,4 +1,4 @@
-import { getCourse, getClassesByCourse } from "@/lib/data";
+import { getCourse, getClassesByCourse, getAssignmentsByCourse } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -25,6 +25,7 @@ export default async function EstudianteCoursePage(props: { params: Promise<{ id
   }
 
   const classes = await getClassesByCourse(course.id);
+  const assignments = await getAssignmentsByCourse(course.id);
 
   // Ordenar clases cronológicamente (más antiguas primero)
   const sortedClasses = [...classes].sort((a, b) => {
@@ -147,6 +148,43 @@ export default async function EstudianteCoursePage(props: { params: Promise<{ id
             </div>
           )}
         </div>
+
+        {/* Trabajos Prácticos Section */}
+        {assignments.length > 0 && (
+          <div className="flex flex-col gap-8">
+            <h2 className="text-3xl font-headline font-bold text-[var(--color-on-surface)] flex items-center gap-3">
+              <span className="material-symbols-outlined text-[var(--color-primary)]">assignment</span>
+              Trabajos Prácticos
+            </h2>
+            <div className="flex flex-col gap-6">
+              {assignments.map((tp) => {
+                const isPastDue = tp.dueDate ? new Date() > new Date(tp.dueDate) : false;
+                return (
+                  <Link
+                    href={`/estudiantes/cursos/${course.id}/tps/${tp.id}`}
+                    key={tp.id}
+                    className="bg-[var(--color-surface-container-low)] hover:bg-[var(--color-surface-container)] transition-colors rounded-[2rem] p-6 md:p-8 border border-[var(--color-outline-variant)] flex flex-col md:flex-row md:items-center justify-between gap-6 group"
+                  >
+                    <div>
+                      <h3 className="text-xl font-bold text-[var(--color-on-surface)] mb-2 group-hover:text-[var(--color-primary)] transition-colors">{tp.title}</h3>
+                      {tp.dueDate && (
+                        <p className={`text-sm flex items-center gap-1.5 ${isPastDue ? 'text-red-400' : 'text-[var(--color-on-surface-variant)]'}`}>
+                          <span className="material-symbols-outlined text-[16px]">schedule</span>
+                          Entrega: <FormattedDate date={tp.dueDate} />
+                          {isPastDue && <span className="ml-1 text-xs font-bold uppercase tracking-wider">(Cerrado)</span>}
+                        </p>
+                      )}
+                    </div>
+                    <span className="px-6 py-3 bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface)] rounded-full group-hover:text-[var(--color-primary)] group-hover:bg-[var(--color-surface-container-high)] transition-colors font-bold text-sm whitespace-nowrap flex items-center justify-center w-full md:w-auto gap-2 shrink-0">
+                      <span>Ver TP</span>
+                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

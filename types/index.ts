@@ -55,10 +55,15 @@ export interface Assignment extends BaseModel {
   };
 }
 
+export interface DeliveryFile {
+  name: string;
+  url: string;
+}
+
 export interface Delivery extends BaseModel {
   assignment: string;
   student: string;
-  repositoryUrl: string;
+  repositoryUrl: string; // JSON array string of DeliveryFile[] or legacy single URL
   grade?: number;
   feedback?: string;
   verdict?: 'Aprobado' | 'Corregir y reenviar';
@@ -66,6 +71,21 @@ export interface Delivery extends BaseModel {
   expand?: {
     student?: User;
   };
+}
+
+// Helper to parse delivery files from repositoryUrl field
+export function parseDeliveryFiles(repositoryUrl: string): DeliveryFile[] {
+  if (!repositoryUrl) return [];
+  try {
+    if (repositoryUrl.trimStart().startsWith('[')) {
+      return JSON.parse(repositoryUrl) as DeliveryFile[];
+    }
+    // Legacy: single URL – extract filename from URL
+    const name = decodeURIComponent(repositoryUrl.split('/').pop() || 'archivo.zip');
+    return [{ name, url: repositoryUrl }];
+  } catch {
+    return [];
+  }
 }
 
 export interface Course extends BaseModel {

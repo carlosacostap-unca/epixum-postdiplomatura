@@ -126,6 +126,20 @@ export async function getAllAssignments() {
   return records;
 }
 
+export async function getAssignmentsByCourse(courseId: string) {
+  try {
+    const pb = await createServerClient();
+    const records = await pb.collection('assignments').getFullList<Assignment>({
+        filter: `course = "${courseId}"`,
+        sort: 'created',
+    });
+    return records;
+  } catch (error) {
+    console.error('Error fetching assignments by course:', error);
+    return [];
+  }
+}
+
 export async function getAssignment(id: string) {
   const pb = await createServerClient();
   const record = await pb.collection('assignments').getOne<Assignment>(id);

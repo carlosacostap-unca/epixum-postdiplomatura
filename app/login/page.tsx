@@ -22,7 +22,8 @@ export default function LoginPage() {
       } else if (role === "estudiante") {
         router.push("/estudiantes");
       } else {
-        router.push("/");
+        // Rol desconocido o vacío: limpiar sesión y quedarse en login
+        pb.authStore.clear();
       }
     }
   }, [router]);
@@ -35,7 +36,31 @@ export default function LoginPage() {
 
     try {
       const authData = await pb.collection("users").authWithOAuth2({ provider: "google" });
-      
+
+      // Si el usuario no tiene rol (primera vez), asignar "estudiante" por defecto
+      if (!authData.record.role) {
+        const updateData: Record<string, any> = { role: "estudiante" };
+        const meta = (authData as any).meta;
+        if (meta) {
+          const firstName = meta.givenName || meta.given_name || "";
+          const lastName = meta.familyName || meta.family_name || "";
+          const fullName = meta.name || "";
+          if (firstName) updateData.firstName = firstName;
+          if (lastName) updateData.lastName = lastName;
+          if (firstName || lastName) {
+            updateData.name = `${firstName} ${lastName}`.trim();
+          } else if (fullName) {
+            updateData.name = fullName;
+            const parts = fullName.split(" ");
+            updateData.firstName = parts[0];
+            if (parts.length > 1) updateData.lastName = parts.slice(1).join(" ");
+          }
+        }
+        await pb.collection("users").update(authData.record.id, updateData);
+        authData.record.role = "estudiante";
+        pb.authStore.save(pb.authStore.token, authData.record);
+      }
+
       // Store token in cookie for server-side access
       token = pb.authStore.token;
       model = pb.authStore.model;

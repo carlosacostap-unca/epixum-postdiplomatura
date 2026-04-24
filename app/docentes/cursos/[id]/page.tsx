@@ -1,4 +1,4 @@
-import { getCourse, getClassesByCourse } from "@/lib/data";
+import { getCourse, getClassesByCourse, getAssignmentsByCourse } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +17,7 @@ export default async function TeacherCourseManagementPage(props: { params: Promi
   }
 
   const classes = await getClassesByCourse(course.id);
+  const assignments = await getAssignmentsByCourse(course.id);
   const students = course.expand?.students || [];
 
   return (
@@ -150,9 +151,53 @@ export default async function TeacherCourseManagementPage(props: { params: Promi
           )}
         </div>
 
-        {/* Students Section */}
-        <div className="flex flex-col gap-8">
-          <h2 className="text-3xl font-headline font-bold text-[var(--color-on-surface)]">Estudiantes</h2>
+        {/* Right column: Students + TPs */}
+        <div className="flex flex-col gap-12">
+
+          {/* Trabajos Prácticos Section */}
+          <div className="flex flex-col gap-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-headline font-bold text-[var(--color-on-surface)]">TPs</h2>
+              <Link
+                href={`/docentes/cursos/${course.id}/tps/nuevo`}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[#000000] rounded-full hover:opacity-90 transition-opacity font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(63,255,139,0.2)]"
+              >
+                <span className="material-symbols-outlined text-lg">add</span>
+                <span>Nuevo TP</span>
+              </Link>
+            </div>
+            {assignments.length === 0 ? (
+              <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-8 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
+                <span className="material-symbols-outlined text-4xl text-[var(--color-on-surface-variant)] mb-3">assignment</span>
+                <p className="text-[var(--color-on-surface-variant)]">No hay TPs creados.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {assignments.map((tp) => (
+                  <Link
+                    href={`/docentes/cursos/${course.id}/tps/${tp.id}`}
+                    key={tp.id}
+                    className="bg-[var(--color-surface-container-low)] hover:bg-[var(--color-surface-container)] transition-colors rounded-[2rem] p-6 border border-[var(--color-outline-variant)] flex items-center justify-between gap-4 group"
+                  >
+                    <div className="overflow-hidden">
+                      <h3 className="text-base font-bold text-[var(--color-on-surface)] group-hover:text-[var(--color-primary)] transition-colors truncate">{tp.title}</h3>
+                      {tp.dueDate && (
+                        <p className="text-xs text-[var(--color-on-surface-variant)] flex items-center gap-1 mt-1">
+                          <span className="material-symbols-outlined text-[13px]">schedule</span>
+                          Entrega: <FormattedDate date={tp.dueDate} />
+                        </p>
+                      )}
+                    </div>
+                    <span className="material-symbols-outlined text-[var(--color-on-surface-variant)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all shrink-0">arrow_forward</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Students Section */}
+          <div className="flex flex-col gap-8">
+            <h2 className="text-3xl font-headline font-bold text-[var(--color-on-surface)]">Estudiantes</h2>
           
           {students.length === 0 ? (
             <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-12 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
@@ -185,7 +230,8 @@ export default async function TeacherCourseManagementPage(props: { params: Promi
               ))}
             </div>
           )}
-        </div>
+          </div>{/* end Students Section */}
+        </div>{/* end right column */}
       </div>
     </div>
   );
