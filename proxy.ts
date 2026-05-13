@@ -19,16 +19,12 @@ export function proxy(request: NextRequest) {
 
   // Allow access to home page and login page for unauthenticated users
   if (!isLoggedIn && path !== '/login' && path !== '/') {
-    const loginUrl = new URL('/', request.url);
+    const loginUrl = new URL('/login', request.url);
     // Optional: Add ?next=path to redirect back after login
     // loginUrl.searchParams.set('next', path);
     return NextResponse.redirect(loginUrl);
   }
 
-  // If we want to prevent logged-in users from seeing the landing page, we can handle that in page.tsx,
-  // but if we redirect them here, they won't be able to access the landing page at all.
-  // Actually, let's keep it so they can see `/` which shows their dashboard if logged in.
-  // We no longer redirect away from `/login` if logged in here because it's handled, or we can keep it.
   if (isLoggedIn && path === '/login') {
     return NextResponse.redirect(new URL('/', request.url));
   }

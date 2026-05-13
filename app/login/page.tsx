@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import pb from "@/lib/pocketbase";
-import Link from "next/link";
 import { setAuthCookieAndRedirect } from "@/lib/actions-auth";
 import { useRouter } from "next/navigation";
 
@@ -136,12 +135,6 @@ export default function LoginPage() {
             </div>
           </button>
 
-          <div className="text-center mt-8">
-             <Link href="/" className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-lg">arrow_back</span>
-                Volver al inicio
-             </Link>
-          </div>
         </div>
       </div>
     </div>
