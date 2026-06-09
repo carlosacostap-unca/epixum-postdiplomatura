@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
 import TpStudentDelivery from "@/components/TpStudentDelivery";
+import StudentTpResources from "./StudentTpResources";
 
 export const dynamic = 'force-dynamic';
 
@@ -81,35 +82,9 @@ export default async function StudentTpDetailPage(props: {
           <div className="xl:col-span-1 flex flex-col gap-6">
             <h2 className="text-2xl font-headline font-bold text-[var(--color-on-surface)] flex items-center gap-2">
               <span className="material-symbols-outlined text-[var(--color-primary)]">attach_file</span>
-              Recursos
+              Recursos del enunciado
             </h2>
-            <div className="flex flex-col gap-3">
-              {links.map((link) => {
-                const isFile =
-                  link.type === 'file' ||
-                  link.url.includes('idrivee2.com') ||
-                  link.url.includes('epixum-javascript-storage');
-                return (
-                  <a
-                    key={link.id}
-                    href={isFile ? '#' : link.url}
-                    target={isFile ? undefined : '_blank'}
-                    rel={isFile ? undefined : 'noopener noreferrer'}
-                    className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-container)] transition-colors group"
-                  >
-                    <span className={`material-symbols-outlined text-[20px] shrink-0 ${isFile ? 'text-[var(--color-primary)]' : 'text-blue-400'}`}>
-                      {isFile ? 'description' : 'link'}
-                    </span>
-                    <span className="text-sm font-medium text-[var(--color-on-surface)] group-hover:text-[var(--color-primary)] transition-colors flex-1 truncate">
-                      {link.title}
-                    </span>
-                    <span className="material-symbols-outlined text-[16px] text-[var(--color-on-surface-variant)] shrink-0">
-                      {isFile ? 'download' : 'open_in_new'}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
+            <StudentTpResources links={links} />
           </div>
         )}
 
