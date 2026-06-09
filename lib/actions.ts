@@ -3,6 +3,16 @@
 import { createServerClient } from "@/lib/pocketbase-server";
 import { revalidatePath } from "next/cache";
 import { getPresignedUploadUrl, getPresignedDownloadUrl, configureBucketCors } from "./s3";
+import { parseDeliveryFiles } from "@/types";
+
+function getStorageKeyFromUrl(fileUrl: string) {
+  let key = fileUrl;
+  if (fileUrl.startsWith('http')) {
+    const urlObj = new URL(fileUrl);
+    key = decodeURIComponent(urlObj.pathname.split('/').pop() || '');
+  }
+  return key;
+}
 
 export async function ensureCorsConfigured() {
   try {
@@ -678,16 +688,42 @@ export async function getDeliveryFileDownloadUrl(fileUrl: string) {
   if (!user) return { success: false, error: 'No autorizado' };
 
   try {
-    let key = fileUrl;
-    if (fileUrl.startsWith('http')) {
-      const urlObj = new URL(fileUrl);
-      key = decodeURIComponent(urlObj.pathname.split('/').pop() || '');
-    }
+    const key = getStorageKeyFromUrl(fileUrl);
     if (!key) return { success: false, error: 'Clave de archivo inválida' };
     const downloadUrl = await getPresignedDownloadUrl(key);
     return { success: true, url: downloadUrl };
   } catch (error) {
     console.error('Failed to get file download URL:', error);
+    return { success: false, error: 'Error al obtener el enlace de descarga' };
+  }
+}
+
+export async function getTeacherDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+
+  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+    return { success: false, error: 'No autorizado' };
+  }
+
+  try {
+    const delivery = await pb.collection('deliveries').getOne(deliveryId);
+    const files = parseDeliveryFiles(delivery.repositoryUrl);
+    const file = files[fileIndex];
+
+    if (!file?.url) {
+      return { success: false, error: 'Archivo de entrega inválido' };
+    }
+
+    const key = getStorageKeyFromUrl(file.url);
+    if (!key) {
+      return { success: false, error: 'Clave de archivo inválida' };
+    }
+
+    const downloadUrl = await getPresignedDownloadUrl(key);
+    return { success: true, url: downloadUrl };
+  } catch (error) {
+    console.error('Failed to get teacher delivery file download URL:', error);
     return { success: false, error: 'Error al obtener el enlace de descarga' };
   }
 }

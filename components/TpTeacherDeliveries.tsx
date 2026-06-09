@@ -2,7 +2,7 @@
 
 import { Delivery, parseDeliveryFiles } from "@/types";
 import { useState } from "react";
-import { updateDeliveryEvaluation, getDeliveryFileDownloadUrl } from "@/lib/actions";
+import { updateDeliveryEvaluation, getTeacherDeliveryFileDownloadUrl } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import FormattedDate from "./FormattedDate";
 
@@ -17,10 +17,11 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleDownloadFile = async (url: string, name: string) => {
-    setDownloadingFile(url);
+  const handleDownloadFile = async (deliveryId: string, fileIndex: number, name: string) => {
+    const downloadId = `${deliveryId}:${fileIndex}`;
+    setDownloadingFile(downloadId);
     try {
-      const result = await getDeliveryFileDownloadUrl(url);
+      const result = await getTeacherDeliveryFileDownloadUrl(deliveryId, fileIndex);
       if (result.success && result.url) {
         const a = document.createElement('a');
         a.href = result.url;
@@ -30,7 +31,8 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
       } else {
         alert(result.error || "No se pudo descargar el archivo");
       }
-    } catch {
+    } catch (error) {
+      console.error("Error downloading delivery file:", error);
       alert("Error al descargar el archivo");
     } finally {
       setDownloadingFile(null);
@@ -122,12 +124,12 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
                       {files.map((file, i) => (
                         <button
                           key={i}
-                          onClick={() => handleDownloadFile(file.url, file.name)}
-                          disabled={downloadingFile === file.url}
+                          onClick={() => handleDownloadFile(delivery.id, i, file.name)}
+                          disabled={downloadingFile === `${delivery.id}:${i}`}
                           className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-container-highest)] hover:bg-[var(--color-surface-container-high)] transition-colors text-left disabled:opacity-50 w-full"
                         >
                           <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">
-                            {downloadingFile === file.url ? 'hourglass_empty' : 'download'}
+                            {downloadingFile === `${delivery.id}:${i}` ? 'hourglass_empty' : 'download'}
                           </span>
                           <span className="text-sm text-[var(--color-on-surface)] truncate flex-1">{file.name}</span>
                         </button>
