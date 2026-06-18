@@ -5,6 +5,7 @@ import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
 import TpTeacherDeliveries from "@/components/TpTeacherDeliveries";
 import TpResourceManager from "./TpResourceManager";
+import TpManagementActions from "./TpManagementActions";
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +72,9 @@ export default async function TeacherTpDetailPage(props: {
             dangerouslySetInnerHTML={{ __html: assignment.description }}
           />
         )}
+        <div className="mt-8">
+          <TpManagementActions assignment={assignment} courseId={course.id} />
+        </div>
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">

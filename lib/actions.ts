@@ -340,6 +340,8 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
     await pb.collection('courses').update(courseId, { assignments: updatedAssignments });
     
     revalidatePath(`/courses/${courseId}`);
+    revalidatePath(`/docentes/cursos/${courseId}`);
+    revalidatePath(`/estudiantes/cursos/${courseId}`);
     return { success: true, assignmentId: newAssignment.id };
   } catch (error) {
     console.error('Failed to create assignment for course:', error);
@@ -396,19 +398,26 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
   const description = formData.get('description') as string;
   const dueDate = formData.get('dueDate') as string;
   const systemPrompt = formData.get('systemPrompt') as string;
+  const courseId = formData.get('courseId') as string;
 
   try {
     const data: any = {
       title,
       description,
       systemPrompt: systemPrompt || "",
+      dueDate: dueDate ? new Date(dueDate).toISOString() : null,
     };
-    if (dueDate) data.dueDate = new Date(dueDate).toISOString();
 
     await pb.collection('assignments').update(assignmentId, data);
     
     revalidatePath('/');
     revalidatePath(`/assignments/${assignmentId}`);
+    if (courseId) {
+      revalidatePath(`/docentes/cursos/${courseId}`);
+      revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+      revalidatePath(`/estudiantes/cursos/${courseId}`);
+      revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
+    }
     return { success: true };
   } catch (error: any) {
     console.error('Failed to update assignment:', error);
@@ -440,7 +449,7 @@ export async function updateAssignmentSystemPrompt(assignmentId: string, systemP
   }
 }
 
-export async function deleteAssignment(assignmentId: string) {
+export async function deleteAssignment(assignmentId: string, courseId?: string) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
@@ -449,8 +458,24 @@ export async function deleteAssignment(assignmentId: string) {
   }
 
   try {
+    const targetCourseId = courseId || (await pb.collection('assignments').getOne(assignmentId)).course;
+    if (targetCourseId) {
+      const course = await pb.collection('courses').getOne(targetCourseId);
+      const assignments = Array.isArray(course.assignments) ? course.assignments : [];
+      await pb.collection('courses').update(targetCourseId, {
+        assignments: assignments.filter((id: string) => id !== assignmentId),
+      });
+    }
+
     await pb.collection('assignments').delete(assignmentId);
+
     revalidatePath('/');
+    revalidatePath('/docentes', 'layout');
+    revalidatePath('/estudiantes', 'layout');
+    if (targetCourseId) {
+      revalidatePath(`/docentes/cursos/${targetCourseId}`);
+      revalidatePath(`/estudiantes/cursos/${targetCourseId}`);
+    }
     return { success: true };
   } catch (error) {
     console.error('Failed to delete assignment:', error);
