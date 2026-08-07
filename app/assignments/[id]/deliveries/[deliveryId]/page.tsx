@@ -1,10 +1,11 @@
-import { getAssignment, getDeliveryById } from "@/lib/data";
+import { getAssignment, getCourse, getDeliveryById } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
 import DownloadButtonClient from './DownloadButtonClient';
 import AIPreevaluationClient from './AIPreevaluationClient';
+import Image from "next/image";
 
 export const dynamic = 'force-dynamic';
 
@@ -19,8 +20,14 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
   const assignment = await getAssignment(id);
   const delivery = await getDeliveryById(deliveryId);
 
-  if (!assignment || !delivery) {
+  if (!assignment || !delivery || delivery.assignment !== assignment.id) {
     return notFound();
+  }
+
+  if (user.role === "docente") {
+    if (!assignment.course) redirect("/docentes");
+    const course = await getCourse(assignment.course).catch(() => null);
+    if (!course?.teachers?.includes(user.id)) redirect("/docentes");
   }
 
   const student = delivery.expand?.student;
@@ -28,7 +35,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
 
   return (
     <div className="container mx-auto p-8 min-h-screen max-w-4xl">
-      <Link href={`/assignments/${id}`} className="text-blue-500 hover:underline mb-8 inline-block">
+      <Link href={user.role === "docente" && assignment.course ? `/docentes/cursos/${assignment.course}/tps/${id}#entregas` : "/admin"} className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold hover:text-[var(--color-primary)]">
         &larr; Volver a las entregas
       </Link>
 
@@ -58,9 +65,12 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
                 <div className="flex items-center gap-4">
                   <div className="h-16 w-16 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center overflow-hidden">
                     {student.avatar ? (
-                      <img 
+                      <Image
+                        unoptimized
                         src={`${pbUrl}/api/files/${student.collectionId}/${student.id}/${student.avatar}`} 
                         alt={student.name}
+                        width={64}
+                        height={64}
                         className="h-full w-full object-cover"
                       />
                     ) : (

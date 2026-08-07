@@ -6,6 +6,8 @@ import { generateAIEvaluation } from '@/app/actions/openai';
 import JSZip from 'jszip';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useToast } from '@/components/ui';
+import { getErrorMessage } from '@/lib/errors';
 
 interface AIPreevaluationClientProps {
   assignmentId: string;
@@ -26,6 +28,7 @@ export default function AIPreevaluationClient({
   initialVerdict,
   initialStatus
 }: AIPreevaluationClientProps) {
+  const { notify } = useToast();
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -59,6 +62,9 @@ export default function AIPreevaluationClient({
       hasAttemptedGeneration.current = true;
       generateUserPrompt();
     }
+    // La generación automática debe ejecutarse una sola vez por montaje. La
+    // acción manual disponible en pantalla permite reintentar explícitamente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSaveSystemPrompt = async () => {
@@ -115,13 +121,15 @@ export default function AIPreevaluationClient({
       // Función auxiliar para procesar un archivo ZIP
       const textExtensions = ['.js', '.ts', '.jsx', '.tsx', '.html', '.css', '.json', '.md', '.txt'];
       
-      const processZip = async (zipData: Blob | ArrayBuffer | Uint8Array) => {
+      const processZip = async (
+        zipData: Blob | ArrayBuffer | Uint8Array,
+      ): Promise<{ promptText: string; textFilesCount: number; innerZipEntry: JSZip.JSZipObject | null }> => {
         const zip = new JSZip();
         const loadedZip = await zip.loadAsync(zipData);
         
         let promptText = '';
         let textFilesCount = 0;
-        let innerZipEntry: any = null;
+        let innerZipEntry: JSZip.JSZipObject | null = null;
         
         const filePromises: Promise<void>[] = [];
         
@@ -282,9 +290,9 @@ export default function AIPreevaluationClient({
       } else {
         throw new Error(result.error || 'Error desconocido al generar la evaluación');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error al generar la preevaluación:", error);
-      setEvaluationError(error.message || 'Error al comunicarse con la IA. Inténtalo de nuevo.');
+      setEvaluationError(getErrorMessage(error, 'Error al comunicarse con la IA. Inténtalo de nuevo.'));
       setProcessingStatus('');
     } finally {
       setIsEvaluating(false);
@@ -373,7 +381,7 @@ export default function AIPreevaluationClient({
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(prompt);
-                    alert('¡Prompt copiado al portapapeles!');
+                    notify({ title: 'Prompt copiado', description: 'Ya podés pegarlo donde lo necesites.', tone: 'success' });
                   }}
                   className="text-sm text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 flex items-center gap-1 ml-2"
                 >

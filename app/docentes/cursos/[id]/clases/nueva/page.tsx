@@ -1,52 +1,21 @@
-import { getCourse } from "@/lib/data";
-import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { TeacherCourseContext } from "@/components/course/TeacherCourseContext";
+import { Card, CardContent } from "@/components/ui";
+import { getCourse, getCourseWeeks } from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
 import NewClassForm from "./NewClassForm";
 
-export default async function NewClassPage(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+export default async function NewClassPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ semana?: string }> }) {
+  const { id } = await params;
+  const { semana } = await searchParams;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") {
-    redirect("/");
-  }
+  if (!user || user.role !== "docente") redirect("/");
+  const course = await getCourse(id);
+  if (!course?.teachers?.includes(user.id)) redirect("/docentes");
+  const weeks = course.organizationMode === "semanal" ? await getCourseWeeks(course.id) : [];
 
-  const course = await getCourse(params.id);
-  if (!course) {
-    redirect("/docentes");
-  }
-
-  return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full flex flex-col items-center">
-      <div className="w-full max-w-3xl">
-        {/* Back button */}
-        <Link 
-          href={`/docentes/cursos/${course.id}`} 
-          className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors mb-8 md:mb-16 group"
-        >
-          <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-          <span className="font-bold text-sm tracking-widest uppercase">Volver al curso</span>
-        </Link>
-
-        {/* Header */}
-        <header className="mb-10 md:mb-16">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-              Planificación
-            </span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-headline tracking-tight text-[var(--color-on-surface)] mb-4">
-            Programar nueva clase
-          </h1>
-          <p className="text-[var(--color-on-surface-variant)] text-lg">
-            Añade una nueva sesión al curso <strong className="text-[var(--color-on-surface)] font-medium">{course.title}</strong>.
-          </p>
-        </header>
-
-        {/* Form */}
-        <NewClassForm courseId={course.id} />
-      </div>
-    </div>
-  );
+  return <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <TeacherCourseContext course={course} current="clases" title="Programar nueva clase" description={`Añadí una nueva sesión a ${course.title}.`} />
+    <Card className="max-w-3xl"><CardContent><NewClassForm courseId={course.id} weeks={weeks} initialWeekId={semana} /></CardContent></Card>
+  </div>;
 }

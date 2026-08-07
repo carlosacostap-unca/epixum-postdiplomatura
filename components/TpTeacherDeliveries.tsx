@@ -1,289 +1,202 @@
 "use client";
 
-import { Delivery, parseDeliveryFiles } from "@/types";
-import { useState } from "react";
-import { updateDeliveryEvaluation, getTeacherDeliveryFileDownloadUrl } from "@/lib/actions";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import FormattedDate from "./FormattedDate";
+import {
+  Badge,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  Select,
+  useToast,
+} from "@/components/ui";
+import { getTeacherDeliveryFileDownloadUrl, updateDeliveryEvaluation } from "@/lib/actions";
+import { Delivery, parseDeliveryFiles } from "@/types";
 
-interface TpTeacherDeliveriesProps {
-  deliveries: Delivery[];
-  courseId: string;
-  assignmentId: string;
+type ReviewFilter = "all" | "pending" | "draft" | "published";
+
+function reviewStatus(delivery: Delivery): Exclude<ReviewFilter, "all"> {
+  return delivery.status === "draft" || delivery.status === "published" ? delivery.status : "pending";
 }
 
-export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId }: TpTeacherDeliveriesProps) {
+const statusCopy = {
+  pending: { label: "Sin evaluar", tone: "warning" as const },
+  draft: { label: "Borrador", tone: "info" as const },
+  published: { label: "Publicada", tone: "success" as const },
+};
+
+export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId }: { deliveries: Delivery[]; courseId: string; assignmentId: string }) {
   const [expandedDelivery, setExpandedDelivery] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
-  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<ReviewFilter>("all");
+  const { notify } = useToast();
 
-  const handleDownloadFile = async (deliveryId: string, fileIndex: number, name: string) => {
+  const counts = useMemo(() => ({
+    all: deliveries.length,
+    pending: deliveries.filter((item) => reviewStatus(item) === "pending").length,
+    draft: deliveries.filter((item) => reviewStatus(item) === "draft").length,
+    published: deliveries.filter((item) => reviewStatus(item) === "published").length,
+  }), [deliveries]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("es");
+    return deliveries.filter((delivery) => {
+      if (filter !== "all" && reviewStatus(delivery) !== filter) return false;
+      const student = delivery.expand?.student;
+      const identity = [student?.name, student?.firstName, student?.lastName, student?.email].filter(Boolean).join(" ").toLocaleLowerCase("es");
+      return !normalized || identity.includes(normalized);
+    });
+  }, [deliveries, filter, query]);
+
+  const download = async (deliveryId: string, fileIndex: number, name: string) => {
     const downloadId = `${deliveryId}:${fileIndex}`;
     setDownloadingFile(downloadId);
-    try {
-      const result = await getTeacherDeliveryFileDownloadUrl(deliveryId, fileIndex);
-      if (result.success && result.url) {
-        const a = document.createElement('a');
-        a.href = result.url;
-        a.download = name;
-        a.target = '_blank';
-        a.click();
-      } else {
-        alert(result.error || "No se pudo descargar el archivo");
-      }
-    } catch (error) {
-      console.error("Error downloading delivery file:", error);
-      alert("Error al descargar el archivo");
-    } finally {
-      setDownloadingFile(null);
+    const result = await getTeacherDeliveryFileDownloadUrl(deliveryId, fileIndex);
+    setDownloadingFile(null);
+    if (!result.success || !result.url) {
+      notify({ title: "No se pudo descargar el archivo", description: result.error, tone: "error" });
+      return;
     }
+    const anchor = document.createElement("a");
+    anchor.href = result.url;
+    anchor.download = name;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.click();
   };
 
   if (deliveries.length === 0) {
-    return (
-      <div className="bg-[var(--color-surface-container-low)] rounded-[2rem] p-12 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
-        <span className="material-symbols-outlined text-5xl text-[var(--color-on-surface-variant)] mb-4">inbox</span>
-        <p className="text-[var(--color-on-surface-variant)] text-lg">Ningún estudiante ha entregado aún.</p>
-      </div>
-    );
+    return <EmptyState icon="inbox" title="Todavía no hay entregas" description="Las entregas de estudiantes aparecerán aquí para su revisión." />;
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {deliveries.map((delivery) => {
-        const student = delivery.expand?.student;
-        const files = parseDeliveryFiles(delivery.repositoryUrl);
-        const isExpanded = expandedDelivery === delivery.id;
-        const hasFeedback = !!delivery.feedback;
+    <div className="space-y-6">
+      <div className="grid gap-4 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-5 md:grid-cols-[minmax(0,1fr)_14rem]">
+        <Field label="Buscar estudiante" id="delivery-search">
+          <input id="delivery-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre o correo" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" />
+        </Field>
+        <Field label="Estado de revisión" id="delivery-status">
+          <Select id="delivery-status" value={filter} onChange={(event) => setFilter(event.target.value as ReviewFilter)}>
+            <option value="all">Todas ({counts.all})</option>
+            <option value="pending">Sin evaluar ({counts.pending})</option>
+            <option value="draft">Borradores ({counts.draft})</option>
+            <option value="published">Publicadas ({counts.published})</option>
+          </Select>
+        </Field>
+      </div>
 
-        return (
-          <div
-            key={delivery.id}
-            className="bg-[var(--color-surface-container-low)] rounded-[2rem] border border-[var(--color-outline-variant)] overflow-hidden"
-          >
-            {/* Header */}
-            <div
-              className="p-6 flex items-center justify-between gap-4 cursor-pointer hover:bg-[var(--color-surface-container)] transition-colors"
-              onClick={() => setExpandedDelivery(isExpanded ? null : delivery.id)}
-            >
-              <div className="flex items-center gap-4">
-                <img
-                  src={
-                    student?.avatar
-                      ? `${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/_pb_users_auth_/${student.id}/${student.avatar}`
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(student?.name || "U")}&background=3fff8b&color=0e0e0e`
-                  }
-                  alt={student?.name || "Estudiante"}
-                  className="w-10 h-10 rounded-full border border-[var(--color-outline-variant)] object-cover shrink-0"
-                />
-                <div>
-                  <p className="font-bold text-[var(--color-on-surface)]">
-                    {student?.name || "Estudiante"}{student?.lastName ? ` ${student.lastName}` : ""}
-                  </p>
-                  <div className="flex items-center gap-3 flex-wrap mt-1">
-                    <span className="text-xs text-[var(--color-on-surface-variant)] flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]">attach_file</span>
-                      {files.length} archivo{files.length !== 1 ? "s" : ""}
-                    </span>
-                    <span className="text-xs text-[var(--color-on-surface-variant)] flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]">calendar_today</span>
-                      <FormattedDate date={delivery.created} />
-                    </span>
-                    {delivery.verdict && (
-                      <span className={`px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                        delivery.verdict === 'Aprobado'
-                          ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                          : 'bg-[#FFB4A4]/10 text-[#FFB4A4]'
-                      }`}>
-                        {delivery.verdict}
-                      </span>
-                    )}
-                    {hasFeedback && !delivery.verdict && (
-                      <span className="px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-blue-500/10 text-blue-400">
-                        Con retroalimentación
-                      </span>
-                    )}
+      <p role="status" className="text-sm text-[var(--color-on-surface-variant)]">{filtered.length} {filtered.length === 1 ? "entrega encontrada" : "entregas encontradas"}</p>
+
+      {filtered.length === 0 ? (
+        <EmptyState icon="filter_alt_off" title="No hay coincidencias" description="Probá otro nombre o cambiá el estado de revisión." action={<Button variant="secondary" onClick={() => { setQuery(""); setFilter("all"); }}>Limpiar filtros</Button>} />
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((delivery) => {
+            const student = delivery.expand?.student;
+            const files = parseDeliveryFiles(delivery.repositoryUrl);
+            const isExpanded = expandedDelivery === delivery.id;
+            const state = reviewStatus(delivery);
+            const studentLabel = [student?.firstName || student?.name, student?.lastName].filter(Boolean).join(" ") || "Estudiante";
+
+            return (
+              <article key={delivery.id} className="overflow-hidden rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)]">
+                <button type="button" aria-expanded={isExpanded} aria-controls={`delivery-${delivery.id}`} onClick={() => setExpandedDelivery(isExpanded ? null : delivery.id)} className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-[var(--color-surface-container)] md:p-6">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{studentLabel.charAt(0).toUpperCase()}</span>
+                    <span className="min-w-0"><span className="block truncate font-bold">{studentLabel}</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">{files.length} {files.length === 1 ? "archivo" : "archivos"} · <FormattedDate date={delivery.created} showTime /></span></span>
                   </div>
-                </div>
-              </div>
-              <span className={`material-symbols-outlined text-[var(--color-on-surface-variant)] transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
-                expand_more
-              </span>
-            </div>
+                  <span className="flex shrink-0 items-center gap-3"><Badge tone={statusCopy[state].tone}>{statusCopy[state].label}</Badge><span className={`material-symbols-outlined transition-transform ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true">expand_more</span></span>
+                </button>
 
-            {/* Expanded content */}
-            {isExpanded && (
-              <div className="border-t border-[var(--color-outline-variant)] p-6 flex flex-col gap-6">
-                {/* Files */}
-                {files.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)] mb-3">
-                      Archivos entregados
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      {files.map((file, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleDownloadFile(delivery.id, i, file.name)}
-                          disabled={downloadingFile === `${delivery.id}:${i}`}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-container-highest)] hover:bg-[var(--color-surface-container-high)] transition-colors text-left disabled:opacity-50 w-full"
-                        >
-                          <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">
-                            {downloadingFile === `${delivery.id}:${i}` ? 'hourglass_empty' : 'download'}
-                          </span>
-                          <span className="text-sm text-[var(--color-on-surface)] truncate flex-1">{file.name}</span>
-                        </button>
-                      ))}
-                    </div>
+                {isExpanded && (
+                  <div id={`delivery-${delivery.id}`} className="space-y-7 border-t border-[var(--color-outline-variant)] p-5 md:p-6">
+                    <section aria-labelledby={`files-${delivery.id}`}>
+                      <h3 id={`files-${delivery.id}`} className="text-sm font-bold uppercase tracking-wide text-[var(--color-on-surface-variant)]">Archivos entregados</h3>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {files.map((file, index) => <Button key={`${file.url}-${index}`} variant="secondary" isPending={downloadingFile === `${delivery.id}:${index}`} pendingLabel="Preparando…" leadingIcon={<span className="material-symbols-outlined text-lg">download</span>} onClick={() => download(delivery.id, index, file.name)} className="min-w-0 justify-start"><span className="truncate">{file.name}</span></Button>)}
+                      </div>
+                      <Link
+                        href={`/assignments/${assignmentId}/deliveries/${delivery.id}`}
+                        className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 py-2.5 text-sm font-bold hover:text-[var(--color-primary)]"
+                      >
+                        <span className="material-symbols-outlined text-lg" aria-hidden="true">auto_awesome</span>
+                        Abrir detalle y preevaluación con IA
+                      </Link>
+                    </section>
+                    <FeedbackForm delivery={delivery} courseId={courseId} assignmentId={assignmentId} />
                   </div>
                 )}
-
-                {/* Feedback Form */}
-                <FeedbackForm
-                  delivery={delivery}
-                  courseId={courseId}
-                  assignmentId={assignmentId}
-                  onSaved={() => router.refresh()}
-                />
-              </div>
-            )}
-          </div>
-        );
-      })}
+              </article>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-function FeedbackForm({
-  delivery,
-  courseId,
-  assignmentId,
-  onSaved,
-}: {
-  delivery: Delivery;
-  courseId: string;
-  assignmentId: string;
-  onSaved: () => void;
-}) {
+function FeedbackForm({ delivery }: { delivery: Delivery; courseId: string; assignmentId: string }) {
+  const router = useRouter();
+  const { notify } = useToast();
   const [feedback, setFeedback] = useState(delivery.feedback || "");
-  const [verdict, setVerdict] = useState<'Aprobado' | 'Corregir y reenviar' | ''>(delivery.verdict || "");
-  const [loading, setLoading] = useState(false);
+  const [grade, setGrade] = useState(delivery.grade?.toString() || "");
+  const [verdict, setVerdict] = useState<"Aprobado" | "Corregir y reenviar" | "">(delivery.verdict || "");
+  const [loading, setLoading] = useState<"draft" | "published" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [confirmPublish, setConfirmPublish] = useState(false);
 
-  const handleSave = async (publish: boolean) => {
-    setLoading(true);
-    setError(null);
-    setSaved(false);
-    try {
-      const result = await updateDeliveryEvaluation(
-        delivery.id,
-        delivery.grade || 0,
-        feedback,
-        verdict || undefined,
-        publish ? 'published' : 'draft'
-      );
-      if (result.success) {
-        setSaved(true);
-        onSaved();
-        setTimeout(() => setSaved(false), 3000);
-      } else {
-        setError(result.error || "Error al guardar");
-      }
-    } catch {
-      setError("Error inesperado");
-    } finally {
-      setLoading(false);
+  const save = async (status: "draft" | "published") => {
+    const numericGrade = Number(grade);
+    if (grade === "" || !Number.isFinite(numericGrade) || numericGrade < 0 || numericGrade > 10) {
+      setError("Ingresá una nota entre 0 y 10.");
+      return;
     }
+    if (status === "published" && (!feedback.trim() || !verdict)) {
+      setError("Para publicar, completá la devolución y seleccioná un veredicto.");
+      setConfirmPublish(false);
+      return;
+    }
+
+    setLoading(status);
+    setError(null);
+    const result = await updateDeliveryEvaluation(delivery.id, numericGrade, feedback.trim(), verdict || undefined, status);
+    setLoading(null);
+    setConfirmPublish(false);
+    if (!result.success) {
+      setError(result.error || "No se pudo guardar la evaluación.");
+      return;
+    }
+    notify(status === "published"
+      ? { title: "Evaluación publicada", description: "La nota y la devolución ya son visibles para el estudiante.", tone: "success" }
+      : { title: "Borrador guardado", description: "El estudiante todavía no puede ver esta evaluación.", tone: "info" });
+    router.refresh();
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
-        Retroalimentación
-      </h4>
-
-      {error && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-          {error}
-        </div>
-      )}
-
-      <textarea
-        value={feedback}
-        onChange={(e) => setFeedback(e.target.value)}
-        placeholder="Escribe tu retroalimentación para el estudiante..."
-        rows={4}
-        className="w-full px-5 py-4 rounded-2xl bg-[var(--color-surface-container-highest)] border border-[var(--color-outline-variant)] text-[var(--color-on-surface)] placeholder:text-[var(--color-on-surface-variant)]/50 focus:outline-none focus:border-[var(--color-primary)] transition-colors resize-none text-sm"
-      />
-
-      <div className="flex flex-col gap-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
-          Veredicto
-        </label>
-        <div className="flex gap-3 flex-wrap">
-          {(['Aprobado', 'Corregir y reenviar'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setVerdict(verdict === v ? '' : v)}
-              className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all border ${
-                verdict === v
-                  ? v === 'Aprobado'
-                    ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/30'
-                    : 'bg-[#FFB4A4]/20 text-[#FFB4A4] border-[#FFB4A4]/30'
-                  : 'bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] border-[var(--color-outline-variant)]'
-              }`}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
+    <section aria-labelledby={`evaluation-${delivery.id}`} className="space-y-5">
+      <div><h3 id={`evaluation-${delivery.id}`} className="font-headline text-xl font-bold">Evaluación</h3><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Guardá para continuar más tarde o publicá para hacerla visible.</p></div>
+      {error && <p role="alert" className="rounded-[var(--epixum-radius-md)] bg-[var(--color-error)]/10 p-3 text-sm text-[var(--color-error)]">{error}</p>}
+      <div className="grid gap-4 md:grid-cols-[10rem_minmax(0,1fr)]">
+        <Field label="Nota (0 a 10)" id={`grade-${delivery.id}`}>
+          <input id={`grade-${delivery.id}`} type="number" min="0" max="10" step="0.01" value={grade} onChange={(event) => setGrade(event.target.value)} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" />
+        </Field>
+        <Field label="Veredicto" id={`verdict-${delivery.id}`}>
+          <Select id={`verdict-${delivery.id}`} value={verdict} onChange={(event) => setVerdict(event.target.value as typeof verdict)}><option value="">Seleccionar</option><option value="Aprobado">Aprobado</option><option value="Corregir y reenviar">Corregir y reenviar</option></Select>
+        </Field>
       </div>
-
-      <div className="flex gap-3 flex-wrap">
-        <button
-          type="button"
-          onClick={() => handleSave(true)}
-          disabled={loading}
-          className="px-6 py-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[#000000] font-bold rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 text-sm flex items-center gap-2"
-        >
-          {loading ? (
-            <span className="material-symbols-outlined animate-spin text-[18px]">refresh</span>
-          ) : (
-            <span className="material-symbols-outlined text-[18px]">send</span>
-          )}
-          {loading ? "Guardando..." : "Publicar retroalimentación"}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSave(false)}
-          disabled={loading}
-          className="px-6 py-3 bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] font-bold rounded-full hover:bg-[var(--color-surface-container-high)] transition-colors disabled:opacity-50 text-sm border border-[var(--color-outline-variant)] flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-[18px]">draft</span>
-          Guardar borrador
-        </button>
-        {saved && (
-          <span className="flex items-center gap-1 text-[var(--color-primary)] text-sm font-medium">
-            <span className="material-symbols-outlined text-[18px]">check_circle</span>
-            Guardado
-          </span>
-        )}
+      <Field label="Devolución para el estudiante" id={`feedback-${delivery.id}`}>
+        <textarea id={`feedback-${delivery.id}`} value={feedback} onChange={(event) => setFeedback(event.target.value)} rows={5} className="w-full resize-y rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-3" />
+      </Field>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <Button variant="secondary" isPending={loading === "draft"} pendingLabel="Guardando…" leadingIcon={<span className="material-symbols-outlined text-lg">draft</span>} onClick={() => save("draft")}>Guardar borrador</Button>
+        <Button isPending={loading === "published"} pendingLabel="Publicando…" leadingIcon={<span className="material-symbols-outlined text-lg">publish</span>} onClick={() => setConfirmPublish(true)}>Publicar evaluación</Button>
       </div>
-
-      {delivery.status === 'published' && (
-        <p className="text-xs text-[var(--color-on-surface-variant)] flex items-center gap-1">
-          <span className="material-symbols-outlined text-[14px]">visibility</span>
-          La retroalimentación ya fue publicada y es visible para el estudiante.
-        </p>
-      )}
-      {delivery.status === 'draft' && (
-        <p className="text-xs text-[var(--color-on-surface-variant)] flex items-center gap-1">
-          <span className="material-symbols-outlined text-[14px]">visibility_off</span>
-          Retroalimentación guardada como borrador. El estudiante no puede verla aún.
-        </p>
-      )}
-    </div>
+      <p className="flex items-center gap-2 text-sm text-[var(--color-on-surface-variant)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">{delivery.status === "published" ? "visibility" : "visibility_off"}</span>{delivery.status === "published" ? "La evaluación actual es visible para el estudiante." : "La evaluación todavía no es visible para el estudiante."}</p>
+      <ConfirmDialog open={confirmPublish} onOpenChange={setConfirmPublish} title="Publicar evaluación" description="La nota, el veredicto y la devolución pasarán a ser visibles para el estudiante. Podrás actualizarlos más adelante." confirmLabel="Publicar ahora" isPending={loading === "published"} onConfirm={() => save("published")} />
+    </section>
   );
 }

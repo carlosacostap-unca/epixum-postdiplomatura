@@ -2,6 +2,7 @@
 
 import { createServerClient } from "@/lib/pocketbase-server";
 import { revalidatePath } from "next/cache";
+import { getErrorMessage } from "@/lib/errors";
 
 interface UserProfileData {
   firstName?: string;
@@ -25,7 +26,7 @@ export async function updateUserProfile(userId: string, data: UserProfileData) {
   }
 
   try {
-    const updateData: any = {
+    const updateData: Record<string, string | null | undefined> = {
       firstName: data.firstName,
       lastName: data.lastName,
       dni: data.dni,
@@ -59,8 +60,8 @@ export async function updateUserProfile(userId: string, data: UserProfileData) {
     revalidatePath("/"); // Update globally if user info is in header
     
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating profile:", error);
-    return { success: false, error: error?.message || "Error al actualizar perfil" };
+    return { success: false, error: getErrorMessage(error, "Error al actualizar perfil") };
   }
 }

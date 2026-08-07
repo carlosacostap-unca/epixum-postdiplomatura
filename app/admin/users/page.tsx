@@ -1,57 +1,21 @@
 import { getUsers } from "@/lib/data";
-import { getCurrentUser } from "@/lib/pocketbase-server";
-import { User } from "@/types";
-import { redirect } from "next/navigation";
 import UserRoleSelect from "@/components/UserRoleSelect";
+import { DataTable, PageHeader, Select, type DataColumn } from "@/components/ui";
+import type { User } from "@/types";
 
-export const dynamic = 'force-dynamic';
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+const valueOf = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] || "" : value || "";
 
-export default async function AdminUsersPage() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser || currentUser.role !== 'admin') {
-    redirect('/');
-  }
-
+export default async function AdminUsersPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const query = valueOf(params.q).trim().toLocaleLowerCase("es");
+  const role = valueOf(params.role);
   const users = await getUsers();
-
-  return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6 text-zinc-900 dark:text-zinc-100">Administración de Usuarios</h1>
-      <div className="bg-white dark:bg-zinc-800 rounded-lg shadow overflow-hidden border border-zinc-200 dark:border-zinc-700">
-        <table className="w-full text-left text-sm text-zinc-500 dark:text-zinc-400">
-          <thead className="bg-zinc-50 dark:bg-zinc-900 text-xs uppercase font-medium">
-            <tr>
-              <th className="px-6 py-4">Usuario</th>
-              <th className="px-6 py-4">Email</th>
-              <th className="px-6 py-4">Rol</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-            {users.map((user: User) => (
-              <tr key={user.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                  {user.avatar ? (
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/_pb_users_auth_/${user.id}/${user.avatar}`}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-500 dark:text-zinc-400">
-                      {user.name?.[0] || user.email[0]}
-                    </div>
-                  )}
-                  {user.name || "Sin nombre"}
-                </td>
-                <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">
-                  <UserRoleSelect user={user} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const filtered = users.filter((user) => !query || `${user.name} ${user.email}`.toLocaleLowerCase("es").includes(query)).filter((user) => !role || user.role === role);
+  const columns: DataColumn<User>[] = [
+    { id: "user", header: "Usuario", render: (user) => <div><p className="font-bold">{user.name || "Sin nombre"}</p><p className="mt-1 text-xs text-[var(--color-on-surface-variant)]">@{user.username}</p></div> },
+    { id: "email", header: "Correo", render: (user) => <span className="break-all">{user.email}</span> },
+    { id: "role", header: "Rol", render: (user) => <UserRoleSelect user={user} /> },
+  ];
+  return <div className="p-6 md:p-10 xl:p-12"><PageHeader eyebrow="Administración" title="Usuarios" description="Buscá personas y administrá sus permisos." /><form className="mt-8 grid gap-3 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-4 md:grid-cols-[1fr_14rem_auto]" role="search"><label className="sr-only" htmlFor="user-search">Buscar usuarios</label><input id="user-search" name="q" defaultValue={valueOf(params.q)} placeholder="Buscar por nombre o correo" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4" /><label className="sr-only" htmlFor="user-role">Rol</label><Select id="user-role" name="role" defaultValue={role}><option value="">Todos los roles</option><option value="estudiante">Estudiantes</option><option value="docente">Docentes</option><option value="admin">Administradores</option></Select><button className="min-h-11 rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold">Aplicar</button></form><p className="my-5 text-sm text-[var(--color-on-surface-variant)]" role="status">{filtered.length} {filtered.length === 1 ? "usuario" : "usuarios"}</p><DataTable ariaLabel="Usuarios de la plataforma" items={filtered} columns={columns} getKey={(user) => user.id} /></div>;
 }

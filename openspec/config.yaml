@@ -1,0 +1,33 @@
+schema: spec-driven
+
+context: |
+  Producto: Epixum, plataforma educativa para cursos, docentes y estudiantes.
+  Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, PocketBase, iDrive S3 y OpenAI.
+  Autenticación: Google OAuth mediante PocketBase y cookie HttpOnly pb_auth para renderizado servidor.
+  Roles: admin, docente y estudiante. Cada ruta y acción sensible debe respetar el rol y el alcance del curso.
+  Persistencia: PocketBase es la fuente de verdad; course_enrollments representa las matrículas vigentes.
+  Archivos: iDrive S3-compatible mediante URLs prefirmadas. No se envían correos electrónicos.
+  Idioma del producto y de las especificaciones: español.
+  Convención normativa: usar MUST o MUST NOT en el cuerpo de cada requisito OpenSpec.
+
+rules:
+  specs:
+    - Cada requisito debe describir comportamiento observable y al menos un escenario verificable.
+    - Las restricciones de rol y propiedad deben quedar explícitas.
+    - No documentar secretos, tokens ni valores reales de variables de entorno.
+  proposal:
+    - Incluir impacto sobre datos y compatibilidad cuando corresponda.
+  tasks:
+    - Incluir validación proporcional al riesgo de cada cambio.
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

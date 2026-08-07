@@ -1,6 +1,7 @@
 "use client";
 
 import { createLink, updateLink, getResourceUploadUrl } from "@/lib/actions";
+import { getErrorMessage } from "@/lib/errors";
 import { Link as LinkType } from "@/types";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
@@ -92,9 +93,9 @@ export default function LinkForm({ link, classId, assignmentId, onClose, isEmbed
         setError(result.error || "Ocurrió un error");
         setLoading(false);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      setError(e.message || "Ocurrió un error inesperado");
+      setError(getErrorMessage(e, "Ocurrió un error inesperado"));
       setLoading(false);
     }
   }

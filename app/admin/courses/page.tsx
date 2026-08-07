@@ -1,71 +1,45 @@
-import { getAllCourses } from '@/lib/data';
-import Link from 'next/link';
-import FormattedDate from '@/components/FormattedDate';
+import Link from "next/link";
+import { getAllCourses } from "@/lib/data";
+import { Badge, DataTable, PageHeader, Select, type DataColumn } from "@/components/ui";
+import FormattedDate from "@/components/FormattedDate";
+import type { Course } from "@/types";
 
-export default async function CoursesPage() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+const valueOf = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] || "" : value || "";
+
+export default async function CoursesPage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const query = valueOf(params.q).trim().toLocaleLowerCase("es");
+  const status = valueOf(params.status);
+  const sort = valueOf(params.sort) || "newest";
   const courses = await getAllCourses();
+  const filtered = courses
+    .filter((course) => !query || course.title.toLocaleLowerCase("es").includes(query) || course.expand?.teachers?.some((teacher) => teacher.name?.toLocaleLowerCase("es").includes(query)))
+    .filter((course) => !status || course.status === status)
+    .sort((a, b) => sort === "title" ? a.title.localeCompare(b.title, "es") : sort === "oldest" ? a.created.localeCompare(b.created) : b.created.localeCompare(a.created));
+
+  const columns: DataColumn<Course>[] = [
+    { id: "title", header: "Curso", render: (course) => <div><p className="font-bold">{course.title}</p><p className="mt-1 text-xs text-[var(--color-on-surface-variant)]">{course.expand?.teachers?.map((teacher) => teacher.name || teacher.username).join(", ") || "Sin docente"}</p></div> },
+    { id: "status", header: "Estado", render: (course) => <Badge tone={course.status === "en curso" ? "success" : course.status === "borrador" ? "warning" : "neutral"}>{course.status}</Badge> },
+    { id: "start", header: "Inicio", render: (course) => course.startDate ? <FormattedDate date={course.startDate} /> : "Sin fecha" },
+    { id: "end", header: "Fin", render: (course) => course.endDate ? <FormattedDate date={course.endDate} /> : "Sin fecha" },
+    { id: "actions", header: "Acciones", render: (course) => <Link href={`/admin/courses/${course.id}`} className="font-bold text-[var(--color-primary)] hover:underline">Editar curso</Link> },
+  ];
 
   return (
-    <div className="container mx-auto p-8 max-w-6xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Gestión de Cursos</h1>
-        <Link 
-          href="/admin/courses/new" 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
-        >
-          Nuevo Curso
-        </Link>
-      </div>
-
-      <div className="bg-white dark:bg-zinc-800 rounded-lg shadow overflow-hidden border border-zinc-200 dark:border-zinc-700">
-        <table className="w-full text-left text-sm text-zinc-500 dark:text-zinc-400">
-          <thead className="bg-zinc-50 dark:bg-zinc-900 text-xs uppercase font-medium">
-            <tr>
-              <th scope="col" className="px-6 py-4">Título</th>
-              <th scope="col" className="px-6 py-4">Estado</th>
-              <th scope="col" className="px-6 py-4">Inicio</th>
-              <th scope="col" className="px-6 py-4">Fin</th>
-              <th scope="col" className="px-6 py-4 text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-            {courses.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                  No hay cursos registrados.
-                </td>
-              </tr>
-            ) : (
-              courses.map((course) => (
-                <tr key={course.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{course.title}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${course.status === 'en curso' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                        course.status === 'finalizado' ? 'bg-gray-100 text-gray-800 dark:bg-zinc-700 dark:text-zinc-300' : 
-                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
-                      {course.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                    {course.startDate ? <FormattedDate date={course.startDate} /> : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                    {course.endDate ? <FormattedDate date={course.endDate} /> : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Link href={`/admin/courses/${course.id}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300">
-                      Editar
-                    </Link>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="p-6 md:p-10 xl:p-12">
+      <PageHeader eyebrow="Administración" title="Cursos" description="Gestioná el catálogo, sus estados y docentes." actions={<Link href="/admin/courses/new" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]"><span className="material-symbols-outlined" aria-hidden="true">add</span>Nuevo curso</Link>} />
+      <form className="mt-8 grid gap-3 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-4 md:grid-cols-[1fr_13rem_13rem_auto]" role="search">
+        <label className="sr-only" htmlFor="course-search">Buscar cursos</label>
+        <input id="course-search" name="q" defaultValue={valueOf(params.q)} placeholder="Buscar por curso o docente" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4" />
+        <label className="sr-only" htmlFor="course-status">Estado</label>
+        <Select id="course-status" name="status" defaultValue={status}><option value="">Todos los estados</option><option value="borrador">Borrador</option><option value="en curso">En curso</option><option value="finalizado">Finalizado</option></Select>
+        <label className="sr-only" htmlFor="course-sort">Orden</label>
+        <Select id="course-sort" name="sort" defaultValue={sort}><option value="newest">Más recientes</option><option value="oldest">Más antiguos</option><option value="title">Título A–Z</option></Select>
+        <button className="min-h-11 rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold">Aplicar</button>
+      </form>
+      <p className="my-5 text-sm text-[var(--color-on-surface-variant)]" role="status">{filtered.length} {filtered.length === 1 ? "curso" : "cursos"}</p>
+      <DataTable ariaLabel="Cursos de la plataforma" items={filtered} columns={columns} getKey={(course) => course.id} />
     </div>
   );
 }

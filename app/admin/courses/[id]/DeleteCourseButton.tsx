@@ -1,34 +1,28 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { deleteCourse } from '@/lib/actions-courses';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { deleteCourse } from "@/lib/actions-courses";
+import { Button, ConfirmDialog, useToast } from "@/components/ui";
 
 export default function DeleteCourseButton({ id, title }: { id: string; title: string }) {
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { notify } = useToast();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
-    if (confirm(`¿Estás seguro de que deseas eliminar el curso "${title}"? Esta acción no se puede deshacer.`)) {
-      setLoading(true);
-      try {
-        await deleteCourse(id);
-        router.push('/admin/courses');
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Hubo un error al eliminar el curso');
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      await deleteCourse(id);
+      notify({ title: "Curso eliminado", description: `${title} ya no está disponible.`, tone: "success" });
+      router.push("/admin/courses");
+      router.refresh();
+    } catch (error: unknown) {
+      notify({ title: "No pudimos eliminar el curso", description: error instanceof Error ? error.message : "Intentá nuevamente.", tone: "error", duration: null });
+      setLoading(false);
     }
   };
 
-  return (
-    <button
-      onClick={handleDelete}
-      disabled={loading}
-      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50"
-    >
-      {loading ? 'Eliminando...' : 'Eliminar Curso'}
-    </button>
-  );
+  return <><Button variant="danger" onClick={() => setOpen(true)} leadingIcon={<span className="material-symbols-outlined" aria-hidden="true">delete</span>}>Eliminar curso</Button><ConfirmDialog open={open} onOpenChange={setOpen} title="Eliminar curso" description={<>Vas a eliminar <strong>{title}</strong>. Esta acción no se puede deshacer.</>} confirmLabel="Eliminar definitivamente" onConfirm={handleDelete} isPending={loading} tone="danger" /></>;
 }

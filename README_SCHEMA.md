@@ -11,6 +11,10 @@ Para que la aplicación funcione correctamente, necesitas crear las siguientes c
     - `startDate`: Date
     - `endDate`: Date
     - `status`: Select (options: "borrador", "en curso", "finalizado")
+    - `organizationMode`: Select (options: "tradicional", "semanal"). Los registros existentes se inicializan como `tradicional`.
+    - `enrollmentMode`: Select (options: "clave", "invitacion_contrasena"). Los registros existentes se inicializan como `clave`.
+    - `enrollmentKeyHash`: Text (Hidden, 64 caracteres). Se genera en el servidor; nunca se guarda la clave en texto plano.
+    - `invitationPasswordHash`: Text (Hidden, 64 caracteres). HMAC sensible a mayúsculas de la contraseña compartida.
     - `students`: Relation (Multiple) -> Collection: `users`
     - `teachers`: Relation (Multiple) -> Collection: `users`
     - `classes`: Relation (Multiple) -> Collection: `classes`
@@ -42,28 +46,51 @@ Para que el rol "Docente" pueda gestionar el contenido, debes configurar las sig
 **Collection: `users`**
 
 - **List/View Rule**: `id = @request.auth.id || @request.auth.role = "admin"`
-- **Create Rule**: `""` (Público, para permitir registro)
-- **Update Rule**: `(id = @request.auth.id && @request.body.role:isset = false) || @request.auth.role = "admin"`
-  - *Nota*: Esto permite que los usuarios editen su perfil pero **NO** su rol. Solo los admins pueden cambiar roles.
+- **Create Rule**: `@request.context = "oauth2"` (alta automática exclusivamente desde Google OAuth)
+- **Update Rule**: `(id = @request.auth.id && ((role = "" && @request.body.role = "estudiante") || @request.body.role:isset = false)) || @request.auth.role = "admin"`
+  - *Nota*: un usuario nuevo puede asignarse solamente el rol inicial `estudiante`; después no puede cambiar su propio rol.
 - **Delete Rule**: `id = @request.auth.id || @request.auth.role = "admin"`
   - *Nota*: Permite que los usuarios borren su cuenta y que los admins borren a cualquiera.
 
-## 9. Colección: `enrollment_requests` (Solicitudes de Matrícula)
-- **Name**: `enrollment_requests`
+## Colección: `course_enrollments` (Matrículas)
+- **Name**: `course_enrollments`
 - **Type**: `Base`
 - **Fields**:
-    - `firstName`: Text (Required)
-    - `lastName`: Text (Required)
-    - `dni`: Text (Required)
-    - `birthDate`: Date (Required)
-    - `email`: Email (Required)
-    - `phone`: Text (Required)
-    - `courses`: Relation (Multiple, Required) -> Collection: `courses`
-    - `status`: Select (options: "pending", "approved", "rejected") (Required, Default: "pending")
+    - `course`: Relation (Single, Required) -> Collection: `courses`
+    - `student`: Relation (Single, Required) -> Collection: `users`
+    - `keyHash`: Text (Hidden, 64 caracteres). Prueba que la matrícula fue autorizada por una clave válida.
+    - `invitation`: Relation (Single, Optional) -> Collection: `course_enrollment_invitations`.
+- **Índice único**: `(course, student)` para impedir matrículas duplicadas.
 - **API Rules**:
-    - **List/View Rule**: `@request.auth.role = "docente" || @request.auth.role = "admin"`
-    - **Create Rule**: `""` (Public)
-    - **Update/Delete Rule**: `@request.auth.role = "docente" || @request.auth.role = "admin"`
+    - **List/View**: el estudiante ve sus matrículas; los docentes asignados y administradores ven las de sus cursos.
+    - **Create**: bloqueado para clientes directos. Una Server Action valida identidad, modalidad y credencial, y un cliente de servicio exclusivo del servidor crea la matrícula.
+    - **Update**: bloqueado.
+    - **Delete**: docentes asignados o administradores.
+
+El script `npm run setup:enrollment` agrega este esquema, migra la relación heredada `courses.students` y elimina la colección anterior `enrollment_requests`.
+
+## Colecciones de doble validación
+
+- `course_enrollment_invitations`: relaciona un curso con un `emailNormalized` único, estado `pendiente`, `activada` o `revocada`, estudiante y fecha de activación opcionales; declara `created` y `updated` como campos `autodate`.
+- `course_enrollment_attempts`: registra solamente curso, invitación, estudiante y fechas automáticas de cada contraseña incorrecta; nunca persiste la contraseña ni su HMAC.
+- Los administradores gestionan invitaciones. Los docentes asignados pueden rotar la contraseña del curso, pero no consultar emails invitados.
+- Los estudiantes sólo leen invitaciones pendientes que coinciden con su email autenticado y no pueden alterar invitaciones ni borrar intentos. La activación y la matrícula se persisten exclusivamente desde una Server Action autenticada.
+- Cinco intentos incorrectos dentro de 15 minutos bloquean temporalmente la activación.
+- `npm run schema:invitation` aplica únicamente esta migración de forma idempotente y sin eliminar registros.
+- La guía de operación, rotación, estados, rollback y mantenimiento está en [`docs/invitation_enrollment/README.md`](docs/invitation_enrollment/README.md).
+
+## Colección: `course_weeks` (Semanas del curso)
+
+- **Campos**: `course` (requerido), `number` (entero no negativo, desde 0), `title`, `startDate`, `endDate`, `status` (`borrador`, `publicada`, `programada`) y `publishAt`.
+- **Índice único**: `(course, number)`.
+- **Gestión**: solamente docentes asignados a cursos con modalidad semanal.
+- **Lectura estudiantil**: requiere matrícula y una semana publicada o cuya programación ya se cumplió.
+- `classes`, `assignments` e `inquiries` incorporan una relación singular y opcional `week`, sin eliminar el contenido cuando se borra la semana.
+- El contenido sin semana permanece disponible para el docente y oculto al estudiante mientras el curso sea semanal.
+
+`npm run setup:enrollment` también aplica esta migración de forma idempotente. `npm run schema:test` verifica primera ejecución, reejecución y conservación de registros.
+
+La guía operativa, los permisos, la estrategia de rollback y los criterios de aceptación están en [`docs/weekly_course/README.md`](docs/weekly_course/README.md).
 
 ## Pasos para implementar Roles
 

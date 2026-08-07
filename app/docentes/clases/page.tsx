@@ -1,150 +1,51 @@
-import { createServerClient, getCurrentUser } from "@/lib/pocketbase-server";
-import { redirect } from "next/navigation";
-import { Course, Class } from "@/types";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import FormattedDate from "@/components/FormattedDate";
+import { Badge, Card, CardContent, EmptyState, PageHeader } from "@/components/ui";
+import { getClassesByCourse, getTeacherCourses } from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function DocenteClasesPage() {
   const user = await getCurrentUser();
-
-  if (!user || user.role !== "docente") {
-    redirect("/");
-  }
-
-  const pb = await createServerClient();
-  let courses: Course[] = [];
-  let coursesWithClasses: { course: Course, classes: Class[] }[] = [];
-  
-  try {
-    courses = await pb.collection("courses").getFullList<Course>({
-      filter: `teachers ~ "${user.id}"`,
-      sort: "-created",
-      requestKey: null,
-    });
-
-    // Fetch classes for each course
-    coursesWithClasses = await Promise.all(courses.map(async (course) => {
-      let classes: Class[] = [];
-      try {
-        classes = await pb.collection("classes").getFullList<Class>({
-          filter: `course = "${course.id}"`,
-          sort: "-date",
-          requestKey: null,
-        });
-      } catch (e) {
-        console.error(`Error fetching classes for course ${course.id}:`, e);
-      }
-      return { course, classes };
-    }));
-  } catch (error) {
-    console.error("Error fetching courses with classes:", error);
-  }
+  if (!user || user.role !== "docente") redirect("/");
+  const courses = await getTeacherCourses(user.id);
+  const groups = await Promise.all(courses.map(async (course) => ({ course, classes: await getClassesByCourse(course.id) })));
+  const total = groups.reduce((sum, group) => sum + group.classes.length, 0);
 
   return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full">
-      <header className="mb-12 md:mb-24 flex flex-col md:flex-row gap-10 md:gap-20 items-start justify-between">
-        <div className="max-w-2xl">
-          <div className="flex items-center gap-3 mb-8">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-              Panel Docente
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-headline tracking-tight text-[var(--color-on-surface)] mb-6">
-            Gestionar <span className="text-[var(--color-primary)]">Clases</span>
-          </h1>
-          <p className="text-[var(--color-on-surface-variant)] text-lg md:text-xl leading-relaxed">
-            Administra las clases de los cursos que tienes asignados. Selecciona un curso para ver y gestionar sus clases.
-          </p>
-        </div>
-      </header>
-
-      <div className="flex flex-col gap-12">
-        {coursesWithClasses.length === 0 ? (
-          <div className="bg-[var(--color-surface-container-low)] rounded-[3rem] p-16 text-center flex flex-col items-center">
-            <span className="material-symbols-outlined text-6xl opacity-50 mb-6">school</span>
-            <p className="text-[var(--color-on-surface-variant)] text-lg">No tienes cursos asignados actualmente.</p>
-          </div>
-        ) : (
-          coursesWithClasses.map(({ course, classes }) => {
-            // Ordenar las clases por fecha (más recientes primero)
-            const sortedClasses = [...classes].sort((a, b) => {
-              return new Date(b.date).getTime() - new Date(a.date).getTime();
-            });
-
-            return (
-              <div key={course.id} className="bg-[var(--color-surface-container-low)] rounded-[2rem] md:rounded-[3rem] overflow-hidden flex flex-col">
-                <div className="p-6 md:p-8 md:pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-headline font-semibold text-[var(--color-on-surface)]">{course.title}</h2>
-                    <p className="text-base text-[var(--color-on-surface-variant)] mt-2">
-                      {classes.length} {classes.length === 1 ? 'clase' : 'clases'}
-                    </p>
-                  </div>
-                  <Link 
-                    href={`/docentes/cursos/${course.id}`}
-                    className="flex items-center justify-center w-full sm:w-auto gap-2 px-6 py-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[#000000] rounded-full hover:opacity-90 transition-opacity font-medium text-base whitespace-nowrap shadow-[0_0_20px_rgba(63,255,139,0.2)]"
-                    title="Gestionar Curso"
-                  >
-                    <span className="material-symbols-outlined text-lg">visibility</span>
-                    Gestionar Curso
-                  </Link>
-                </div>
-
-                <div className="p-4 pt-0">
-                  {sortedClasses.length === 0 ? (
-                    <div className="p-12 text-center text-[var(--color-on-surface-variant)] text-lg bg-[var(--color-surface-container)] rounded-[2rem] mx-4 mb-4">
-                      No hay clases registradas en este curso.
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto bg-[var(--color-surface-container)] rounded-[2rem] mx-4 mb-4">
-                      <table className="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                          <tr className="border-b border-transparent">
-                            <th className="px-8 py-6 font-headline font-semibold text-sm text-[var(--color-on-surface-variant)] uppercase tracking-wider">Título</th>
-                            <th className="px-8 py-6 font-headline font-semibold text-sm text-[var(--color-on-surface-variant)] uppercase tracking-wider">Fecha</th>
-                            <th className="px-8 py-6 font-headline font-semibold text-sm text-[var(--color-on-surface-variant)] uppercase tracking-wider text-right">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-transparent">
-                          {sortedClasses.map((cls) => (
-                            <tr key={cls.id} className="hover:bg-[var(--color-surface-container-highest)] transition-colors group">
-                              <td className="px-8 py-6">
-                                <div className="font-medium text-lg text-[var(--color-on-surface)]">
-                                  {cls.title}
-                                </div>
-                                {cls.description && (
-                                  <div className="text-sm text-[var(--color-on-surface-variant)] truncate max-w-md mt-2" dangerouslySetInnerHTML={{__html: cls.description.substring(0, 100) + (cls.description.length > 100 ? '...' : '')}} />
-                                )}
-                              </td>
-                              <td className="px-8 py-6">
-                                <div className="text-base text-[var(--color-on-surface-variant)]">
-                                  {cls.date ? <FormattedDate date={cls.date} showTime={true} /> : 'Sin fecha'}
-                                </div>
-                              </td>
-                              <td className="px-8 py-6 text-right">
-                                <Link 
-                                  href={`/docentes/cursos/${course.id}/clases/${cls.id}`}
-                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-[var(--color-surface-container-highest)] text-[var(--color-primary)] hover:bg-gradient-to-br hover:from-[var(--color-primary)] hover:to-[var(--color-primary-container)] hover:text-[#000000] hover:shadow-[0_0_20px_rgba(63,255,139,0.2)] hover:scale-[1.05] active:scale-95 transition-all"
-                                >
-                                  Ver detalles
-                                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                                </Link>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
+    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+      <PageHeader eyebrow="Panel docente" title="Clases" description="Todas las clases de tus cursos asignados, agrupadas por contexto." metadata={<Badge tone="info">{total} {total === 1 ? "clase" : "clases"}</Badge>} />
+      {groups.length === 0 ? (
+        <EmptyState icon="school" title="No tenés cursos asignados" description="Cuando un administrador te asigne un curso, sus clases aparecerán aquí." />
+      ) : (
+        <div className="space-y-10">
+          {groups.map(({ course, classes }) => (
+            <section key={course.id} aria-labelledby={`course-${course.id}`} className="space-y-4">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                <div><h2 id={`course-${course.id}`} className="font-headline text-2xl font-bold">{course.title}</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">{classes.length} {classes.length === 1 ? "clase" : "clases"}</p></div>
+                <Link href={`/docentes/cursos/${course.id}/clases/nueva`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Nueva clase</Link>
               </div>
-            );
-          })
-        )}
-      </div>
+              {classes.length === 0 ? (
+                <EmptyState icon="menu_book" title="Sin clases" description="Programá la primera clase de este curso." action={<Link href={`/docentes/cursos/${course.id}/clases/nueva`} className="font-bold text-[var(--color-primary)]">Programar clase</Link>} />
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {classes.map((classItem) => (
+                    <Link key={classItem.id} href={`/docentes/cursos/${course.id}/clases/${classItem.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+                      <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
+                        <h3 className="font-headline text-xl font-bold">{classItem.title}</h3>
+                        <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{classItem.date ? <FormattedDate date={classItem.date} showTime /> : "Sin fecha programada"}</p>
+                        <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)]">Gestionar <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></span>
+                      </CardContent></Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

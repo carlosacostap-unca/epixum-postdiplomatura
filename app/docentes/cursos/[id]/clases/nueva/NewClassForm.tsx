@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClassForCourse } from "@/lib/actions";
+import type { CourseWeek } from "@/types";
 
-export default function NewClassForm({ courseId }: { courseId: string }) {
+export default function NewClassForm({ courseId, weeks, initialWeekId }: { courseId: string; weeks: CourseWeek[]; initialWeekId?: string }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [week, setWeek] = useState(initialWeekId && weeks.some((item) => item.id === initialWeekId) ? initialWeekId : "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -21,6 +23,7 @@ export default function NewClassForm({ courseId }: { courseId: string }) {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
+    formData.append("week", week);
     
     // Si hay fecha, la convertimos a UTC usando la zona horaria del navegador
     if (date) {
@@ -29,14 +32,17 @@ export default function NewClassForm({ courseId }: { courseId: string }) {
       formData.append("date", localDate.toISOString());
     }
 
-    const result = await createClassForCourse(courseId, formData);
-
-    setIsLoading(false);
-
-    if (result.success) {
-      router.push(`/docentes/cursos/${courseId}`);
-    } else {
-      setError(result.error || "Error al crear la clase");
+    try {
+      const result = await createClassForCourse(courseId, formData);
+      if (result.success) {
+        router.push(`/docentes/cursos/${courseId}`);
+      } else {
+        setError(result.error || "Error al crear la clase");
+      }
+    } catch {
+      setError("No pudimos conectar con el servidor. Intentá nuevamente.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,6 +72,15 @@ export default function NewClassForm({ courseId }: { courseId: string }) {
             placeholder="Ej: Introducción a React"
           />
         </div>
+
+        {weeks.length > 0 ? <div>
+          <label htmlFor="week" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-on-surface-variant)] mb-3">Semana</label>
+          <select id="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full bg-[var(--color-surface-container-lowest)] border border-[var(--color-outline-variant)]/30 rounded-[1.5rem] px-6 py-4 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-all outline-none">
+            <option value="">Sin semana</option>
+            {weeks.map((item) => <option key={item.id} value={item.id}>Semana {item.number}: {item.title}</option>)}
+          </select>
+          <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">El contenido sin semana no se muestra a los estudiantes.</p>
+        </div> : null}
 
         <div>
           <label htmlFor="description" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-on-surface-variant)] mb-3">

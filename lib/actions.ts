@@ -3,7 +3,89 @@
 import { createServerClient } from "@/lib/pocketbase-server";
 import { revalidatePath } from "next/cache";
 import { getPresignedUploadUrl, getPresignedDownloadUrl, configureBucketCors } from "./s3";
-import { parseDeliveryFiles } from "@/types";
+import { parseDeliveryFiles, type CourseWeek } from "@/types";
+import { teacherCanManageCourse } from "./teacher-scope";
+import { getErrorResponse } from "./errors";
+import { isWeekEffectivelyVisible } from "./course-weeks";
+
+type ServerPocketBase = Awaited<ReturnType<typeof createServerClient>>;
+
+async function canManageCourse(
+  pb: ServerPocketBase,
+  user: { id: string; role?: string },
+  courseId?: string,
+) {
+  if (!courseId) return false;
+  if (user.role === "admin") return true;
+  if (user.role !== "docente") return false;
+  try {
+    const course = await pb.collection("courses").getOne(courseId, { fields: "id,teachers" });
+    return teacherCanManageCourse(course, { id: user.id, role: user.role || "" });
+  } catch {
+    return false;
+  }
+}
+
+async function studentCanAccessCourse(
+  pb: ServerPocketBase,
+  user: { id: string; role?: string },
+  courseId?: string,
+) {
+  if (!courseId || user.role !== "estudiante") return false;
+  try {
+    await pb.collection("course_enrollments").getFirstListItem(
+      pb.filter("course = {:courseId} && student = {:studentId}", { courseId, studentId: user.id }),
+      { fields: "id" },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function studentCanAccessContent(
+  pb: ServerPocketBase,
+  user: { id: string; role?: string },
+  collection: "classes" | "assignments",
+  recordId: string,
+) {
+  try {
+    const record = await pb.collection(collection).getOne(recordId, { fields: "id,course,week" });
+    if (!(await studentCanAccessCourse(pb, user, record.course))) return false;
+    const course = await pb.collection("courses").getOne(record.course, { fields: "id,organizationMode" });
+    if (course.organizationMode !== "semanal") return true;
+    if (!record.week) return false;
+    const week = await pb.collection("course_weeks").getOne<CourseWeek>(record.week, { fields: "id,course,status,publishAt" });
+    return week.course === record.course && isWeekEffectivelyVisible(week);
+  } catch {
+    return false;
+  }
+}
+
+async function classCourseId(pb: ServerPocketBase, classId: string) {
+  const record = await pb.collection("classes").getOne(classId, { fields: "course" });
+  return record.course as string | undefined;
+}
+
+async function assignmentCourseId(pb: ServerPocketBase, assignmentId: string) {
+  const record = await pb.collection("assignments").getOne(assignmentId, { fields: "course" });
+  return record.course as string | undefined;
+}
+
+async function validatedWeekId(pb: ServerPocketBase, courseId: string, value: FormDataEntryValue | null) {
+  const weekId = typeof value === "string" ? value.trim() : "";
+  if (!weekId) return null;
+  const week = await pb.collection("course_weeks").getOne(weekId, { fields: "id,course" });
+  if (week.course !== courseId) throw new Error("La semana no pertenece a este curso");
+  return weekId;
+}
+
+async function linkCourseId(pb: ServerPocketBase, linkId: string) {
+  const link = await pb.collection("links").getOne(linkId, { fields: "class,assignment" });
+  if (link.class) return classCourseId(pb, link.class as string);
+  if (link.assignment) return assignmentCourseId(pb, link.assignment as string);
+  return undefined;
+}
 
 function getStorageKeyFromUrl(fileUrl: string) {
   let key = fileUrl;
@@ -69,6 +151,32 @@ export async function getResourceDownloadUrl(linkId: string) {
   try {
     const link = await pb.collection('links').getOne(linkId);
 
+    if (user.role === "docente") {
+      const courseId = link.class
+        ? await classCourseId(pb, link.class)
+        : link.assignment
+          ? await assignmentCourseId(pb, link.assignment)
+          : undefined;
+      if (!(await canManageCourse(pb, user, courseId))) {
+        return { success: false, error: "No autorizado para este curso" };
+      }
+    }
+    if (user.role === "estudiante") {
+      const courseId = link.class
+        ? await classCourseId(pb, link.class)
+        : link.assignment
+          ? await assignmentCourseId(pb, link.assignment)
+          : undefined;
+      const contentAllowed = link.class
+        ? await studentCanAccessContent(pb, user, "classes", link.class)
+        : link.assignment
+          ? await studentCanAccessContent(pb, user, "assignments", link.assignment)
+          : false;
+      if (!courseId || !contentAllowed) {
+        return { success: false, error: "No autorizado para este curso" };
+      }
+    }
+
     // Extract key from url
     // Assuming url is like https://endpoint/bucket/filename.ext or just filename
     let key = link.url;
@@ -106,8 +214,17 @@ export async function getDeliveryDownloadUrl(deliveryId: string) {
     const delivery = await pb.collection('deliveries').getOne(deliveryId);
 
     // Check permissions: Student can access their own, Teacher/Admin can access all
-    if (user.role === 'estudiante' && delivery.student !== user.id) {
+    if (user.role === 'estudiante') {
+      const courseId = await assignmentCourseId(pb, delivery.assignment);
+      if (delivery.student !== user.id || !(await studentCanAccessCourse(pb, user, courseId))) {
         return { success: false, error: 'Unauthorized access to delivery' };
+      }
+    }
+    if (user.role === "docente") {
+      const courseId = await assignmentCourseId(pb, delivery.assignment);
+      if (!(await canManageCourse(pb, user, courseId))) {
+        return { success: false, error: "No autorizado para este curso" };
+      }
     }
 
     // Extract key from repositoryUrl
@@ -155,6 +272,9 @@ export async function createClassForCourse(courseId: string, formData: FormData)
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
+  if (!(await canManageCourse(pb, user, courseId))) {
+    return { success: false, error: "No tienes permisos para gestionar este curso" };
+  }
 
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
@@ -166,6 +286,7 @@ export async function createClassForCourse(courseId: string, formData: FormData)
   }
 
   try {
+    const week = await validatedWeekId(pb, courseId, formData.get('week'));
     let dateObj = null;
     if (dateStr) {
       // Check if dateStr is already an ISO string
@@ -179,11 +300,12 @@ export async function createClassForCourse(courseId: string, formData: FormData)
     }
 
     // Create the class
-    const data: any = {
+    const data: Record<string, unknown> = {
       title,
       description,
       date: dateObj,
       course: courseId, // Relacionar directamente la clase con el curso
+      week,
     };
     
     const newClass = await pb.collection('classes').create(data);
@@ -213,7 +335,7 @@ export async function createClass(formData: FormData) {
   }
 
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       title,
       description,
       date: date ? new Date(date).toISOString() : null,
@@ -235,6 +357,10 @@ export async function updateClass(classId: string, formData: FormData) {
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
+  const scopedCourseId = await classCourseId(pb, classId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar esta clase" };
+  }
 
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
@@ -242,6 +368,7 @@ export async function updateClass(classId: string, formData: FormData) {
   const timeStr = formData.get('time') as string;
 
   try {
+    const week = await validatedWeekId(pb, scopedCourseId!, formData.get('week'));
     let dateObj = null;
     if (dateStr) {
       if (dateStr.includes('T') && dateStr.endsWith('Z')) {
@@ -252,10 +379,11 @@ export async function updateClass(classId: string, formData: FormData) {
       }
     }
 
-    const data: any = {
+    const data: Record<string, unknown> = {
       title,
       description,
       date: dateObj,
+      week,
     };
 
     await pb.collection('classes').update(classId, data);
@@ -277,6 +405,10 @@ export async function deleteClass(classId: string) {
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
+  const scopedCourseId = await classCourseId(pb, classId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar esta clase" };
+  }
 
   try {
     await pb.collection('classes').delete(classId);
@@ -297,6 +429,9 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
+  if (!(await canManageCourse(pb, user, courseId))) {
+    return { success: false, error: "No tienes permisos para gestionar este curso" };
+  }
 
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
@@ -309,6 +444,7 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
   }
 
   try {
+    const week = await validatedWeekId(pb, courseId, formData.get('week'));
     let dateObj = null;
     if (dueDateStr) {
       if (dueDateStr.includes('T') && dueDateStr.endsWith('Z')) {
@@ -319,12 +455,13 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
       }
     }
 
-    const data: any = {
+    const data: Record<string, unknown> = {
       title,
       description,
       dueDate: dateObj,
       systemPrompt: systemPrompt || "",
       course: courseId,
+      week,
     };
     
     // Create the assignment
@@ -367,7 +504,7 @@ export async function createAssignment(formData: FormData) {
   }
 
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       title,
       description,
       systemPrompt: systemPrompt || "",
@@ -377,10 +514,11 @@ export async function createAssignment(formData: FormData) {
     await pb.collection('assignments').create(data);
     revalidatePath('/');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to create assignment:', error);
-    if (error.response?.data) {
-      console.error('PocketBase validation errors:', JSON.stringify(error.response.data, null, 2));
+    const response = getErrorResponse(error);
+    if (response) {
+      console.error('PocketBase validation errors:', JSON.stringify(response, null, 2));
     }
     return { success: false, error: 'Failed to create assignment' };
   }
@@ -393,6 +531,10 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
+  const scopedCourseId = await assignmentCourseId(pb, assignmentId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar este trabajo" };
+  }
 
   const title = formData.get('title') as string;
   const description = formData.get('description') as string;
@@ -401,11 +543,13 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
   const courseId = formData.get('courseId') as string;
 
   try {
-    const data: any = {
+    const week = await validatedWeekId(pb, scopedCourseId!, formData.get('week'));
+    const data: Record<string, unknown> = {
       title,
       description,
       systemPrompt: systemPrompt || "",
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      week,
     };
 
     await pb.collection('assignments').update(assignmentId, data);
@@ -419,10 +563,11 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
       revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
     }
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update assignment:', error);
-    if (error.response?.data) {
-      console.error('PocketBase validation errors:', JSON.stringify(error.response.data, null, 2));
+    const response = getErrorResponse(error);
+    if (response) {
+      console.error('PocketBase validation errors:', JSON.stringify(response, null, 2));
     }
     return { success: false, error: 'Failed to update assignment' };
   }
@@ -435,6 +580,10 @@ export async function updateAssignmentSystemPrompt(assignmentId: string, systemP
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
+  const scopedCourseId = await assignmentCourseId(pb, assignmentId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar este trabajo" };
+  }
 
   try {
     await pb.collection('assignments').update(assignmentId, {
@@ -443,7 +592,7 @@ export async function updateAssignmentSystemPrompt(assignmentId: string, systemP
     
     revalidatePath(`/assignments/${assignmentId}`);
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update system prompt:', error);
     return { success: false, error: 'Failed to update system prompt' };
   }
@@ -455,6 +604,11 @@ export async function deleteAssignment(assignmentId: string, courseId?: string) 
 
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
+  }
+
+  const scopedCourseId = courseId || await assignmentCourseId(pb, assignmentId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar este trabajo" };
   }
 
   try {
@@ -502,9 +656,15 @@ export async function createLink(formData: FormData) {
   if (!title || !url || (!classId && !assignmentId)) {
      return { success: false, error: 'Title, URL and Parent ID are required' };
   }
+  const scopedCourseId = classId
+    ? await classCourseId(pb, classId).catch(() => undefined)
+    : await assignmentCourseId(pb, assignmentId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar recursos en este curso" };
+  }
 
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       title,
       url,
       type,
@@ -534,6 +694,10 @@ export async function updateLink(linkId: string, formData: FormData) {
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
+  const scopedCourseId = await linkCourseId(pb, linkId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar este recurso" };
+  }
 
   const title = formData.get('title') as string;
   const url = formData.get('url') as string;
@@ -542,7 +706,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   const assignmentId = formData.get('assignmentId') as string;
 
   try {
-    const data: any = {
+    const data: Record<string, unknown> = {
       title,
       url,
     };
@@ -569,6 +733,10 @@ export async function deleteLink(linkId: string, parentId?: string, parentType?:
 
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
+  }
+  const scopedCourseId = await linkCourseId(pb, linkId).catch(() => undefined);
+  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+    return { success: false, error: "No tienes permisos para gestionar este recurso" };
   }
 
   try {
@@ -611,11 +779,14 @@ export async function createDelivery(formData: FormData) {
   try {
     // Check deadline
     const assignment = await pb.collection('assignments').getOne(assignmentId);
+    if (!(await studentCanAccessContent(pb, user, "assignments", assignmentId))) {
+      return { success: false, error: "No estás matriculado en este curso" };
+    }
     if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
         return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
-    const data: Record<string, any> = {
+    const data: Record<string, unknown> = {
       assignment: assignmentId,
       student: user.id,
       repositoryUrl,
@@ -649,6 +820,9 @@ export async function createDeliveryWithFiles(assignmentId: string, courseId: st
 
   try {
     const assignment = await pb.collection('assignments').getOne(assignmentId);
+    if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, "assignments", assignmentId))) {
+      return { success: false, error: "No estás matriculado en este curso" };
+    }
     if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
       return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
@@ -686,10 +860,13 @@ export async function updateDeliveryWithFiles(deliveryId: string, courseId: stri
 
   try {
     const delivery = await pb.collection('deliveries').getOne(deliveryId);
-    if (delivery.student !== user.id) {
+    if (delivery.student !== user.id || delivery.assignment !== assignmentId) {
       return { success: false, error: 'No autorizado' };
     }
     const assignment = await pb.collection('assignments').getOne(delivery.assignment);
+    if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, "assignments", assignmentId))) {
+      return { success: false, error: "No estás matriculado en este curso" };
+    }
     if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
       return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
@@ -707,13 +884,18 @@ export async function updateDeliveryWithFiles(deliveryId: string, courseId: stri
   }
 }
 
-export async function getDeliveryFileDownloadUrl(fileUrl: string) {
+export async function getStudentDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
-  if (!user) return { success: false, error: 'No autorizado' };
+  if (!user || user.role !== "estudiante") return { success: false, error: 'No autorizado' };
 
   try {
-    const key = getStorageKeyFromUrl(fileUrl);
+    const delivery = await pb.collection("deliveries").getOne(deliveryId);
+    if (delivery.student !== user.id) return { success: false, error: "No autorizado" };
+    if (!(await studentCanAccessContent(pb, user, "assignments", delivery.assignment))) return { success: false, error: "No autorizado para este curso" };
+    const file = parseDeliveryFiles(delivery.repositoryUrl)[fileIndex];
+    if (!file?.url) return { success: false, error: "Archivo de entrega inválido" };
+    const key = getStorageKeyFromUrl(file.url);
     if (!key) return { success: false, error: 'Clave de archivo inválida' };
     const downloadUrl = await getPresignedDownloadUrl(key);
     return { success: true, url: downloadUrl };
@@ -733,6 +915,10 @@ export async function getTeacherDeliveryFileDownloadUrl(deliveryId: string, file
 
   try {
     const delivery = await pb.collection('deliveries').getOne(deliveryId);
+    const courseId = await assignmentCourseId(pb, delivery.assignment);
+    if (!(await canManageCourse(pb, user, courseId))) {
+      return { success: false, error: "No autorizado para este curso" };
+    }
     const files = parseDeliveryFiles(delivery.repositoryUrl);
     const file = files[fileIndex];
 
@@ -775,6 +961,9 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
     // Check deadline
     const currentDelivery = await pb.collection('deliveries').getOne(deliveryId);
     const assignment = await pb.collection('assignments').getOne(currentDelivery.assignment);
+    if (user.role !== "estudiante" || currentDelivery.student !== user.id || !(await studentCanAccessContent(pb, user, "assignments", currentDelivery.assignment))) {
+      return { success: false, error: "No autorizado" };
+    }
     
     if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
         return { success: false, error: 'El plazo de entrega ha finalizado' };
@@ -808,7 +997,10 @@ export async function updateDeliveryEvaluation(deliveryId: string, grade: number
 
   try {
     const delivery = await pb.collection('deliveries').getOne(deliveryId);
-
+    const courseId = await assignmentCourseId(pb, delivery.assignment);
+    if (!(await canManageCourse(pb, user, courseId))) {
+      return { success: false, error: "No autorizado para evaluar esta entrega" };
+    }
     
     await pb.collection('deliveries').update(deliveryId, {
       grade,

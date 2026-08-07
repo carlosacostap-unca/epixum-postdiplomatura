@@ -1,6 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+function hasUnexpiredToken(token: string) {
+  try {
+    const [, encodedPayload] = token.split('.');
+    if (!encodedPayload) return false;
+
+    const base64 = encodedPayload
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(Math.ceil(encodedPayload.length / 4) * 4, '=');
+    const payload = JSON.parse(atob(base64)) as { exp?: number };
+
+    return typeof payload.exp === 'number' && payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
@@ -15,18 +32,30 @@ export function proxy(request: NextRequest) {
   }
 
   const pbAuth = request.cookies.get('pb_auth');
-  const isLoggedIn = !!pbAuth?.value;
+  const hasAuthCookie = !!pbAuth?.value;
+  const isLoggedIn = hasAuthCookie && hasUnexpiredToken(pbAuth.value);
+
+  // The login page is also the session recovery point. Always remove any
+  // existing server cookie so revoked tokens and legacy cookie formats cannot
+  // survive a redirect back to login.
+  if (path === '/login') {
+    const response = NextResponse.next();
+    if (hasAuthCookie) {
+      response.cookies.delete('pb_auth');
+    }
+    return response;
+  }
 
   // Allow access to home page and login page for unauthenticated users
-  if (!isLoggedIn && path !== '/login' && path !== '/') {
+  if (!isLoggedIn && path !== '/') {
     const loginUrl = new URL('/login', request.url);
     // Optional: Add ?next=path to redirect back after login
     // loginUrl.searchParams.set('next', path);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (isLoggedIn && path === '/login') {
-    return NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.redirect(loginUrl);
+    if (hasAuthCookie) {
+      response.cookies.delete('pb_auth');
+    }
+    return response;
   }
 
   return NextResponse.next();

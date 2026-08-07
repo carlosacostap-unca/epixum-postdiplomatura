@@ -1,58 +1,50 @@
-import { getCourse, getClassesByCourse } from "@/lib/data";
-import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import NewInquiryForm from "@/components/NewInquiryForm";
+import { StudentCourseContext } from "@/components/course/StudentCourseContext";
+import { Card, CardContent } from "@/components/ui";
+import { getClassesByCourse, getCourse, getCourseOrganizationData, isStudentEnrolled } from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function EstudianteNewInquiryPage(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+export default async function EstudianteNewInquiryPage({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ classId?: string; semana?: string }>;
+}) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const user = await getCurrentUser();
-  if (!user || user.role !== "estudiante") {
-    redirect("/");
-  }
+  if (!user || user.role !== "estudiante") redirect("/");
+  const course = await getCourse(id);
+  if (!course || !(await isStudentEnrolled(course.id, user.id))) redirect("/estudiantes");
 
-  const course = await getCourse(params.id);
-  if (!course) {
-    redirect("/estudiantes");
-  }
-
-  const isEnrolled = course.expand?.students?.some(student => student.id === user.id);
-  if (!isEnrolled) {
-    redirect("/estudiantes");
-  }
-
-  const classes = await getClassesByCourse(course.id);
+  const weekly = course.organizationMode === "semanal";
+  const organization = weekly ? await getCourseOrganizationData(course) : null;
+  const classes = organization?.classes || await getClassesByCourse(course.id);
+  const weeks = organization?.weeks || [];
+  const initialClassId = classes.some((item) => item.id === query.classId) ? query.classId : undefined;
+  const initialWeekId = weeks.some((item) => item.id === query.semana) ? query.semana : undefined;
 
   return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full flex flex-col items-center justify-center">
-      <div className="w-full max-w-3xl flex flex-col gap-8 md:gap-12">
-        <Link 
-          href={`/estudiantes/cursos/${course.id}/consultas`} 
-          className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors self-start group"
-        >
-          <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-          <span className="font-bold text-sm tracking-widest uppercase">Volver al Foro</span>
-        </Link>
-
-        <div className="flex flex-col gap-4 text-center items-center">
-          <div className="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-3xl">add_comment</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-headline tracking-tight text-[var(--color-on-surface)]">
-            Nueva Consulta
-          </h1>
-          <p className="text-[var(--color-on-surface-variant)] text-lg">
-            {course.title}
-          </p>
-        </div>
-
-        <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-8 md:p-12 border border-[var(--color-outline-variant)] shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-primary)]/5 blur-[60px] -z-10 rounded-full pointer-events-none"></div>
-          <NewInquiryForm courseId={course.id} classes={classes} basePath={`/estudiantes/cursos/${course.id}/consultas`} />
-        </div>
-      </div>
+    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+      <StudentCourseContext
+        course={course}
+        current="consultas"
+        title="Nueva consulta"
+        description={weekly ? "Elegí la semana y describí tu duda para que el curso pueda ayudarte." : "Describí tu duda para que el curso pueda ayudarte."}
+      />
+      <Card className="max-w-3xl">
+        <CardContent>
+          <NewInquiryForm
+            courseId={course.id}
+            classes={classes}
+            weeks={weeks}
+            weekly={weekly}
+            initialClassId={initialClassId}
+            initialWeekId={initialWeekId}
+            basePath={`/estudiantes/cursos/${course.id}/consultas?autor=mis-consultas`}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

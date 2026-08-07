@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Course, User, Class, Assignment, Inquiry } from '@/types';
+import { Course, User, Class, Assignment, Inquiry, CourseEnrollmentMode } from '@/types';
 import { createCourse, updateCourse } from '@/lib/actions-courses';
 import RichTextEditor from '@/components/RichTextEditor';
 import Link from 'next/link';
+import { Button, useToast } from '@/components/ui';
 
 interface CourseFormProps {
   course?: Course;
-  students: User[];
   teachers: User[];
   availableClasses: Class[];
   availableAssignments: Assignment[];
@@ -18,18 +18,19 @@ interface CourseFormProps {
 
 export default function CourseForm({ 
   course, 
-  students, 
   teachers, 
   availableClasses, 
   availableAssignments, 
   availableInquiries 
 }: CourseFormProps) {
   const router = useRouter();
+  const { notify } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
   // Usar estado para la descripción del RichTextEditor
   const [description, setDescription] = useState(course?.description || '');
+  const [enrollmentMode, setEnrollmentMode] = useState<CourseEnrollmentMode>(course?.enrollmentMode || 'clave');
 
   const isEdit = !!course;
 
@@ -45,24 +46,26 @@ export default function CourseForm({
     try {
       if (isEdit) {
         await updateCourse(course.id, formData);
+        notify({ title: 'Curso actualizado', description: 'Los cambios ya están visibles.', tone: 'success' });
         router.push('/admin/courses');
       } else {
         await createCourse(formData);
+        notify({ title: 'Curso creado', description: 'El nuevo curso ya figura en el catálogo.', tone: 'success' });
         router.push('/admin/courses');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar el curso');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar el curso');
       setLoading(false);
     }
   };
 
-  const inputClass = "mt-1 block w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:border-blue-400 dark:focus:ring-blue-400";
-  const labelClass = "block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1";
+  const inputClass = "mt-1 block w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5 text-sm text-[var(--color-on-surface)] placeholder:text-[var(--color-text-muted)]";
+  const labelClass = "mb-1 block text-sm font-bold text-[var(--color-on-surface)]";
 
   return (
-    <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8" noValidate>
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-md text-sm">
+        <div className="rounded-[var(--epixum-radius-md)] bg-[color-mix(in_srgb,var(--color-error)_12%,transparent)] p-4 text-sm text-[var(--color-error)]" role="alert">
           {error}
         </div>
       )}
@@ -81,7 +84,7 @@ export default function CourseForm({
 
       <div>
         <label className={labelClass}>Descripción</label>
-        <div className="border border-zinc-300 dark:border-zinc-700 rounded-md overflow-hidden bg-white dark:bg-zinc-900">
+        <div className="overflow-hidden rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)]">
           <RichTextEditor 
             content={description} 
             onChange={setDescription} 
@@ -127,6 +130,39 @@ export default function CourseForm({
         </div>
       </div>
 
+      <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
+        <label htmlFor="organizationMode" className={labelClass}>Organización del curso</label>
+        <select
+          id="organizationMode"
+          name="organizationMode"
+          defaultValue={course?.organizationMode || 'tradicional'}
+          className={inputClass}
+        >
+          <option value="tradicional">Tradicional · listas de clases, trabajos y consultas</option>
+          <option value="semanal">Por semanas · estructura administrada por los docentes</option>
+        </select>
+        <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
+          Cambiar la modalidad no crea ni elimina contenido. La organización semanal existente se conserva si después volvés a activarla.
+        </p>
+      </div>
+
+      <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
+        <label htmlFor="enrollmentMode" className={labelClass}>Modalidad de matrícula</label>
+        <select
+          id="enrollmentMode"
+          name="enrollmentMode"
+          value={enrollmentMode}
+          onChange={(event) => setEnrollmentMode(event.target.value as CourseEnrollmentMode)}
+          className={inputClass}
+        >
+          <option value="clave">Clave compartida · matrícula inmediata</option>
+          <option value="invitacion_contrasena">Email autorizado + contraseña · doble validación</option>
+        </select>
+        <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
+          Cambiar la modalidad no elimina matrículas ni invitaciones. En doble validación, los administradores cargan los emails y la comunicación se realiza fuera de Epixum.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
         <div>
           <label htmlFor="teachers" className={labelClass}>Docentes Asignados</label>
@@ -147,21 +183,38 @@ export default function CourseForm({
         </div>
 
         <div>
-          <label htmlFor="students" className={labelClass}>Estudiantes Matriculados</label>
-          <select
-            id="students"
-            name="students"
-            multiple
-            defaultValue={course?.students || []}
-            className={`${inputClass} h-32`}
-          >
-            {students.map(student => (
-              <option key={student.id} value={student.id}>
-                {student.name || student.username}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Mantén presionado Ctrl o Cmd para seleccionar múltiples</p>
+          <label htmlFor={enrollmentMode === 'clave' ? 'enrollmentKey' : 'invitationPassword'} className={labelClass}>
+            {enrollmentMode === 'clave' ? 'Clave de matriculación' : 'Contraseña compartida del curso'}
+          </label>
+          {enrollmentMode === 'clave' ? <>
+            <input
+              type="text"
+              id="enrollmentKey"
+              name="enrollmentKey"
+              minLength={6}
+              maxLength={64}
+              autoComplete="off"
+              placeholder={isEdit ? "Dejala vacía para conservar la clave actual" : "Ej.: EPIXUM-2026"}
+              className={inputClass}
+            />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Los estudiantes que ingresen esta clave quedarán matriculados inmediatamente.
+            </p>
+          </> : <>
+            <input
+              type="password"
+              id="invitationPassword"
+              name="invitationPassword"
+              minLength={8}
+              maxLength={64}
+              autoComplete="new-password"
+              placeholder={isEdit ? "Dejala vacía para conservar la contraseña actual" : "Entre 8 y 64 caracteres"}
+              className={inputClass}
+            />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              Distingue mayúsculas y minúsculas. Sólo los emails cargados por un administrador podrán utilizarla.
+            </p>
+          </>}
         </div>
       </div>
 
@@ -221,20 +274,20 @@ export default function CourseForm({
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Mantén presionado Ctrl o Cmd para seleccionar múltiples</p>
       </div>
 
-      <div className="flex justify-end gap-3 pt-6 border-t border-zinc-200 dark:border-zinc-700">
+      <div className="flex flex-col-reverse justify-end gap-3 pt-6 sm:flex-row">
         <Link
           href="/admin/courses"
-          className="px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md shadow-sm text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold text-[var(--color-on-surface)]"
         >
           Cancelar
         </Link>
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+          isPending={loading}
+          pendingLabel="Guardando…"
         >
-          {loading ? 'Guardando...' : isEdit ? 'Actualizar Curso' : 'Crear Curso'}
-        </button>
+          {isEdit ? 'Actualizar curso' : 'Crear curso'}
+        </Button>
       </div>
     </form>
   );

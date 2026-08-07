@@ -1,0 +1,28 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+[mcp_servers.pocketbase-epixum]
+command = "node"
+args = ["C:\\Proyectos\\epixum-postdiplomatura\\tools\\pocketbase-mcp\\server.mjs"]
+cwd = "C:\\Proyectos\\epixum-postdiplomatura"
+enabled = true
+startup_timeout_sec = 15
+tool_timeout_sec = 60
+default_tools_approval_mode = "auto"
+
+[mcp_servers.pocketbase-epixum.tools.pocketbase_create_record]
+approval_mode = "approve"
+
+[mcp_servers.pocketbase-epixum.tools.pocketbase_update_record]
+approval_mode = "approve"
+
+[mcp_servers.pocketbase-epixum.tools.pocketbase_delete_record]
+approval_mode = "approve"
+
+[mcp_servers.pocketbase-epixum.tools.pocketbase_create_collection]
+approval_mode = "approve"
+
+[mcp_servers.pocketbase-epixum.tools.pocketbase_update_collection]
+approval_mode = "approve"
+
+[mcp_servers.pocketbase-epixum.tools.pocketbase_delete_collection]
+approval_mode = "approve"

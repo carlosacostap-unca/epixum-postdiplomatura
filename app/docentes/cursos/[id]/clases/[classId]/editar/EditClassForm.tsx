@@ -3,16 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateClass } from "@/lib/actions";
-import { Class } from "@/types";
+import { Class, CourseWeek } from "@/types";
 import { format } from "date-fns";
 
-export default function EditClassForm({ courseId, classData }: { courseId: string, classData: Class }) {
+export default function EditClassForm({ courseId, classData, weeks }: { courseId: string; classData: Class; weeks: CourseWeek[] }) {
   const [title, setTitle] = useState(classData.title || "");
   const [description, setDescription] = useState(classData.description || "");
   
   // Extraer fecha y hora del formato ISO si existe
   const [date, setDate] = useState(classData.date ? format(new Date(classData.date), "yyyy-MM-dd") : "");
   const [time, setTime] = useState(classData.date ? format(new Date(classData.date), "HH:mm") : "");
+  const [week, setWeek] = useState(classData.week || "");
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,6 +27,7 @@ export default function EditClassForm({ courseId, classData }: { courseId: strin
     const formData = new FormData();
     formData.append("title", title);
     formData.append("description", description);
+    formData.append("week", week);
     
     // Convertir fecha local a UTC antes de enviar
     if (date) {
@@ -34,14 +36,17 @@ export default function EditClassForm({ courseId, classData }: { courseId: strin
       formData.append("date", localDate.toISOString());
     }
 
-    const result = await updateClass(classData.id, formData);
-
-    setIsLoading(false);
-
-    if (result.success) {
-      router.push(`/docentes/cursos/${courseId}/clases/${classData.id}`);
-    } else {
-      setError(result.error || "Error al actualizar la clase");
+    try {
+      const result = await updateClass(classData.id, formData);
+      if (result.success) {
+        router.push(`/docentes/cursos/${courseId}/clases/${classData.id}`);
+      } else {
+        setError(result.error || "Error al actualizar la clase");
+      }
+    } catch {
+      setError("No pudimos conectar con el servidor. Intentá nuevamente.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -113,6 +118,14 @@ export default function EditClassForm({ courseId, classData }: { courseId: strin
             />
           </div>
         </div>
+
+        {weeks.length > 0 ? <div>
+          <label htmlFor="week" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-on-surface-variant)] mb-3">Semana</label>
+          <select id="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full bg-[var(--color-surface-container-lowest)] border border-[var(--color-outline-variant)]/30 rounded-[1.5rem] px-6 py-4 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-all outline-none">
+            <option value="">Sin semana</option>
+            {weeks.map((item) => <option key={item.id} value={item.id}>Semana {item.number}: {item.title}</option>)}
+          </select>
+        </div> : null}
       </div>
 
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 sm:gap-6 mt-4 w-full">

@@ -2,6 +2,7 @@
 
 import OpenAI from 'openai';
 import { getCurrentUser } from '@/lib/pocketbase-server';
+import { getErrorMessage } from '@/lib/errors';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -72,8 +73,8 @@ export async function generateAIEvaluation(systemPrompt: string, userPrompt: str
         verdicto: evaluation.verdicto
       }
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error generating AI evaluation:", error);
-    return { success: false, error: error.message || 'Error al comunicarse con OpenAI' };
+    return { success: false, error: getErrorMessage(error, 'Error al comunicarse con OpenAI') };
   }
 }

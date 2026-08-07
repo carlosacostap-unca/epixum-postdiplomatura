@@ -4,18 +4,21 @@ import { createAssignmentForCourse } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import RichTextEditor from "@/components/RichTextEditor";
+import type { CourseWeek } from "@/types";
 
-export default function NuevoTpForm({ courseId }: { courseId: string }) {
+export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { courseId: string; weeks: CourseWeek[]; initialWeekId?: string }) {
   const router = useRouter();
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [week, setWeek] = useState(initialWeekId && weeks.some((item) => item.id === initialWeekId) ? initialWeekId : "");
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
     try {
       formData.set("description", description);
+      formData.set("week", week);
       const dueDateStr = formData.get("dueDate") as string;
       if (dueDateStr) {
         formData.set("dueDate", new Date(dueDateStr).toISOString());
@@ -53,6 +56,15 @@ export default function NuevoTpForm({ courseId }: { courseId: string }) {
           className="w-full px-5 py-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] text-[var(--color-on-surface)] placeholder:text-[var(--color-on-surface-variant)]/50 focus:outline-none focus:border-[var(--color-primary)] transition-colors"
         />
       </div>
+
+      {weeks.length > 0 ? <div className="flex flex-col gap-2">
+        <label htmlFor="week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Semana</label>
+        <select id="week" name="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full px-5 py-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors">
+          <option value="">Sin semana</option>
+          {weeks.map((item) => <option key={item.id} value={item.id}>Semana {item.number}: {item.title}</option>)}
+        </select>
+        <p className="text-sm text-[var(--color-on-surface-variant)]">El contenido sin semana no se muestra a los estudiantes.</p>
+      </div> : null}
 
       <div className="flex flex-col gap-2">
         <label className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">

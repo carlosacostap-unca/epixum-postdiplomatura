@@ -1,4 +1,4 @@
-import { getCourse } from "@/lib/data";
+import { getCourse, getCourseWeeks } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -6,13 +6,15 @@ import NuevoTpForm from "./NuevoTpForm";
 
 export const dynamic = 'force-dynamic';
 
-export default async function NuevoTpPage(props: { params: Promise<{ id: string }> }) {
+export default async function NuevoTpPage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ semana?: string }> }) {
   const params = await props.params;
+  const { semana } = await props.searchParams;
   const user = await getCurrentUser();
   if (!user || user.role !== "docente") redirect("/");
 
   const course = await getCourse(params.id);
-  if (!course) redirect("/docentes");
+  if (!course?.teachers?.includes(user.id)) redirect("/docentes");
+  const weeks = course.organizationMode === "semanal" ? await getCourseWeeks(course.id) : [];
 
   return (
     <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full">
@@ -39,7 +41,7 @@ export default async function NuevoTpPage(props: { params: Promise<{ id: string 
         </h1>
       </header>
 
-      <NuevoTpForm courseId={course.id} />
+      <NuevoTpForm courseId={course.id} weeks={weeks} initialWeekId={semana} />
     </div>
   );
 }

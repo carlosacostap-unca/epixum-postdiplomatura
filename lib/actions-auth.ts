@@ -1,13 +1,43 @@
 "use server";
 
+import PocketBase from "pocketbase";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createServerClient } from "./pocketbase-server";
 
-export async function setAuthCookieAndRedirect(token: string, model: any) {
-  // Configurar la cookie del lado del servidor para asegurar que Next.js la reconozca inmediatamente
+export async function setAuthCookieAndRedirect(token: string) {
   const cookieStore = await cookies();
-  cookieStore.set("pb_auth", token, {
+  const url = process.env.NEXT_PUBLIC_POCKETBASE_URL;
+
+  if (!token || !url) {
+    cookieStore.delete("pb_auth");
+    return { success: false, error: "No se pudo iniciar la sesión." };
+  }
+
+  const serverPb = new PocketBase(url);
+  serverPb.authStore.save(token, null);
+
+  let verifiedToken: string;
+  let role: unknown;
+
+  try {
+    const authData = await serverPb.collection("users").authRefresh({ requestKey: null });
+    verifiedToken = authData.token;
+    role = authData.record.role;
+  } catch (error) {
+    cookieStore.delete("pb_auth");
+    console.error(
+      "No se pudo validar la sesión de PocketBase:",
+      error instanceof Error ? error.message : "Error desconocido",
+    );
+    return {
+      success: false,
+      error: "La sesión de Google no pudo validarse. Intenta ingresar nuevamente.",
+    };
+  }
+
+  // La cookie del servidor contiene solamente el JWT. El estado completo de
+  // PocketBase permanece en el almacenamiento local del navegador.
+  cookieStore.set("pb_auth", verifiedToken, {
     path: "/",
     maxAge: 86400,
     sameSite: "lax",
@@ -15,8 +45,6 @@ export async function setAuthCookieAndRedirect(token: string, model: any) {
     httpOnly: true,
   });
 
-  // Redirigir según el rol
-  const role = model?.role;
   if (role === "docente") {
     redirect("/docentes");
   } else if (role === "admin") {

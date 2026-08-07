@@ -7,6 +7,10 @@ export interface BaseModel {
 }
 
 export type UserRole = 'admin' | 'docente' | 'estudiante';
+export type CourseOrganizationMode = 'tradicional' | 'semanal';
+export type CourseEnrollmentMode = 'clave' | 'invitacion_contrasena';
+export type CourseWeekStatus = 'borrador' | 'publicada' | 'programada';
+export type CourseInvitationStatus = 'pendiente' | 'activada' | 'revocada';
 
 export interface User extends BaseModel {
   username: string;
@@ -34,10 +38,12 @@ export interface Class extends BaseModel {
   description: string;
   date: string;
   course?: string; // Relation to Course ID
+  week?: string; // Optional relation to CourseWeek ID
   // Expanding relations
   expand?: {
     links?: Link[];
     course?: Course;
+    week?: CourseWeek;
   };
 }
 
@@ -47,11 +53,13 @@ export interface Assignment extends BaseModel {
   dueDate?: string; // Adding dueDate as it might be useful without sprints
   systemPrompt?: string; // Prompt de sistema para preevaluación con IA
   course?: string; // Relation to Course ID
+  week?: string; // Optional relation to CourseWeek ID
   // Expanding relations
   expand?: {
     links?: Link[];
     deliveries?: Delivery[];
     course?: Course;
+    week?: CourseWeek;
   };
 }
 
@@ -94,6 +102,10 @@ export interface Course extends BaseModel {
   startDate?: string;
   endDate?: string;
   status: 'borrador' | 'en curso' | 'finalizado';
+  organizationMode?: CourseOrganizationMode;
+  enrollmentMode?: CourseEnrollmentMode;
+  enrollmentKeyHash?: string;
+  invitationPasswordHash?: string;
   students?: string[]; // Relation to multiple User IDs
   teachers?: string[]; // Relation to multiple User IDs
   classes?: string[]; // Relation to multiple Class IDs
@@ -105,6 +117,56 @@ export interface Course extends BaseModel {
     classes?: Class[];
     assignments?: Assignment[];
     inquiries?: Inquiry[];
+    weeks?: CourseWeek[];
+    invitations?: CourseEnrollmentInvitation[];
+  };
+}
+
+export interface CourseWeek extends BaseModel {
+  course: string;
+  number: number;
+  title: string;
+  startDate?: string;
+  endDate?: string;
+  status: CourseWeekStatus;
+  publishAt?: string;
+  expand?: {
+    course?: Course;
+  };
+}
+
+export interface CourseEnrollment extends BaseModel {
+  course: string;
+  student: string;
+  invitation?: string;
+  keyHash?: string;
+  expand?: {
+    course?: Course;
+    student?: User;
+    invitation?: CourseEnrollmentInvitation;
+  };
+}
+
+export interface CourseEnrollmentInvitation extends BaseModel {
+  course: string;
+  emailNormalized: string;
+  status: CourseInvitationStatus;
+  activatedStudent?: string;
+  activatedAt?: string;
+  expand?: {
+    course?: Course;
+    activatedStudent?: User;
+  };
+}
+
+export interface CourseEnrollmentAttempt extends BaseModel {
+  course: string;
+  invitation: string;
+  student: string;
+  expand?: {
+    course?: Course;
+    invitation?: CourseEnrollmentInvitation;
+    student?: User;
   };
 }
 
@@ -116,11 +178,13 @@ export interface Inquiry extends BaseModel {
   course?: string; // Relation to Course ID
   class?: string; // Relation to Class ID (optional)
   assignment?: string; // Relation to Assignment ID (optional)
+  week?: string; // Relation to CourseWeek ID (optional)
   expand?: {
     author?: User;
     course?: Course;
     class?: Class;
     assignment?: Assignment;
+    week?: CourseWeek;
   };
 }
 
@@ -132,18 +196,3 @@ export interface InquiryResponse extends BaseModel {
     author?: User;
   };
 }
-
-export interface EnrollmentRequest extends BaseModel {
-  firstName: string;
-  lastName: string;
-  dni: string;
-  birthDate: string;
-  email: string;
-  phone: string;
-  courses: string[]; // Relation to multiple Course IDs
-  status: 'pending' | 'approved' | 'rejected';
-  expand?: {
-    courses?: Course[];
-  };
-}
-

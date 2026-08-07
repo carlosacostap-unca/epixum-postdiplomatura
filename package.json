@@ -9,7 +9,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup:enrollment": "node scripts/setup-db.js",
+    "mcp:pocketbase": "node tools/pocketbase-mcp/server.mjs",
+    "mcp:pocketbase:test": "node --test tools/pocketbase-mcp/*.test.mjs",
+    "mcp:pocketbase:smoke": "node tools/pocketbase-mcp/smoke.mjs",
+    "schema:test": "node --test scripts/weekly-schema.test.mjs scripts/invitation-schema.test.mjs",
+    "schema:allow-week-zero": "node scripts/allow-week-zero.mjs",
+    "schema:invitation": "node scripts/setup-invitation-schema.mjs",
+    "schema:invitation:snapshot": "node scripts/pocketbase-invitation-snapshot.mjs",
+    "schema:invitation:verify": "node scripts/verify-invitation-access.mjs",
+    "schema:access-test": "node scripts/verify-weekly-access.mjs",
+    "spec:list": "openspec list --specs",
+    "spec:validate": "openspec validate --specs --strict --no-interactive",
+    "test:ui": "vitest run",
+    "test:ui:watch": "vitest"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1004.0",
@@ -22,8 +36,7 @@
     "@tiptap/starter-kit": "^3.20.0",
     "date-fns": "^4.1.0",
     "jszip": "^3.10.1",
-    "next": "^16.2.6",
-    "nodemailer": "^8.0.4",
+    "next": "^16.3.0",
     "openai": "^6.32.0",
     "pocketbase": "^0.26.8",
     "react": "19.2.3",
@@ -32,15 +45,23 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@fission-ai/openspec": "^1.7.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.19",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
     "@types/node": "^20",
-    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.3.0",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10",
+    "zod": "^4.4.3"
   }
 }

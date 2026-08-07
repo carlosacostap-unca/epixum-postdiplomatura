@@ -1,109 +1,59 @@
-import { getCourse, getAssignment, getLinks, getDeliveries } from "@/lib/data";
-import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
 import TpTeacherDeliveries from "@/components/TpTeacherDeliveries";
-import TpResourceManager from "./TpResourceManager";
+import { TeacherCourseContext } from "@/components/course/TeacherCourseContext";
+import { Badge, Card, CardContent } from "@/components/ui";
+import { getAssignment, getCourse, getCourseWeeks, getDeliveries, getLinks } from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
 import TpManagementActions from "./TpManagementActions";
+import TpResourceManager from "./TpResourceManager";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function TeacherTpDetailPage(props: {
-  params: Promise<{ id: string; tpId: string }>;
-}) {
-  const params = await props.params;
+export default async function TeacherTpDetailPage({ params }: { params: Promise<{ id: string; tpId: string }> }) {
+  const { id, tpId } = await params;
   const user = await getCurrentUser();
   if (!user || user.role !== "docente") redirect("/");
+  const course = await getCourse(id);
+  if (!course?.teachers?.includes(user.id)) redirect("/docentes");
+  const assignment = await getAssignment(tpId).catch(() => null);
+  if (!assignment || assignment.course !== course.id) redirect(`/docentes/cursos/${course.id}#trabajos`);
 
-  const course = await getCourse(params.id);
-  if (!course) redirect("/docentes");
-
-  let assignment;
-  try {
-    assignment = await getAssignment(params.tpId);
-  } catch {
-    redirect(`/docentes/cursos/${params.id}`);
-  }
-
-  const links = await getLinks(params.tpId, "assignment");
-  const deliveries = await getDeliveries(params.tpId);
-
+  const [links, deliveries, weeks] = await Promise.all([
+    getLinks(tpId, "assignment"),
+    getDeliveries(tpId),
+    course.organizationMode === "semanal" ? getCourseWeeks(course.id) : [],
+  ]);
   const isPastDue = assignment.dueDate ? new Date() > new Date(assignment.dueDate) : false;
+  const pending = deliveries.filter((delivery) => delivery.status !== "published").length;
 
   return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full">
-      <Link
-        href={`/docentes/cursos/${course.id}`}
-        className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors mb-8 md:mb-12 group"
-      >
-        <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-        <span className="font-bold text-sm tracking-widest uppercase">Volver al curso</span>
-      </Link>
+    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+      <TeacherCourseContext
+        course={course}
+        current="trabajos"
+        title={assignment.title}
+        description={assignment.dueDate ? <>Fecha límite: <FormattedDate date={assignment.dueDate} showTime /></> : "Trabajo sin fecha límite."}
+        actions={<TpManagementActions assignment={assignment} courseId={course.id} weeks={weeks} />}
+      />
 
-      {/* Header */}
-      <header className="mb-12 md:mb-16">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
-          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-            Trabajo Práctico
-          </span>
-          <span className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)]">
-            {course.title}
-          </span>
-          {isPastDue && (
-            <span className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-400">
-              Plazo cerrado
-            </span>
-          )}
-        </div>
-        <h1 className="text-4xl md:text-5xl font-headline tracking-tight text-[var(--color-on-surface)] mb-4 leading-tight">
-          {assignment.title}
-        </h1>
-        {assignment.dueDate && (
-          <p className={`flex items-center gap-2 text-sm font-medium mb-6 ${isPastDue ? 'text-red-400' : 'text-[var(--color-on-surface-variant)]'}`}>
-            <span className="material-symbols-outlined text-[18px]">schedule</span>
-            Fecha límite: <FormattedDate date={assignment.dueDate} showTime />
-          </p>
-        )}
-        {assignment.description && (
-          <div
-            className="prose prose-invert max-w-3xl text-[var(--color-on-surface-variant)] text-lg leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: assignment.description }}
-          />
-        )}
-        <div className="mt-8">
-          <TpManagementActions assignment={assignment} courseId={course.id} />
-        </div>
-      </header>
+      <div className="flex flex-wrap gap-3">
+        <Badge tone={isPastDue ? "error" : "success"}>{isPastDue ? "Plazo cerrado" : "Plazo abierto"}</Badge>
+        <Badge tone={pending ? "warning" : "neutral"}>{pending} por revisar</Badge>
+        <Badge tone="info">{deliveries.length} {deliveries.length === 1 ? "entrega" : "entregas"}</Badge>
+      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-        {/* Resources */}
-        <div className="xl:col-span-1 flex flex-col gap-6">
-          <h2 className="text-2xl font-headline font-bold text-[var(--color-on-surface)] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[var(--color-primary)]">attach_file</span>
-            Recursos del enunciado
-          </h2>
-          <TpResourceManager links={links} assignmentId={assignment.id} courseId={course.id} />
-        </div>
+      {assignment.description && <Card><CardContent><h2 className="font-headline text-2xl font-bold">Enunciado</h2><div className="prose prose-invert mt-5 max-w-none text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: assignment.description }} /></CardContent></Card>}
 
-        {/* Deliveries */}
-        <div className="xl:col-span-2 flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-headline font-bold text-[var(--color-on-surface)] flex items-center gap-2">
-              <span className="material-symbols-outlined text-[var(--color-primary)]">assignment_turned_in</span>
-              Entregas
-              <span className="ml-2 px-3 py-0.5 rounded-full bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] text-sm font-bold">
-                {deliveries.length}
-              </span>
-            </h2>
-          </div>
-          <TpTeacherDeliveries
-            deliveries={deliveries}
-            courseId={course.id}
-            assignmentId={assignment.id}
-          />
-        </div>
+      <div className="grid gap-10 xl:grid-cols-[minmax(16rem,0.75fr)_minmax(0,2fr)]">
+        <section aria-labelledby="assignment-resources-title" className="space-y-5">
+          <div><h2 id="assignment-resources-title" className="font-headline text-2xl font-bold">Recursos</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Material adjunto al enunciado.</p></div>
+          <TpResourceManager links={links} assignmentId={assignment.id} />
+        </section>
+        <section id="entregas" aria-labelledby="deliveries-title" className="scroll-mt-6 space-y-5">
+          <div><h2 id="deliveries-title" className="font-headline text-2xl font-bold">Entregas</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Buscá, filtrá y evaluá sin perder el contexto del trabajo.</p></div>
+          <TpTeacherDeliveries deliveries={deliveries} courseId={course.id} assignmentId={assignment.id} />
+        </section>
       </div>
     </div>
   );

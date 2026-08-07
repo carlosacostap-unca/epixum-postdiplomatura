@@ -5,18 +5,21 @@ import { Link as LinkType } from "@/types";
 import { deleteLink, getResourceDownloadUrl } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import LinkForm from "@/components/LinkForm";
+import { ConfirmDialog, useToast } from "@/components/ui";
 
 interface TpResourceManagerProps {
   links: LinkType[];
   assignmentId: string;
-  courseId: string;
 }
 
-export default function TpResourceManager({ links, assignmentId, courseId }: TpResourceManagerProps) {
+export default function TpResourceManager({ links, assignmentId }: TpResourceManagerProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingLink, setEditingLink] = useState<LinkType | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [deletingLink, setDeletingLink] = useState<LinkType | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
+  const { notify } = useToast();
 
   const isFileResource = (link: LinkType) =>
     link.type === 'file' || link.url.includes('idrivee2.com') || link.url.includes('epixum-javascript-storage');
@@ -30,20 +33,33 @@ export default function TpResourceManager({ links, assignmentId, courseId }: TpR
         if (result.success && result.url) {
           window.open(result.url, '_blank');
         } else {
-          alert("No se pudo descargar el archivo.");
+          notify({ title: "No se pudo descargar el archivo", description: result.error, tone: "error", duration: null });
         }
       } catch {
-        alert("Error al descargar el archivo.");
+        notify({ title: "Error al descargar el archivo", description: "Intentá nuevamente en unos segundos.", tone: "error", duration: null });
       } finally {
         setDownloadingId(null);
       }
     }
   };
 
-  const handleDelete = async (linkId: string) => {
-    if (!confirm("¿Eliminar este recurso?")) return;
-    await deleteLink(linkId, assignmentId, 'assignment');
-    router.refresh();
+  const handleDelete = async () => {
+    if (!deletingLink) return;
+    setIsDeleting(true);
+    try {
+      const result = await deleteLink(deletingLink.id, assignmentId, 'assignment');
+      if (!result.success) {
+        notify({ title: "No se pudo eliminar el recurso", description: result.error, tone: "error", duration: null });
+        return;
+      }
+      setDeletingLink(null);
+      notify({ title: "Recurso eliminado", tone: "success" });
+      router.refresh();
+    } catch {
+      notify({ title: "No se pudo eliminar el recurso", description: "Intentá nuevamente.", tone: "error", duration: null });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -91,7 +107,7 @@ export default function TpResourceManager({ links, assignmentId, courseId }: TpR
                 <span className="material-symbols-outlined text-[16px]">edit</span>
               </button>
               <button
-                onClick={() => handleDelete(link.id)}
+                onClick={() => setDeletingLink(link)}
                 className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--color-on-surface-variant)] hover:text-red-400 transition-colors"
                 title="Eliminar"
               >
@@ -119,6 +135,17 @@ export default function TpResourceManager({ links, assignmentId, courseId }: TpR
           Agregar recurso
         </button>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deletingLink)}
+        onOpenChange={(open) => !open && setDeletingLink(null)}
+        title="Eliminar recurso"
+        description={<>Vas a eliminar <strong>{deletingLink?.title}</strong> de este trabajo práctico. Esta acción no se puede deshacer.</>}
+        confirmLabel="Eliminar recurso"
+        tone="danger"
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

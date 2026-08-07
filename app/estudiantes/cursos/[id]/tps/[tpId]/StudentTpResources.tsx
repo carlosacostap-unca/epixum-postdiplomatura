@@ -1,78 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { EmptyState, useToast } from "@/components/ui";
 import { getResourceDownloadUrl } from "@/lib/actions";
-import { Link as LinkType } from "@/types";
+import type { Link as LinkType } from "@/types";
 
-interface StudentTpResourcesProps {
-  links: LinkType[];
-}
-
-export default function StudentTpResources({ links }: StudentTpResourcesProps) {
+export default function StudentTpResources({ links }: { links: LinkType[] }) {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-
-  const isFileResource = (link: LinkType) =>
-    link.type === "file" ||
-    link.url.includes("idrivee2.com") ||
-    link.url.includes("epixum-javascript-storage");
-
-  const handleResourceClick = async (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    link: LinkType
-  ) => {
-    if (!isFileResource(link)) return;
-
+  const { notify } = useToast();
+  const isFile = (link: LinkType) => link.type === "file" || link.url.includes("idrivee2.com") || link.url.includes("epixum-javascript-storage");
+  const open = async (event: React.MouseEvent<HTMLAnchorElement>, link: LinkType) => {
+    if (!isFile(link)) return;
     event.preventDefault();
     setDownloadingId(link.id);
-
     try {
       const result = await getResourceDownloadUrl(link.id);
-      if (result.success && result.url) {
-        window.open(result.url, "_blank");
-      } else {
-        alert(result.error || "No se pudo descargar el archivo.");
-      }
+      if (!result.success || !result.url) { notify({ title: "No se pudo descargar", description: result.error, tone: "error", duration: null }); return; }
+      window.open(result.url, "_blank", "noopener,noreferrer");
     } catch {
-      alert("Error al descargar el archivo.");
+      notify({ title: "No se pudo descargar", description: "Intentá nuevamente.", tone: "error", duration: null });
     } finally {
       setDownloadingId(null);
     }
   };
-
-  return (
-    <div className="flex flex-col gap-3">
-      {links.map((link) => {
-        const isFile = isFileResource(link);
-
-        return (
-          <a
-            key={link.id}
-            href={isFile ? "#" : link.url}
-            target={isFile ? undefined : "_blank"}
-            rel={isFile ? undefined : "noopener noreferrer"}
-            onClick={(event) => handleResourceClick(event, link)}
-            className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-container)] transition-colors group"
-          >
-            <span
-              className={`material-symbols-outlined text-[20px] shrink-0 ${
-                isFile ? "text-[var(--color-primary)]" : "text-blue-400"
-              }`}
-            >
-              {isFile ? "description" : "link"}
-            </span>
-            <span className="text-sm font-medium text-[var(--color-on-surface)] group-hover:text-[var(--color-primary)] transition-colors flex-1 truncate">
-              {downloadingId === link.id ? "Descargando..." : link.title}
-            </span>
-            <span className="material-symbols-outlined text-[16px] text-[var(--color-on-surface-variant)] shrink-0">
-              {downloadingId === link.id
-                ? "hourglass_empty"
-                : isFile
-                  ? "download"
-                  : "open_in_new"}
-            </span>
-          </a>
-        );
-      })}
-    </div>
-  );
+  if (links.length === 0) return <EmptyState className="py-10" icon="folder_off" title="Sin recursos adjuntos" description="El enunciado no tiene material adicional." />;
+  return <div className="space-y-3">{links.map((link) => <a key={link.id} href={isFile(link) ? "#" : link.url} target="_blank" rel="noopener noreferrer" onClick={(event) => open(event, link)} className="flex min-w-0 items-center gap-3 rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container-low)] p-4 hover:bg-[var(--color-surface-container)]"><span className={`material-symbols-outlined text-[var(--color-primary)] ${downloadingId === link.id ? "animate-spin" : ""}`} aria-hidden="true">{downloadingId === link.id ? "progress_activity" : isFile(link) ? "download" : "open_in_new"}</span><span className="truncate font-bold">{downloadingId === link.id ? "Preparando…" : link.title}</span></a>)}</div>;
 }

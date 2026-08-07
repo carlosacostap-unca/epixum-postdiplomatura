@@ -1,139 +1,46 @@
-import { getCourse, getClassesByCourse } from "@/lib/data";
-import { getInquiries } from "@/lib/actions-inquiries";
-import { getCurrentUser } from "@/lib/pocketbase-server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import FormattedDate from "@/components/FormattedDate";
+import { StudentCourseContext } from "@/components/course/StudentCourseContext";
+import { Badge, Card, CardContent, EmptyState, Field, Select } from "@/components/ui";
+import { getInquiries } from "@/lib/actions-inquiries";
+import { getCourse, getCourseOrganizationData, isStudentEnrolled } from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
+type SearchParams = Promise<{ buscar?: string; estado?: string; autor?: string; semana?: string }>;
 
-export default async function EstudianteCourseInquiriesPage(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+export default async function EstudianteCourseInquiriesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const user = await getCurrentUser();
-  if (!user || user.role !== "estudiante") {
-    redirect("/");
-  }
+  if (!user || user.role !== "estudiante") redirect("/");
+  const course = await getCourse(id);
+  if (!course || !(await isStudentEnrolled(course.id, user.id))) redirect("/estudiantes");
+  const weekly = course.organizationMode === "semanal";
+  const organization = weekly ? await getCourseOrganizationData(course) : null;
+  const weeks = organization?.weeks || [];
+  const weekId = weeks.some((week) => week.id === query.semana) ? query.semana : undefined;
+  const status = query.estado === "Pendiente" || query.estado === "Resuelta" ? query.estado : undefined;
+  const mine = query.autor === "mis-consultas";
+  const [rawInquiries, rawOwnPending] = await Promise.all([
+    getInquiries({ courseId: course.id, weekId, status, authorId: mine ? user.id : undefined, search: query.buscar?.trim() || undefined, sort: "recent" }),
+    getInquiries({ courseId: course.id, status: "Pendiente", authorId: user.id, sort: "recent" }),
+  ]);
+  const visibleWeekIds = new Set(weeks.map((week) => week.id));
+  const inquiries = weekly ? rawInquiries.filter((item) => Boolean(item.week && visibleWeekIds.has(item.week))) : rawInquiries;
+  const ownPending = weekly ? rawOwnPending.filter((item) => Boolean(item.week && visibleWeekIds.has(item.week))) : rawOwnPending;
 
-  const course = await getCourse(params.id);
-  if (!course) {
-    redirect("/estudiantes");
-  }
-
-  const isEnrolled = course.expand?.students?.some(student => student.id === user.id);
-  if (!isEnrolled) {
-    redirect("/estudiantes");
-  }
-
-  const inquiries = await getInquiries({ courseId: course.id });
-
-  return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full">
-      {/* Back button */}
-      <Link 
-        href={`/estudiantes/cursos/${course.id}`} 
-        className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors mb-8 md:mb-12 group"
-      >
-        <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-        <span className="font-bold text-sm tracking-widest uppercase">Volver al curso</span>
-      </Link>
-
-      <header className="mb-12 md:mb-24 flex flex-col md:flex-row gap-10 md:gap-20 items-start justify-between">
-        <div className="max-w-3xl">
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-              Foro de Consultas
-            </span>
-            <span className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)]">
-              {course.title}
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-headline tracking-tight text-[var(--color-on-surface)] mb-6 leading-tight">
-            Foro de Consultas
-          </h1>
-          <p className="text-[var(--color-on-surface-variant)] text-lg md:text-xl leading-relaxed">
-            Comparte tus dudas, debate con tus compañeros y recibe ayuda de los docentes.
-          </p>
-        </div>
-
-        <Link 
-          href={`/estudiantes/cursos/${course.id}/consultas/nueva`}
-          className="flex items-center gap-2 px-8 py-4 bg-[var(--color-primary)] text-[var(--color-on-primary)] rounded-full hover:bg-[var(--color-primary)]/90 transition-colors font-bold shadow-[0_0_30px_var(--color-primary)]/30 w-full md:w-auto justify-center"
-        >
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          <span>Nueva Consulta</span>
-        </Link>
-      </header>
-
-      <div className="grid grid-cols-1 gap-6">
-        {inquiries.length === 0 ? (
-          <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-12 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
-            <span className="material-symbols-outlined text-5xl text-[var(--color-on-surface-variant)] mb-4">forum</span>
-            <p className="text-[var(--color-on-surface-variant)] text-lg">Aún no hay consultas en este foro. ¡Sé el primero en preguntar!</p>
-          </div>
-        ) : (
-          inquiries.map((inquiry) => (
-            <Link 
-              key={inquiry.id}
-              href={`/estudiantes/cursos/${course.id}/consultas/${inquiry.id}`}
-              className="bg-[var(--color-surface-container-low)] hover:bg-[var(--color-surface-container)] transition-colors rounded-[2rem] p-6 md:p-8 border border-[var(--color-outline-variant)] flex flex-col md:flex-row md:items-center justify-between gap-6 group"
-            >
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-3 mb-3">
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-                    inquiry.status === "Resuelta"
-                      ? "bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)]"
-                      : "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                  }`}>
-                    {inquiry.status}
-                  </span>
-                  {(inquiry.expand?.class || inquiry.expand?.assignment) && (
-                    <span className="text-sm text-[var(--color-on-surface-variant)] flex items-center gap-1 font-medium">
-                      Clase: 
-                      {inquiry.expand?.class && <span className="text-[var(--color-on-surface)]">{inquiry.expand.class.title}</span>}
-                      {inquiry.expand?.assignment && <span className="text-[var(--color-on-surface)]">{inquiry.expand.assignment.title}</span>}
-                    </span>
-                  )}
-                </div>
-                
-                <h3 className="text-xl font-bold text-[var(--color-on-surface)] mb-2 group-hover:text-[var(--color-primary)] transition-colors">
-                  {inquiry.title}
-                </h3>
-                
-                <p className="text-[var(--color-on-surface-variant)] text-sm line-clamp-2 mb-4">
-                  {inquiry.description}
-                </p>
-
-                <div className="flex items-center gap-4 text-sm text-[var(--color-on-surface-variant)]">
-                  <div className="flex items-center gap-2">
-                    {inquiry.expand?.author?.avatar ? (
-                      <img
-                        src={`${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/_pb_users_auth_/${inquiry.expand.author.id}/${inquiry.expand.author.avatar}`}
-                        className="w-6 h-6 rounded-full object-cover border border-[var(--color-outline-variant)]"
-                        alt=""
-                      />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-[var(--color-surface-container-highest)] flex items-center justify-center text-xs font-bold text-[var(--color-on-surface)] border border-[var(--color-outline-variant)]">
-                        {(inquiry.expand?.author?.name || inquiry.expand?.author?.firstName || "?").charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="font-medium">
-                      {inquiry.expand?.author?.name || [inquiry.expand?.author?.firstName, inquiry.expand?.author?.lastName].filter(Boolean).join(" ") || "Usuario"}
-                    </span>
-                  </div>
-                  <span>•</span>
-                  <FormattedDate date={inquiry.created} showTime={true} />
-                </div>
-              </div>
-              
-              <span className="px-6 py-3 bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface)] rounded-full group-hover:text-[var(--color-primary)] group-hover:bg-[var(--color-surface-container-high)] transition-colors font-bold text-sm whitespace-nowrap flex items-center justify-center w-full md:w-auto gap-2 shrink-0">
-                <span>Ver Debate</span>
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </span>
-            </Link>
-          ))
-        )}
-      </div>
-    </div>
-  );
+  return <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <StudentCourseContext course={course} current="consultas" title="Consultas" description={weekly ? "Conversaciones organizadas dentro de cada semana publicada." : "Retomá tus conversaciones o participá en las dudas del curso."} actions={<Link href={`/estudiantes/cursos/${course.id}/consultas/nueva${weekId ? `?semana=${weekId}` : ""}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Nueva consulta</Link>} />
+    {ownPending.length > 0 && <section aria-labelledby="own-pending-title" className="space-y-4"><div><h2 id="own-pending-title" className="font-headline text-2xl font-bold">Retomar mis consultas</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Tus conversaciones que todavía necesitan atención.</p></div><div className="grid gap-4 md:grid-cols-2">{ownPending.slice(0, 4).map((inquiry) => <Link key={inquiry.id} href={`/estudiantes/cursos/${course.id}/consultas/${inquiry.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4"><Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent><div className="flex flex-wrap gap-2"><Badge tone="warning">Pendiente · Tu consulta</Badge>{inquiry.expand?.week && <Badge tone="info">Semana {inquiry.expand.week.number}</Badge>}</div><h3 className="mt-4 font-headline text-xl font-bold">{inquiry.title}</h3><p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">Última actividad <FormattedDate date={inquiry.updated || inquiry.created} showTime /></p></CardContent></Card></Link>)}</div></section>}
+    <form method="get" className={`grid gap-4 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-5 ${weekly ? "md:grid-cols-[minmax(0,1fr)_12rem_12rem_12rem_auto]" : "md:grid-cols-[minmax(0,1fr)_13rem_13rem_auto]"} md:items-end`}>
+      <Field id="forum-search" label="Buscar"><input name="buscar" type="search" defaultValue={query.buscar} placeholder="Título, autor o contenido" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" /></Field>
+      {weekly && <Field id="forum-week" label="Semana"><Select name="semana" defaultValue={weekId || "all"}><option value="all">Todas</option>{weeks.map((week) => <option key={week.id} value={week.id}>Semana {week.number}</option>)}</Select></Field>}
+      <Field id="forum-status" label="Estado"><Select name="estado" defaultValue={status || "all"}><option value="all">Todas</option><option value="Pendiente">Pendientes</option><option value="Resuelta">Resueltas</option></Select></Field>
+      <Field id="forum-author" label="Autor"><Select name="autor" defaultValue={mine ? "mis-consultas" : "all"}><option value="all">Todo el curso</option><option value="mis-consultas">Mis consultas</option></Select></Field>
+      <button type="submit" className="min-h-11 rounded-full bg-[var(--color-surface-container-highest)] px-5 py-2.5 text-sm font-bold">Aplicar filtros</button>
+    </form>
+    <p role="status" className="text-sm text-[var(--color-on-surface-variant)]">{inquiries.length} {inquiries.length === 1 ? "consulta encontrada" : "consultas encontradas"}</p>
+    {inquiries.length === 0 ? <EmptyState icon="forum" title="No hay consultas con estos filtros" description="Probá una búsqueda más amplia o creá una nueva conversación." action={<Link href={`/estudiantes/cursos/${course.id}/consultas`} className="font-bold text-[var(--color-primary)]">Limpiar filtros</Link>} /> : <div className="space-y-4">{inquiries.map((inquiry) => <Link key={inquiry.id} href={`/estudiantes/cursos/${course.id}/consultas/${inquiry.id}`} className="block rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4"><Card className="transition-colors hover:bg-[var(--color-surface-container)]"><CardContent className="flex flex-col justify-between gap-5 md:flex-row md:items-center"><div className="min-w-0"><div className="flex flex-wrap gap-2"><Badge tone={inquiry.status === "Pendiente" ? "warning" : "success"}>{inquiry.status}</Badge>{inquiry.author === user.id && <Badge tone="info">Tu consulta</Badge>}{inquiry.expand?.week && <Badge tone="info">Semana {inquiry.expand.week.number}</Badge>}{inquiry.expand?.class && <Badge>{inquiry.expand.class.title}</Badge>}</div><h2 className="mt-4 truncate font-headline text-xl font-bold">{inquiry.title}</h2><p className="mt-2 line-clamp-2 text-sm text-[var(--color-on-surface-variant)]">{inquiry.description}</p><p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{inquiry.expand?.author?.name || "Usuario"} · <FormattedDate date={inquiry.updated || inquiry.created} showTime /></p></div><span className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[var(--color-primary)]">Abrir conversación <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></span></CardContent></Card></Link>)}</div>}
+  </div>;
 }

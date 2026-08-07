@@ -2,13 +2,15 @@
 
 import RichTextEditor from "@/components/RichTextEditor";
 import { deleteAssignment, updateAssignment } from "@/lib/actions";
-import { Assignment } from "@/types";
+import { Assignment, CourseWeek } from "@/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ConfirmDialog, useToast } from "@/components/ui";
 
 interface TpManagementActionsProps {
   assignment: Assignment;
   courseId: string;
+  weeks: CourseWeek[];
 }
 
 function getLocalDateTime(isoDate?: string) {
@@ -19,13 +21,16 @@ function getLocalDateTime(isoDate?: string) {
   return localDate.toISOString().slice(0, 16);
 }
 
-export default function TpManagementActions({ assignment, courseId }: TpManagementActionsProps) {
+export default function TpManagementActions({ assignment, courseId, weeks }: TpManagementActionsProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(assignment.description || "");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [week, setWeek] = useState(assignment.week || "");
+  const { notify } = useToast();
 
   async function handleSubmit(formData: FormData) {
     setIsSaving(true);
@@ -34,6 +39,7 @@ export default function TpManagementActions({ assignment, courseId }: TpManageme
     try {
       formData.set("description", description);
       formData.set("courseId", courseId);
+      formData.set("week", week);
 
       const dueDate = formData.get("dueDate") as string;
       if (dueDate) {
@@ -47,6 +53,7 @@ export default function TpManagementActions({ assignment, courseId }: TpManageme
       }
 
       setIsEditing(false);
+      notify({ title: "Trabajo práctico actualizado", tone: "success" });
       router.refresh();
     } catch {
       setError("Ocurrio un error inesperado al guardar el TP.");
@@ -56,12 +63,6 @@ export default function TpManagementActions({ assignment, courseId }: TpManageme
   }
 
   async function handleDelete() {
-    const confirmed = window.confirm(
-      "Vas a eliminar este TP del curso. Los estudiantes ya no podran verlo. Esta accion no se puede deshacer."
-    );
-
-    if (!confirmed) return;
-
     setIsDeleting(true);
     setError(null);
 
@@ -72,6 +73,8 @@ export default function TpManagementActions({ assignment, courseId }: TpManageme
         return;
       }
 
+      setConfirmDelete(false);
+      notify({ title: "Trabajo práctico eliminado", tone: "success" });
       router.replace(`/docentes/cursos/${courseId}`);
       router.refresh();
     } catch {
@@ -94,7 +97,7 @@ export default function TpManagementActions({ assignment, courseId }: TpManageme
         </button>
         <button
           type="button"
-          onClick={handleDelete}
+          onClick={() => setConfirmDelete(true)}
           disabled={isDeleting}
           className="inline-flex items-center gap-2 px-5 py-3 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/20 transition-colors font-bold text-sm border border-red-500/20 disabled:opacity-60"
         >
@@ -153,6 +156,14 @@ export default function TpManagementActions({ assignment, courseId }: TpManageme
                 />
               </div>
 
+              {weeks.length > 0 ? <div className="flex flex-col gap-2">
+                <label htmlFor="tp-week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Semana</label>
+                <select id="tp-week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full rounded-2xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] px-5 py-4 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none">
+                  <option value="">Sin semana</option>
+                  {weeks.map((item) => <option key={item.id} value={item.id}>Semana {item.number}: {item.title}</option>)}
+                </select>
+              </div> : null}
+
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
                   Enunciado
@@ -198,6 +209,17 @@ export default function TpManagementActions({ assignment, courseId }: TpManageme
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Eliminar trabajo práctico"
+        description="Los estudiantes dejarán de verlo y se perderá el acceso a sus entregas desde el curso. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar TP"
+        tone="danger"
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

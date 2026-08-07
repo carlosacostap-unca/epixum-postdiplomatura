@@ -1,237 +1,168 @@
-import { getCourse, getClassesByCourse, getAssignmentsByCourse } from "@/lib/data";
-import { getCurrentUser } from "@/lib/pocketbase-server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
+import CourseKeyManager from "@/components/CourseKeyManager";
+import { TeacherCourseContext } from "@/components/course/TeacherCourseContext";
+import TeacherWeeklyCourseManager from "@/components/course/TeacherWeeklyCourseManager";
+import { Badge, Card, CardContent, EmptyState, StatCard } from "@/components/ui";
+import { getInquiries } from "@/lib/actions-inquiries";
+import {
+  getAssignmentsByCourse,
+  getClassesByCourse,
+  getCourse,
+  getCourseOrganizationData,
+  getCourseStudents,
+  getDeliveries,
+} from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
+import { redirect } from "next/navigation";
 
-export default async function TeacherCourseManagementPage(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+const primaryLink = "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]";
+
+function plainText(value?: string) {
+  return value?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export default async function TeacherCourseManagementPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") {
-    redirect("/");
-  }
+  if (!user || user.role !== "docente") redirect("/");
 
-  const course = await getCourse(params.id);
-  if (!course) {
-    redirect("/docentes");
-  }
+  const course = await getCourse(id);
+  if (!course?.teachers?.includes(user.id)) redirect("/docentes");
 
-  const classes = await getClassesByCourse(course.id);
-  const assignments = await getAssignmentsByCourse(course.id);
-  const students = course.expand?.students || [];
+  const weekly = course.organizationMode === "semanal";
+  const [organization, students] = await Promise.all([
+    weekly ? getCourseOrganizationData(course) : null,
+    getCourseStudents(course.id),
+  ]);
+  const [classes, assignments, inquiries] = organization
+    ? [organization.allClasses, organization.allAssignments, organization.allInquiries]
+    : await Promise.all([
+        getClassesByCourse(course.id),
+        getAssignmentsByCourse(course.id),
+        getInquiries({ courseId: course.id }),
+      ]);
+  const deliveries = (await Promise.all(assignments.map((assignment) => getDeliveries(assignment.id)))).flat();
+  const pendingDeliveries = deliveries.filter((delivery) => delivery.status !== "published");
+  const pendingInquiries = inquiries.filter((inquiry) => inquiry.status === "Pendiente");
 
   return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full">
-      {/* Back button */}
-      <Link 
-        href="/docentes" 
-        className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors mb-8 md:mb-12 group"
-      >
-        <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-        <span className="font-bold text-sm tracking-widest uppercase">Volver al panel</span>
-      </Link>
+    <div className="w-full space-y-12 p-6 md:p-10 xl:p-12">
+      <TeacherCourseContext
+        course={course}
+        current="resumen"
+        description={plainText(course.description) || "Gestioná el contenido, la actividad y el acceso del curso."}
+      />
 
-      {/* Asymmetrical Hero Section */}
-      <header className="mb-12 md:mb-24 flex flex-col md:flex-row gap-10 md:gap-20 items-start justify-between">
-        <div className="max-w-3xl">
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-              Gestión de Curso
-            </span>
-            <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] ${
-              course.status === 'en curso' ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]' : 
-              course.status === 'finalizado' ? 'bg-[var(--color-on-surface-variant)]/10 text-[var(--color-on-surface-variant)]' : 
-              'bg-[#FFB4A4]/10 text-[#FFB4A4]'
-            }`}>
-              {course.status || 'EN CURSO'}
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-headline tracking-tight text-[var(--color-on-surface)] mb-6 leading-tight">
-            {course.title}
-          </h1>
-          {course.description && (
-            <p className="text-[var(--color-on-surface-variant)] text-lg md:text-xl leading-relaxed" dangerouslySetInnerHTML={{ __html: course.description }} />
-          )}
-        </div>
+      <section aria-label="Resumen del curso" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Entregas por revisar" value={pendingDeliveries.length} icon="rate_review" tone={pendingDeliveries.length ? "warning" : "neutral"} href="#trabajos" />
+        <StatCard label="Consultas pendientes" value={pendingInquiries.length} icon="forum" tone={pendingInquiries.length ? "warning" : "neutral"} href={`/docentes/cursos/${course.id}/consultas?estado=Pendiente`} />
+        <StatCard label="Clases" value={classes.length} icon="menu_book" href={weekly ? "#semanas" : "#clases"} />
+        <StatCard label="Estudiantes" value={students.length} icon="group" href="#estudiantes" />
+      </section>
 
-        {/* Floating Stats Card */}
-        <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-8 w-full md:min-w-[280px] md:w-auto relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.3)] flex flex-col gap-8 border border-[var(--color-outline-variant)]">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-primary)]/10 blur-[40px] -z-10 rounded-full pointer-events-none"></div>
-          
+      {(pendingDeliveries.length > 0 || pendingInquiries.length > 0) && (
+        <section aria-labelledby="course-pending-title" className="space-y-5">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)] mb-2">
-              Estudiantes
-            </p>
-            <div className="flex items-center gap-4">
-              <span className="text-5xl font-headline font-bold text-[var(--color-on-surface)] leading-none">
-                {students.length}
-              </span>
-              <span className="material-symbols-outlined text-2xl text-[var(--color-primary)]">group</span>
-            </div>
+            <h2 id="course-pending-title" className="font-headline text-2xl font-bold">Requiere atención</h2>
+            <p className="mt-1 text-[var(--color-on-surface-variant)]">Pendientes de este curso, antes del contenido general.</p>
           </div>
-
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)] mb-2">
-              Clases Programadas
-            </p>
-            <div className="flex items-center gap-4">
-              <span className="text-5xl font-headline font-bold text-[var(--color-on-surface)] leading-none">
-                {classes.length}
-              </span>
-              <span className="material-symbols-outlined text-2xl text-[var(--color-primary)]">menu_book</span>
-            </div>
-          </div>
-
-          <div>
-            <Link 
-              href={`/docentes/cursos/${course.id}/consultas`}
-              className="flex items-center justify-between w-full p-4 bg-[var(--color-surface-container-highest)] rounded-2xl hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] transition-colors group border border-[var(--color-outline-variant)]"
-            >
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-xl">forum</span>
-                <span className="font-bold text-sm">Foro de Consultas</span>
-              </div>
-              <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-        {/* Classes Section */}
-        <div className="xl:col-span-2 flex flex-col gap-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-headline font-bold text-[var(--color-on-surface)]">Clases</h2>
-            <Link 
-              href={`/docentes/cursos/${course.id}/clases/nueva`} 
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[#000000] rounded-full hover:opacity-90 transition-opacity font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(63,255,139,0.2)]"
-            >
-              <span className="material-symbols-outlined text-lg">add</span>
-              <span>Nueva Clase</span>
-            </Link>
-          </div>
-
-          {classes.length === 0 ? (
-            <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-12 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
-              <span className="material-symbols-outlined text-5xl text-[var(--color-on-surface-variant)] mb-4">menu_book</span>
-              <p className="text-[var(--color-on-surface-variant)] text-lg">No hay clases creadas para este curso.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-6">
-              {classes.map((c) => (
-                <Link 
-                  href={`/docentes/cursos/${course.id}/clases/${c.id}`}
-                  key={c.id} 
-                  className="bg-[var(--color-surface-container-low)] hover:bg-[var(--color-surface-container)] transition-colors rounded-[2rem] p-6 md:p-8 border border-[var(--color-outline-variant)] flex flex-col md:flex-row md:items-center justify-between gap-6 group"
-                >
-                  <div>
-                    <h3 className="text-xl font-bold text-[var(--color-on-surface)] mb-2 group-hover:text-[var(--color-primary)] transition-colors">{c.title}</h3>
-                    <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-[var(--color-on-surface-variant)]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-                        <span>{c.date ? <FormattedDate date={c.date} /> : 'Sin fecha programada'}</span>
-                      </div>
-                      {c.date && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[16px]">schedule</span>
-                          <span><FormattedDate date={c.date} options={{ hour: '2-digit', minute: '2-digit' }} /> hs</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <span className="px-6 py-3 bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface)] rounded-full group-hover:text-[var(--color-primary)] group-hover:bg-[var(--color-surface-container-high)] transition-colors font-bold text-sm whitespace-nowrap flex items-center justify-center w-full md:w-auto gap-2">
-                    <span>Gestionar</span>
-                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-                  </span>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pendingDeliveries.slice(0, 3).map((delivery) => {
+              const assignment = assignments.find((item) => item.id === delivery.assignment);
+              return (
+                <Link key={delivery.id} href={`/docentes/cursos/${course.id}/tps/${delivery.assignment}#entregas`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+                  <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
+                    <Badge tone={delivery.status === "draft" ? "info" : "warning"}>{delivery.status === "draft" ? "Evaluación en borrador" : "Sin evaluar"}</Badge>
+                    <h3 className="mt-4 font-bold">{assignment?.title || "Trabajo práctico"}</h3>
+                    <p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">{delivery.expand?.student?.name || "Estudiante"} · <FormattedDate date={delivery.created} /></p>
+                  </CardContent></Card>
                 </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right column: Students + TPs */}
-        <div className="flex flex-col gap-12">
-
-          {/* Trabajos Prácticos Section */}
-          <div className="flex flex-col gap-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-headline font-bold text-[var(--color-on-surface)]">TPs</h2>
-              <Link
-                href={`/docentes/cursos/${course.id}/tps/nuevo`}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[#000000] rounded-full hover:opacity-90 transition-opacity font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(63,255,139,0.2)]"
-              >
-                <span className="material-symbols-outlined text-lg">add</span>
-                <span>Nuevo TP</span>
+              );
+            })}
+            {pendingInquiries.slice(0, 3).map((inquiry) => (
+              <Link key={inquiry.id} href={`/docentes/cursos/${course.id}/consultas/${inquiry.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+                <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
+                  <Badge tone="warning">Consulta pendiente</Badge>
+                  <h3 className="mt-4 font-bold">{inquiry.title}</h3>
+                  <p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">{inquiry.expand?.author?.name || "Estudiante"} · <FormattedDate date={inquiry.created} /></p>
+                </CardContent></Card>
               </Link>
-            </div>
-            {assignments.length === 0 ? (
-              <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-8 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
-                <span className="material-symbols-outlined text-4xl text-[var(--color-on-surface-variant)] mb-3">assignment</span>
-                <p className="text-[var(--color-on-surface-variant)]">No hay TPs creados.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {assignments.map((tp) => (
-                  <Link
-                    href={`/docentes/cursos/${course.id}/tps/${tp.id}`}
-                    key={tp.id}
-                    className="bg-[var(--color-surface-container-low)] hover:bg-[var(--color-surface-container)] transition-colors rounded-[2rem] p-6 border border-[var(--color-outline-variant)] flex items-center justify-between gap-4 group"
-                  >
-                    <div className="overflow-hidden">
-                      <h3 className="text-base font-bold text-[var(--color-on-surface)] group-hover:text-[var(--color-primary)] transition-colors truncate">{tp.title}</h3>
-                      {tp.dueDate && (
-                        <p className="text-xs text-[var(--color-on-surface-variant)] flex items-center gap-1 mt-1">
-                          <span className="material-symbols-outlined text-[13px]">schedule</span>
-                          Entrega: <FormattedDate date={tp.dueDate} />
-                        </p>
-                      )}
-                    </div>
-                    <span className="material-symbols-outlined text-[var(--color-on-surface-variant)] group-hover:text-[var(--color-primary)] group-hover:translate-x-1 transition-all shrink-0">arrow_forward</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+            ))}
           </div>
+        </section>
+      )}
 
-          {/* Students Section */}
-          <div className="flex flex-col gap-8">
-            <h2 className="text-3xl font-headline font-bold text-[var(--color-on-surface)]">Estudiantes</h2>
-          
+      {organization ? (
+        <TeacherWeeklyCourseManager courseId={course.id} weeks={organization.weeks} groups={organization.groups} unassigned={organization.unassigned} />
+      ) : <><section id="clases" aria-labelledby="classes-title" className="scroll-mt-6 space-y-5">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div><h2 id="classes-title" className="font-headline text-2xl font-bold md:text-3xl">Clases</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Sesiones y materiales del curso.</p></div>
+          <Link href={`/docentes/cursos/${course.id}/clases/nueva`} className={primaryLink}><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Nueva clase</Link>
+        </div>
+        {classes.length === 0 ? (
+          <EmptyState icon="menu_book" title="Todavía no hay clases" description="Programá la primera clase y después agregá sus recursos." action={<Link href={`/docentes/cursos/${course.id}/clases/nueva`} className={primaryLink}>Programar clase</Link>} />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {classes.map((classItem) => (
+              <Link key={classItem.id} href={`/docentes/cursos/${course.id}/clases/${classItem.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+                <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
+                  <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{classItem.title}</h3><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span></div>
+                  <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{classItem.date ? <FormattedDate date={classItem.date} showTime /> : "Sin fecha programada"}</p>
+                </CardContent></Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section id="trabajos" aria-labelledby="assignments-title" className="scroll-mt-6 space-y-5">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div><h2 id="assignments-title" className="font-headline text-2xl font-bold md:text-3xl">Trabajos prácticos</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Enunciados, entregas y evaluaciones.</p></div>
+          <Link href={`/docentes/cursos/${course.id}/tps/nuevo`} className={primaryLink}><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Nuevo trabajo</Link>
+        </div>
+        {assignments.length === 0 ? (
+          <EmptyState icon="assignment" title="Todavía no hay trabajos" description="Creá el primer trabajo práctico y definí su fecha límite." action={<Link href={`/docentes/cursos/${course.id}/tps/nuevo`} className={primaryLink}>Crear trabajo</Link>} />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {assignments.map((assignment) => {
+              const assignmentDeliveries = deliveries.filter((delivery) => delivery.assignment === assignment.id);
+              const pendingCount = assignmentDeliveries.filter((delivery) => delivery.status !== "published").length;
+              return (
+                <Link key={assignment.id} href={`/docentes/cursos/${course.id}/tps/${assignment.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+                  <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
+                    <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{assignment.title}</h3>{pendingCount > 0 && <Badge tone="warning">{pendingCount} por revisar</Badge>}</div>
+                    <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{assignment.dueDate ? <>Vence <FormattedDate date={assignment.dueDate} showTime /></> : "Sin fecha límite"}</p>
+                    <p className="mt-2 text-sm font-medium">{assignmentDeliveries.length} {assignmentDeliveries.length === 1 ? "entrega" : "entregas"}</p>
+                  </CardContent></Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section></>}
+
+      <div className="grid gap-8 xl:grid-cols-2">
+        <section id="estudiantes" aria-labelledby="students-title" className="scroll-mt-6 space-y-5">
+          <div><h2 id="students-title" className="font-headline text-2xl font-bold">Estudiantes</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Matrículas vigentes del curso.</p></div>
           {students.length === 0 ? (
-            <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-12 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
-              <span className="material-symbols-outlined text-5xl text-[var(--color-on-surface-variant)] mb-4">group_off</span>
-              <p className="text-[var(--color-on-surface-variant)] text-lg">No hay estudiantes inscritos.</p>
-            </div>
+            <EmptyState icon="group_off" title="Sin estudiantes matriculados" description="Compartí una clave de acceso para habilitar la matrícula inmediata." />
           ) : (
-            <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-6 border border-[var(--color-outline-variant)] flex flex-col gap-4">
+            <Card><CardContent className="divide-y divide-[var(--color-outline-variant)] py-2">
               {students.map((student) => (
-                <div key={student.id} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-[var(--color-surface-container)] transition-colors">
-                  <div className="h-12 w-12 rounded-full border border-[var(--color-outline-variant)] overflow-hidden shrink-0">
-                    <img 
-                      src={student.avatar ? `${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/_pb_users_auth_/${student.id}/${student.avatar}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "User")}&background=3fff8b&color=0e0e0e`} 
-                      alt={student.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="font-bold text-[var(--color-on-surface)] truncate">{student.name} {student.lastName}</p>
-                    {student.email ? (
-                      <p className="text-sm text-[var(--color-on-surface-variant)] truncate">{student.email}</p>
-                    ) : (
-                      <div className="flex items-center gap-1 text-sm text-[var(--color-on-surface-variant)]/70 truncate" title="Para ver el email, el usuario debe tener 'emailVisibility' activado en PocketBase">
-                        <span className="material-symbols-outlined text-[14px]">visibility_off</span>
-                        <span className="italic">Email oculto</span>
-                      </div>
-                    )}
-                  </div>
+                <div key={student.id} className="flex items-center gap-4 py-4">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{(student.firstName || student.name || "E").charAt(0).toUpperCase()}</span>
+                  <div className="min-w-0"><p className="truncate font-bold">{[student.firstName || student.name, student.lastName].filter(Boolean).join(" ")}</p><p className="truncate text-sm text-[var(--color-on-surface-variant)]">{student.email || "Correo no visible"}</p></div>
                 </div>
               ))}
-            </div>
+            </CardContent></Card>
           )}
-          </div>{/* end Students Section */}
-        </div>{/* end right column */}
+        </section>
+
+        <section id="acceso" aria-labelledby="access-title" className="scroll-mt-6 space-y-5">
+          <div><h2 id="access-title" className="font-headline text-2xl font-bold">Acceso al curso</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Gestioná la credencial sin exponer la versión almacenada.</p></div>
+          <CourseKeyManager courseId={course.id} enrollmentMode={course.enrollmentMode || "clave"} />
+        </section>
       </div>
     </div>
   );

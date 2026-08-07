@@ -1,132 +1,104 @@
 [
   {
-    "id": "enrollment_requests_id",
-    "name": "enrollment_requests",
+    "name": "course_enrollments",
     "type": "base",
-    "system": false,
-    "schema": [
+    "fields": [
       {
-        "system": false,
-        "id": "first_name_field",
-        "name": "firstName",
-        "type": "text",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": 1,
-          "max": null,
-          "pattern": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "last_name_field",
-        "name": "lastName",
-        "type": "text",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": 1,
-          "max": null,
-          "pattern": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "dni_field",
-        "name": "dni",
-        "type": "text",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": 1,
-          "max": null,
-          "pattern": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "birthdate_field",
-        "name": "birthDate",
-        "type": "date",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": "",
-          "max": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "email_field",
-        "name": "email",
-        "type": "email",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "exceptDomains": null,
-          "onlyDomains": null
-        }
-      },
-      {
-        "system": false,
-        "id": "phone_field",
-        "name": "phone",
-        "type": "text",
-        "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "min": null,
-          "max": null,
-          "pattern": ""
-        }
-      },
-      {
-        "system": false,
-        "id": "courses_field",
-        "name": "courses",
+        "name": "course",
         "type": "relation",
         "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "collectionId": "courses",
-          "cascadeDelete": false,
-          "minSelect": 1,
-          "maxSelect": null,
-          "displayFields": null
-        }
+        "collectionId": "COURSES_COLLECTION_ID",
+        "cascadeDelete": true,
+        "maxSelect": 1
       },
       {
-        "system": false,
-        "id": "status_field",
-        "name": "status",
-        "type": "select",
+        "name": "student",
+        "type": "relation",
         "required": true,
-        "presentable": false,
-        "unique": false,
-        "options": {
-          "maxSelect": 1,
-          "values": [
-            "pending",
-            "approved",
-            "rejected"
-          ]
-        }
+        "collectionId": "USERS_COLLECTION_ID",
+        "cascadeDelete": true,
+        "maxSelect": 1
+      },
+      {
+        "name": "keyHash",
+        "type": "text",
+        "required": false,
+        "hidden": true,
+        "min": 64,
+        "max": 64,
+        "pattern": "^[a-f0-9]{64}$"
+      },
+      {
+        "name": "invitation",
+        "type": "relation",
+        "required": false,
+        "collectionId": "COURSE_INVITATIONS_COLLECTION_ID",
+        "cascadeDelete": false,
+        "maxSelect": 1
       }
     ],
-    "indexes": [],
-    "listRule": "@request.auth.role = \"docente\" || @request.auth.role = \"admin\"",
-    "viewRule": "@request.auth.role = \"docente\" || @request.auth.role = \"admin\"",
-    "createRule": "",
-    "updateRule": "@request.auth.role = \"docente\" || @request.auth.role = \"admin\"",
-    "deleteRule": "@request.auth.role = \"docente\" || @request.auth.role = \"admin\"",
-    "options": {}
+    "indexes": [
+      "CREATE UNIQUE INDEX idx_course_enrollments_unique ON course_enrollments (course, student)"
+    ],
+    "listRule": "student = @request.auth.id || course.teachers.id ?= @request.auth.id || @request.auth.role = \"admin\"",
+    "viewRule": "student = @request.auth.id || course.teachers.id ?= @request.auth.id || @request.auth.role = \"admin\"",
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": "course.teachers.id ?= @request.auth.id || @request.auth.role = \"admin\""
+  },
+  {
+    "name": "course_enrollment_invitations",
+    "type": "base",
+    "fields": [
+      { "name": "course", "type": "relation", "required": true, "collectionId": "COURSES_COLLECTION_ID", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "emailNormalized", "type": "email", "required": true },
+      { "name": "status", "type": "select", "required": true, "maxSelect": 1, "values": ["pendiente", "activada", "revocada"] },
+      { "name": "activatedStudent", "type": "relation", "required": false, "collectionId": "USERS_COLLECTION_ID", "cascadeDelete": false, "maxSelect": 1 },
+      { "name": "activatedAt", "type": "date", "required": false },
+      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
+      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+    ],
+    "indexes": ["CREATE UNIQUE INDEX idx_course_invitation_email ON course_enrollment_invitations (course, emailNormalized)"],
+    "listRule": "@request.auth.role = \"admin\" || (@request.auth.role = \"estudiante\" && emailNormalized:lower = @request.auth.email:lower && status = \"pendiente\" && course.enrollmentMode = \"invitacion_contrasena\" && course.status != \"borrador\")",
+    "viewRule": "@request.auth.role = \"admin\" || (@request.auth.role = \"estudiante\" && emailNormalized:lower = @request.auth.email:lower && status = \"pendiente\" && course.enrollmentMode = \"invitacion_contrasena\" && course.status != \"borrador\")",
+    "createRule": "@request.auth.role = \"admin\"",
+    "updateRule": "@request.auth.role = \"admin\"",
+    "deleteRule": "@request.auth.role = \"admin\""
+  },
+  {
+    "name": "course_enrollment_attempts",
+    "type": "base",
+    "fields": [
+      { "name": "course", "type": "relation", "required": true, "collectionId": "COURSES_COLLECTION_ID", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "invitation", "type": "relation", "required": true, "collectionId": "COURSE_INVITATIONS_COLLECTION_ID", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "student", "type": "relation", "required": true, "collectionId": "USERS_COLLECTION_ID", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "created", "type": "autodate", "onCreate": true, "onUpdate": false },
+      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+    ],
+    "indexes": ["CREATE INDEX idx_course_invitation_attempts ON course_enrollment_attempts (student, course, created)"],
+    "listRule": "@request.auth.role = \"admin\" || student = @request.auth.id",
+    "viewRule": "@request.auth.role = \"admin\" || student = @request.auth.id",
+    "createRule": "@request.auth.role = \"estudiante\" && student = @request.auth.id && invitation.status = \"pendiente\" && invitation.emailNormalized:lower = @request.auth.email:lower && invitation.course.id = course.id && course.enrollmentMode = \"invitacion_contrasena\"",
+    "updateRule": null,
+    "deleteRule": "@request.auth.role = \"admin\""
+  },
+  {
+    "name": "course_weeks",
+    "type": "base",
+    "fields": [
+      { "name": "course", "type": "relation", "required": true, "collectionId": "COURSES_COLLECTION_ID", "cascadeDelete": true, "maxSelect": 1 },
+      { "name": "number", "type": "number", "required": false, "min": 0, "onlyInt": true },
+      { "name": "title", "type": "text", "required": true, "min": 1, "max": 160 },
+      { "name": "startDate", "type": "date", "required": false },
+      { "name": "endDate", "type": "date", "required": false },
+      { "name": "status", "type": "select", "required": true, "maxSelect": 1, "values": ["borrador", "publicada", "programada"] },
+      { "name": "publishAt", "type": "date", "required": false }
+    ],
+    "indexes": ["CREATE UNIQUE INDEX idx_course_weeks_number ON course_weeks (course, number)"],
+    "listRule": "@request.auth.role = \"admin\" || course.teachers.id ?= @request.auth.id || (@request.auth.role = \"estudiante\" && course.course_enrollments_via_course.student.id ?= @request.auth.id && (status = \"publicada\" || (status = \"programada\" && publishAt != \"\" && publishAt <= @now)))",
+    "viewRule": "@request.auth.role = \"admin\" || course.teachers.id ?= @request.auth.id || (@request.auth.role = \"estudiante\" && course.course_enrollments_via_course.student.id ?= @request.auth.id && (status = \"publicada\" || (status = \"programada\" && publishAt != \"\" && publishAt <= @now)))",
+    "createRule": "@request.auth.role = \"docente\" && course.teachers.id ?= @request.auth.id && course.organizationMode = \"semanal\"",
+    "updateRule": "@request.auth.role = \"docente\" && course.teachers.id ?= @request.auth.id && course.organizationMode = \"semanal\"",
+    "deleteRule": "@request.auth.role = \"docente\" && course.teachers.id ?= @request.auth.id && course.organizationMode = \"semanal\""
   }
 ]

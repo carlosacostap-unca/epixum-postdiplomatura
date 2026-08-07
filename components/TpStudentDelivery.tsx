@@ -1,334 +1,93 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Delivery, parseDeliveryFiles } from "@/types";
-import { createDeliveryWithFiles, updateDeliveryWithFiles, getDeliveryFileDownloadUrl, getUploadUrl } from "@/lib/actions";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import FormattedDate from "./FormattedDate";
+import { Badge, Button, Card, CardContent, EmptyState, IconButton, useToast } from "@/components/ui";
+import { createDeliveryWithFiles, getStudentDeliveryFileDownloadUrl, getUploadUrl, updateDeliveryWithFiles } from "@/lib/actions";
+import { getDeadlineState } from "@/lib/student-learning";
+import { Delivery, parseDeliveryFiles } from "@/types";
 
-interface TpStudentDeliveryProps {
-  assignmentId: string;
-  courseId: string;
-  delivery: Delivery | null;
-  dueDate?: string;
-}
-
-export default function TpStudentDelivery({
-  assignmentId,
-  courseId,
-  delivery,
-  dueDate,
-}: TpStudentDeliveryProps) {
-  const [isEditing, setIsEditing] = useState(!delivery);
+export default function TpStudentDelivery({ assignmentId, courseId, delivery, dueDate }: { assignmentId: string; courseId: string; delivery: Delivery | null; dueDate?: string }) {
+  const deadline = getDeadlineState(dueDate);
+  const isPastDue = deadline === "overdue";
+  const [isEditing, setIsEditing] = useState(!delivery && !isPastDue);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string>("");
+  const [progress, setProgress] = useState<{ current: number; total: number; label: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-
-  const isPastDue = dueDate ? new Date() > new Date(dueDate) : false;
+  const { notify } = useToast();
   const existingFiles = delivery ? parseDeliveryFiles(delivery.repositoryUrl) : [];
-  const hasFeedback = delivery?.status === 'published' && delivery.feedback;
 
-  const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const addFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files);
-      setSelectedFiles((prev) => {
-        const existingNames = new Set(prev.map((f) => f.name));
-        const toAdd = newFiles.filter((f) => !existingNames.has(f.name));
-        return [...prev, ...toAdd];
-      });
-      // Limpiar el input para permitir volver a seleccionar los mismos archivos
-      e.target.value = "";
-    }
+    const incoming = Array.from(event.target.files || []);
+    setSelectedFiles((current) => {
+      const names = new Set(current.map((file) => file.name));
+      return [...current, ...incoming.filter((file) => !names.has(file.name))];
+    });
+    event.target.value = "";
   };
 
-  const handleRemoveSelected = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = async () => {
-    if (isPastDue) {
-      setError("El plazo de entrega ha finalizado.");
-      return;
-    }
-    if (selectedFiles.length === 0) {
-      setError("Debes seleccionar al menos un archivo.");
-      return;
-    }
-
+  const submit = async () => {
+    if (isPastDue) { setError("El plazo de entrega finalizó y ya no admite cambios."); return; }
+    if (selectedFiles.length === 0) { setError("Seleccioná al menos un archivo."); fileInputRef.current?.focus(); return; }
     setLoading(true);
     setError(null);
-
     try {
-      const uploadedFiles: { name: string; url: string }[] = [];
-
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        setUploadProgress(`Subiendo archivo ${i + 1} de ${selectedFiles.length}: ${file.name}`);
-
-        // Sanitize filename
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const uniqueName = `${Date.now()}_${safeName}`;
-
-        const authResult = await getUploadUrl(uniqueName, file.type);
-        if (!authResult.success || !authResult.url) {
-          throw new Error(`No se pudo obtener URL de subida para ${file.name}`);
-        }
-
-        const uploadResponse = await fetch(authResult.url, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Error al subir ${file.name}`);
-        }
-
-        uploadedFiles.push({
-          name: file.name,
-          url: authResult.url.split('?')[0],
-        });
+      const uploaded: { name: string; url: string }[] = [];
+      for (let index = 0; index < selectedFiles.length; index += 1) {
+        const file = selectedFiles[index];
+        setProgress({ current: index, total: selectedFiles.length, label: `Subiendo ${file.name}` });
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const authorization = await getUploadUrl(`${Date.now()}_${safeName}`, file.type);
+        if (!authorization.success || !authorization.url) throw new Error(`No se pudo preparar la subida de ${file.name}.`);
+        const response = await fetch(authorization.url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
+        if (!response.ok) throw new Error(`No se pudo subir ${file.name}.`);
+        uploaded.push({ name: file.name, url: authorization.url.split("?")[0] });
+        setProgress({ current: index + 1, total: selectedFiles.length, label: `${file.name} subido` });
       }
-
-      setUploadProgress("Guardando entrega...");
-
+      setProgress({ current: selectedFiles.length, total: selectedFiles.length, label: "Guardando la entrega" });
       const result = delivery
-        ? await updateDeliveryWithFiles(delivery.id, courseId, assignmentId, uploadedFiles)
-        : await createDeliveryWithFiles(assignmentId, courseId, uploadedFiles);
-
-      if (result.success) {
-        setIsEditing(false);
-        setSelectedFiles([]);
-        setUploadProgress("");
-        router.refresh();
-      } else {
-        setError(result.error || "Error al guardar la entrega");
-      }
-    } catch (err: any) {
-      setError(err.message || "Ocurrió un error inesperado");
+        ? await updateDeliveryWithFiles(delivery.id, courseId, assignmentId, uploaded)
+        : await createDeliveryWithFiles(assignmentId, courseId, uploaded);
+      if (!result.success) { setError(result.error || "No se pudo guardar la entrega."); return; }
+      setIsEditing(false);
+      setSelectedFiles([]);
+      notify({ title: delivery ? "Entrega actualizada" : "Entrega enviada", description: "Los archivos quedaron guardados correctamente.", tone: "success" });
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Ocurrió un error inesperado.");
     } finally {
       setLoading(false);
-      setUploadProgress("");
+      setProgress(null);
     }
   };
 
-  const handleDownload = async (url: string, name: string) => {
-    setDownloadingUrl(url);
-    try {
-      const result = await getDeliveryFileDownloadUrl(url);
-      if (result.success && result.url) {
-        const a = document.createElement('a');
-        a.href = result.url;
-        a.download = name;
-        a.target = '_blank';
-        a.click();
-      } else {
-        alert(result.error || "No se pudo descargar");
-      }
-    } catch {
-      alert("Error al descargar el archivo");
-    } finally {
-      setDownloadingUrl(null);
-    }
+  const download = async (index: number, name: string) => {
+    if (!delivery) return;
+    setDownloadingIndex(index);
+    const result = await getStudentDeliveryFileDownloadUrl(delivery.id, index);
+    setDownloadingIndex(null);
+    if (!result.success || !result.url) { notify({ title: "No se pudo descargar", description: result.error, tone: "error" }); return; }
+    const anchor = document.createElement("a");
+    anchor.href = result.url;
+    anchor.download = name;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.click();
   };
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Existing delivery */}
-      {delivery && !isEditing && (
-        <div className="bg-[var(--color-surface-container-low)] rounded-[2rem] p-6 border border-[var(--color-outline-variant)] flex flex-col gap-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-[var(--color-primary)] text-[22px]">check_circle</span>
-              <div>
-                <p className="font-bold text-[var(--color-on-surface)]">Entrega enviada</p>
-                <p className="text-xs text-[var(--color-on-surface-variant)] flex items-center gap-1 mt-0.5">
-                  <span className="material-symbols-outlined text-[13px]">calendar_today</span>
-                  <FormattedDate date={delivery.created} />
-                </p>
-              </div>
-            </div>
-            {!isPastDue && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-5 py-2.5 rounded-full bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-high)] font-bold text-sm transition-colors border border-[var(--color-outline-variant)] flex items-center gap-2"
-              >
-                <span className="material-symbols-outlined text-[16px]">edit</span>
-                Reenviar entrega
-              </button>
-            )}
-          </div>
+  return <div className="space-y-6">
+    {delivery && !isEditing && <Card><CardContent className="space-y-5"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start"><div><div className="flex flex-wrap items-center gap-3"><Badge tone="success">Entrega enviada</Badge>{delivery.status === "published" && <Badge tone="info">Evaluada</Badge>}</div><p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">Enviada <FormattedDate date={delivery.created} showTime /></p></div>{!isPastDue && <Button variant="secondary" leadingIcon={<span className="material-symbols-outlined text-lg">edit</span>} onClick={() => setIsEditing(true)}>Actualizar entrega</Button>}</div><div className="space-y-2"><h3 className="text-sm font-bold uppercase tracking-wide text-[var(--color-on-surface-variant)]">Archivos entregados</h3>{existingFiles.map((file, index) => <Button key={`${file.url}-${index}`} variant="secondary" isPending={downloadingIndex === index} pendingLabel="Preparando…" leadingIcon={<span className="material-symbols-outlined text-lg">download</span>} onClick={() => download(index, file.name)} className="w-full justify-start"><span className="truncate">{file.name}</span></Button>)}</div>{isPastDue && <p className="flex items-center gap-2 text-sm text-[var(--color-on-surface-variant)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">lock</span>El plazo terminó. Tu entrega se conserva, pero ya no puede modificarse.</p>}</CardContent></Card>}
 
-          {existingFiles.length > 0 && (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)] mb-2">
-                Archivos entregados
-              </p>
-              <div className="flex flex-col gap-2">
-                {existingFiles.map((file, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleDownload(file.url, file.name)}
-                    disabled={downloadingUrl === file.url}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-container-highest)] hover:bg-[var(--color-surface-container-high)] transition-colors text-left disabled:opacity-50 w-full"
-                  >
-                    <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">
-                      {downloadingUrl === file.url ? 'hourglass_empty' : 'download'}
-                    </span>
-                    <span className="text-sm text-[var(--color-on-surface)] truncate">{file.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+    {delivery?.status === "published" && <Card><CardContent className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-headline text-xl font-bold">Devolución del docente</h3>{delivery.verdict && <Badge tone={delivery.verdict === "Aprobado" ? "success" : "warning"}>{delivery.verdict}</Badge>}</div>{delivery.grade !== undefined && <p className="font-headline text-3xl font-bold text-[var(--color-primary)]">Nota: {delivery.grade}</p>}<p className="whitespace-pre-wrap leading-relaxed text-[var(--color-on-surface-variant)]">{delivery.feedback || "La evaluación fue publicada sin comentario adicional."}</p></CardContent></Card>}
 
-      {/* Feedback from teacher */}
-      {hasFeedback && (
-        <div className="bg-[var(--color-surface-container-low)] rounded-[2rem] p-6 border border-[var(--color-outline-variant)] flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[var(--color-primary)] text-[22px]">rate_review</span>
-            <h3 className="font-bold text-[var(--color-on-surface)] text-lg">Retroalimentación del docente</h3>
-          </div>
-          {delivery?.verdict && (
-            <span className={`self-start px-4 py-1.5 rounded-full text-sm font-bold ${
-              delivery.verdict === 'Aprobado'
-                ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
-                : 'bg-[#FFB4A4]/15 text-[#FFB4A4]'
-            }`}>
-              {delivery.verdict}
-            </span>
-          )}
-          <p className="text-[var(--color-on-surface-variant)] leading-relaxed whitespace-pre-wrap">
-            {delivery?.feedback}
-          </p>
-        </div>
-      )}
+    {isEditing && !isPastDue && <Card><CardContent className="space-y-5"><div><h3 className="font-headline text-xl font-bold">{delivery ? "Actualizar entrega" : "Subir entrega"}</h3><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Los archivos seleccionados reemplazarán la entrega actual.</p></div>{error && <p role="alert" className="rounded-[var(--epixum-radius-md)] bg-[var(--color-error)]/10 p-3 text-sm text-[var(--color-error)]">{error}</p>}<input ref={fileInputRef} id={`tp-files-${assignmentId}`} type="file" multiple onChange={addFiles} className="sr-only" /><label htmlFor={`tp-files-${assignmentId}`} className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-3 rounded-[var(--epixum-radius-lg)] border-2 border-dashed border-[var(--color-outline)] p-6 text-center hover:border-[var(--color-primary)]"><span className="material-symbols-outlined text-4xl text-[var(--color-primary)]" aria-hidden="true">upload_file</span><span className="font-bold">Seleccionar archivos</span><span className="text-sm text-[var(--color-on-surface-variant)]">Podés volver a elegir para agregar más.</span></label>{selectedFiles.length > 0 && <div className="space-y-2"><h4 className="text-sm font-bold">Archivos seleccionados ({selectedFiles.length})</h4>{selectedFiles.map((file, index) => <div key={`${file.name}-${index}`} className="flex items-center gap-3 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] p-3"><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">description</span><span className="min-w-0 flex-1 truncate text-sm">{file.name}</span><span className="text-xs text-[var(--color-on-surface-variant)]">{Math.ceil(file.size / 1024)} KB</span><IconButton label={`Quitar ${file.name}`} icon={<span className="material-symbols-outlined">close</span>} variant="ghost" onClick={() => setSelectedFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} /></div>)}</div>}{progress && <div role="status" className="space-y-2"><div className="flex justify-between gap-4 text-sm"><span>{progress.label}</span><span>{Math.round((progress.current / Math.max(progress.total, 1)) * 100)}%</span></div><progress className="h-2 w-full accent-[var(--color-primary)]" max={progress.total} value={progress.current} /></div>}<div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">{delivery && <Button variant="ghost" disabled={loading} onClick={() => { setIsEditing(false); setSelectedFiles([]); setError(null); }}>Cancelar</Button>}<Button isPending={loading} pendingLabel="Enviando…" disabled={selectedFiles.length === 0} leadingIcon={<span className="material-symbols-outlined text-lg">send</span>} onClick={submit}>Enviar entrega</Button></div></CardContent></Card>}
 
-      {/* Upload form */}
-      {isEditing && (
-        <div className="bg-[var(--color-surface-container-low)] rounded-[2rem] p-6 border border-[var(--color-outline-variant)] flex flex-col gap-5">
-          <h3 className="font-bold text-[var(--color-on-surface)] text-lg flex items-center gap-2">
-            <span className="material-symbols-outlined text-[var(--color-primary)] text-[22px]">upload_file</span>
-            {delivery ? "Actualizar entrega" : "Subir entrega"}
-          </h3>
-
-          {isPastDue ? (
-            <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px]">lock</span>
-              El plazo de entrega ha finalizado.
-            </div>
-          ) : (
-            <>
-              {error && (
-                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                  {error}
-                </div>
-              )}
-
-              {/* File input */}
-              <div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={handleFilesChange}
-                  className="hidden"
-                  id="tp-file-input"
-                />
-                <label
-                  htmlFor="tp-file-input"
-                  className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-[var(--color-outline-variant)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-surface-container)] transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-4xl text-[var(--color-on-surface-variant)]">upload_file</span>
-                  <span className="text-sm text-[var(--color-on-surface-variant)] text-center">
-                    Haz clic para agregar archivos<br />
-                    <span className="text-xs">Podés hacer clic varias veces para ir sumando archivos</span>
-                  </span>
-                </label>
-              </div>
-
-              {/* Selected files preview */}
-              {selectedFiles.length > 0 && (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)] mb-2">
-                    Archivos seleccionados ({selectedFiles.length})
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {selectedFiles.map((file, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface-container-highest)] border border-[var(--color-outline-variant)]"
-                      >
-                        <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px] shrink-0">description</span>
-                        <span className="text-sm text-[var(--color-on-surface)] flex-1 truncate">{file.name}</span>
-                        <span className="text-xs text-[var(--color-on-surface-variant)] shrink-0">
-                          {(file.size / 1024).toFixed(0)} KB
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSelected(i)}
-                          className="p-1 rounded-lg hover:bg-red-500/10 text-[var(--color-on-surface-variant)] hover:text-red-400 transition-colors shrink-0"
-                        >
-                          <span className="material-symbols-outlined text-[16px]">close</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Progress */}
-              {loading && uploadProgress && (
-                <div className="flex items-center gap-3 p-4 rounded-2xl bg-[var(--color-surface-container-highest)]">
-                  <span className="material-symbols-outlined animate-spin text-[var(--color-primary)] text-[20px]">refresh</span>
-                  <span className="text-sm text-[var(--color-on-surface-variant)]">{uploadProgress}</span>
-                </div>
-              )}
-
-              <div className="flex gap-3 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading || selectedFiles.length === 0}
-                  className="px-6 py-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[#000000] font-bold rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 text-sm flex items-center gap-2"
-                >
-                  {loading ? (
-                    <span className="material-symbols-outlined animate-spin text-[18px]">refresh</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-[18px]">send</span>
-                  )}
-                  {loading ? "Enviando..." : "Enviar entrega"}
-                </button>
-                {delivery && (
-                  <button
-                    type="button"
-                    onClick={() => { setIsEditing(false); setSelectedFiles([]); setError(null); }}
-                    disabled={loading}
-                    className="px-6 py-3 bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] font-bold rounded-full hover:bg-[var(--color-surface-container-high)] transition-colors disabled:opacity-50 text-sm border border-[var(--color-outline-variant)]"
-                  >
-                    Cancelar
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* No delivery yet and past due */}
-      {!delivery && !isEditing && isPastDue && (
-        <div className="bg-[var(--color-surface-container-low)] rounded-[2rem] p-8 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
-          <span className="material-symbols-outlined text-4xl text-[var(--color-on-surface-variant)] mb-3">lock</span>
-          <p className="text-[var(--color-on-surface-variant)]">El plazo de entrega ha cerrado y no realizaste ninguna entrega.</p>
-        </div>
-      )}
-    </div>
-  );
+    {!delivery && isPastDue && <EmptyState icon="lock" title="Entrega cerrada" description="La fecha límite ya pasó y no registraste una entrega. El servidor también bloqueará cualquier intento fuera de término." />}
+  </div>;
 }

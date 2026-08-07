@@ -18,9 +18,18 @@ export default function LogoutButton({ className, iconOnly }: { className?: stri
   };
 
   return (
-    <button onClick={handleLogout} className={className} disabled={isPending}>
-      <span className="material-symbols-outlined">{isPending ? "hourglass_empty" : "logout"}</span>
-      {!iconOnly && <span>{isPending ? "Cerrando..." : "Cerrar Sesión"}</span>}
+    <button
+      type="button"
+      onClick={handleLogout}
+      className={className}
+      disabled={isPending}
+      aria-busy={isPending || undefined}
+      aria-label={iconOnly ? (isPending ? "Cerrando sesión" : "Cerrar sesión") : undefined}
+    >
+      <span className={`material-symbols-outlined ${isPending ? "animate-spin" : ""}`} aria-hidden="true">
+        {isPending ? "progress_activity" : "logout"}
+      </span>
+      {!iconOnly && <span>{isPending ? "Cerrando…" : "Cerrar sesión"}</span>}
     </button>
   );
 }

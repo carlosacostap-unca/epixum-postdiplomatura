@@ -1,10 +1,15 @@
 import PocketBase from 'pocketbase';
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 
 import { User } from '@/types';
+import { getErrorMessage, getErrorStatus } from '@/lib/errors';
 
 // Server-side helper to get authenticated instance
-export async function createServerClient() {
+// React cache is scoped to the current server render. Layouts, pages and data
+// loaders therefore share one authenticated PocketBase client without ever
+// sharing a session between requests or users.
+export const createServerClient = cache(async () => {
   const cookieStore = await cookies();
   const token = cookieStore.get('pb_auth')?.value;
   
@@ -18,6 +23,7 @@ export async function createServerClient() {
   }
 
   const serverPb = new PocketBase(url);
+  serverPb.autoCancellation(false);
   
   if (token) {
     try {
@@ -35,14 +41,15 @@ export async function createServerClient() {
          try {
            await serverPb.collection('users').authRefresh();
            // console.log("Token refrescado y modelo obtenido:", serverPb.authStore.model?.email);
-         } catch (refreshErr: any) {
+         } catch (refreshErr: unknown) {
            // Solo limpiar la sesión si es un error de autenticación (ej: token inválido/expirado)
            // Si es un error de red (timeout), mantenemos el token actual que podría seguir siendo válido
-           if (refreshErr?.status === 401 || refreshErr?.status === 403 || refreshErr?.status === 400) {
+           const status = getErrorStatus(refreshErr);
+           if (status === 401 || status === 403 || status === 400) {
             console.warn("Token inválido o expirado. Limpiando sesión.");
             serverPb.authStore.clear(); 
           } else {
-            console.warn("Advertencia de red al refrescar token (el token actual se mantendrá):", refreshErr?.message || "Timeout/Network error");
+            console.warn("Advertencia de red al refrescar token (el token actual se mantendrá):", getErrorMessage(refreshErr, "Timeout/Network error"));
           }
         }
      }
@@ -52,15 +59,14 @@ export async function createServerClient() {
   }
 
   return serverPb;
-}
+});
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const pb = await createServerClient();
   if (!pb.authStore.isValid) return null;
   try {
     return pb.authStore.model as unknown as User;
-  } catch (e) {
+  } catch {
     return null;
   }
-}
-
+});

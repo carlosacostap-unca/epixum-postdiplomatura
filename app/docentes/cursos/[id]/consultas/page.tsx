@@ -1,134 +1,70 @@
-import { getCourse } from "@/lib/data";
-import { getInquiries } from "@/lib/actions-inquiries";
-import { getCurrentUser } from "@/lib/pocketbase-server";
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import FormattedDate from "@/components/FormattedDate";
+import { TeacherCourseContext } from "@/components/course/TeacherCourseContext";
+import { Badge, Card, CardContent, EmptyState, Field, Select } from "@/components/ui";
+import { getInquiries } from "@/lib/actions-inquiries";
+import { getCourse } from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function TeacherCourseInquiriesPage(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params;
+type SearchParams = Promise<{ estado?: string; orden?: string; buscar?: string }>;
+
+export default async function TeacherCourseInquiriesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") {
-    redirect("/");
-  }
+  if (!user || user.role !== "docente") redirect("/");
+  const course = await getCourse(id);
+  if (!course?.teachers?.includes(user.id)) redirect("/docentes");
 
-  const course = await getCourse(params.id);
-  if (!course) {
-    redirect("/docentes");
-  }
-
-  const inquiries = await getInquiries({ courseId: course.id });
+  const status = query.estado === "Pendiente" || query.estado === "Resuelta" ? query.estado : undefined;
+  const sort = query.orden === "recent" ? "recent" : "oldest";
+  const search = query.buscar?.trim() || undefined;
+  const inquiries = await getInquiries({ courseId: course.id, status, search, sort });
+  const pendingCount = inquiries.filter((inquiry) => inquiry.status === "Pendiente").length;
 
   return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full">
-      {/* Back button */}
-      <Link 
-        href={`/docentes/cursos/${course.id}`} 
-        className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors mb-8 md:mb-12 group"
-      >
-        <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-        <span className="font-bold text-sm tracking-widest uppercase">Volver al curso</span>
-      </Link>
+    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+      <TeacherCourseContext
+        course={course}
+        current="consultas"
+        title="Consultas"
+        description="Priorizá las dudas pendientes y retomá las conversaciones del curso."
+        actions={<Link href={`/docentes/cursos/${course.id}/consultas/nueva`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Nueva consulta</Link>}
+      />
 
-      <header className="mb-12 md:mb-24 flex flex-col md:flex-row gap-10 md:gap-20 items-start justify-between">
-        <div className="max-w-3xl">
-          <div className="flex flex-wrap items-center gap-3 mb-8">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-              Foro de Consultas
-            </span>
-            <span className="px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)]">
-              {course.title}
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-headline tracking-tight text-[var(--color-on-surface)] mb-6 leading-tight">
-            Foro de Consultas
-          </h1>
-          <p className="text-[var(--color-on-surface-variant)] text-lg md:text-xl leading-relaxed">
-            Revisa y responde las dudas de los estudiantes o inicia una nueva consulta para este curso.
-          </p>
-        </div>
+      <form method="get" className="grid gap-4 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-5 md:grid-cols-[minmax(0,1fr)_13rem_13rem_auto] md:items-end">
+        <Field label="Buscar" id="inquiry-search"><input id="inquiry-search" name="buscar" type="search" defaultValue={search} placeholder="Título, autor o contenido" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" /></Field>
+        <Field label="Estado" id="inquiry-status"><Select id="inquiry-status" name="estado" defaultValue={status || "all"}><option value="all">Todas</option><option value="Pendiente">Pendientes</option><option value="Resuelta">Resueltas</option></Select></Field>
+        <Field label="Orden" id="inquiry-order"><Select id="inquiry-order" name="orden" defaultValue={sort}><option value="oldest">Más antiguas primero</option><option value="recent">Más recientes primero</option></Select></Field>
+        <button type="submit" className="min-h-11 rounded-full bg-[var(--color-surface-container-highest)] px-5 py-2.5 text-sm font-bold">Aplicar filtros</button>
+      </form>
 
-        <Link 
-          href={`/docentes/cursos/${course.id}/consultas/nueva`}
-          className="flex items-center gap-2 px-8 py-4 bg-[var(--color-primary)] text-[var(--color-on-primary)] rounded-full hover:bg-[var(--color-primary)]/90 transition-colors font-bold shadow-[0_0_30px_var(--color-primary)]/30 w-full md:w-auto justify-center"
-        >
-          <span className="material-symbols-outlined text-[20px]">add</span>
-          <span>Nueva Consulta</span>
-        </Link>
-      </header>
-
-      <div className="grid grid-cols-1 gap-6">
-        {inquiries.length === 0 ? (
-          <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-12 text-center flex flex-col items-center justify-center border border-[var(--color-outline-variant)]">
-            <span className="material-symbols-outlined text-5xl text-[var(--color-on-surface-variant)] mb-4">forum</span>
-            <p className="text-[var(--color-on-surface-variant)] text-lg">No hay consultas para este curso todavía.</p>
-          </div>
-        ) : (
-          inquiries.map((inquiry) => (
-            <Link 
-              key={inquiry.id}
-              href={`/docentes/cursos/${course.id}/consultas/${inquiry.id}`}
-              className="bg-[var(--color-surface-container-low)] hover:bg-[var(--color-surface-container)] transition-colors rounded-[2rem] p-6 md:p-8 border border-[var(--color-outline-variant)] flex flex-col md:flex-row md:items-center justify-between gap-6 group"
-            >
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-3 mb-3">
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${
-                    inquiry.status === "Resuelta"
-                      ? "bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)]"
-                      : "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-                  }`}>
-                    {inquiry.status}
-                  </span>
-                  {(inquiry.expand?.class || inquiry.expand?.assignment) && (
-                    <span className="text-sm text-[var(--color-on-surface-variant)] flex items-center gap-1 font-medium">
-                      En: 
-                      {inquiry.expand?.class && <span className="text-[var(--color-on-surface)]">{inquiry.expand.class.title}</span>}
-                      {inquiry.expand?.assignment && <span className="text-[var(--color-on-surface)]">{inquiry.expand.assignment.title}</span>}
-                    </span>
-                  )}
-                </div>
-                
-                <h3 className="text-xl font-bold text-[var(--color-on-surface)] mb-2 group-hover:text-[var(--color-primary)] transition-colors">
-                  {inquiry.title}
-                </h3>
-                
-                <p className="text-[var(--color-on-surface-variant)] text-sm line-clamp-2 mb-4">
-                  {inquiry.description}
-                </p>
-
-                <div className="flex items-center gap-4 text-sm text-[var(--color-on-surface-variant)]">
-                  <div className="flex items-center gap-2">
-                    {inquiry.expand?.author?.avatar ? (
-                      <img
-                        src={`${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/_pb_users_auth_/${inquiry.expand.author.id}/${inquiry.expand.author.avatar}`}
-                        className="w-6 h-6 rounded-full object-cover border border-[var(--color-outline-variant)]"
-                        alt=""
-                      />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-[var(--color-surface-container-highest)] flex items-center justify-center text-xs font-bold text-[var(--color-on-surface)] border border-[var(--color-outline-variant)]">
-                        {(inquiry.expand?.author?.name || inquiry.expand?.author?.firstName || "?").charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="font-medium">
-                      {inquiry.expand?.author?.name || [inquiry.expand?.author?.firstName, inquiry.expand?.author?.lastName].filter(Boolean).join(" ") || "Usuario"}
-                    </span>
-                  </div>
-                  <span>•</span>
-                  <FormattedDate date={inquiry.created} showTime={true} />
-                </div>
-              </div>
-              
-              <span className="px-6 py-3 bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface)] rounded-full group-hover:text-[var(--color-primary)] group-hover:bg-[var(--color-surface-container-high)] transition-colors font-bold text-sm whitespace-nowrap flex items-center justify-center w-full md:w-auto gap-2 shrink-0">
-                <span>Ver Consulta</span>
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </span>
-            </Link>
-          ))
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p role="status" className="text-sm text-[var(--color-on-surface-variant)]">{inquiries.length} {inquiries.length === 1 ? "consulta encontrada" : "consultas encontradas"}</p>
+        {!status && <Badge tone={pendingCount ? "warning" : "neutral"}>{pendingCount} pendientes en resultados</Badge>}
       </div>
+
+      {inquiries.length === 0 ? (
+        <EmptyState icon="forum" title="No hay consultas con estos filtros" description={search || status ? "Probá una búsqueda más amplia o volvé a ver todas las consultas." : "Las nuevas consultas del curso aparecerán aquí."} action={(search || status) ? <Link href={`/docentes/cursos/${course.id}/consultas`} className="font-bold text-[var(--color-primary)]">Limpiar filtros</Link> : undefined} />
+      ) : (
+        <div className="space-y-4">
+          {inquiries.map((inquiry) => (
+            <Link key={inquiry.id} href={`/docentes/cursos/${course.id}/consultas/${inquiry.id}`} className="block rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+              <Card className="transition-colors hover:bg-[var(--color-surface-container)]"><CardContent className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-3"><Badge tone={inquiry.status === "Pendiente" ? "warning" : "success"}>{inquiry.status}</Badge>{inquiry.expand?.class && <Badge>{inquiry.expand.class.title}</Badge>}{inquiry.expand?.assignment && <Badge>{inquiry.expand.assignment.title}</Badge>}</div>
+                  <h2 className="mt-4 truncate font-headline text-xl font-bold">{inquiry.title}</h2>
+                  <p className="mt-2 line-clamp-2 text-sm text-[var(--color-on-surface-variant)]">{inquiry.description}</p>
+                  <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{inquiry.expand?.author?.name || "Usuario"} · <FormattedDate date={inquiry.created} showTime /></p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-[var(--color-primary)]">Abrir consulta <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></span>
+              </CardContent></Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

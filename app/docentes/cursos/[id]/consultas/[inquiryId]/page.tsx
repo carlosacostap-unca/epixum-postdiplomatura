@@ -2,9 +2,10 @@ import { getCourse } from "@/lib/data";
 import { getInquiry, getInquiryResponses } from "@/lib/actions-inquiries";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
 import TeacherInquiryActions from "./TeacherInquiryActions";
+import { TeacherCourseContext } from "@/components/course/TeacherCourseContext";
+import Image from "next/image";
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,7 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
   }
 
   const course = await getCourse(params.id);
-  if (!course) {
+  if (!course?.teachers?.includes(user.id)) {
     redirect("/docentes");
   }
 
@@ -26,18 +27,14 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
   }
 
   const inquiry = inquiryResult.data;
+  if (inquiry.course !== course.id) {
+    notFound();
+  }
   const responses = await getInquiryResponses(params.inquiryId);
 
   return (
     <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full flex flex-col">
-      {/* Back button */}
-      <Link 
-        href={`/docentes/cursos/${course.id}/consultas`} 
-        className="inline-flex items-center gap-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary)] transition-colors mb-8 md:mb-12 group"
-      >
-        <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
-        <span className="font-bold text-sm tracking-widest uppercase">Volver a Consultas</span>
-      </Link>
+      <TeacherCourseContext course={course} current="consultas" title={inquiry.title} description="Conversación y estado de atención." />
 
       <div className="max-w-4xl w-full mx-auto flex flex-col gap-12">
         {/* Inquiry Detail */}
@@ -67,10 +64,13 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
 
           <div className="flex items-center gap-4 mb-8 pb-8 border-b border-[var(--color-outline-variant)]">
             {inquiry.expand?.author?.avatar ? (
-              <img
+              <Image
+                unoptimized
                 src={`${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/_pb_users_auth_/${inquiry.expand.author.id}/${inquiry.expand.author.avatar}`}
                 className="w-12 h-12 rounded-full object-cover border border-[var(--color-outline-variant)]"
                 alt=""
+                width={48}
+                height={48}
               />
             ) : (
               <div className="w-12 h-12 rounded-full bg-[var(--color-surface-container-highest)] flex items-center justify-center text-xl font-bold text-[var(--color-on-surface)] border border-[var(--color-outline-variant)]">
@@ -115,10 +115,13 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       {response.expand?.author?.avatar ? (
-                        <img
+                        <Image
+                          unoptimized
                           src={`${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/_pb_users_auth_/${response.expand.author.id}/${response.expand.author.avatar}`}
                           className="w-10 h-10 rounded-full object-cover"
                           alt=""
+                          width={40}
+                          height={40}
                         />
                       ) : (
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${

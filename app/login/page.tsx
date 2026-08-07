@@ -1,45 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import pb from "@/lib/pocketbase";
 import { setAuthCookieAndRedirect } from "@/lib/actions-auth";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
-  // Check if already logged in
   useEffect(() => {
-    if (pb.authStore.isValid && pb.authStore.model) {
-      const role = pb.authStore.model.role;
-      if (role === "docente") {
-        router.push("/docentes");
-      } else if (role === "admin") {
-        router.push("/admin/courses");
-      } else if (role === "estudiante") {
-        router.push("/estudiantes");
-      } else {
-        // Rol desconocido o vacío: limpiar sesión y quedarse en login
-        pb.authStore.clear();
-      }
-    }
-  }, [router]);
+    // El servidor elimina la cookie HttpOnly al entrar a /login; el navegador
+    // debe limpiar por separado el estado persistido por el SDK de PocketBase.
+    pb.authStore.clear();
+  }, []);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
+    pb.authStore.clear();
     let token = null;
-    let model = null;
 
     try {
       const authData = await pb.collection("users").authWithOAuth2({ provider: "google" });
 
       // Si el usuario no tiene rol (primera vez), asignar "estudiante" por defecto
       if (!authData.record.role) {
-        const updateData: Record<string, any> = { role: "estudiante" };
-        const meta = (authData as any).meta;
+        const updateData: Record<string, string> = { role: "estudiante" };
+        const meta = authData.meta;
         if (meta) {
           const firstName = meta.givenName || meta.given_name || "";
           const lastName = meta.familyName || meta.family_name || "";
@@ -62,12 +49,11 @@ export default function LoginPage() {
 
       // Store token in cookie for server-side access
       token = pb.authStore.token;
-      model = pb.authStore.model;
       
-      if (!token || !model) {
-        throw new Error("No se pudo obtener el token o el modelo del usuario.");
+      if (!token || !pb.authStore.model) {
+        throw new Error("No se pudo obtener la sesión del usuario.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login error:", err);
       setError("Tu cuenta de email no está autorizada para ingresar a la plataforma.");
       setIsLoading(false);
@@ -77,8 +63,13 @@ export default function LoginPage() {
     // Ejecutar la redirección fuera del bloque try-catch
     // ya que Next.js implementa `redirect()` lanzando un error especial
     // que no debe ser atrapado por el catch.
-    if (token && model) {
-      await setAuthCookieAndRedirect(token, model);
+    if (token) {
+      const result = await setAuthCookieAndRedirect(token);
+      if (!result.success) {
+        pb.authStore.clear();
+        setError(result.error);
+        setIsLoading(false);
+      }
     }
   };
 
@@ -99,7 +90,7 @@ export default function LoginPage() {
         
         <div className="text-center mb-12">
           <h1 className="text-4xl font-headline tracking-tight mb-3 text-[var(--color-on-surface)]">Epixum</h1>
-          <p className="text-lg text-[var(--color-on-surface-variant)]">Plataforma de PostDiplomatura</p>
+          <p className="text-lg text-[var(--color-on-surface-variant)]">Plataforma educativa</p>
         </div>
 
         {error && (

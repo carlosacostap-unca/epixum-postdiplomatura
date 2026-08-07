@@ -1,7 +1,8 @@
+/* eslint-disable @next/next/no-page-custom-font -- Material Symbols is an icon font loaded once by the root App Router layout. */
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit, Manrope, Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
+import { ToastProvider } from "@/components/ui/toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Epixum - PostDiplomatura",
+  title: "Epixum",
   description: "Plataforma de gestión educativa",
   icons: {
     icon: '/epixum-logo.png',
@@ -49,8 +50,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${manrope.variable} ${inter.variable} antialiased`}
       >
-        <Header />
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

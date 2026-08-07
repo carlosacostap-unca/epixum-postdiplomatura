@@ -1,314 +1,244 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { User } from "@/types";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { updateUserProfile } from "@/lib/actions-users";
+import type { User } from "@/types";
+import { Badge, Button, Dialog, Field, useToast } from "@/components/ui";
+import { cx } from "@/components/ui/styles";
+import Image from "next/image";
 
 interface ProfileModalButtonProps {
-  user: User;
-  pocketbaseUrl: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
   className?: string;
+  pocketbaseUrl: string;
+  user: User;
+}
+interface ProfileFormData {
+  birthDate: string;
+  dni: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
 }
 
-export default function ProfileModalButton({ user, pocketbaseUrl, children, className }: ProfileModalButtonProps) {
+type ProfileField = keyof ProfileFormData;
+type ProfileErrors = Partial<Record<ProfileField, string>>;
+
+const inputClassName =
+  "w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5 text-[var(--color-on-surface)] transition-colors hover:border-[var(--color-on-surface-variant)] disabled:opacity-50";
+
+function getInitialFormData(user: User): ProfileFormData {
+  const nameParts = user.name?.trim().split(/\s+/) ?? [];
+  return {
+    firstName: user.firstName || nameParts[0] || "",
+    lastName: user.lastName || nameParts.slice(1).join(" ") || "",
+    phone: user.phone || "",
+    dni: user.dni || "",
+    birthDate: user.birthDate ? user.birthDate.substring(0, 10) : "",
+  };
+}
+
+function validateProfile(data: ProfileFormData): ProfileErrors {
+  const errors: ProfileErrors = {};
+  if (data.firstName.length > 80) errors.firstName = "El nombre no puede superar los 80 caracteres.";
+  if (data.lastName.length > 80) errors.lastName = "El apellido no puede superar los 80 caracteres.";
+  if (data.dni && !/^\d{7,10}$/.test(data.dni)) errors.dni = "Ingresá entre 7 y 10 números, sin puntos.";
+  if (data.phone && !/^[+\d][\d\s()-]{5,29}$/.test(data.phone)) errors.phone = "Ingresá un teléfono válido.";
+  if (data.birthDate && new Date(`${data.birthDate}T12:00:00Z`).getTime() > Date.now()) {
+    errors.birthDate = "La fecha de nacimiento no puede estar en el futuro.";
+  }
+  return errors;
+}
+
+function ProfileAvatar({ user, pocketbaseUrl }: { user: User; pocketbaseUrl: string }) {
+  const initials = (user.firstName || user.name || user.email || "U")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+  if (user.avatar) {
+    return (
+      <Image
+        unoptimized
+        alt={`Avatar de ${user.name || "usuario"}`}
+        className="size-24 rounded-full object-cover"
+        src={`${pocketbaseUrl}/api/files/_pb_users_auth_/${user.id}/${user.avatar}`}
+        width={96}
+        height={96}
+      />
+    );
+  }
+
+  return (
+    <span className="flex size-24 items-center justify-center rounded-full bg-[var(--color-primary)] font-headline text-2xl font-black text-[var(--color-on-primary)]" aria-hidden="true">
+      {initials}
+    </span>
+  );
+}
+
+export default function ProfileModalButton({ children, className, pocketbaseUrl, user }: ProfileModalButtonProps) {
+  const router = useRouter();
+  const { notify } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [formData, setFormData] = useState<ProfileFormData>(() => getInitialFormData(user));
+  const [errors, setErrors] = useState<ProfileErrors>({});
+  const [serverError, setServerError] = useState("");
 
-  const nameParts = user.name ? user.name.split(' ') : [];
-  const initialFirstName = user.firstName || nameParts[0] || '';
-  const initialLastName = user.lastName || nameParts.slice(1).join(' ') || '';
+  const roleLabel = user.role === "admin" ? "Administrador" : user.role === "docente" ? "Docente" : "Estudiante";
+  const errorMessages = Object.values(errors);
 
-  const [formData, setFormData] = useState({
-    firstName: initialFirstName,
-    lastName: initialLastName,
-    phone: user.phone || '',
-    dni: user.dni || '',
-    birthDate: user.birthDate ? user.birthDate.substring(0, 10) : ''
-  });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const handleClose = () => {
-    setIsOpen(false);
-    setTimeout(() => {
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
       setIsEditing(false);
-      setError("");
-    }, 300); // reset after animation
+      setErrors({});
+      setServerError("");
+      setFormData(getInitialFormData(user));
+    }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const updateField = (field: ProfileField, value: string) => {
+    setFormData((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: undefined }));
+    setServerError("");
   };
 
-  const handleSave = async () => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalized: ProfileFormData = {
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      dni: formData.dni.trim(),
+      phone: formData.phone.trim(),
+      birthDate: formData.birthDate,
+    };
+    const nextErrors = validateProfile(normalized);
+    setFormData(normalized);
+    setErrors(nextErrors);
+    setServerError("");
+
+    if (Object.keys(nextErrors).length > 0) return;
+
     setIsSaving(true);
-    setError("");
     try {
-      const res = await updateUserProfile(user.id, formData);
-      if (res.success) {
-        setIsEditing(false);
-        // Data is revalidated, UI will update naturally or via Next.js router
-      } else {
-        setError(res.error || "Error al guardar");
+      const result = await updateUserProfile(user.id, normalized);
+      if (!result.success) {
+        setServerError(result.error || "No pudimos actualizar tu perfil.");
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || "Error al guardar");
+
+      notify({ title: "Perfil actualizado", description: "Tus datos ya están guardados.", tone: "success" });
+      setIsEditing(false);
+      router.refresh();
+    } catch (error: unknown) {
+      setServerError(error instanceof Error ? error.message : "No pudimos actualizar tu perfil.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const avatarUrl = user.avatar 
-    ? `${pocketbaseUrl}/api/files/_pb_users_auth_/${user.id}/${user.avatar}` 
-    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "Docente")}&background=1418eb&color=fff`;
-
-  // Determine role display name
-  const roleDisplay = user.role === 'admin' ? 'Administrador' : 
-                      user.role === 'docente' ? 'Profesor' : 'Estudiante';
-
   return (
     <>
-      {/* Trigger Button */}
-      <button 
+      <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className={className || "w-full flex items-center gap-3 text-left hover:bg-[var(--color-surface-container)] p-2 -ml-2 rounded-[2rem] transition-colors cursor-pointer group"}
-      >
-        {children ? children : (
-          <>
-            <div className="h-10 w-10 rounded-full border-2 border-[var(--color-surface-container-highest)] overflow-hidden group-hover:border-[var(--color-primary)] transition-colors">
-              <img 
-                alt="Avatar" 
-                className="h-full w-full object-cover" 
-                src={avatarUrl}
-              />
-            </div>
-            <div>
-              <h2 className="text-[var(--color-primary)] font-black text-sm uppercase tracking-widest font-headline line-clamp-1 group-hover:opacity-80 transition-opacity">
-                {user.name || "Usuario"}
-              </h2>
-              <p className="text-[var(--color-on-surface-variant)] text-[11px] font-bold tracking-widest uppercase group-hover:text-[var(--color-on-surface)] transition-colors">
-                Mi Perfil
-              </p>
-            </div>
-          </>
+        className={cx(
+          "flex min-h-14 w-full items-center gap-3 rounded-[var(--epixum-radius-lg)] px-3 text-left transition-colors hover:bg-[var(--color-surface-container)]",
+          className,
         )}
+        aria-label="Abrir mi perfil"
+      >
+        {children ?? <span>Mi perfil</span>}
       </button>
 
-      {/* Portal for Modal and Backdrop */}
-      {mounted && createPortal(
-        <>
-          {/* Backdrop */}
-          <div 
-            className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] transition-opacity duration-300 ${
-              isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-            }`}
-            onClick={handleClose}
-          />
-
-          {/* Modal / Sidebar */}
-          <div 
-            className={`fixed top-0 right-0 h-screen w-full sm:w-[400px] bg-[var(--color-surface-container-low)]/90 backdrop-blur-[30px] border-l-4 border-[var(--color-surface-container)] shadow-2xl z-[101] transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ${
-              isOpen ? "translate-x-0" : "translate-x-full"
-            }`}
-          >
-            {/* Header */}
-        <div className="flex items-center justify-between p-8 border-b-4 border-[var(--color-surface-container)]">
-          <h2 className="text-lg font-headline font-bold text-[var(--color-on-surface)] tracking-wide">
-            {isEditing ? "Editar Perfil" : "Detalles de Usuario"}
-          </h2>
-          <button 
-            onClick={handleClose}
-            className="p-2 text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-highest)] rounded-full transition-colors"
-          >
-            <span className="material-symbols-outlined text-xl">close</span>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-8 scrollbar-thin scrollbar-thumb-[var(--color-surface-container-highest)] scrollbar-track-transparent">
-          {isEditing ? (
-            <div className="space-y-6">
-              {error && (
-                <div className="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)] text-sm">
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-[11px] font-label font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-2">
-                    Nombre
-                  </label>
-                  <input 
-                    type="text" 
-                    name="firstName" 
-                    value={formData.firstName} 
-                    onChange={handleChange}
-                    className="w-full bg-[var(--color-surface-container)] border-none rounded-xl px-4 py-3 text-[var(--color-on-surface)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-label font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-2">
-                    Apellido
-                  </label>
-                  <input 
-                    type="text" 
-                    name="lastName" 
-                    value={formData.lastName} 
-                    onChange={handleChange}
-                    className="w-full bg-[var(--color-surface-container)] border-none rounded-xl px-4 py-3 text-[var(--color-on-surface)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-label font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-2">
-                    Teléfono
-                  </label>
-                  <input 
-                    type="text" 
-                    name="phone" 
-                    value={formData.phone} 
-                    onChange={handleChange}
-                    className="w-full bg-[var(--color-surface-container)] border-none rounded-xl px-4 py-3 text-[var(--color-on-surface)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-label font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-2">
-                    DNI
-                  </label>
-                  <input 
-                    type="text" 
-                    name="dni" 
-                    value={formData.dni} 
-                    onChange={handleChange}
-                    className="w-full bg-[var(--color-surface-container)] border-none rounded-xl px-4 py-3 text-[var(--color-on-surface)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-label font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-2">
-                    Fecha de Nacimiento
-                  </label>
-                  <input 
-                    type="date" 
-                    name="birthDate" 
-                    value={formData.birthDate} 
-                    onChange={handleChange}
-                    className="w-full bg-[var(--color-surface-container)] border-none rounded-xl px-4 py-3 text-[var(--color-on-surface)] text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)] transition-all [color-scheme:dark]"
-                  />
-                </div>
+      <Dialog
+        open={isOpen}
+        onOpenChange={handleOpenChange}
+        title={isEditing ? "Editar perfil" : "Mi perfil"}
+        description={isEditing ? "Actualizá tus datos personales. Los campos pueden dejarse vacíos." : "Información asociada a tu cuenta de Epixum."}
+        footer={
+          isEditing ? (
+            <>
+              <Button variant="ghost" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancelar</Button>
+              <Button type="submit" form="profile-form" isPending={isSaving} pendingLabel="Guardando…">Guardar cambios</Button>
+            </>
+          ) : (
+            <Button leadingIcon={<span className="material-symbols-outlined" aria-hidden="true">edit</span>} onClick={() => setIsEditing(true)}>
+              Editar perfil
+            </Button>
+          )
+        }
+      >
+        {isEditing ? (
+          <form id="profile-form" onSubmit={handleSubmit} className="space-y-5 py-3" noValidate>
+            {errorMessages.length > 0 || serverError ? (
+              <div className="rounded-[var(--epixum-radius-md)] bg-[color-mix(in_srgb,var(--color-error)_12%,transparent)] p-4 text-sm text-[var(--color-error)]" role="alert">
+                <p className="font-bold">Revisá los datos antes de guardar.</p>
+                {serverError ? <p className="mt-1">{serverError}</p> : null}
+                {errorMessages.length > 0 ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-5">{errorMessages.map((message) => <li key={message}>{message}</li>)}</ul>
+                ) : null}
               </div>
+            ) : null}
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Nombre" error={errors.firstName}>
+                <input value={formData.firstName} onChange={(event) => updateField("firstName", event.target.value)} className={inputClassName} autoComplete="given-name" />
+              </Field>
+              <Field label="Apellido" error={errors.lastName}>
+                <input value={formData.lastName} onChange={(event) => updateField("lastName", event.target.value)} className={inputClassName} autoComplete="family-name" />
+              </Field>
             </div>
-          ) : (
-            <>
-              {/* Avatar & Name */}
-              <div className="flex flex-col items-center mb-10">
-                <div className="relative mb-6">
-                  <div className="absolute inset-0 bg-[var(--color-primary)]/20 rounded-full blur-xl"></div>
-                  <div className="h-28 w-28 rounded-full border-4 border-[var(--color-surface-container-highest)] overflow-hidden relative shadow-[0_0_30px_rgba(63,255,139,0.1)]">
-                    <img 
-                      alt="Avatar Completo" 
-                      className="h-full w-full object-cover" 
-                      src={avatarUrl}
-                    />
-                  </div>
-                </div>
-                <h3 className="text-2xl font-headline font-bold text-[var(--color-on-surface)] mb-2">{user.name || "Usuario"}</h3>
-                <span className="px-4 py-1.5 bg-[var(--color-surface-container-highest)] text-[var(--color-primary)] rounded-full text-[10px] font-bold tracking-widest uppercase">
-                  {roleDisplay}
-                </span>
-              </div>
 
-              {/* Contact Info */}
-              <div className="mb-10">
-                <h4 className="text-[11px] font-label font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-4">
-                  Información de Contacto
-                </h4>
-                <div className="glass-panel rounded-[2rem] p-2 bg-[var(--color-surface-container)]">
-                  <div className="flex items-center gap-4 p-4 border-b-2 border-[var(--color-surface-container-highest)]">
-                    <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">mail</span>
-                    <span className="text-sm text-[var(--color-on-surface)]">{user.email || "No especificado"}</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 border-b-2 border-[var(--color-surface-container-highest)]">
-                    <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">call</span>
-                    <span className="text-sm text-[var(--color-on-surface)]">{user.phone || "No especificado"}</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-4">
-                    <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">badge</span>
-                    <span className="text-sm text-[var(--color-on-surface)]">{user.dni ? `DNI: ${user.dni}` : "DNI no especificado"}</span>
-                  </div>
-                </div>
-              </div>
+            <Field label="Teléfono" hint="Podés incluir código de país y área." error={errors.phone}>
+              <input type="tel" value={formData.phone} onChange={(event) => updateField("phone", event.target.value)} className={inputClassName} autoComplete="tel" />
+            </Field>
 
-              {/* Additional Info */}
-              <div className="mb-8">
-                <h4 className="text-[11px] font-label font-bold text-[var(--color-on-surface-variant)] uppercase tracking-widest mb-4">
-                  Datos Adicionales
-                </h4>
-                <div className="glass-panel rounded-[2rem] p-2 bg-[var(--color-surface-container)]">
-                  <div className="flex items-center gap-4 p-4 border-b-2 border-[var(--color-surface-container-highest)]">
-                    <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">account_circle</span>
-                    <span className="text-sm text-[var(--color-on-surface)]">@{user.username || "usuario"}</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-4">
-                    <span className="material-symbols-outlined text-[var(--color-primary)] text-[20px]">calendar_month</span>
-                    <span className="text-sm text-[var(--color-on-surface)]">
-                      {user.birthDate 
-                        ? new Date(user.birthDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) 
-                        : "Fecha de nacimiento no especificada"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+            <Field label="DNI" hint="Solo números, sin puntos." error={errors.dni}>
+              <input inputMode="numeric" value={formData.dni} onChange={(event) => updateField("dni", event.target.value)} className={inputClassName} autoComplete="off" />
+            </Field>
 
-        {/* Footer actions */}
-        <div className="p-8 border-t-4 border-[var(--color-surface-container)] flex gap-4 bg-[var(--color-surface-container-low)]">
-          {isEditing ? (
-            <>
-              <button 
-                onClick={() => {
-                  setIsEditing(false);
-                  setError("");
-                }}
-                disabled={isSaving}
-                className="flex-1 py-4 px-6 rounded-[2rem] border-2 border-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] text-sm font-bold tracking-widest uppercase hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)] transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex-1 py-4 px-6 rounded-[2rem] bg-[var(--color-primary)] hover:opacity-80 text-[var(--color-on-primary)] text-sm font-bold tracking-widest uppercase transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isSaving ? (
-                  <>
-                    <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-                    Guardando...
-                  </>
-                ) : (
-                  "Guardar"
-                )}
-              </button>
-            </>
-          ) : (
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="w-full py-4 px-6 rounded-[2rem] bg-[var(--color-surface-container)] hover:bg-[var(--color-surface-container-highest)] text-[var(--color-primary)] text-sm font-bold tracking-widest uppercase transition-colors flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">edit</span>
-              Editar Perfil
-            </button>
-          )}
-        </div>
-      </div>
-      </>, document.body)}
+            <Field label="Fecha de nacimiento" error={errors.birthDate}>
+              <input type="date" value={formData.birthDate} onChange={(event) => updateField("birthDate", event.target.value)} className={inputClassName} autoComplete="bday" />
+            </Field>
+          </form>
+        ) : (
+          <div className="py-3">
+            <div className="flex flex-col items-center text-center">
+              <ProfileAvatar user={user} pocketbaseUrl={pocketbaseUrl} />
+              <h3 className="mt-5 font-headline text-2xl font-bold">{user.name || "Usuario"}</h3>
+              <Badge tone="success" className="mt-2">{roleLabel}</Badge>
+            </div>
+
+            <dl className="mt-8 grid gap-4 rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container)] p-5 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">Correo</dt>
+                <dd className="mt-1 break-words text-sm">{user.email || "No especificado"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">Teléfono</dt>
+                <dd className="mt-1 text-sm">{user.phone || "No especificado"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">DNI</dt>
+                <dd className="mt-1 text-sm">{user.dni || "No especificado"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">Nacimiento</dt>
+                <dd className="mt-1 text-sm">
+                  {user.birthDate
+                    ? new Date(user.birthDate).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+                    : "No especificada"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        )}
+      </Dialog>
     </>
   );
 }

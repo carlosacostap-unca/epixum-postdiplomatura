@@ -1,89 +1,161 @@
-import { getCurrentUser } from "@/lib/pocketbase-server";
-import { getTeacherCourses } from "@/lib/data";
 import Link from "next/link";
+import FormattedDate from "@/components/FormattedDate";
+import {
+  Badge,
+  Card,
+  CardContent,
+  EmptyState,
+  PageHeader,
+  StatCard,
+} from "@/components/ui";
+import { getTeacherDashboardData } from "@/lib/data";
+import { getCurrentUser } from "@/lib/pocketbase-server";
+
+function studentName(delivery: Awaited<ReturnType<typeof getTeacherDashboardData>>["pendingDeliveries"][number]) {
+  const student = delivery.expand?.student;
+  return [student?.firstName ?? student?.name, student?.lastName].filter(Boolean).join(" ") || "Estudiante";
+}
 
 export default async function DocentesPage() {
   const user = await getCurrentUser();
-  
   if (!user) return null;
 
-  const courses = await getTeacherCourses(user.id);
+  const dashboard = await getTeacherDashboardData(user.id);
+  const firstName = user.firstName || user.name?.split(" ")[0] || "Docente";
+  const hasPending = dashboard.pendingDeliveryCount + dashboard.pendingInquiryCount > 0;
 
   return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full">
-      {/* Welcome Header */}
-      <header className="mb-12 md:mb-24 flex flex-col md:flex-row gap-10 md:gap-20 items-start justify-between">
-        <div className="max-w-2xl">
-          <div className="flex items-center gap-3 mb-8">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] shadow-[0_0_10px_var(--color-primary)]"></span>
-            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)]">
-              Panel Docente
-            </span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-headline tracking-tight text-[var(--color-on-surface)] mb-6">
-            Hola, <span className="text-[var(--color-primary)]">{user.firstName || user.name?.split(' ')[0] || 'Docente'}</span>
-          </h1>
-          <p className="text-[var(--color-on-surface-variant)] text-lg md:text-xl leading-relaxed">
-            Bienvenido al panel docente. Selecciona uno de tus cursos para gestionar su contenido, clases y trabajos prácticos.
-          </p>
-        </div>
+    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+      <PageHeader
+        eyebrow="Panel docente"
+        title={<>Hola, <span className="text-[var(--color-primary)]">{firstName}</span></>}
+        description={hasPending
+          ? "Estos son los elementos que requieren tu atención."
+          : "Todo está al día. Podés continuar preparando el contenido de tus cursos."}
+      />
 
-        <div className="bg-[var(--color-surface-container-low)] rounded-[2rem] p-8 w-full md:min-w-[240px] md:w-auto relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.3)]">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--color-primary)]/10 blur-[40px] -z-10 rounded-full pointer-events-none"></div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--color-on-surface-variant)] mb-4">
-            Cursos Activos
-          </p>
-          <div className="flex items-center gap-4">
-            <span className="text-6xl font-headline font-bold text-[var(--color-primary)] leading-none">
-              {courses.length}
-            </span>
-            <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]">school</span>
-          </div>
-        </div>
-      </header>
+      <section aria-label="Resumen docente" className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Cursos asignados"
+          value={dashboard.courses.length}
+          icon="school"
+          href="/docentes/clases"
+          tone="primary"
+          description="Abrir clases por curso"
+        />
+        <StatCard
+          label="Entregas por revisar"
+          value={dashboard.pendingDeliveryCount}
+          icon="rate_review"
+          tone={dashboard.pendingDeliveryCount ? "warning" : "neutral"}
+          description="Sin evaluación publicada"
+        />
+        <StatCard
+          label="Consultas pendientes"
+          value={dashboard.pendingInquiryCount}
+          icon="forum"
+          tone={dashboard.pendingInquiryCount ? "warning" : "neutral"}
+          description="Ordenadas por antigüedad"
+        />
+      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {courses.length === 0 ? (
-          <div className="col-span-full bg-[var(--color-surface-container-low)] rounded-[3rem] p-16 text-center flex flex-col items-center">
-            <span className="material-symbols-outlined text-6xl opacity-50 mb-6">school</span>
-            <p className="text-[var(--color-on-surface-variant)] text-lg">No tienes cursos asignados actualmente.</p>
-          </div>
-        ) : (
-          courses.map((course) => (
-            <Link 
-              href={`/docentes/cursos/${course.id}`} 
-              key={course.id}
-              className="bg-[var(--color-surface-container-low)] hover:bg-[var(--color-surface-container)] transition-colors rounded-[2.5rem] overflow-hidden group flex flex-col h-full border border-[var(--color-outline-variant)] shadow-[0_0_30px_rgba(0,0,0,0.2)]"
-            >
-              <div className="p-8 flex-1">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-full flex items-center justify-center text-[var(--color-primary)] group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-[20px]">deployed_code</span>
-                  </div>
-                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                    course.status === 'en curso' ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]' : 
-                    course.status === 'finalizado' ? 'bg-[var(--color-on-surface-variant)]/10 text-[var(--color-on-surface-variant)]' : 
-                    'bg-[#FFB4A4]/10 text-[#FFB4A4]'
-                  }`}>
-                    {course.status || 'EN CURSO'}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-headline font-bold text-[var(--color-on-surface)] mb-4 leading-tight group-hover:text-[var(--color-primary)] transition-colors">
-                  {course.title}
-                </h3>
-                {course.description && (
-                  <div className="text-sm text-[var(--color-on-surface-variant)] line-clamp-3 leading-relaxed" dangerouslySetInnerHTML={{__html: course.description}} />
-                )}
-              </div>
-              
-              <div className="px-8 py-6 border-t border-[var(--color-outline-variant)]/30 flex justify-between items-center mt-auto">
-                <span className="text-sm font-bold text-[var(--color-on-surface)] group-hover:text-[var(--color-primary)] transition-colors">Gestionar curso</span>
-                <span className="material-symbols-outlined text-[var(--color-on-surface)] group-hover:text-[var(--color-primary)] text-xl group-hover:translate-x-2 transition-transform">arrow_forward</span>
-              </div>
+      {!hasPending ? (
+        <EmptyState
+          icon="task_alt"
+          title="Estás al día"
+          description="No hay entregas sin evaluación publicada ni consultas pendientes en tus cursos."
+          action={dashboard.courses[0] ? (
+            <Link className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-primary)] px-5 py-2.5 font-bold text-[var(--color-on-primary)]" href={`/docentes/cursos/${dashboard.courses[0].id}`}>
+              Gestionar contenido
             </Link>
-          ))
+          ) : undefined}
+        />
+      ) : (
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-8 xl:grid-cols-2">
+          <section aria-labelledby="pending-deliveries-title" className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 id="pending-deliveries-title" className="font-headline text-2xl font-bold">Entregas por revisar</h2>
+              <Badge tone="warning">{dashboard.pendingDeliveryCount} pendientes</Badge>
+            </div>
+            {dashboard.pendingDeliveries.length === 0 ? (
+              <EmptyState icon="assignment_turned_in" title="Sin entregas pendientes" description="Las evaluaciones publicadas ya no aparecen en esta lista." />
+            ) : (
+              <div className="space-y-3">
+                {dashboard.pendingDeliveries.map((delivery) => {
+                  const assignment = delivery.expand?.assignment;
+                  return (
+                    <Link key={delivery.id} href={`/docentes/cursos/${assignment?.course}/tps/${delivery.assignment}#entregas`} className="block rounded-[var(--epixum-radius-lg)] focus-visible:outline-offset-4">
+                      <Card className="transition-colors hover:bg-[var(--color-surface-container)]">
+                        <CardContent className="flex items-center justify-between gap-4 py-5">
+                          <div className="min-w-0">
+                            <p className="truncate font-bold">{assignment?.title || "Trabajo práctico"}</p>
+                            <p className="mt-1 truncate text-sm text-[var(--color-on-surface-variant)]">{studentName(delivery)} · Entregada <FormattedDate date={delivery.created} /></p>
+                          </div>
+                          <Badge tone={delivery.status === "draft" ? "info" : "warning"}>{delivery.status === "draft" ? "Borrador" : "Sin evaluar"}</Badge>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section aria-labelledby="pending-inquiries-title" className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 id="pending-inquiries-title" className="font-headline text-2xl font-bold">Consultas pendientes</h2>
+              <Badge tone="warning">{dashboard.pendingInquiryCount} pendientes</Badge>
+            </div>
+            {dashboard.pendingInquiries.length === 0 ? (
+              <EmptyState icon="forum" title="Sin consultas pendientes" description="Las consultas resueltas siguen disponibles dentro de cada curso." />
+            ) : (
+              <div className="space-y-3">
+                {dashboard.pendingInquiries.map((inquiry) => (
+                  <Link key={inquiry.id} href={`/docentes/cursos/${inquiry.course}/consultas/${inquiry.id}`} className="block rounded-[var(--epixum-radius-lg)] focus-visible:outline-offset-4">
+                    <Card className="transition-colors hover:bg-[var(--color-surface-container)]">
+                      <CardContent className="flex items-center justify-between gap-4 py-5">
+                        <div className="min-w-0">
+                          <p className="truncate font-bold">{inquiry.title}</p>
+                          <p className="mt-1 truncate text-sm text-[var(--color-on-surface-variant)]">{inquiry.expand?.course?.title || "Curso"} · <FormattedDate date={inquiry.created} showTime /></p>
+                        </div>
+                        <span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+
+      <section aria-labelledby="teacher-courses-title" className="space-y-5">
+        <div>
+          <h2 id="teacher-courses-title" className="font-headline text-2xl font-bold md:text-3xl">Tus cursos</h2>
+          <p className="mt-1 text-[var(--color-on-surface-variant)]">Contenido, participantes, consultas y acceso en un mismo contexto.</p>
+        </div>
+        {dashboard.courses.length === 0 ? (
+          <EmptyState icon="school" title="No tenés cursos asignados" description="Cuando un administrador te asigne un curso, aparecerá aquí." />
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {dashboard.courses.map((course) => (
+              <Link key={course.id} href={`/docentes/cursos/${course.id}`} className="group rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+                <Card className="flex h-full flex-col transition-colors group-hover:bg-[var(--color-surface-container)]">
+                  <CardContent className="flex flex-1 flex-col gap-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]" aria-hidden="true">deployed_code</span>
+                      <Badge tone={course.status === "en curso" ? "success" : course.status === "borrador" ? "warning" : "neutral"}>{course.status}</Badge>
+                    </div>
+                    <h3 className="font-headline text-xl font-bold group-hover:text-[var(--color-primary)]">{course.title}</h3>
+                    <div className="line-clamp-3 text-sm leading-relaxed text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: course.description || "Sin descripción." }} />
+                    <span className="mt-auto inline-flex items-center gap-2 pt-2 text-sm font-bold">Gestionar curso <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></span>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

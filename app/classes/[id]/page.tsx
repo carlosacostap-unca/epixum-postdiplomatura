@@ -1,43 +1,19 @@
-import { getClass, getLinks } from "@/lib/data";
-import { Class, Link as LinkType, Inquiry } from "@/types";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import FormattedDate from "@/components/FormattedDate";
+import { getClass } from "@/lib/data";
+import { getHomeForRole } from "@/lib/navigation";
 import { getCurrentUser } from "@/lib/pocketbase-server";
-import ClassDetailsManagement from "@/components/ClassDetailsManagement";
-import ClassDetailsStudent from "@/components/ClassDetailsStudent";
-import { getInquiries } from "@/lib/actions-inquiries";
-import InquiryList from "@/components/inquiries/InquiryList";
+import { notFound, redirect } from "next/navigation";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function ClassPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function LegacyClassPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  let classData: Class;
-  let links: LinkType[] = [];
-  let inquiries: Inquiry[] = [];
   const user = await getCurrentUser();
-  
-  try {
-    classData = await getClass(id);
-    links = await getLinks(id);
-    inquiries = await getInquiries({ classId: id });
-  } catch (e) {
-    console.error(e);
-    return notFound();
-  }
+  if (!user) redirect("/login");
 
-  const isAuthorized = user && (user.role === 'docente' || user.role === 'admin');
+  const classData = await getClass(id).catch(() => null);
+  if (!classData) notFound();
+  if (!classData.course || user.role === "admin") redirect(getHomeForRole(user.role));
 
-  if (isAuthorized) {
-    return <div className="container mx-auto p-8 min-h-screen">
-      <ClassDetailsManagement user={user} classData={classData} links={links} inquiries={inquiries} />
-    </div>;
-  }
-
-  return (
-    <div className="container mx-auto p-8 min-h-screen">
-      <ClassDetailsStudent user={user} classData={classData} links={links} inquiries={inquiries} />
-    </div>
-  );
+  const area = user.role === "docente" ? "docentes" : "estudiantes";
+  redirect(`/${area}/cursos/${classData.course}/clases/${id}`);
 }

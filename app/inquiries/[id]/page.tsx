@@ -1,51 +1,19 @@
-import { getInquiry, getInquiryResponses } from "@/lib/actions-inquiries";
+import { getInquiry } from "@/lib/actions-inquiries";
+import { getHomeForRole } from "@/lib/navigation";
 import { getCurrentUser } from "@/lib/pocketbase-server";
-import InquiryDetailsHeader from "@/components/inquiries/InquiryDetailsHeader";
-import InquiryResponseList from "@/components/inquiries/InquiryResponseList";
-import InquiryResponseForm from "@/components/inquiries/InquiryResponseForm";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function InquiryDetailPage({ params }: PageProps) {
+export default async function LegacyInquiryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  const inquiryResult = await getInquiry(id);
+  if (!user) redirect("/login");
 
-  if (!inquiryResult.success || !inquiryResult.data) {
-    notFound();
-  }
+  const result = await getInquiry(id);
+  if (!result.success || !result.data) notFound();
+  if (!result.data.course || user.role === "admin") redirect(getHomeForRole(user.role));
 
-  const inquiry = inquiryResult.data;
-  const responses = await getInquiryResponses(id);
-
-  return (
-    <div className="container mx-auto p-8 min-h-screen max-w-4xl">
-      <Link href="/inquiries" className="text-sm text-blue-600 hover:underline mb-6 inline-block">&larr; Volver a consultas</Link>
-      
-      <InquiryDetailsHeader inquiry={inquiry} currentUser={user} />
-
-      <div className="mt-10">
-        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-            <svg className="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-            Respuestas ({responses.length})
-        </h2>
-        
-        <InquiryResponseList 
-            responses={responses} 
-            currentUser={user} 
-            inquiryId={inquiry.id} 
-        />
-
-        {user && (
-            <InquiryResponseForm inquiryId={inquiry.id} />
-        )}
-      </div>
-    </div>
-  );
+  const area = user.role === "docente" ? "docentes" : "estudiantes";
+  redirect(`/${area}/cursos/${result.data.course}/consultas/${id}`);
 }
