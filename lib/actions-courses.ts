@@ -91,7 +91,7 @@ export async function createCourse(formData: FormData) {
     return record;
   } catch (error) {
     console.error('Error creating course:', error);
-    throw new Error('Failed to create course');
+    throw new Error('No pudimos crear el curso. Revisá los datos e intentá nuevamente.');
   }
 }
 
@@ -157,7 +157,7 @@ export async function updateCourse(id: string, formData: FormData) {
     return record;
   } catch (error) {
     console.error('Error updating course:', error);
-    throw new Error('Failed to update course');
+    throw new Error('No pudimos actualizar el curso. Revisá los datos e intentá nuevamente.');
   }
 }
 
@@ -170,6 +170,6 @@ export async function deleteCourse(id: string) {
     revalidateCourseSurfaces();
   } catch (error) {
     console.error('Error deleting course:', error);
-    throw new Error('Failed to delete course');
+    throw new Error('No pudimos eliminar el curso. Intentá nuevamente.');
   }
 }

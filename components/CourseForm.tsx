@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Course, User, Class, Assignment, Inquiry, CourseEnrollmentMode } from '@/types';
 import { createCourse, updateCourse } from '@/lib/actions-courses';
@@ -27,6 +27,7 @@ export default function CourseForm({
   const { notify } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const feedbackRef = useRef<HTMLDivElement>(null);
   
   // Usar estado para la descripción del RichTextEditor
   const [description, setDescription] = useState(course?.description || '');
@@ -56,6 +57,10 @@ export default function CourseForm({
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar el curso');
       setLoading(false);
+      requestAnimationFrame(() => {
+        feedbackRef.current?.focus();
+        feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
     }
   };
 
@@ -64,12 +69,6 @@ export default function CourseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8" noValidate>
-      {error && (
-        <div className="rounded-[var(--epixum-radius-md)] bg-[color-mix(in_srgb,var(--color-error)_12%,transparent)] p-4 text-sm text-[var(--color-error)]" role="alert">
-          {error}
-        </div>
-      )}
-
       <div>
         <label htmlFor="title" className={labelClass}>Título del Curso *</label>
         <input
@@ -275,6 +274,16 @@ export default function CourseForm({
       </div>
 
       <div className="flex flex-col-reverse justify-end gap-3 pt-6 sm:flex-row">
+        {error && (
+          <div
+            ref={feedbackRef}
+            className="w-full rounded-[var(--epixum-radius-md)] bg-[color-mix(in_srgb,var(--color-error)_12%,transparent)] p-4 text-sm font-medium text-[var(--color-error)] sm:mr-auto sm:w-auto sm:flex-1"
+            role="alert"
+            tabIndex={-1}
+          >
+            {error}
+          </div>
+        )}
         <Link
           href="/admin/courses"
           className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold text-[var(--color-on-surface)]"
