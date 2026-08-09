@@ -46,7 +46,8 @@ export default function CourseForm({
 
     try {
       if (isEdit) {
-        await updateCourse(course.id, formData);
+        const result = await updateCourse(course.id, formData);
+        if (!result.success) throw new Error(result.error);
         notify({ title: 'Curso actualizado', description: 'Los cambios ya están visibles.', tone: 'success' });
         router.push('/admin/courses');
       } else {
@@ -68,7 +69,7 @@ export default function CourseForm({
   const labelClass = "mb-1 block text-sm font-bold text-[var(--color-on-surface)]";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8">
       <div>
         <label htmlFor="title" className={labelClass}>Título del Curso *</label>
         <input

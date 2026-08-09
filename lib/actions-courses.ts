@@ -7,6 +7,11 @@ import { hashEnrollmentKey, validateEnrollmentKey } from './course-enrollment-ke
 import { validateInvitationPassword } from './course-invitations';
 import { hashInvitationPassword } from './course-invitation-password';
 import { createServiceClient } from './pocketbase-service';
+import { getErrorMessage } from './errors';
+
+export type UpdateCourseResult =
+  | { success: true; courseId: string }
+  | { success: false; error: string };
 
 function requireAdmin(pb: Awaited<ReturnType<typeof createServerClient>>) {
   const user = pb.authStore.model;
@@ -95,7 +100,7 @@ export async function createCourse(formData: FormData) {
   }
 }
 
-export async function updateCourse(id: string, formData: FormData) {
+async function updateCourseOrThrow(id: string, formData: FormData) {
   const pb = await createServerClient();
   requireAdmin(pb);
   const title = formData.get('title') as string;
@@ -158,6 +163,26 @@ export async function updateCourse(id: string, formData: FormData) {
   } catch (error) {
     console.error('Error updating course:', error);
     throw new Error('No pudimos actualizar el curso. Revisá los datos e intentá nuevamente.');
+  }
+}
+
+export async function updateCourse(id: string, formData: FormData): Promise<UpdateCourseResult> {
+  try {
+    const record = await updateCourseOrThrow(id, formData);
+    return { success: true, courseId: record.id };
+  } catch (error) {
+    const message = getErrorMessage(error, 'No pudimos actualizar el curso.');
+    const safeMessage =
+      message.startsWith('La clave debe') ||
+      message.startsWith('La contraseña debe') ||
+      message.startsWith('La contraseña no puede') ||
+      message.startsWith('No tienes permisos')
+        ? message
+        : message.includes('COURSE_ENROLLMENT_SECRET')
+          ? 'La seguridad de matrículas no está configurada en el servidor. Configurá COURSE_ENROLLMENT_SECRET con al menos 32 caracteres y volvé a desplegar.'
+          : 'No pudimos actualizar el curso. Revisá los datos e intentá nuevamente.';
+
+    return { success: false, error: safeMessage };
   }
 }
 

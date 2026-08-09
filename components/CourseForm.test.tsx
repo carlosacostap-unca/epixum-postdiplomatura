@@ -44,7 +44,7 @@ describe("CourseForm", () => {
 
   it("envía la actualización al presionar el botón", async () => {
     const user = userEvent.setup();
-    vi.mocked(updateCourse).mockResolvedValue(course);
+    vi.mocked(updateCourse).mockResolvedValue({ success: true, courseId: course.id });
 
     render(<ToastProvider><CourseForm course={course} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     await user.click(screen.getByRole("button", { name: "Actualizar curso" }));
@@ -55,7 +55,7 @@ describe("CourseForm", () => {
 
   it("muestra el error junto al botón cuando la actualización falla", async () => {
     const user = userEvent.setup();
-    vi.mocked(updateCourse).mockRejectedValue(new Error("No tienes permisos para administrar cursos"));
+    vi.mocked(updateCourse).mockResolvedValue({ success: false, error: "No tienes permisos para administrar cursos" });
     Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
 
     render(<ToastProvider><CourseForm course={course} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);

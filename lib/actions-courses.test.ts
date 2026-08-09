@@ -77,7 +77,22 @@ describe('modalidad administrativa del curso', () => {
 
   it.each(['docente', 'estudiante'])('rechaza cambios solicitados por rol %s', async (role) => {
     mocks.model = { id: `${role}-1`, role };
-    await expect(updateCourse('course-1', courseForm('semanal'))).rejects.toThrow('No tienes permisos');
+    await expect(updateCourse('course-1', courseForm('semanal'))).resolves.toEqual({
+      success: false,
+      error: 'No tienes permisos para administrar cursos',
+    });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it('devuelve un error accionable cuando falta el secreto de matrículas', async () => {
+    delete process.env.COURSE_ENROLLMENT_SECRET;
+    const form = courseForm('tradicional', 'invitacion_contrasena');
+    form.set('invitationPassword', 'Segura-123');
+
+    await expect(updateCourse('course-1', form)).resolves.toEqual({
+      success: false,
+      error: expect.stringContaining('COURSE_ENROLLMENT_SECRET'),
+    });
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
