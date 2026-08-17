@@ -30,6 +30,17 @@ const course: Course = {
 };
 
 describe("CourseForm", () => {
+  it("muestra contenidos deshabilitados por defecto y explica que conserva los datos", () => {
+    render(<ToastProvider><CourseForm teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    expect(screen.getByRole("checkbox", { name: /habilitar contenidos/i })).not.toBeChecked();
+    expect(screen.getByText(/contenidos y sus recursos se conservan ocultos/i)).toBeInTheDocument();
+  });
+
+  it("refleja la configuración guardada del curso", () => {
+    render(<ToastProvider><CourseForm course={{ ...course, contentsEnabled: true }} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    expect(screen.getByRole("checkbox", { name: /habilitar contenidos/i })).toBeChecked();
+  });
+
   it("muestra la modalidad por clave por defecto y permite elegir doble validación", async () => {
     const user = userEvent.setup();
     render(<ToastProvider><CourseForm teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);

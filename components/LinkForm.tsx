@@ -10,11 +10,12 @@ interface LinkFormProps {
   link?: LinkType;
   classId?: string;
   assignmentId?: string;
+  contentId?: string;
   onClose?: () => void;
   isEmbedded?: boolean;
 }
 
-export default function LinkForm({ link, classId, assignmentId, onClose, isEmbedded = false }: LinkFormProps) {
+export default function LinkForm({ link, classId, assignmentId, contentId, onClose, isEmbedded = false }: LinkFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +44,7 @@ export default function LinkForm({ link, classId, assignmentId, onClose, isEmbed
         
         if (selectedFile) {
             // Get presigned URL
-            const uploadAuth = await getResourceUploadUrl(selectedFile.name, selectedFile.type);
+            const uploadAuth = await getResourceUploadUrl(selectedFile.name, selectedFile.type, { classId, assignmentId, contentId });
             if (!uploadAuth.success || !uploadAuth.url) {
                 throw new Error(uploadAuth.error || "Error al obtener URL de subida");
             }
@@ -77,6 +78,7 @@ export default function LinkForm({ link, classId, assignmentId, onClose, isEmbed
       
       if (classId) finalFormData.append("classId", classId);
       if (assignmentId) finalFormData.append("assignmentId", assignmentId);
+      if (contentId) finalFormData.append("contentId", contentId);
 
       let result;
       if (link) {

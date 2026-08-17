@@ -26,13 +26,14 @@ vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
 import { createCourse, updateCourse } from './actions-courses';
 
-function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' | 'invitacion_contrasena') {
+function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' | 'invitacion_contrasena', contentsEnabled = false) {
   const form = new FormData();
   form.set('title', 'Curso');
   form.set('description', 'Descripción');
   form.set('status', 'en curso');
   if (mode) form.set('organizationMode', mode);
   if (enrollmentMode) form.set('enrollmentMode', enrollmentMode);
+  if (contentsEnabled) form.set('contentsEnabled', 'true');
   form.append('teachers', 'teacher-1');
   form.append('classes', 'class-1');
   form.append('assignments', 'assignment-1');
@@ -53,7 +54,15 @@ describe('modalidad administrativa del curso', () => {
 
   it('crea cursos tradicionales por defecto', async () => {
     await createCourse(courseForm());
-    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ organizationMode: 'tradicional', enrollmentMode: 'clave' }));
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ organizationMode: 'tradicional', enrollmentMode: 'clave', contentsEnabled: false }));
+  });
+
+  it('habilita contenidos solamente cuando el administrador marca la opción', async () => {
+    await createCourse(courseForm('tradicional', 'clave', true));
+    await updateCourse('course-1', courseForm('tradicional', 'clave', false));
+
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ contentsEnabled: true }));
+    expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ contentsEnabled: false }));
   });
 
   it('alterna la modalidad de matrícula sin limpiar credenciales existentes', async () => {

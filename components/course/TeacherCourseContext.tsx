@@ -6,6 +6,7 @@ export type TeacherCourseSection =
   | "resumen"
   | "clases"
   | "trabajos"
+  | "contenidos"
   | "consultas"
   | "estudiantes"
   | "acceso";
@@ -14,21 +15,26 @@ const sectionLabels: Record<TeacherCourseSection, string> = {
   resumen: "Resumen",
   clases: "Clases",
   trabajos: "Trabajos",
+  contenidos: "Contenidos",
   consultas: "Consultas",
   estudiantes: "Estudiantes",
   acceso: "Acceso",
 };
 
-function tabs(courseId: string, current: TeacherCourseSection): TabItem[] {
-  const base = `/docentes/cursos/${courseId}`;
-  return [
+function tabs(course: Course, current: TeacherCourseSection): TabItem[] {
+  const base = `/docentes/cursos/${course.id}`;
+  const items: TabItem[] = [
     { href: base, label: "Resumen", icon: "dashboard", isActive: current === "resumen" },
     { href: `${base}#clases`, label: "Clases", icon: "menu_book", isActive: current === "clases" },
     { href: `${base}#trabajos`, label: "Trabajos", icon: "assignment", isActive: current === "trabajos" },
+  ];
+  if (course.contentsEnabled) items.push({ href: `${base}/contenidos`, label: "Contenidos", icon: "library_books", isActive: current === "contenidos" });
+  items.push(
     { href: `${base}/consultas`, label: "Consultas", icon: "forum", isActive: current === "consultas" },
     { href: `${base}#estudiantes`, label: "Estudiantes", icon: "group", isActive: current === "estudiantes" },
     { href: `${base}#acceso`, label: "Acceso", icon: "key", isActive: current === "acceso" },
-  ];
+  );
+  return items;
 }
 
 function statusTone(status: Course["status"]) {
@@ -66,7 +72,7 @@ export function TeacherCourseContext({
         metadata={<Badge tone={statusTone(course.status)}>{course.status}</Badge>}
         actions={actions}
       />
-      <Tabs label={`Secciones de ${course.title}`} items={tabs(course.id, current)} />
+      <Tabs label={`Secciones de ${course.title}`} items={tabs(course, current)} />
     </div>
   );
 }
