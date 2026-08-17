@@ -39,7 +39,7 @@ export default function NewResourceForm({ courseId, classId }: NewResourceFormPr
         }
         
         // Get presigned URL
-        const uploadAuth = await getResourceUploadUrl(selectedFile.name, selectedFile.type);
+        const uploadAuth = await getResourceUploadUrl(selectedFile.name, selectedFile.type, { classId });
         if (!uploadAuth.success || !uploadAuth.url) {
             throw new Error(uploadAuth.error || "Error al obtener URL de subida");
         }

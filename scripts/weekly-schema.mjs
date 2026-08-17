@@ -1,3 +1,7 @@
+import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
+
+export { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
+
 const WEEK_VISIBILITY_RULE =
   '(status = "publicada" || (status = "programada" && publishAt != "" && publishAt <= @now))';
 
@@ -56,9 +60,6 @@ export const INQUIRY_RULES = {
     `${CONTENT_MANAGE_RULE} || (` +
     'author = @request.auth.id && course.course_enrollments_via_course.student.id ?= @request.auth.id && ' + CONTENT_VISIBILITY_RULE + ')',
 };
-
-export const COURSE_UPDATE_RULE =
-  '@request.auth.role = "admin" || (@request.auth.role = "docente" && teachers.id ?= @request.auth.id && @request.body.organizationMode:isset = false && @request.body.enrollmentMode:isset = false)';
 
 function hasField(collection, name) {
   return collection.fields.some((field) => field.name === name);

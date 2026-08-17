@@ -29,8 +29,9 @@ export interface Link extends BaseModel {
   title: string;
   url: string;
   type?: 'link' | 'file';
-  class?: string; // Relation to Class ID (optional, mutually exclusive with assignment)
-  assignment?: string; // Relation to Assignment ID (optional, mutually exclusive with class)
+  class?: string; // Relation to Class ID (optional, mutually exclusive with assignment/content)
+  assignment?: string; // Relation to Assignment ID (optional, mutually exclusive with class/content)
+  content?: string; // Relation to CourseContent ID (optional, mutually exclusive with class/assignment)
 }
 
 export interface Class extends BaseModel {
@@ -104,6 +105,7 @@ export interface Course extends BaseModel {
   status: 'borrador' | 'en curso' | 'finalizado';
   organizationMode?: CourseOrganizationMode;
   enrollmentMode?: CourseEnrollmentMode;
+  contentsEnabled?: boolean;
   enrollmentKeyHash?: string;
   invitationPasswordHash?: string;
   students?: string[]; // Relation to multiple User IDs
@@ -119,6 +121,17 @@ export interface Course extends BaseModel {
     inquiries?: Inquiry[];
     weeks?: CourseWeek[];
     invitations?: CourseEnrollmentInvitation[];
+  };
+}
+
+export interface CourseContent extends BaseModel {
+  course: string;
+  title: string;
+  description: string;
+  position: number;
+  expand?: {
+    course?: Course;
+    links?: Link[];
   };
 }
 

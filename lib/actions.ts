@@ -7,6 +7,7 @@ import { parseDeliveryFiles, type CourseWeek } from "@/types";
 import { teacherCanManageCourse } from "./teacher-scope";
 import { getErrorResponse } from "./errors";
 import { isWeekEffectivelyVisible } from "./course-weeks";
+import { getExclusiveResourceParent, resourceParentField, type ResourceParent } from "./resource-parent";
 
 type ServerPocketBase = Awaited<ReturnType<typeof createServerClient>>;
 
@@ -72,6 +73,38 @@ async function assignmentCourseId(pb: ServerPocketBase, assignmentId: string) {
   return record.course as string | undefined;
 }
 
+async function contentCourseId(pb: ServerPocketBase, contentId: string) {
+  const record = await pb.collection("course_contents").getOne(contentId, { fields: "course" });
+  return record.course as string | undefined;
+}
+
+async function canManageResourceParent(pb: ServerPocketBase, user: { id: string; role?: string }, parent: ResourceParent) {
+  const courseId = parent.type === 'class'
+    ? await classCourseId(pb, parent.id)
+    : parent.type === 'assignment'
+      ? await assignmentCourseId(pb, parent.id)
+      : await contentCourseId(pb, parent.id);
+  if (parent.type !== 'content') return { allowed: await canManageCourse(pb, user, courseId), courseId };
+  if (!courseId || user.role !== 'docente') return { allowed: false, courseId };
+  try {
+    const course = await pb.collection('courses').getOne(courseId, { fields: 'id,teachers,contentsEnabled' });
+    return { allowed: Boolean(course.contentsEnabled && course.teachers?.includes(user.id)), courseId };
+  } catch {
+    return { allowed: false, courseId };
+  }
+}
+
+async function studentCanAccessIndependentContent(pb: ServerPocketBase, user: { id: string; role?: string }, contentId: string) {
+  try {
+    const courseId = await contentCourseId(pb, contentId);
+    if (!(await studentCanAccessCourse(pb, user, courseId))) return false;
+    const course = await pb.collection('courses').getOne(courseId!, { fields: 'id,contentsEnabled' });
+    return course.contentsEnabled === true;
+  } catch {
+    return false;
+  }
+}
+
 async function validatedWeekId(pb: ServerPocketBase, courseId: string, value: FormDataEntryValue | null) {
   const weekId = typeof value === "string" ? value.trim() : "";
   if (!weekId) return null;
@@ -80,11 +113,9 @@ async function validatedWeekId(pb: ServerPocketBase, courseId: string, value: Fo
   return weekId;
 }
 
-async function linkCourseId(pb: ServerPocketBase, linkId: string) {
-  const link = await pb.collection("links").getOne(linkId, { fields: "class,assignment" });
-  if (link.class) return classCourseId(pb, link.class as string);
-  if (link.assignment) return assignmentCourseId(pb, link.assignment as string);
-  return undefined;
+async function linkParent(pb: ServerPocketBase, linkId: string) {
+  const link = await pb.collection('links').getOne(linkId, { fields: 'class,assignment,content' });
+  return getExclusiveResourceParent({ classId: link.class, assignmentId: link.assignment, contentId: link.content });
 }
 
 function getStorageKeyFromUrl(fileUrl: string) {
@@ -123,7 +154,7 @@ export async function getUploadUrl(filename: string, fileType: string) {
   }
 }
 
-export async function getResourceUploadUrl(filename: string, fileType: string) {
+export async function getResourceUploadUrl(filename: string, fileType: string, parentIds?: { classId?: string; assignmentId?: string; contentId?: string }) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
@@ -132,6 +163,10 @@ export async function getResourceUploadUrl(filename: string, fileType: string) {
   }
 
   try {
+    const parent = getExclusiveResourceParent(parentIds || {});
+    if (!parent) return { success: false, error: 'Debe indicar exactamente un contenido padre' };
+    const access = await canManageResourceParent(pb, user, parent);
+    if (!access.allowed) return { success: false, error: 'No tienes permisos para subir recursos en este curso' };
     const { url, fields } = await getPresignedUploadUrl(filename, fileType);
     return { success: true, url, fields };
   } catch (error) {
@@ -150,31 +185,19 @@ export async function getResourceDownloadUrl(linkId: string) {
 
   try {
     const link = await pb.collection('links').getOne(linkId);
-
-    if (user.role === "docente") {
-      const courseId = link.class
-        ? await classCourseId(pb, link.class)
-        : link.assignment
-          ? await assignmentCourseId(pb, link.assignment)
-          : undefined;
-      if (!(await canManageCourse(pb, user, courseId))) {
-        return { success: false, error: "No autorizado para este curso" };
-      }
-    }
-    if (user.role === "estudiante") {
-      const courseId = link.class
-        ? await classCourseId(pb, link.class)
-        : link.assignment
-          ? await assignmentCourseId(pb, link.assignment)
-          : undefined;
-      const contentAllowed = link.class
-        ? await studentCanAccessContent(pb, user, "classes", link.class)
-        : link.assignment
-          ? await studentCanAccessContent(pb, user, "assignments", link.assignment)
-          : false;
-      if (!courseId || !contentAllowed) {
-        return { success: false, error: "No autorizado para este curso" };
-      }
+    const parent = getExclusiveResourceParent({ classId: link.class, assignmentId: link.assignment, contentId: link.content });
+    if (!parent) return { success: false, error: 'El recurso no tiene un padre válido' };
+    const teacherAllowed = user.role === 'docente' && (await canManageResourceParent(pb, user, parent)).allowed;
+    const adminAllowed = user.role === 'admin' && parent.type !== 'content' && (await canManageResourceParent(pb, user, parent)).allowed;
+    const studentAllowed = user.role === 'estudiante' && (
+      parent.type === 'class'
+        ? await studentCanAccessContent(pb, user, 'classes', parent.id)
+        : parent.type === 'assignment'
+          ? await studentCanAccessContent(pb, user, 'assignments', parent.id)
+          : await studentCanAccessIndependentContent(pb, user, parent.id)
+    );
+    if (!teacherAllowed && !adminAllowed && !studentAllowed) {
+      return { success: false, error: 'No autorizado para este curso' };
     }
 
     // Extract key from url
@@ -652,14 +675,14 @@ export async function createLink(formData: FormData) {
   const type = formData.get('type') as 'link' | 'file' || 'link';
   const classId = formData.get('classId') as string;
   const assignmentId = formData.get('assignmentId') as string;
+  const contentId = formData.get('contentId') as string;
+  const parent = getExclusiveResourceParent({ classId, assignmentId, contentId });
 
-  if (!title || !url || (!classId && !assignmentId)) {
-     return { success: false, error: 'Title, URL and Parent ID are required' };
+  if (!title || !url || !parent) {
+     return { success: false, error: 'Título, URL y exactamente un padre son obligatorios' };
   }
-  const scopedCourseId = classId
-    ? await classCourseId(pb, classId).catch(() => undefined)
-    : await assignmentCourseId(pb, assignmentId).catch(() => undefined);
-  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+  const access = await canManageResourceParent(pb, user, parent).catch(() => ({ allowed: false, courseId: undefined }));
+  if (!access.allowed) {
     return { success: false, error: "No tienes permisos para gestionar recursos en este curso" };
   }
 
@@ -669,8 +692,7 @@ export async function createLink(formData: FormData) {
       url,
       type,
     };
-    if (classId) data.class = classId;
-    if (assignmentId) data.assignment = assignmentId;
+    data[resourceParentField(parent)] = parent.id;
     
     await pb.collection('links').create(data);
     
@@ -679,6 +701,10 @@ export async function createLink(formData: FormData) {
       revalidatePath('/docentes', 'layout'); // Revalidate all teacher routes
     }
     if (assignmentId) revalidatePath(`/assignments/${assignmentId}`);
+    if (contentId && access.courseId) {
+      revalidatePath(`/docentes/cursos/${access.courseId}/contenidos/${contentId}`);
+      revalidatePath(`/estudiantes/cursos/${access.courseId}/contenidos/${contentId}`);
+    }
     
     return { success: true };
   } catch (error) {
@@ -694,8 +720,10 @@ export async function updateLink(linkId: string, formData: FormData) {
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
-  const scopedCourseId = await linkCourseId(pb, linkId).catch(() => undefined);
-  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+  const parent = await linkParent(pb, linkId).catch(() => null);
+  if (!parent) return { success: false, error: 'El recurso no tiene un padre válido' };
+  const access = await canManageResourceParent(pb, user, parent).catch(() => ({ allowed: false, courseId: undefined }));
+  if (!access.allowed) {
     return { success: false, error: "No tienes permisos para gestionar este recurso" };
   }
 
@@ -704,6 +732,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   const type = formData.get('type') as 'link' | 'file';
   const classId = formData.get('classId') as string;
   const assignmentId = formData.get('assignmentId') as string;
+  const contentId = formData.get('contentId') as string;
 
   try {
     const data: Record<string, unknown> = {
@@ -719,6 +748,10 @@ export async function updateLink(linkId: string, formData: FormData) {
       revalidatePath('/docentes', 'layout');
     }
     if (assignmentId) revalidatePath(`/assignments/${assignmentId}`);
+    if (contentId && access.courseId) {
+      revalidatePath(`/docentes/cursos/${access.courseId}/contenidos/${contentId}`);
+      revalidatePath(`/estudiantes/cursos/${access.courseId}/contenidos/${contentId}`);
+    }
     
     return { success: true };
   } catch (error) {
@@ -727,15 +760,17 @@ export async function updateLink(linkId: string, formData: FormData) {
   }
 }
 
-export async function deleteLink(linkId: string, parentId?: string, parentType?: 'class' | 'assignment') {
+export async function deleteLink(linkId: string, parentId?: string, parentType?: 'class' | 'assignment' | 'content') {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
   if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
     throw new Error("Unauthorized");
   }
-  const scopedCourseId = await linkCourseId(pb, linkId).catch(() => undefined);
-  if (!(await canManageCourse(pb, user, scopedCourseId))) {
+  const parent = await linkParent(pb, linkId).catch(() => null);
+  if (!parent) return { success: false, error: 'El recurso no tiene un padre válido' };
+  const access = await canManageResourceParent(pb, user, parent).catch(() => ({ allowed: false, courseId: undefined }));
+  if (!access.allowed) {
     return { success: false, error: "No tienes permisos para gestionar este recurso" };
   }
 
@@ -748,6 +783,10 @@ export async function deleteLink(linkId: string, parentId?: string, parentType?:
           revalidatePath('/docentes', 'layout'); // Revalidate all teacher routes
         }
         if (parentType === 'assignment') revalidatePath(`/assignments/${parentId}`);
+        if (parentType === 'content' && access.courseId) {
+          revalidatePath(`/docentes/cursos/${access.courseId}/contenidos/${parentId}`);
+          revalidatePath(`/estudiantes/cursos/${access.courseId}/contenidos/${parentId}`);
+        }
     }
     // Si no se pasaron parentId/parentType pero igual queremos asegurar que se actualice la UI docente
     revalidatePath('/docentes', 'layout');

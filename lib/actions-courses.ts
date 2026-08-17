@@ -26,6 +26,10 @@ function parseEnrollmentMode(value: FormDataEntryValue | null) {
   return value === 'invitacion_contrasena' ? 'invitacion_contrasena' as const : 'clave' as const;
 }
 
+function parseContentsEnabled(value: FormDataEntryValue | null) {
+  return value === 'true' || value === 'on';
+}
+
 function revalidateCourseSurfaces(courseId?: string) {
   revalidatePath('/admin');
   revalidatePath('/admin/courses');
@@ -44,6 +48,7 @@ export async function createCourse(formData: FormData) {
   const status = formData.get('status') as 'borrador' | 'en curso' | 'finalizado';
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const enrollmentMode = parseEnrollmentMode(formData.get('enrollmentMode'));
+  const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   
   if (startDate && !startDate.includes('T')) {
     startDate = `${startDate}T12:00:00.000Z`;
@@ -68,6 +73,7 @@ export async function createCourse(formData: FormData) {
     status: status || 'borrador',
     organizationMode,
     enrollmentMode,
+    contentsEnabled,
     teachers,
     classes,
     assignments,
@@ -110,6 +116,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
   const status = formData.get('status') as 'borrador' | 'en curso' | 'finalizado';
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const enrollmentMode = parseEnrollmentMode(formData.get('enrollmentMode'));
+  const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   
   if (startDate && !startDate.includes('T')) {
     startDate = `${startDate}T12:00:00.000Z`;
@@ -134,6 +141,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
     status: status || 'borrador',
     organizationMode,
     enrollmentMode,
+    contentsEnabled,
     teachers,
     classes,
     assignments,
