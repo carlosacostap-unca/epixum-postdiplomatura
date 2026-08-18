@@ -3,7 +3,12 @@
 import { createServerClient } from "@/lib/pocketbase-server";
 import { revalidatePath } from "next/cache";
 import { getPresignedUploadUrl, getPresignedDownloadUrl, configureBucketCors } from "./s3";
-import { parseDeliveryFiles, type CourseWeek } from "@/types";
+import {
+  isValidDeliveryUrl,
+  parseDeliverySubmission,
+  serializeDeliveryUrl,
+  type CourseWeek,
+} from "@/types";
 import { teacherCanManageCourse } from "./teacher-scope";
 import { getErrorResponse } from "./errors";
 import { isWeekEffectivelyVisible } from "./course-weeks";
@@ -250,10 +255,11 @@ export async function getDeliveryDownloadUrl(deliveryId: string) {
       }
     }
 
-    // Extract key from repositoryUrl
-    // Assuming repositoryUrl is like https://endpoint/bucket/filename.zip
-    const url = new URL(delivery.repositoryUrl);
-    const key = url.pathname.split('/').pop();
+    const submission = parseDeliverySubmission(delivery.repositoryUrl);
+    if (submission.type !== 'files') {
+      return { success: false, error: 'Esta entrega corresponde a un enlace externo' };
+    }
+    const key = submission.files[0] ? getStorageKeyFromUrl(submission.files[0].url) : '';
 
     if (!key) {
         return { success: false, error: 'Invalid file key' };
@@ -923,6 +929,86 @@ export async function updateDeliveryWithFiles(deliveryId: string, courseId: stri
   }
 }
 
+export async function createDeliveryWithUrl(assignmentId: string, courseId: string, value: string) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+  const url = value.trim();
+
+  if (!user || user.role !== 'estudiante') {
+    return { success: false, error: 'No autorizado: Solo estudiantes pueden entregar' };
+  }
+
+  if (!assignmentId || !courseId || !isValidDeliveryUrl(url)) {
+    return { success: false, error: 'Ingresá una URL absoluta que comience con http:// o https://' };
+  }
+
+  try {
+    const assignment = await pb.collection('assignments').getOne(assignmentId);
+    if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, 'assignments', assignmentId))) {
+      return { success: false, error: 'No estás matriculado en este curso' };
+    }
+    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+      return { success: false, error: 'El plazo de entrega ha finalizado' };
+    }
+
+    await pb.collection('deliveries').create({
+      assignment: assignmentId,
+      student: user.id,
+      repositoryUrl: serializeDeliveryUrl(url),
+    });
+
+    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
+    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to create delivery with URL:', error);
+    if (String(error).toLowerCase().includes('unique')) {
+      return { success: false, error: 'Ya enviaste una entrega para este trabajo práctico' };
+    }
+    return { success: false, error: 'Error al guardar la entrega' };
+  }
+}
+
+export async function updateDeliveryWithUrl(deliveryId: string, courseId: string, assignmentId: string, value: string) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+  const url = value.trim();
+
+  if (!user || user.role !== 'estudiante') {
+    return { success: false, error: 'No autorizado' };
+  }
+
+  if (!deliveryId || !assignmentId || !courseId || !isValidDeliveryUrl(url)) {
+    return { success: false, error: 'Ingresá una URL absoluta que comience con http:// o https://' };
+  }
+
+  try {
+    const delivery = await pb.collection('deliveries').getOne(deliveryId);
+    if (delivery.student !== user.id || delivery.assignment !== assignmentId) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    const assignment = await pb.collection('assignments').getOne(delivery.assignment);
+    if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, 'assignments', assignmentId))) {
+      return { success: false, error: 'No estás matriculado en este curso' };
+    }
+    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+      return { success: false, error: 'El plazo de entrega ha finalizado' };
+    }
+
+    await pb.collection('deliveries').update(deliveryId, {
+      repositoryUrl: serializeDeliveryUrl(url),
+    });
+
+    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
+    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update delivery with URL:', error);
+    return { success: false, error: 'Error al actualizar la entrega' };
+  }
+}
+
 export async function getStudentDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
@@ -932,7 +1018,9 @@ export async function getStudentDeliveryFileDownloadUrl(deliveryId: string, file
     const delivery = await pb.collection("deliveries").getOne(deliveryId);
     if (delivery.student !== user.id) return { success: false, error: "No autorizado" };
     if (!(await studentCanAccessContent(pb, user, "assignments", delivery.assignment))) return { success: false, error: "No autorizado para este curso" };
-    const file = parseDeliveryFiles(delivery.repositoryUrl)[fileIndex];
+    const submission = parseDeliverySubmission(delivery.repositoryUrl);
+    if (submission.type !== 'files') return { success: false, error: 'Esta entrega corresponde a un enlace externo' };
+    const file = submission.files[fileIndex];
     if (!file?.url) return { success: false, error: "Archivo de entrega inválido" };
     const key = getStorageKeyFromUrl(file.url);
     if (!key) return { success: false, error: 'Clave de archivo inválida' };
@@ -958,8 +1046,11 @@ export async function getTeacherDeliveryFileDownloadUrl(deliveryId: string, file
     if (!(await canManageCourse(pb, user, courseId))) {
       return { success: false, error: "No autorizado para este curso" };
     }
-    const files = parseDeliveryFiles(delivery.repositoryUrl);
-    const file = files[fileIndex];
+    const submission = parseDeliverySubmission(delivery.repositoryUrl);
+    if (submission.type !== 'files') {
+      return { success: false, error: 'Esta entrega corresponde a un enlace externo' };
+    }
+    const file = submission.files[fileIndex];
 
     if (!file?.url) {
       return { success: false, error: 'Archivo de entrega inválido' };

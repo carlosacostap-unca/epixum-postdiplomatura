@@ -14,7 +14,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { getTeacherDeliveryFileDownloadUrl, updateDeliveryEvaluation } from "@/lib/actions";
-import { Delivery, parseDeliveryFiles } from "@/types";
+import { Delivery, parseDeliverySubmission } from "@/types";
 
 type ReviewFilter = "all" | "pending" | "draft" | "published";
 
@@ -97,7 +97,8 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
         <div className="space-y-4">
           {filtered.map((delivery) => {
             const student = delivery.expand?.student;
-            const files = parseDeliveryFiles(delivery.repositoryUrl);
+            const submission = parseDeliverySubmission(delivery.repositoryUrl);
+            const files = submission.type === "files" ? submission.files : [];
             const isExpanded = expandedDelivery === delivery.id;
             const state = reviewStatus(delivery);
             const studentLabel = [student?.firstName || student?.name, student?.lastName].filter(Boolean).join(" ") || "Estudiante";
@@ -107,7 +108,7 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
                 <button type="button" aria-expanded={isExpanded} aria-controls={`delivery-${delivery.id}`} onClick={() => setExpandedDelivery(isExpanded ? null : delivery.id)} className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-[var(--color-surface-container)] md:p-6">
                   <div className="flex min-w-0 items-center gap-4">
                     <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{studentLabel.charAt(0).toUpperCase()}</span>
-                    <span className="min-w-0"><span className="block truncate font-bold">{studentLabel}</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">{files.length} {files.length === 1 ? "archivo" : "archivos"} · <FormattedDate date={delivery.created} showTime /></span></span>
+                    <span className="min-w-0"><span className="block truncate font-bold">{studentLabel}</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">{submission.type === "url" ? "Enlace" : `${files.length} ${files.length === 1 ? "archivo" : "archivos"}`} · <FormattedDate date={delivery.created} showTime /></span></span>
                   </div>
                   <span className="flex shrink-0 items-center gap-3"><Badge tone={statusCopy[state].tone}>{statusCopy[state].label}</Badge><span className={`material-symbols-outlined transition-transform ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true">expand_more</span></span>
                 </button>
@@ -115,16 +116,20 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
                 {isExpanded && (
                   <div id={`delivery-${delivery.id}`} className="space-y-7 border-t border-[var(--color-outline-variant)] p-5 md:p-6">
                     <section aria-labelledby={`files-${delivery.id}`}>
-                      <h3 id={`files-${delivery.id}`} className="text-sm font-bold uppercase tracking-wide text-[var(--color-on-surface-variant)]">Archivos entregados</h3>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        {files.map((file, index) => <Button key={`${file.url}-${index}`} variant="secondary" isPending={downloadingFile === `${delivery.id}:${index}`} pendingLabel="Preparando…" leadingIcon={<span className="material-symbols-outlined text-lg">download</span>} onClick={() => download(delivery.id, index, file.name)} className="min-w-0 justify-start"><span className="truncate">{file.name}</span></Button>)}
-                      </div>
+                      <h3 id={`files-${delivery.id}`} className="text-sm font-bold uppercase tracking-wide text-[var(--color-on-surface-variant)]">{submission.type === "url" ? "Enlace entregado" : "Archivos entregados"}</h3>
+                      {submission.type === "url" ? (
+                        <a href={submission.url} target="_blank" rel="noopener noreferrer" className="mt-3 flex min-h-11 items-center gap-3 rounded-[var(--epixum-radius-pill)] bg-[var(--color-surface-container-highest)] px-5 py-2.5 text-sm font-bold hover:text-[var(--color-primary)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span><span className="truncate">{submission.url}</span></a>
+                      ) : (
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {files.map((file, index) => <Button key={`${file.url}-${index}`} variant="secondary" isPending={downloadingFile === `${delivery.id}:${index}`} pendingLabel="Preparando…" leadingIcon={<span className="material-symbols-outlined text-lg">download</span>} onClick={() => download(delivery.id, index, file.name)} className="min-w-0 justify-start"><span className="truncate">{file.name}</span></Button>)}
+                        </div>
+                      )}
                       <Link
                         href={`/assignments/${assignmentId}/deliveries/${delivery.id}`}
                         className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 py-2.5 text-sm font-bold hover:text-[var(--color-primary)]"
                       >
-                        <span className="material-symbols-outlined text-lg" aria-hidden="true">auto_awesome</span>
-                        Abrir detalle y preevaluación con IA
+                        <span className="material-symbols-outlined text-lg" aria-hidden="true">{submission.type === "url" ? "rate_review" : "auto_awesome"}</span>
+                        {submission.type === "url" ? "Abrir detalle y evaluación" : "Abrir detalle y preevaluación con IA"}
                       </Link>
                     </section>
                     <FeedbackForm delivery={delivery} courseId={courseId} assignmentId={assignmentId} />

@@ -6,6 +6,7 @@ import FormattedDate from "@/components/FormattedDate";
 import DownloadButtonClient from './DownloadButtonClient';
 import AIPreevaluationClient from './AIPreevaluationClient';
 import Image from "next/image";
+import { parseDeliverySubmission } from "@/types";
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +33,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
 
   const student = delivery.expand?.student;
   const pbUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL?.replace(/\/$/, "") || "";
+  const submission = parseDeliverySubmission(delivery.repositoryUrl);
 
   return (
     <div className="container mx-auto p-8 min-h-screen max-w-4xl">
@@ -89,39 +91,42 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
               )}
             </div>
 
-            {/* Delivery File */}
             <div className="flex-1">
               <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-700 pb-2">
-                Archivo Entregado
+                {submission.type === "url" ? "Enlace entregado" : "Archivo entregado"}
               </h2>
               <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
                 <div className="flex items-center gap-3 mb-4">
-                  <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <div>
-                    <div className="font-medium text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]" title={delivery.repositoryUrl}>
-                      {delivery.repositoryUrl || "Sin archivo"}
+                  <span className="material-symbols-outlined text-3xl text-blue-500" aria-hidden="true">{submission.type === "url" ? "link" : "description"}</span>
+                  <div className="min-w-0">
+                    <div className="max-w-[240px] truncate font-medium text-zinc-900 dark:text-zinc-100" title={submission.type === "url" ? submission.url : submission.files[0]?.name}>
+                      {submission.type === "url" ? submission.url : submission.files[0]?.name || "Sin archivo"}
                     </div>
-                    <div className="text-xs text-zinc-500">ZIP entregado</div>
+                    <div className="text-xs text-zinc-500">{submission.type === "url" ? "URL externa" : `${submission.files.length} ${submission.files.length === 1 ? "archivo" : "archivos"}`}</div>
                   </div>
                 </div>
-                
-                <DownloadButtonClient deliveryId={delivery.id} />
+                {submission.type === "url" ? (
+                  <a href={submission.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)] hover:brightness-110"><span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span>Abrir enlace</a>
+                ) : (
+                  <DownloadButtonClient deliveryId={delivery.id} />
+                )}
               </div>
             </div>
           </div>
 
-          {/* AI Preevaluation Section */}
-          <AIPreevaluationClient 
-            assignmentId={assignment.id} 
-            deliveryId={delivery.id} 
-            initialPrompt={assignment.systemPrompt || ''}
-            initialGrade={delivery.grade}
-            initialFeedback={delivery.feedback}
-            initialVerdict={delivery.verdict}
-            initialStatus={delivery.status}
-          />
+          {submission.type === "files" && submission.files.length > 0 ? (
+            <AIPreevaluationClient
+              assignmentId={assignment.id}
+              deliveryId={delivery.id}
+              initialPrompt={assignment.systemPrompt || ''}
+              initialGrade={delivery.grade}
+              initialFeedback={delivery.feedback}
+              initialVerdict={delivery.verdict}
+              initialStatus={delivery.status}
+            />
+          ) : submission.type === "url" ? (
+            <p className="mt-8 rounded-lg bg-zinc-50 p-4 text-sm text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300">La preevaluación con IA solo está disponible para entregas de archivos. Podés evaluar este enlace desde la lista de entregas del trabajo práctico.</p>
+          ) : null}
         </div>
       </div>
     </div>

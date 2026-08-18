@@ -69,10 +69,14 @@ export interface DeliveryFile {
   url: string;
 }
 
+export type DeliverySubmission =
+  | { type: 'files'; files: DeliveryFile[] }
+  | { type: 'url'; url: string };
+
 export interface Delivery extends BaseModel {
   assignment: string;
   student: string;
-  repositoryUrl: string; // JSON array string of DeliveryFile[] or legacy single URL
+  repositoryUrl: string; // JSON DeliverySubmission data or a legacy file reference
   grade?: number;
   feedback?: string;
   verdict?: 'Aprobado' | 'Corregir y reenviar';
@@ -82,19 +86,58 @@ export interface Delivery extends BaseModel {
   };
 }
 
-// Helper to parse delivery files from repositoryUrl field
-export function parseDeliveryFiles(repositoryUrl: string): DeliveryFile[] {
-  if (!repositoryUrl) return [];
+export function isValidDeliveryUrl(value: string): boolean {
   try {
-    if (repositoryUrl.trimStart().startsWith('[')) {
-      return JSON.parse(repositoryUrl) as DeliveryFile[];
-    }
-    // Legacy: single URL – extract filename from URL
-    const name = decodeURIComponent(repositoryUrl.split('/').pop() || 'archivo.zip');
-    return [{ name, url: repositoryUrl }];
+    const parsed = new URL(value.trim());
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
-    return [];
+    return false;
   }
+}
+
+export function serializeDeliveryUrl(value: string): string {
+  const url = value.trim();
+  if (!isValidDeliveryUrl(url)) {
+    throw new Error('La URL debe ser absoluta y comenzar con http:// o https://');
+  }
+  return JSON.stringify({ type: 'url', url });
+}
+
+export function parseDeliverySubmission(repositoryUrl: string): DeliverySubmission {
+  if (!repositoryUrl) return { type: 'files', files: [] };
+  try {
+    const parsed: unknown = JSON.parse(repositoryUrl);
+    if (Array.isArray(parsed)) {
+      const files = parsed.filter((item): item is DeliveryFile => (
+        typeof item === 'object'
+        && item !== null
+        && typeof (item as DeliveryFile).name === 'string'
+        && typeof (item as DeliveryFile).url === 'string'
+      ));
+      return { type: 'files', files };
+    }
+    if (
+      typeof parsed === 'object'
+      && parsed !== null
+      && (parsed as { type?: unknown }).type === 'url'
+      && typeof (parsed as { url?: unknown }).url === 'string'
+      && isValidDeliveryUrl((parsed as { url: string }).url)
+    ) {
+      return { type: 'url', url: (parsed as { url: string }).url };
+    }
+    return { type: 'files', files: [] };
+  } catch {
+    // Legacy values are stored as a single file URL instead of JSON.
+  }
+
+  const name = decodeURIComponent(repositoryUrl.split('/').pop() || 'archivo.zip');
+  return { type: 'files', files: [{ name, url: repositoryUrl }] };
+}
+
+// Compatibility helper for existing file download consumers.
+export function parseDeliveryFiles(repositoryUrl: string): DeliveryFile[] {
+  const submission = parseDeliverySubmission(repositoryUrl);
+  return submission.type === 'files' ? submission.files : [];
 }
 
 export interface Course extends BaseModel {
