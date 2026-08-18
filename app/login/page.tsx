@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import NonGmailAccountGuidance from "@/components/NonGmailAccountGuidance";
 import pb from "@/lib/pocketbase";
 import { setAuthCookieAndRedirect } from "@/lib/actions-auth";
 
@@ -126,6 +127,7 @@ export default function LoginPage() {
             </div>
           </button>
 
+          <NonGmailAccountGuidance />
         </div>
       </div>
     </div>
