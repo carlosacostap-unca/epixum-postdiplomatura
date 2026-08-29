@@ -34,6 +34,12 @@ describe("CourseForm", () => {
     render(<ToastProvider><CourseForm teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     expect(screen.getByRole("checkbox", { name: /habilitar contenidos/i })).not.toBeChecked();
     expect(screen.getByText(/contenidos y sus recursos se conservan ocultos/i)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /habilitar preevaluación asistida por ia/i })).not.toBeChecked();
+  });
+
+  it("refleja la habilitación administrativa de IA guardada", () => {
+    render(<ToastProvider><CourseForm course={{ ...course, aiPreevaluationEnabled: true }} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    expect(screen.getByRole("checkbox", { name: /habilitar preevaluación asistida por ia/i })).toBeChecked();
   });
 
   it("refleja la configuración guardada del curso", () => {

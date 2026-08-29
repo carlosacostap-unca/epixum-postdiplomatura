@@ -147,6 +147,25 @@ export default function CourseForm({
       </div>
 
       <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
+        <label className="flex cursor-pointer items-start gap-3" htmlFor="aiPreevaluationEnabled">
+          <input
+            type="checkbox"
+            id="aiPreevaluationEnabled"
+            name="aiPreevaluationEnabled"
+            value="true"
+            defaultChecked={course?.aiPreevaluationEnabled ?? false}
+            className="mt-1 size-5 rounded border-[var(--color-outline)] text-[var(--color-primary)]"
+          />
+          <span>
+            <span className="block text-sm font-bold text-[var(--color-on-surface)]">Habilitar preevaluación asistida por IA</span>
+            <span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">
+              Los docentes podrán configurar cada TP para analizar entregas de repositorios públicos de GitHub. Deshabilitarla conserva configuraciones e intentos previos.
+            </span>
+          </span>
+        </label>
+      </div>
+
+      <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
         <label className="flex cursor-pointer items-start gap-3" htmlFor="contentsEnabled">
           <input
             type="checkbox"

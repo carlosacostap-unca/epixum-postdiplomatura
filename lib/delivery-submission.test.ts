@@ -38,6 +38,19 @@ describe('delivery submissions', () => {
     expect(parseDeliveryFiles(serialized)).toEqual([]);
   });
 
+  it('mantiene un snapshot GitHub versionado sin romper el sobre URL anterior', () => {
+    const serialized = serializeDeliveryUrl('https://github.com/epixum/trabajo', {
+      provider: 'github',
+      repositoryFullName: 'epixum/trabajo',
+      commitSha: 'a'.repeat(40),
+      commitCapturedAt: '2026-08-22T12:00:00.000Z',
+      captureSource: 'student-submission',
+    });
+    expect(parseDeliverySubmission(serialized)).toMatchObject({
+      type: 'url', provider: 'github', repositoryFullName: 'epixum/trabajo', commitSha: 'a'.repeat(40),
+    });
+  });
+
   it('rechaza la serialización de protocolos no permitidos', () => {
     expect(() => serializeDeliveryUrl('ftp://example.com/entrega')).toThrow(
       'La URL debe ser absoluta y comenzar con http:// o https://',

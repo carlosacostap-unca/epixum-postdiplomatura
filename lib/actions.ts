@@ -6,13 +6,16 @@ import { getPresignedUploadUrl, getPresignedDownloadUrl, configureBucketCors } f
 import {
   isValidDeliveryUrl,
   parseDeliverySubmission,
-  serializeDeliveryUrl,
+  type AIVerdict,
   type CourseWeek,
 } from "@/types";
 import { teacherCanManageCourse } from "./teacher-scope";
 import { getErrorResponse } from "./errors";
 import { isWeekEffectivelyVisible } from "./course-weeks";
 import { getExclusiveResourceParent, resourceParentField, type ResourceParent } from "./resource-parent";
+import { serializeDeliveryUrlForAssignment } from "./delivery-github";
+import { GithubRepositoryError } from "./github-repository";
+import { createServiceClient } from "./pocketbase-service";
 
 type ServerPocketBase = Awaited<ReturnType<typeof createServerClient>>;
 
@@ -951,10 +954,11 @@ export async function createDeliveryWithUrl(assignmentId: string, courseId: stri
       return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
+    const repositoryUrl = await serializeDeliveryUrlForAssignment(assignmentId, courseId, url, 'student-submission');
     await pb.collection('deliveries').create({
       assignment: assignmentId,
       student: user.id,
-      repositoryUrl: serializeDeliveryUrl(url),
+      repositoryUrl,
     });
 
     revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
@@ -964,6 +968,9 @@ export async function createDeliveryWithUrl(assignmentId: string, courseId: stri
     console.error('Failed to create delivery with URL:', error);
     if (String(error).toLowerCase().includes('unique')) {
       return { success: false, error: 'Ya enviaste una entrega para este trabajo práctico' };
+    }
+    if (error instanceof GithubRepositoryError || (error instanceof Error && error.message.startsWith('Este trabajo requiere'))) {
+      return { success: false, error: error.message };
     }
     return { success: false, error: 'Error al guardar la entrega' };
   }
@@ -996,8 +1003,9 @@ export async function updateDeliveryWithUrl(deliveryId: string, courseId: string
       return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
+    const repositoryUrl = await serializeDeliveryUrlForAssignment(assignmentId, courseId, url, 'student-update');
     await pb.collection('deliveries').update(deliveryId, {
-      repositoryUrl: serializeDeliveryUrl(url),
+      repositoryUrl,
     });
 
     revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
@@ -1005,7 +1013,7 @@ export async function updateDeliveryWithUrl(deliveryId: string, courseId: string
     return { success: true };
   } catch (error) {
     console.error('Failed to update delivery with URL:', error);
-    return { success: false, error: 'Error al actualizar la entrega' };
+    return { success: false, error: error instanceof GithubRepositoryError || (error instanceof Error && error.message.startsWith('Este trabajo requiere')) ? error.message : 'Error al actualizar la entrega' };
   }
 }
 
@@ -1113,7 +1121,7 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
   }
 }
 
-export async function updateDeliveryEvaluation(deliveryId: string, grade: number, feedback: string, verdict: 'Aprobado' | 'Corregir y reenviar' | undefined, status: 'draft' | 'published') {
+export async function updateDeliveryEvaluation(deliveryId: string, grade: number | null, feedback: string, verdict: AIVerdict | undefined, status: 'draft' | 'published', attemptId?: string) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
@@ -1124,12 +1132,23 @@ export async function updateDeliveryEvaluation(deliveryId: string, grade: number
   if (!deliveryId || deliveryId.length !== 15) {
     return { success: false, error: 'Invalid delivery ID' };
   }
+  if (grade !== null && !Number.isFinite(grade)) return { success: false, error: 'La nota no es válida' };
+  if (verdict && !['Aprobado', 'Desaprobado', 'Corregir y reenviar'].includes(verdict)) return { success: false, error: 'El veredicto no es válido' };
+  if (status === 'published' && (!feedback.trim() || !verdict)) return { success: false, error: 'La publicación requiere devolución y veredicto' };
 
   try {
     const delivery = await pb.collection('deliveries').getOne(deliveryId);
     const courseId = await assignmentCourseId(pb, delivery.assignment);
     if (!(await canManageCourse(pb, user, courseId))) {
       return { success: false, error: "No autorizado para evaluar esta entrega" };
+    }
+    let attempt: { id: string; delivery: string; status: string } | null = null;
+    let servicePb: Awaited<ReturnType<typeof createServiceClient>> | null = null;
+    if (attemptId) {
+      servicePb = await createServiceClient();
+      const selectedAttempt = await servicePb.collection('ai_preevaluations').getOne<{ id: string; delivery: string; status: string }>(attemptId, { fields: 'id,delivery,status' });
+      if (selectedAttempt.delivery !== deliveryId || selectedAttempt.status !== 'completed') return { success: false, error: 'La sugerencia de IA no corresponde a esta entrega' };
+      attempt = selectedAttempt;
     }
     
     await pb.collection('deliveries').update(deliveryId, {
@@ -1138,6 +1157,13 @@ export async function updateDeliveryEvaluation(deliveryId: string, grade: number
       verdict,
       status
     });
+    if (attempt && servicePb) {
+      await servicePb.collection('ai_preevaluations').update(attempt.id, {
+        adoptedAt: new Date().toISOString(),
+        adoptedBy: user.id,
+        adoptedAs: status,
+      });
+    }
     
     revalidatePath(`/assignments/${delivery.assignment}`);
     revalidatePath(`/assignments/${delivery.assignment}/deliveries/${deliveryId}`);

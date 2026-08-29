@@ -6,7 +6,11 @@ import FormattedDate from "@/components/FormattedDate";
 import DownloadButtonClient from './DownloadButtonClient';
 import AIPreevaluationClient from './AIPreevaluationClient';
 import Image from "next/image";
-import { parseDeliverySubmission } from "@/types";
+import { isGithubDeliverySubmission, parseDeliverySubmission } from "@/types";
+import { getAssignmentAIConfig } from "@/lib/actions-ai-config";
+import { assignmentAIConfigInputSchema } from "@/lib/ai-preevaluation-schema";
+import { getAIPreevaluationProviderStatus, getLatestAIPreevaluation } from "@/app/actions/openai";
+import { parseGithubRepositoryUrl } from "@/lib/github-url";
 
 export const dynamic = 'force-dynamic';
 
@@ -25,15 +29,32 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
     return notFound();
   }
 
-  if (user.role === "docente") {
-    if (!assignment.course) redirect("/docentes");
-    const course = await getCourse(assignment.course).catch(() => null);
-    if (!course?.teachers?.includes(user.id)) redirect("/docentes");
-  }
+  if (!assignment.course) redirect(user.role === "docente" ? "/docentes" : "/admin");
+  const course = await getCourse(assignment.course).catch(() => null);
+  if (!course) return notFound();
+  if (user.role === "docente" && !course.teachers?.includes(user.id)) redirect("/docentes");
 
   const student = delivery.expand?.student;
   const pbUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL?.replace(/\/$/, "") || "";
   const submission = parseDeliverySubmission(delivery.repositoryUrl);
+  const [aiConfig, providerStatus] = await Promise.all([
+    getAssignmentAIConfig(assignment.id).catch(() => null),
+    getAIPreevaluationProviderStatus(),
+  ]);
+  const configValidation = aiConfig ? assignmentAIConfigInputSchema.safeParse({
+    active: aiConfig.active,
+    criteria: aiConfig.criteria,
+    requiredChecks: aiConfig.requiredChecks,
+    allowedVerdicts: aiConfig.allowedVerdicts,
+    gradeEnabled: aiConfig.gradeEnabled,
+    gradeMin: aiConfig.gradeMin,
+    gradeMax: aiConfig.gradeMax,
+    messageGuidance: aiConfig.messageGuidance,
+    additionalInstructions: aiConfig.additionalInstructions,
+  }) : null;
+  const githubCandidate = submission.type === 'url' ? parseGithubRepositoryUrl(submission.url) : null;
+  const aiEligible = Boolean(course.aiPreevaluationEnabled && configValidation?.success && configValidation.data.active && githubCandidate);
+  const initialAttempt = aiEligible ? await getLatestAIPreevaluation(delivery.id).catch(() => null) : null;
 
   return (
     <div className="container mx-auto p-8 min-h-screen max-w-4xl">
@@ -114,19 +135,20 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
             </div>
           </div>
 
-          {submission.type === "files" && submission.files.length > 0 ? (
-            <AIPreevaluationClient
-              assignmentId={assignment.id}
-              deliveryId={delivery.id}
-              initialPrompt={assignment.systemPrompt || ''}
-              initialGrade={delivery.grade}
-              initialFeedback={delivery.feedback}
-              initialVerdict={delivery.verdict}
-              initialStatus={delivery.status}
-            />
-          ) : submission.type === "url" ? (
-            <p className="mt-8 rounded-lg bg-zinc-50 p-4 text-sm text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300">La preevaluación con IA solo está disponible para entregas de archivos. Podés evaluar este enlace desde la lista de entregas del trabajo práctico.</p>
-          ) : null}
+          <AIPreevaluationClient
+            deliveryId={delivery.id}
+            aiEligible={aiEligible}
+            repositoryUrl={submission.type === 'url' ? submission.url : undefined}
+            repositoryFullName={isGithubDeliverySubmission(submission) ? submission.repositoryFullName : githubCandidate?.fullName}
+            commitSha={isGithubDeliverySubmission(submission) ? submission.commitSha : undefined}
+            captureSource={isGithubDeliverySubmission(submission) ? submission.captureSource : undefined}
+            providerStatus={providerStatus}
+            initialAttempt={initialAttempt}
+            initialGrade={delivery.grade}
+            initialFeedback={delivery.feedback}
+            initialVerdict={delivery.verdict}
+            initialStatus={delivery.status}
+          />
         </div>
       </div>
     </div>

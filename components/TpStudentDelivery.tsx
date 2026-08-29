@@ -13,7 +13,7 @@ import {
   updateDeliveryWithUrl,
 } from "@/lib/actions";
 import { getDeadlineState } from "@/lib/student-learning";
-import { Delivery, isValidDeliveryUrl, parseDeliverySubmission } from "@/types";
+import { Delivery, isGithubDeliverySubmission, isValidDeliveryUrl, parseDeliverySubmission } from "@/types";
 
 export default function TpStudentDelivery({ assignmentId, courseId, delivery, dueDate }: { assignmentId: string; courseId: string; delivery: Delivery | null; dueDate?: string }) {
   const deadline = getDeadlineState(dueDate);
@@ -125,6 +125,11 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
                 <span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span>
                 <span className="truncate">{existingSubmission.url}</span>
               </a>
+              {isGithubDeliverySubmission(existingSubmission) && <div className="rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-high)] p-4 text-sm">
+                <p><span className="font-bold">Repositorio:</span> {existingSubmission.repositoryFullName}</p>
+                <p className="mt-1"><span className="font-bold">Commit entregado:</span> <code>{existingSubmission.commitSha.slice(0, 12)}</code></p>
+                <p className="mt-1 text-[var(--color-on-surface-variant)]">Capturado <FormattedDate date={existingSubmission.commitCapturedAt} showTime /></p>
+              </div>}
             </div>
           ) : (
             <div className="space-y-2">
@@ -137,7 +142,7 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
       </Card>
     )}
 
-    {delivery?.status === "published" && <Card><CardContent className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-headline text-xl font-bold">Devolución del docente</h3>{delivery.verdict && <Badge tone={delivery.verdict === "Aprobado" ? "success" : "warning"}>{delivery.verdict}</Badge>}</div>{delivery.grade !== undefined && <p className="font-headline text-3xl font-bold text-[var(--color-primary)]">Nota: {delivery.grade}</p>}<p className="whitespace-pre-wrap leading-relaxed text-[var(--color-on-surface-variant)]">{delivery.feedback || "La evaluación fue publicada sin comentario adicional."}</p></CardContent></Card>}
+    {delivery?.status === "published" && <Card><CardContent className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-headline text-xl font-bold">Devolución del docente</h3>{delivery.verdict && <Badge tone={delivery.verdict === "Aprobado" ? "success" : delivery.verdict === "Desaprobado" ? "error" : "warning"}>{delivery.verdict}</Badge>}</div>{typeof delivery.grade === "number" && <p className="font-headline text-3xl font-bold text-[var(--color-primary)]">Nota: {delivery.grade}</p>}<p className="whitespace-pre-wrap leading-relaxed text-[var(--color-on-surface-variant)]">{delivery.feedback || "La evaluación fue publicada sin comentario adicional."}</p></CardContent></Card>}
 
     {isEditing && !isPastDue && (
       <Card>

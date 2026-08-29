@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import NonGmailAccountGuidance from "@/components/NonGmailAccountGuidance";
 import pb from "@/lib/pocketbase";
 import { setAuthCookieAndRedirect } from "@/lib/actions-auth";
+import {
+  extractOAuthProfile,
+  getOAuthLoginErrorMessage,
+  type OAuthProfile,
+} from "@/lib/auth-login";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,43 +25,19 @@ export default function LoginPage() {
     setError(null);
     pb.authStore.clear();
     let token = null;
+    let profile: OAuthProfile = {};
 
     try {
       const authData = await pb.collection("users").authWithOAuth2({ provider: "google" });
-
-      // Si el usuario no tiene rol (primera vez), asignar "estudiante" por defecto
-      if (!authData.record.role) {
-        const updateData: Record<string, string> = { role: "estudiante" };
-        const meta = authData.meta;
-        if (meta) {
-          const firstName = meta.givenName || meta.given_name || "";
-          const lastName = meta.familyName || meta.family_name || "";
-          const fullName = meta.name || "";
-          if (firstName) updateData.firstName = firstName;
-          if (lastName) updateData.lastName = lastName;
-          if (firstName || lastName) {
-            updateData.name = `${firstName} ${lastName}`.trim();
-          } else if (fullName) {
-            updateData.name = fullName;
-            const parts = fullName.split(" ");
-            updateData.firstName = parts[0];
-            if (parts.length > 1) updateData.lastName = parts.slice(1).join(" ");
-          }
-        }
-        await pb.collection("users").update(authData.record.id, updateData);
-        authData.record.role = "estudiante";
-        pb.authStore.save(pb.authStore.token, authData.record);
-      }
-
-      // Store token in cookie for server-side access
-      token = pb.authStore.token;
+      token = authData.token || pb.authStore.token;
+      profile = extractOAuthProfile(authData.meta);
       
-      if (!token || !pb.authStore.model) {
+      if (!token || !authData.record) {
         throw new Error("No se pudo obtener la sesión del usuario.");
       }
     } catch (err: unknown) {
       console.error("Login error:", err);
-      setError("Tu cuenta de email no está autorizada para ingresar a la plataforma.");
+      setError(getOAuthLoginErrorMessage(err));
       setIsLoading(false);
       return;
     }
@@ -65,7 +46,7 @@ export default function LoginPage() {
     // ya que Next.js implementa `redirect()` lanzando un error especial
     // que no debe ser atrapado por el catch.
     if (token) {
-      const result = await setAuthCookieAndRedirect(token);
+      const result = await setAuthCookieAndRedirect(token, profile);
       if (!result.success) {
         pb.authStore.clear();
         setError(result.error);

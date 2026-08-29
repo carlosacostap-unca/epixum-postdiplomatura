@@ -30,6 +30,10 @@ function parseContentsEnabled(value: FormDataEntryValue | null) {
   return value === 'true' || value === 'on';
 }
 
+function parseAIPreevaluationEnabled(value: FormDataEntryValue | null) {
+  return value === 'true' || value === 'on';
+}
+
 function revalidateCourseSurfaces(courseId?: string) {
   revalidatePath('/admin');
   revalidatePath('/admin/courses');
@@ -49,6 +53,7 @@ export async function createCourse(formData: FormData) {
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const enrollmentMode = parseEnrollmentMode(formData.get('enrollmentMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
+  const aiPreevaluationEnabled = parseAIPreevaluationEnabled(formData.get('aiPreevaluationEnabled'));
   
   if (startDate && !startDate.includes('T')) {
     startDate = `${startDate}T12:00:00.000Z`;
@@ -74,6 +79,7 @@ export async function createCourse(formData: FormData) {
     organizationMode,
     enrollmentMode,
     contentsEnabled,
+    aiPreevaluationEnabled,
     teachers,
     classes,
     assignments,
@@ -117,6 +123,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const enrollmentMode = parseEnrollmentMode(formData.get('enrollmentMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
+  const aiPreevaluationEnabled = parseAIPreevaluationEnabled(formData.get('aiPreevaluationEnabled'));
   
   if (startDate && !startDate.includes('T')) {
     startDate = `${startDate}T12:00:00.000Z`;
@@ -142,6 +149,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
     organizationMode,
     enrollmentMode,
     contentsEnabled,
+    aiPreevaluationEnabled,
     teachers,
     classes,
     assignments,

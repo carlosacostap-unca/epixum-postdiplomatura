@@ -59,3 +59,7 @@ npm.cmd run spec:validate
 
 Para proponer una evolución del sistema, inicia un cambio OpenSpec en lugar de editar directamente
 las especificaciones base.
+
+## Preevaluación con IA
+
+La configuración del piloto de repositorios públicos de GitHub, sus variables privadas, límites, migración y verificaciones se documenta en [docs/ai-preevaluation/README.md](docs/ai-preevaluation/README.md).

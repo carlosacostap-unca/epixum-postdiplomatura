@@ -14,7 +14,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { getTeacherDeliveryFileDownloadUrl, updateDeliveryEvaluation } from "@/lib/actions";
-import { Delivery, parseDeliverySubmission } from "@/types";
+import { Delivery, parseDeliverySubmission, type AIVerdict } from "@/types";
 
 type ReviewFilter = "all" | "pending" | "draft" | "published";
 
@@ -149,15 +149,15 @@ function FeedbackForm({ delivery }: { delivery: Delivery; courseId: string; assi
   const { notify } = useToast();
   const [feedback, setFeedback] = useState(delivery.feedback || "");
   const [grade, setGrade] = useState(delivery.grade?.toString() || "");
-  const [verdict, setVerdict] = useState<"Aprobado" | "Corregir y reenviar" | "">(delivery.verdict || "");
+  const [verdict, setVerdict] = useState<AIVerdict | "">(delivery.verdict || "");
   const [loading, setLoading] = useState<"draft" | "published" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmPublish, setConfirmPublish] = useState(false);
 
   const save = async (status: "draft" | "published") => {
-    const numericGrade = Number(grade);
-    if (grade === "" || !Number.isFinite(numericGrade) || numericGrade < 0 || numericGrade > 10) {
-      setError("Ingresá una nota entre 0 y 10.");
+    const numericGrade = grade === "" ? null : Number(grade);
+    if (numericGrade !== null && !Number.isFinite(numericGrade)) {
+      setError("Ingresá una nota válida o dejala vacía.");
       return;
     }
     if (status === "published" && (!feedback.trim() || !verdict)) {
@@ -186,11 +186,11 @@ function FeedbackForm({ delivery }: { delivery: Delivery; courseId: string; assi
       <div><h3 id={`evaluation-${delivery.id}`} className="font-headline text-xl font-bold">Evaluación</h3><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Guardá para continuar más tarde o publicá para hacerla visible.</p></div>
       {error && <p role="alert" className="rounded-[var(--epixum-radius-md)] bg-[var(--color-error)]/10 p-3 text-sm text-[var(--color-error)]">{error}</p>}
       <div className="grid gap-4 md:grid-cols-[10rem_minmax(0,1fr)]">
-        <Field label="Nota (0 a 10)" id={`grade-${delivery.id}`}>
-          <input id={`grade-${delivery.id}`} type="number" min="0" max="10" step="0.01" value={grade} onChange={(event) => setGrade(event.target.value)} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" />
+        <Field label="Nota opcional" id={`grade-${delivery.id}`}>
+          <input id={`grade-${delivery.id}`} type="number" step="0.01" value={grade} onChange={(event) => setGrade(event.target.value)} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" />
         </Field>
         <Field label="Veredicto" id={`verdict-${delivery.id}`}>
-          <Select id={`verdict-${delivery.id}`} value={verdict} onChange={(event) => setVerdict(event.target.value as typeof verdict)}><option value="">Seleccionar</option><option value="Aprobado">Aprobado</option><option value="Corregir y reenviar">Corregir y reenviar</option></Select>
+          <Select id={`verdict-${delivery.id}`} value={verdict} onChange={(event) => setVerdict(event.target.value as typeof verdict)}><option value="">Seleccionar</option><option value="Aprobado">Aprobado</option><option value="Desaprobado">Desaprobado</option><option value="Corregir y reenviar">Corregir y reenviar</option></Select>
         </Field>
       </div>
       <Field label="Devolución para el estudiante" id={`feedback-${delivery.id}`}>

@@ -7,6 +7,9 @@ import { getAssignment, getCourse, getCourseWeeks, getDeliveries, getLinks } fro
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import TpManagementActions from "./TpManagementActions";
 import TpResourceManager from "./TpResourceManager";
+import AssignmentAIConfigPanel from "./AssignmentAIConfigPanel";
+import { getAssignmentAIConfig } from "@/lib/actions-ai-config";
+import { emptyAssignmentAIConfig } from "@/lib/assignment-ai-config";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +22,11 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
   const assignment = await getAssignment(tpId).catch(() => null);
   if (!assignment || assignment.course !== course.id) redirect(`/docentes/cursos/${course.id}#trabajos`);
 
-  const [links, deliveries, weeks] = await Promise.all([
+  const [links, deliveries, weeks, aiConfig] = await Promise.all([
     getLinks(tpId, "assignment"),
     getDeliveries(tpId),
     course.organizationMode === "semanal" ? getCourseWeeks(course.id) : [],
+    getAssignmentAIConfig(assignment.id),
   ]);
   const isPastDue = assignment.dueDate ? new Date() > new Date(assignment.dueDate) : false;
   const pending = deliveries.filter((delivery) => delivery.status !== "published").length;
@@ -44,6 +48,8 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
       </div>
 
       {assignment.description && <Card><CardContent><h2 className="font-headline text-2xl font-bold">Enunciado</h2><div className="prose prose-invert mt-5 max-w-none text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: assignment.description }} /></CardContent></Card>}
+
+      <AssignmentAIConfigPanel assignmentId={assignment.id} courseEnabled={Boolean(course.aiPreevaluationEnabled)} initialConfig={aiConfig || emptyAssignmentAIConfig()} />
 
       <div className="grid gap-10 xl:grid-cols-[minmax(16rem,0.75fr)_minmax(0,2fr)]">
         <section aria-labelledby="assignment-resources-title" className="space-y-5">

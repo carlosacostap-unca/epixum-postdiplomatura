@@ -26,7 +26,7 @@ vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
 import { createCourse, updateCourse } from './actions-courses';
 
-function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' | 'invitacion_contrasena', contentsEnabled = false) {
+function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' | 'invitacion_contrasena', contentsEnabled = false, aiPreevaluationEnabled = false) {
   const form = new FormData();
   form.set('title', 'Curso');
   form.set('description', 'Descripción');
@@ -34,6 +34,7 @@ function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' |
   if (mode) form.set('organizationMode', mode);
   if (enrollmentMode) form.set('enrollmentMode', enrollmentMode);
   if (contentsEnabled) form.set('contentsEnabled', 'true');
+  if (aiPreevaluationEnabled) form.set('aiPreevaluationEnabled', 'true');
   form.append('teachers', 'teacher-1');
   form.append('classes', 'class-1');
   form.append('assignments', 'assignment-1');
@@ -63,6 +64,13 @@ describe('modalidad administrativa del curso', () => {
 
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ contentsEnabled: true }));
     expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ contentsEnabled: false }));
+  });
+
+  it('deja la IA deshabilitada por defecto y solo el admin puede habilitarla', async () => {
+    await createCourse(courseForm());
+    await updateCourse('course-1', courseForm('tradicional', 'clave', false, true));
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ aiPreevaluationEnabled: false }));
+    expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ aiPreevaluationEnabled: true }));
   });
 
   it('alterna la modalidad de matrícula sin limpiar credenciales existentes', async () => {
