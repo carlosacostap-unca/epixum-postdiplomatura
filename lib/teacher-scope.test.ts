@@ -11,9 +11,10 @@ describe("alcance docente", () => {
     expect(teacherCanManageCourse(otherCourse, teacher)).toBe(false);
   });
 
-  it("mantiene acceso administrativo sin ampliar el alcance docente", () => {
+  it("mantiene acceso administrativo y deriva docencia de la asignación", () => {
     expect(teacherCanManageCourse(otherCourse, { id: "admin-a", role: "admin" })).toBe(true);
-    expect(teacherCanManageCourse(assignedCourse, { id: "student-a", role: "estudiante" })).toBe(false);
+    expect(teacherCanManageCourse(assignedCourse, { id: "teacher-a", role: "estudiante" })).toBe(true);
+    expect(teacherCanManageCourse(assignedCourse, { id: "student-a", role: "docente" })).toBe(false);
   });
 
   it("filtra pendientes y contenido a los cursos asignados", () => {

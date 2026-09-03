@@ -13,7 +13,7 @@ export default async function EstudianteNewInquiryPage({ params, searchParams }:
 }) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const user = await getCurrentUser();
-  if (!user || user.role !== "estudiante") redirect("/");
+  if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course || !(await isStudentEnrolled(course.id, user.id))) redirect("/estudiantes");
 

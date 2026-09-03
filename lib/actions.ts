@@ -25,8 +25,6 @@ async function canManageCourse(
   courseId?: string,
 ) {
   if (!courseId) return false;
-  if (user.role === "admin") return true;
-  if (user.role !== "docente") return false;
   try {
     const course = await pb.collection("courses").getOne(courseId, { fields: "id,teachers" });
     return teacherCanManageCourse(course, { id: user.id, role: user.role || "" });
@@ -40,7 +38,7 @@ async function studentCanAccessCourse(
   user: { id: string; role?: string },
   courseId?: string,
 ) {
-  if (!courseId || user.role !== "estudiante") return false;
+  if (!courseId) return false;
   try {
     await pb.collection("course_enrollments").getFirstListItem(
       pb.filter("course = {:courseId} && student = {:studentId}", { courseId, studentId: user.id }),
@@ -93,10 +91,10 @@ async function canManageResourceParent(pb: ServerPocketBase, user: { id: string;
       ? await assignmentCourseId(pb, parent.id)
       : await contentCourseId(pb, parent.id);
   if (parent.type !== 'content') return { allowed: await canManageCourse(pb, user, courseId), courseId };
-  if (!courseId || user.role !== 'docente') return { allowed: false, courseId };
+  if (!courseId) return { allowed: false, courseId };
   try {
     const course = await pb.collection('courses').getOne(courseId, { fields: 'id,teachers,contentsEnabled' });
-    return { allowed: Boolean(course.contentsEnabled && course.teachers?.includes(user.id)), courseId };
+    return { allowed: Boolean(course.contentsEnabled && teacherCanManageCourse(course, { id: user.id, role: user.role || '' })), courseId };
   } catch {
     return { allowed: false, courseId };
   }
@@ -145,11 +143,11 @@ export async function ensureCorsConfigured() {
   }
 }
 
-export async function getUploadUrl(filename: string, fileType: string) {
+export async function getUploadUrl(filename: string, fileType: string, assignmentId: string) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || user.role !== 'estudiante') {
+  if (!user || !(await studentCanAccessContent(pb, user, 'assignments', assignmentId))) {
     return { success: false, error: 'Unauthorized' };
   }
 
@@ -166,7 +164,7 @@ export async function getResourceUploadUrl(filename: string, fileType: string, p
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
 
@@ -195,16 +193,13 @@ export async function getResourceDownloadUrl(linkId: string) {
     const link = await pb.collection('links').getOne(linkId);
     const parent = getExclusiveResourceParent({ classId: link.class, assignmentId: link.assignment, contentId: link.content });
     if (!parent) return { success: false, error: 'El recurso no tiene un padre válido' };
-    const teacherAllowed = user.role === 'docente' && (await canManageResourceParent(pb, user, parent)).allowed;
-    const adminAllowed = user.role === 'admin' && parent.type !== 'content' && (await canManageResourceParent(pb, user, parent)).allowed;
-    const studentAllowed = user.role === 'estudiante' && (
-      parent.type === 'class'
-        ? await studentCanAccessContent(pb, user, 'classes', parent.id)
-        : parent.type === 'assignment'
-          ? await studentCanAccessContent(pb, user, 'assignments', parent.id)
-          : await studentCanAccessIndependentContent(pb, user, parent.id)
-    );
-    if (!teacherAllowed && !adminAllowed && !studentAllowed) {
+    const managerAllowed = (await canManageResourceParent(pb, user, parent)).allowed;
+    const studentAllowed = parent.type === 'class'
+      ? await studentCanAccessContent(pb, user, 'classes', parent.id)
+      : parent.type === 'assignment'
+        ? await studentCanAccessContent(pb, user, 'assignments', parent.id)
+        : await studentCanAccessIndependentContent(pb, user, parent.id);
+    if (!managerAllowed && !studentAllowed) {
       return { success: false, error: 'No autorizado para este curso' };
     }
 
@@ -244,18 +239,11 @@ export async function getDeliveryDownloadUrl(deliveryId: string) {
   try {
     const delivery = await pb.collection('deliveries').getOne(deliveryId);
 
-    // Check permissions: Student can access their own, Teacher/Admin can access all
-    if (user.role === 'estudiante') {
-      const courseId = await assignmentCourseId(pb, delivery.assignment);
-      if (delivery.student !== user.id || !(await studentCanAccessCourse(pb, user, courseId))) {
-        return { success: false, error: 'Unauthorized access to delivery' };
-      }
-    }
-    if (user.role === "docente") {
-      const courseId = await assignmentCourseId(pb, delivery.assignment);
-      if (!(await canManageCourse(pb, user, courseId))) {
-        return { success: false, error: "No autorizado para este curso" };
-      }
+    const courseId = await assignmentCourseId(pb, delivery.assignment);
+    const ownerAllowed = delivery.student === user.id && await studentCanAccessCourse(pb, user, courseId);
+    const managerAllowed = await canManageCourse(pb, user, courseId);
+    if (!ownerAllowed && !managerAllowed) {
+      return { success: false, error: "No autorizado para este curso" };
     }
 
     const submission = parseDeliverySubmission(delivery.repositoryUrl);
@@ -277,7 +265,7 @@ export async function getDeliveryDownloadUrl(deliveryId: string) {
   }
 }
 
-export async function updateUserRole(userId: string, role: string) {
+export async function updateUserAdminAccess(userId: string, isAdministrator: boolean) {
   const pb = await createServerClient();
   
   // Verify current user is admin
@@ -286,8 +274,12 @@ export async function updateUserRole(userId: string, role: string) {
   }
 
   try {
-    await pb.collection('users').update(userId, { role });
+    const targetRole = isAdministrator ? 'admin' : 'estudiante';
+    await pb.collection('users').update(userId, { role: targetRole });
+    const updated = await pb.collection('users').getOne(userId, { fields: 'id,role' });
+    if (updated.role !== targetRole) throw new Error('No se pudo verificar el privilegio administrativo');
     revalidatePath('/admin/users');
+    revalidatePath('/admin');
     return { success: true };
   } catch (error) {
     console.error('Failed to update role:', error);
@@ -301,7 +293,7 @@ export async function createClassForCourse(courseId: string, formData: FormData)
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   if (!(await canManageCourse(pb, user, courseId))) {
@@ -354,7 +346,7 @@ export async function createClass(formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user || user.role !== 'admin') {
     throw new Error("Unauthorized");
   }
 
@@ -386,7 +378,7 @@ export async function updateClass(classId: string, formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   const scopedCourseId = await classCourseId(pb, classId).catch(() => undefined);
@@ -434,7 +426,7 @@ export async function deleteClass(classId: string) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   const scopedCourseId = await classCourseId(pb, classId).catch(() => undefined);
@@ -458,7 +450,7 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   if (!(await canManageCourse(pb, user, courseId))) {
@@ -522,7 +514,7 @@ export async function createAssignment(formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user || user.role !== 'admin') {
     throw new Error("Unauthorized");
   }
 
@@ -560,7 +552,7 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   const scopedCourseId = await assignmentCourseId(pb, assignmentId).catch(() => undefined);
@@ -609,7 +601,7 @@ export async function updateAssignmentSystemPrompt(assignmentId: string, systemP
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   const scopedCourseId = await assignmentCourseId(pb, assignmentId).catch(() => undefined);
@@ -634,7 +626,7 @@ export async function deleteAssignment(assignmentId: string, courseId?: string) 
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
@@ -675,7 +667,7 @@ export async function createLink(formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
@@ -726,7 +718,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   const parent = await linkParent(pb, linkId).catch(() => null);
@@ -773,7 +765,7 @@ export async function deleteLink(linkId: string, parentId?: string, parentType?:
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
   const parent = await linkParent(pb, linkId).catch(() => null);
@@ -813,7 +805,7 @@ export async function createDelivery(formData: FormData) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || user.role !== 'estudiante') {
+  if (!user) {
     return { success: false, error: 'Unauthorized: Only students can submit' };
   }
 
@@ -858,7 +850,7 @@ export async function createDeliveryWithFiles(assignmentId: string, courseId: st
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || user.role !== 'estudiante') {
+  if (!user) {
     return { success: false, error: 'No autorizado: Solo estudiantes pueden entregar' };
   }
 
@@ -898,7 +890,7 @@ export async function updateDeliveryWithFiles(deliveryId: string, courseId: stri
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || user.role !== 'estudiante') {
+  if (!user) {
     return { success: false, error: 'No autorizado' };
   }
 
@@ -937,7 +929,7 @@ export async function createDeliveryWithUrl(assignmentId: string, courseId: stri
   const user = pb.authStore.model;
   const url = value.trim();
 
-  if (!user || user.role !== 'estudiante') {
+  if (!user || !(await studentCanAccessContent(pb, user, 'assignments', assignmentId))) {
     return { success: false, error: 'No autorizado: Solo estudiantes pueden entregar' };
   }
 
@@ -981,7 +973,7 @@ export async function updateDeliveryWithUrl(deliveryId: string, courseId: string
   const user = pb.authStore.model;
   const url = value.trim();
 
-  if (!user || user.role !== 'estudiante') {
+  if (!user) {
     return { success: false, error: 'No autorizado' };
   }
 
@@ -1020,7 +1012,7 @@ export async function updateDeliveryWithUrl(deliveryId: string, courseId: string
 export async function getStudentDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
-  if (!user || user.role !== "estudiante") return { success: false, error: 'No autorizado' };
+  if (!user) return { success: false, error: 'No autorizado' };
 
   try {
     const delivery = await pb.collection("deliveries").getOne(deliveryId);
@@ -1044,7 +1036,7 @@ export async function getTeacherDeliveryFileDownloadUrl(deliveryId: string, file
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     return { success: false, error: 'No autorizado' };
   }
 
@@ -1099,7 +1091,7 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
     // Check deadline
     const currentDelivery = await pb.collection('deliveries').getOne(deliveryId);
     const assignment = await pb.collection('assignments').getOne(currentDelivery.assignment);
-    if (user.role !== "estudiante" || currentDelivery.student !== user.id || !(await studentCanAccessContent(pb, user, "assignments", currentDelivery.assignment))) {
+    if (currentDelivery.student !== user.id || !(await studentCanAccessContent(pb, user, "assignments", currentDelivery.assignment))) {
       return { success: false, error: "No autorizado" };
     }
     
@@ -1125,7 +1117,7 @@ export async function updateDeliveryEvaluation(deliveryId: string, grade: number
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
+  if (!user) {
     return { success: false, error: 'Unauthorized' };
   }
 

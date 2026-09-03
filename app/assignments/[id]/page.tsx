@@ -1,5 +1,6 @@
-import { getAssignment } from "@/lib/data";
-import { getHomeForRole } from "@/lib/navigation";
+import { getAssignment, getCourse } from "@/lib/data";
+import { getCourseParticipation, getWorkspaceAccess } from "@/lib/course-role-access";
+import { getHomeForWorkspace } from "@/lib/navigation";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { notFound, redirect } from "next/navigation";
 
@@ -12,8 +13,12 @@ export default async function LegacyAssignmentPage({ params }: { params: Promise
 
   const assignment = await getAssignment(id).catch(() => null);
   if (!assignment) notFound();
-  if (!assignment.course || user.role === "admin") redirect(getHomeForRole(user.role));
-
-  const area = user.role === "docente" ? "docentes" : "estudiantes";
+  if (!assignment.course) redirect(getHomeForWorkspace((await getWorkspaceAccess(user)).preferred));
+  const course = await getCourse(assignment.course).catch(() => null);
+  if (!course) notFound();
+  const participation = await getCourseParticipation(user, course);
+  if (participation === "admin") redirect("/admin");
+  if (participation !== "docente" && participation !== "estudiante") redirect(getHomeForWorkspace((await getWorkspaceAccess(user)).preferred));
+  const area = participation === "docente" ? "docentes" : "estudiantes";
   redirect(`/${area}/cursos/${assignment.course}/tps/${id}`);
 }

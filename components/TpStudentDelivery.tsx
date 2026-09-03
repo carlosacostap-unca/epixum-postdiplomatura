@@ -60,7 +60,7 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
           const file = selectedFiles[index];
           setProgress({ current: index, total: selectedFiles.length, label: `Subiendo ${file.name}` });
           const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-          const authorization = await getUploadUrl(`${Date.now()}_${safeName}`, file.type);
+          const authorization = await getUploadUrl(`${Date.now()}_${safeName}`, file.type, assignmentId);
           if (!authorization.success || !authorization.url) throw new Error(`No se pudo preparar la subida de ${file.name}.`);
           const response = await fetch(authorization.url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
           if (!response.ok) throw new Error(`No se pudo subir ${file.name}.`);

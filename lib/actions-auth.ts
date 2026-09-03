@@ -8,6 +8,10 @@ import {
   missingOAuthProfileFields,
   type OAuthProfile,
 } from "@/lib/auth-login";
+import { hasTeachingCourses } from "@/lib/course-role-access";
+import { resolveWorkspaceAccess } from "@/lib/course-roles";
+import { getHomeForWorkspace } from "@/lib/navigation";
+import type { User } from "@/types";
 
 export async function setAuthCookieAndRedirect(
   token: string,
@@ -85,7 +89,16 @@ export async function setAuthCookieAndRedirect(
   }
 
   const verifiedToken = authData.token;
-  const role = authData.record.role;
+  const user = authData.record as unknown as User;
+  const role = user.role;
+
+  if (!(["admin", "docente", "estudiante"] as string[]).includes(role)) {
+    cookieStore.delete("pb_auth");
+    return {
+      success: false,
+      error: "La cuenta no tiene un rol habilitado para ingresar.",
+    };
+  }
 
   // La cookie HttpOnly es la fuente persistente de la sesión. El cliente OAuth
   // conserva el token sólo en memoria durante este intercambio.
@@ -97,19 +110,8 @@ export async function setAuthCookieAndRedirect(
     httpOnly: true,
   });
 
-  if (role === "docente") {
-    redirect("/docentes");
-  } else if (role === "admin") {
-    redirect("/admin/courses");
-  } else if (role === "estudiante") {
-    redirect("/estudiantes");
-  } else {
-    cookieStore.delete("pb_auth");
-    return {
-      success: false,
-      error: "La cuenta no tiene un rol habilitado para ingresar.",
-    };
-  }
+  const workspaceAccess = resolveWorkspaceAccess(user, await hasTeachingCourses(serverPb, user.id));
+  redirect(getHomeForWorkspace(workspaceAccess.preferred));
 }
 
 export async function clearAuthCookieAndRedirect() {

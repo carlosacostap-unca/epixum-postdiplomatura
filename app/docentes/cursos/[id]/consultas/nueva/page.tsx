@@ -9,9 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function DocenteNewInquiryPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") {
-    redirect("/");
-  }
+  if (!user) redirect("/login");
 
   const course = await getCourse(params.id);
   if (!course) {

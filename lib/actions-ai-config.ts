@@ -11,7 +11,7 @@ import { assignmentAIConfigDTO, type AssignmentAIConfigDTO } from './assignment-
 async function authorizedAssignmentContext(assignmentId: string) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) throw new Error('No autorizado');
+  if (!user) throw new Error('No autorizado');
   const assignment = await pb.collection('assignments').getOne(assignmentId, { fields: 'id,course' });
   if (!assignment.course) throw new Error('El trabajo no pertenece a un curso');
   const course = await pb.collection('courses').getOne<Course>(assignment.course, { fields: 'id,teachers,aiPreevaluationEnabled' });

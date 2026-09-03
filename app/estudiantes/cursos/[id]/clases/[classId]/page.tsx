@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function EstudianteClassPage({ params }: { params: Promise<{ id: string; classId: string }> }) {
   const { id, classId } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "estudiante") redirect("/");
+  if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course || !(await isStudentEnrolled(course.id, user.id))) redirect("/estudiantes");
   const classData = await getClass(classId).catch(() => null);

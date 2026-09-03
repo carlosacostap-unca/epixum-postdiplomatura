@@ -45,7 +45,7 @@ describe('organización semanal', () => {
     const course = { organizationMode: 'semanal', teachers: ['teacher-1'] } as Course;
     expect(courseUsesWeeks(course)).toBe(true);
     expect(teacherCanManageWeeks(course, { id: 'teacher-1', role: 'docente' })).toBe(true);
-    expect(teacherCanManageWeeks(course, { id: 'admin-1', role: 'admin' })).toBe(false);
+    expect(teacherCanManageWeeks(course, { id: 'admin-1', role: 'admin' })).toBe(true);
     expect(teacherCanManageWeeks(course, { id: 'teacher-2', role: 'docente' })).toBe(false);
     expect(weekBelongsToCourse(week({}), 'course-1')).toBe(true);
   });

@@ -23,7 +23,7 @@ function revalidateWeeklyCourse(courseId: string) {
 
 async function requireAssignedTeacher(pb: ServerPocketBase, courseId: string) {
   const user = pb.authStore.model;
-  if (!user || user.role !== 'docente') throw new Error('No tienes permisos para administrar semanas');
+  if (!user) throw new Error('No tienes permisos para administrar semanas');
   const course = await pb.collection('courses').getOne<Course>(courseId, {
     fields: 'id,teachers,organizationMode',
   });

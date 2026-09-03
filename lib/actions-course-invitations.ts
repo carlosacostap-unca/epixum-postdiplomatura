@@ -153,7 +153,7 @@ export async function activateCourseInvitation(
 ): Promise<InvitationActivationResult> {
   const pb = await createServerClient();
   const user = pb.authStore.model as unknown as User | null;
-  if (!pb.authStore.isValid || !user || user.role !== "estudiante" || !user.email) {
+  if (!pb.authStore.isValid || !user || !user.email) {
     return { success: false, error: "No pudimos validar la invitación." };
   }
 
@@ -161,12 +161,16 @@ export async function activateCourseInvitation(
     const servicePb = await createServiceClient();
     const invitation = await servicePb.collection("course_enrollment_invitations").getOne<CourseEnrollmentInvitation>(invitationId, {
       expand: "course",
-      fields: "id,course,emailNormalized,status,expand.course.id,expand.course.title,expand.course.status,expand.course.enrollmentMode",
+      fields: "id,course,emailNormalized,status,expand.course.id,expand.course.title,expand.course.status,expand.course.enrollmentMode,expand.course.teachers",
     });
     const course = invitation.expand?.course;
     const identityMatches = invitation.emailNormalized === normalizeInvitationEmail(user.email);
     if (invitation.course !== courseId || !identityMatches || !course) {
       return { success: false, error: "No pudimos validar la invitaciÃ³n." };
+    }
+
+    if (course.teachers?.includes(user.id)) {
+      return { success: false, error: "No podés activar una matrícula en un curso donde sos docente." };
     }
 
     const existingEnrollment = await findExistingEnrollment(pb, courseId, user.id);
@@ -248,6 +252,12 @@ export async function activateCourseInvitation(
       const status = typeof error === "object" && error !== null && "status" in error ? error.status : undefined;
       if (status !== 400 || !(await findExistingEnrollment(pb, courseId, user.id))) throw error;
     }
+
+    const confirmedEnrollment = await servicePb.collection("course_enrollments").getFirstListItem(
+      servicePb.filter("course = {:courseId} && student = {:studentId}", { courseId, studentId: user.id }),
+      { fields: "id" },
+    );
+    if (!confirmedEnrollment) throw new Error("No se pudo verificar la matrícula creada.");
 
     await reconcileActivatedInvitation(servicePb, invitationId, user.id);
     revalidateInvitationSurfaces(courseId);

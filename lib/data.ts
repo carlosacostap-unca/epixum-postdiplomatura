@@ -6,6 +6,7 @@ import PocketBase from 'pocketbase';
 import { cookies } from 'next/headers';
 import { extractEnrolledCourses, getDeadlineState } from './student-learning';
 import { filterContentForCourseMode, groupContentByWeek, isWeekEffectivelyVisible, unassignedContent } from './course-weeks';
+import { buildUserParticipationSummaries } from './user-participations';
 
 // Helper to create client with token for cached functions
 const createClientWithToken = (token: string | undefined) => {
@@ -67,6 +68,15 @@ export async function getAllCourses() {
         expand: 'teachers'
     });
     return records;
+}
+
+export async function getUserParticipationSummaries() {
+  const pb = await createServerClient();
+  const [courses, enrollments] = await Promise.all([
+    pb.collection('courses').getFullList<Course>({ fields: 'id,title,teachers', sort: 'title' }),
+    pb.collection('course_enrollments').getFullList<CourseEnrollment>({ fields: 'id,course,student' }),
+  ]);
+  return buildUserParticipationSummaries(courses, enrollments);
 }
 
 export async function getTeacherCourses(teacherId: string) {

@@ -8,16 +8,16 @@ const WEEK_VISIBILITY_RULE =
 export const WEEK_RULES = {
   listRule:
     `@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id || (` +
-    `@request.auth.role = "estudiante" && course.course_enrollments_via_course.student.id ?= @request.auth.id && ${WEEK_VISIBILITY_RULE})`,
+    `course.course_enrollments_via_course.student.id ?= @request.auth.id && ${WEEK_VISIBILITY_RULE})`,
   viewRule:
     `@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id || (` +
-    `@request.auth.role = "estudiante" && course.course_enrollments_via_course.student.id ?= @request.auth.id && ${WEEK_VISIBILITY_RULE})`,
+    `course.course_enrollments_via_course.student.id ?= @request.auth.id && ${WEEK_VISIBILITY_RULE})`,
   createRule:
-    '@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id && course.organizationMode = "semanal"',
+    '(@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id) && course.organizationMode = "semanal"',
   updateRule:
-    '@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id && course.organizationMode = "semanal"',
+    '(@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id) && course.organizationMode = "semanal"',
   deleteRule:
-    '@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id && course.organizationMode = "semanal"',
+    '(@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id) && course.organizationMode = "semanal"',
 };
 
 const CONTENT_VISIBILITY_RULE =
@@ -31,7 +31,7 @@ const CONTENT_READ_RULE =
   'course.course_enrollments_via_course.student.id ?= @request.auth.id && ' + CONTENT_SCOPE_RULE + ' && ' + CONTENT_VISIBILITY_RULE + ')';
 
 const CONTENT_MANAGE_RULE =
-  '@request.auth.role = "admin" || (@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id)';
+  '@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id';
 
 export const CONTENT_RULES = {
   listRule: CONTENT_READ_RULE,
@@ -51,7 +51,7 @@ export const INQUIRY_RULES = {
   viewRule: CONTENT_READ_RULE,
   createRule:
     `((${CONTENT_MANAGE_RULE}) && ${INQUIRY_SCOPE_RULE}) || (` +
-    '@request.auth.role = "estudiante" && author = @request.auth.id && ' +
+    'author = @request.auth.id && ' +
     'course.course_enrollments_via_course.student.id ?= @request.auth.id && ' + INQUIRY_SCOPE_RULE + ' && ' + CONTENT_VISIBILITY_RULE + ')',
   updateRule:
     `((${CONTENT_MANAGE_RULE}) && ${INQUIRY_SCOPE_RULE}) || (` +
@@ -59,6 +59,31 @@ export const INQUIRY_RULES = {
   deleteRule:
     `${CONTENT_MANAGE_RULE} || (` +
     'author = @request.auth.id && course.course_enrollments_via_course.student.id ?= @request.auth.id && ' + CONTENT_VISIBILITY_RULE + ')',
+};
+
+const INQUIRY_READ_RULE =
+  '@request.auth.role = "admin" || inquiry.course.teachers.id ?= @request.auth.id || (' +
+  'inquiry.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
+  '(inquiry.course.organizationMode != "semanal" || (inquiry.week != "" && ' +
+  '(inquiry.week.status = "publicada" || (inquiry.week.status = "programada" && inquiry.week.publishAt != "" && inquiry.week.publishAt <= @now)))))';
+
+export const INQUIRY_RESPONSE_RULES = {
+  listRule: INQUIRY_READ_RULE,
+  viewRule: INQUIRY_READ_RULE,
+  createRule: `author = @request.auth.id && (${INQUIRY_READ_RULE})`,
+  updateRule: `author = @request.auth.id || @request.auth.role = "admin" || inquiry.course.teachers.id ?= @request.auth.id`,
+  deleteRule: `author = @request.auth.id || @request.auth.role = "admin" || inquiry.course.teachers.id ?= @request.auth.id`,
+};
+
+export const DELIVERY_RULES = {
+  listRule: '@request.auth.role = "admin" || student = @request.auth.id || assignment.course.teachers.id ?= @request.auth.id',
+  viewRule: '@request.auth.role = "admin" || student = @request.auth.id || assignment.course.teachers.id ?= @request.auth.id',
+  createRule: 'student = @request.auth.id && assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id',
+  updateRule:
+    '@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id || (' +
+    'student = @request.auth.id && assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
+    '@request.body.grade:isset = false && @request.body.feedback:isset = false && @request.body.verdict:isset = false && @request.body.status:isset = false)',
+  deleteRule: null,
 };
 
 function hasField(collection, name) {
@@ -159,5 +184,9 @@ export async function applyWeeklySchema(pb) {
   await ensureWeekRelation(pb, 'classes', weeks, CONTENT_RULES);
   await ensureWeekRelation(pb, 'assignments', weeks, CONTENT_RULES);
   await ensureWeekRelation(pb, 'inquiries', weeks, INQUIRY_RULES);
+  const responses = await getCollection(pb, 'inquiry_responses');
+  if (responses) await pb.collections.update(responses.id, INQUIRY_RESPONSE_RULES);
+  const deliveries = await getCollection(pb, 'deliveries');
+  if (deliveries) await pb.collections.update(deliveries.id, DELIVERY_RULES);
   return { initializedCourses: initialized, weeksCollectionId: weeks.id };
 }

@@ -11,6 +11,7 @@ import { getAssignmentAIConfig } from "@/lib/actions-ai-config";
 import { assignmentAIConfigInputSchema } from "@/lib/ai-preevaluation-schema";
 import { getAIPreevaluationProviderStatus, getLatestAIPreevaluation } from "@/app/actions/openai";
 import { parseGithubRepositoryUrl } from "@/lib/github-url";
+import { isAdmin, isAssignedTeacher } from "@/lib/course-roles";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +19,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
   const { id, deliveryId } = await params;
   const user = await getCurrentUser();
 
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) {
-    redirect('/login');
-  }
+  if (!user) redirect('/login');
 
   const assignment = await getAssignment(id);
   const delivery = await getDeliveryById(deliveryId);
@@ -29,10 +28,10 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
     return notFound();
   }
 
-  if (!assignment.course) redirect(user.role === "docente" ? "/docentes" : "/admin");
+  if (!assignment.course) redirect(isAdmin(user) ? "/admin" : "/docentes");
   const course = await getCourse(assignment.course).catch(() => null);
   if (!course) return notFound();
-  if (user.role === "docente" && !course.teachers?.includes(user.id)) redirect("/docentes");
+  if (!isAdmin(user) && !isAssignedTeacher(course, user.id)) redirect("/docentes");
 
   const student = delivery.expand?.student;
   const pbUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL?.replace(/\/$/, "") || "";
@@ -58,7 +57,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
 
   return (
     <div className="container mx-auto p-8 min-h-screen max-w-4xl">
-      <Link href={user.role === "docente" && assignment.course ? `/docentes/cursos/${assignment.course}/tps/${id}#entregas` : "/admin"} className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold hover:text-[var(--color-primary)]">
+      <Link href={!isAdmin(user) && assignment.course ? `/docentes/cursos/${assignment.course}/tps/${id}#entregas` : "/admin"} className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold hover:text-[var(--color-primary)]">
         &larr; Volver a las entregas
       </Link>
 

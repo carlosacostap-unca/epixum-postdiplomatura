@@ -9,7 +9,7 @@ import { getCurrentUser } from '@/lib/pocketbase-server';
 export default async function StudentCourseContentsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== 'estudiante') redirect('/');
+  if (!user) redirect('/login');
   const course = await getCourse(id);
   if (!course?.contentsEnabled || !(await isStudentEnrolled(id, user.id))) redirect(`/estudiantes/cursos/${id}`);
   const contents = await getCourseContents(course.id);

@@ -1,16 +1,16 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
 
 export const ASSIGNMENT_AI_CONFIG_RULES = {
-  listRule: '@request.auth.role = "admin" || (@request.auth.role = "docente" && assignment.course.teachers.id ?= @request.auth.id)',
-  viewRule: '@request.auth.role = "admin" || (@request.auth.role = "docente" && assignment.course.teachers.id ?= @request.auth.id)',
-  createRule: 'assignment.course.aiPreevaluationEnabled = true && (@request.auth.role = "admin" || (@request.auth.role = "docente" && assignment.course.teachers.id ?= @request.auth.id))',
-  updateRule: 'assignment.course.aiPreevaluationEnabled = true && (@request.auth.role = "admin" || (@request.auth.role = "docente" && assignment.course.teachers.id ?= @request.auth.id))',
-  deleteRule: 'assignment.course.aiPreevaluationEnabled = true && (@request.auth.role = "admin" || (@request.auth.role = "docente" && assignment.course.teachers.id ?= @request.auth.id))',
+  listRule: '@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id',
+  viewRule: '@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id',
+  createRule: 'assignment.course.aiPreevaluationEnabled = true && (@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id)',
+  updateRule: 'assignment.course.aiPreevaluationEnabled = true && (@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id)',
+  deleteRule: 'assignment.course.aiPreevaluationEnabled = true && (@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id)',
 };
 
 export const AI_PREEVALUATION_RULES = {
-  listRule: '@request.auth.role = "admin" || (@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id)',
-  viewRule: '@request.auth.role = "admin" || (@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id)',
+  listRule: '@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id',
+  viewRule: '@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id',
   createRule: null,
   updateRule: null,
   deleteRule: null,

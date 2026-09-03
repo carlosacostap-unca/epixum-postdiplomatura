@@ -4,9 +4,9 @@ export { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
 
 export const INVITATION_RULES = {
   listRule:
-    '@request.auth.role = "admin" || (@request.auth.role = "estudiante" && emailNormalized:lower = @request.auth.email:lower && status = "pendiente" && course.enrollmentMode = "invitacion_contrasena" && course.status != "borrador")',
+    '@request.auth.role = "admin" || (@request.auth.id != "" && emailNormalized:lower = @request.auth.email:lower && status = "pendiente" && course.enrollmentMode = "invitacion_contrasena" && course.status != "borrador")',
   viewRule:
-    '@request.auth.role = "admin" || (@request.auth.role = "estudiante" && emailNormalized:lower = @request.auth.email:lower && status = "pendiente" && course.enrollmentMode = "invitacion_contrasena" && course.status != "borrador")',
+    '@request.auth.role = "admin" || (@request.auth.id != "" && emailNormalized:lower = @request.auth.email:lower && status = "pendiente" && course.enrollmentMode = "invitacion_contrasena" && course.status != "borrador")',
   createRule: '@request.auth.role = "admin"',
   updateRule: '@request.auth.role = "admin"',
   deleteRule: '@request.auth.role = "admin"',
@@ -16,7 +16,7 @@ export const ATTEMPT_RULES = {
   listRule: '@request.auth.role = "admin" || student = @request.auth.id',
   viewRule: '@request.auth.role = "admin" || student = @request.auth.id',
   createRule:
-    '@request.auth.role = "estudiante" && student = @request.auth.id && invitation.status = "pendiente" && invitation.emailNormalized:lower = @request.auth.email:lower && invitation.course.id = course.id && course.enrollmentMode = "invitacion_contrasena"',
+    '@request.auth.id != "" && student = @request.auth.id && invitation.status = "pendiente" && invitation.emailNormalized:lower = @request.auth.email:lower && invitation.course.id = course.id && course.enrollmentMode = "invitacion_contrasena"',
   updateRule: null,
   deleteRule: '@request.auth.role = "admin"',
 };

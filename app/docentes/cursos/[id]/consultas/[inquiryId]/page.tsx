@@ -6,15 +6,14 @@ import FormattedDate from "@/components/FormattedDate";
 import TeacherInquiryActions from "./TeacherInquiryActions";
 import { TeacherCourseContext } from "@/components/course/TeacherCourseContext";
 import Image from "next/image";
+import { getCourseRoleLabel } from "@/lib/course-roles";
 
 export const dynamic = 'force-dynamic';
 
 export default async function TeacherInquiryDetailPage(props: { params: Promise<{ id: string; inquiryId: string }> }) {
   const params = await props.params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") {
-    redirect("/");
-  }
+  if (!user) redirect("/login");
 
   const course = await getCourse(params.id);
   if (!course?.teachers?.includes(user.id)) {
@@ -101,7 +100,8 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
 
           <div className="flex flex-col gap-4">
             {responses.map((response) => {
-              const isTeacherResponse = response.expand?.author?.role === "docente" || response.expand?.author?.role === "admin";
+              const roleLabel = getCourseRoleLabel(course, response.expand?.author);
+              const isTeacherResponse = roleLabel !== "Estudiante";
               
               return (
                 <div 
@@ -139,7 +139,7 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
                           </span>
                           {isTeacherResponse && (
                             <span className="text-[10px] bg-[var(--color-primary)]/20 text-[var(--color-primary)] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                              Docente
+                              {roleLabel}
                             </span>
                           )}
                         </div>

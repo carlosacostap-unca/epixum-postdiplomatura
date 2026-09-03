@@ -25,7 +25,7 @@ function plainText(value?: string) {
 export default async function TeacherCourseManagementPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") redirect("/");
+  if (!user) redirect("/login");
 
   const course = await getCourse(id);
   if (!course?.teachers?.includes(user.id)) redirect("/docentes");

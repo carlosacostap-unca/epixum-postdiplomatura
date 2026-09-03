@@ -15,8 +15,8 @@ async function canModerateInquiry(
   inquiry: Pick<Inquiry, "author" | "course" | "week">,
 ) {
   if (user.role === "admin") return true;
-  if (user.role === "estudiante") return inquiry.author === user.id && studentCanAccessInquiry(pb, user.id, inquiry);
-  if (user.role !== "docente" || !inquiry.course) return false;
+  if (inquiry.author === user.id && await studentCanAccessInquiry(pb, user.id, inquiry)) return true;
+  if (!inquiry.course) return false;
   try {
     const course = await pb.collection("courses").getOne(inquiry.course, { fields: "id,teachers" });
     return teacherCanManageCourse(course, { id: user.id, role: user.role || "" });
@@ -60,7 +60,7 @@ async function canParticipateInInquiry(
   user: { id: string; role?: string },
   inquiry: Pick<Inquiry, "author" | "course" | "week">,
 ) {
-  if (user.role === "estudiante") return studentCanAccessInquiry(pb, user.id, inquiry);
+  if (await studentCanAccessInquiry(pb, user.id, inquiry)) return true;
   return canModerateInquiry(pb, user, inquiry);
 }
 
@@ -152,45 +152,34 @@ export async function createInquiry(data: { title: string; description: string; 
   if (!user) return { success: false, error: "No autorizado" };
 
   try {
+    if (!data.courseId) return { success: false, error: "La consulta debe pertenecer a un curso" };
     let resolvedWeekId = data.weekId;
-    let courseMode: string | undefined;
-    if (data.courseId) {
-      const course = await pb.collection("courses").getOne(data.courseId, { fields: "id,organizationMode,teachers" });
-      courseMode = course.organizationMode;
+    const course = await pb.collection("courses").getOne(data.courseId, { fields: "id,organizationMode,teachers" });
+    const enrolled = await studentEnrolledInCourse(pb, user.id, data.courseId);
+    const canTeach = teacherCanManageCourse(course, { id: user.id, role: user.role || "" });
+    if (!enrolled && !canTeach) return { success: false, error: "No tienes permisos para este curso" };
+    if (data.classId) {
+      const classRecord = await pb.collection("classes").getOne(data.classId, { fields: "course,week" });
+      if (classRecord.course !== data.courseId) return { success: false, error: "La clase no pertenece al curso" };
+      if (classRecord.week) {
+        if (resolvedWeekId && resolvedWeekId !== classRecord.week) return { success: false, error: "La semana no coincide con la clase" };
+        resolvedWeekId = classRecord.week;
+      }
     }
-    if (user.role === "estudiante") {
-      if (!(await studentEnrolledInCourse(pb, user.id, data.courseId))) {
-        return { success: false, error: "No estás matriculado en este curso" };
+    if (data.assignmentId) {
+      const assignment = await pb.collection("assignments").getOne(data.assignmentId, { fields: "course,week" });
+      if (assignment.course !== data.courseId) return { success: false, error: "El trabajo no pertenece al curso" };
+      if (assignment.week) {
+        if (resolvedWeekId && resolvedWeekId !== assignment.week) return { success: false, error: "La semana no coincide con el trabajo" };
+        resolvedWeekId = assignment.week;
       }
-      if (data.classId) {
-        const classRecord = await pb.collection("classes").getOne(data.classId, { fields: "course,week" });
-        if (classRecord.course !== data.courseId) return { success: false, error: "La clase no pertenece al curso" };
-        if (classRecord.week) {
-          if (resolvedWeekId && resolvedWeekId !== classRecord.week) return { success: false, error: "La semana no coincide con la clase" };
-          resolvedWeekId = classRecord.week;
-        }
-      }
-      if (data.assignmentId) {
-        const assignment = await pb.collection("assignments").getOne(data.assignmentId, { fields: "course,week" });
-        if (assignment.course !== data.courseId) return { success: false, error: "El trabajo no pertenece al curso" };
-        if (assignment.week) {
-          if (resolvedWeekId && resolvedWeekId !== assignment.week) return { success: false, error: "La semana no coincide con el trabajo" };
-          resolvedWeekId = assignment.week;
-        }
-      }
-      if (courseMode === "semanal") {
+    }
+    if (enrolled && course.organizationMode === "semanal") {
         if (!resolvedWeekId) return { success: false, error: "Seleccioná una semana publicada para crear la consulta" };
         const week = await pb.collection("course_weeks").getOne<CourseWeek>(resolvedWeekId, { fields: "id,course,status,publishAt" });
         if (week.course !== data.courseId || !isWeekEffectivelyVisible(week)) {
           return { success: false, error: "La semana seleccionada no está disponible" };
         }
-      }
-    }
-    if (user.role === "docente" && data.courseId) {
-      const course = await pb.collection("courses").getOne(data.courseId, { fields: "id,teachers" });
-      if (!teacherCanManageCourse(course, { id: user.id, role: user.role })) {
-        return { success: false, error: "No tienes permisos para este curso" };
-      }
     }
     const newInquiry: Record<string, string> = {
       title: data.title,
@@ -313,6 +302,12 @@ export async function deleteInquiryResponse(responseId: string, inquiryId: strin
   if (!user) return { success: false, error: "No autorizado" };
 
   try {
+    const response = await pb.collection("inquiry_responses").getOne<InquiryResponse>(responseId, { fields: "id,inquiry,author" });
+    if (response.inquiry !== inquiryId) return { success: false, error: "La respuesta no pertenece a esta consulta" };
+    const inquiry = await pb.collection("inquiries").getOne<Inquiry>(inquiryId, { fields: "author,course,week" });
+    if (response.author !== user.id && !(await canModerateInquiry(pb, user, inquiry))) {
+      return { success: false, error: "No tienes permisos para eliminar esta respuesta" };
+    }
     await pb.collection("inquiry_responses").delete(responseId);
     revalidatePath(`/inquiries/${inquiryId}`);
     return { success: true };

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   attempts: [] as Array<{ id: string; created: string }>,
-  course: { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena" },
+  course: { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena", teachers: [] as string[] },
   email: "Alumno@Epixum.com",
   enrollmentExists: false,
   concurrentEnrollment: false,
@@ -31,6 +31,10 @@ vi.mock("./pocketbase-service", () => ({
             throw Object.assign(new Error("duplicate"), { status: 400 });
           }
           mocks.enrollmentExists = true;
+          return { id: "enrollment-1" };
+        }),
+        getFirstListItem: vi.fn(async () => {
+          if (!mocks.enrollmentExists) throw Object.assign(new Error("not found"), { status: 404 });
           return { id: "enrollment-1" };
         }),
       };
@@ -95,7 +99,7 @@ describe("activación de invitaciones", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-07T18:00:00.000Z"));
     mocks.attempts = [];
-    mocks.course = { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena" };
+    mocks.course = { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena", teachers: [] };
     mocks.email = "Alumno@Epixum.com";
     mocks.enrollmentExists = false;
     mocks.concurrentEnrollment = false;
@@ -160,5 +164,13 @@ describe("activación de invitaciones", () => {
     mocks.enrollmentExists = false;
     mocks.concurrentEnrollment = true;
     expect(await activateCourseInvitation("inv-1", "course-1", "Correcta-1")).toMatchObject({ success: true });
+  });
+
+  it("conserva pendiente la invitación cuando la identidad ya enseña en el curso", async () => {
+    mocks.course.teachers = ["student-1"];
+    const result = await activateCourseInvitation("inv-1", "course-1", "Correcta-1");
+    expect(result).toMatchObject({ success: false, error: expect.stringContaining("docente") });
+    expect(mocks.enrollmentCreate).not.toHaveBeenCalled();
+    expect(mocks.invitationUpdate).not.toHaveBeenCalled();
   });
 });

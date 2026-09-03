@@ -10,7 +10,7 @@ import { getCurrentUser } from '@/lib/pocketbase-server';
 export default async function TeacherCourseContentPage({ params }: { params: Promise<{ id: string; contentId: string }> }) {
   const { id, contentId } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== 'docente') redirect('/');
+  if (!user) redirect('/login');
   const course = await getCourse(id);
   if (!course?.contentsEnabled || !course.teachers?.includes(user.id)) redirect(`/docentes/cursos/${id}`);
   const result = await getCourseContentWithResources(course.id, contentId);

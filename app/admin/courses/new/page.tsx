@@ -9,7 +9,7 @@ export default async function NewCoursePage() {
   const assignments = await getAllAssignments();
   const inquiries = await getInquiries();
   
-  const teachers = users.filter(u => u.role === 'docente' || u.role === 'admin');
+  const teachers = users;
 
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-10 xl:p-12">

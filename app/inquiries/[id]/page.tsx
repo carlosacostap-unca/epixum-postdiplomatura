@@ -1,5 +1,7 @@
 import { getInquiry } from "@/lib/actions-inquiries";
-import { getHomeForRole } from "@/lib/navigation";
+import { getCourse } from "@/lib/data";
+import { getCourseParticipation, getWorkspaceAccess } from "@/lib/course-role-access";
+import { getHomeForWorkspace } from "@/lib/navigation";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { notFound, redirect } from "next/navigation";
 
@@ -12,8 +14,12 @@ export default async function LegacyInquiryPage({ params }: { params: Promise<{ 
 
   const result = await getInquiry(id);
   if (!result.success || !result.data) notFound();
-  if (!result.data.course || user.role === "admin") redirect(getHomeForRole(user.role));
-
-  const area = user.role === "docente" ? "docentes" : "estudiantes";
+  if (!result.data.course) redirect(getHomeForWorkspace((await getWorkspaceAccess(user)).preferred));
+  const course = await getCourse(result.data.course).catch(() => null);
+  if (!course) notFound();
+  const participation = await getCourseParticipation(user, course);
+  if (participation === "admin") redirect("/admin");
+  if (participation !== "docente" && participation !== "estudiante") redirect(getHomeForWorkspace((await getWorkspaceAccess(user)).preferred));
+  const area = participation === "docente" ? "docentes" : "estudiantes";
   redirect(`/${area}/cursos/${result.data.course}/consultas/${id}`);
 }

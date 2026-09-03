@@ -36,7 +36,7 @@ function WeekSection({ courseId, week, classes, assignments, inquiries, delivery
 export default async function EstudianteCoursePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "estudiante") redirect("/");
+  if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course || !(await isStudentEnrolled(course.id, user.id))) redirect("/estudiantes");
 

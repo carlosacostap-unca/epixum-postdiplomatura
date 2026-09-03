@@ -10,7 +10,7 @@ import ResourceList from "./ResourceList";
 export default async function TeacherClassManagementPage({ params }: { params: Promise<{ id: string; classId: string }> }) {
   const { id, classId } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") redirect("/");
+  if (!user) redirect("/login");
 
   const course = await getCourse(id);
   if (!course?.teachers?.includes(user.id)) redirect("/docentes");

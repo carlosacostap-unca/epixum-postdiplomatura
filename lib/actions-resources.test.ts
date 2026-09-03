@@ -92,12 +92,17 @@ describe('recursos de contenidos independientes', () => {
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
-  it('bloquea la gestión de contenido para admin o curso deshabilitado', async () => {
+  it('mantiene acceso global de admin y bloquea un curso deshabilitado', async () => {
     mocks.model = { id: 'admin-1', role: 'admin' };
-    await expect(createLink(linkForm({ contentId: 'content-1' }))).resolves.toMatchObject({ success: false });
+    await expect(createLink(linkForm({ contentId: 'content-1' }))).resolves.toMatchObject({ success: true });
     mocks.model = { id: 'teacher-1', role: 'docente' };
     mocks.enabled = false;
     await expect(getResourceUploadUrl('guia.pdf', 'application/pdf', { contentId: 'content-1' })).resolves.toMatchObject({ success: false });
+  });
+
+  it('autoriza docencia por relación aunque la cuenta tenga rol heredado estudiante', async () => {
+    mocks.model = { id: 'teacher-1', role: 'estudiante' };
+    await expect(getResourceUploadUrl('guia.pdf', 'application/pdf', { contentId: 'content-1' })).resolves.toMatchObject({ success: true });
   });
 
   it('autoriza subida docente sólo después de validar el padre', async () => {

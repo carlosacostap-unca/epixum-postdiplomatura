@@ -119,7 +119,7 @@ async function ensureEnrollmentsCollection(courses, users) {
     viewRule:
       'student = @request.auth.id || course.teachers.id ?= @request.auth.id || @request.auth.role = "admin"',
     createRule:
-      'student = @request.auth.id && @request.auth.role = "estudiante" && keyHash = course.enrollmentKeyHash && course.status != "borrador"',
+      null,
     updateRule: null,
     deleteRule:
       'course.teachers.id ?= @request.auth.id || @request.auth.role = "admin"',

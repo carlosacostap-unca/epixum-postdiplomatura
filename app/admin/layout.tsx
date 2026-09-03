@@ -1,6 +1,8 @@
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { redirect } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
+import { getWorkspaceAccess } from "@/lib/course-role-access";
+import { isAdmin } from "@/lib/course-roles";
 
 export default async function AdminLayout({
   children,
@@ -13,12 +15,14 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  if (user.role !== "admin") {
+  if (!isAdmin(user)) {
     redirect("/");
   }
 
+  const workspaceAccess = await getWorkspaceAccess(user);
+
   return (
-    <AppShell user={user} pocketbaseUrl={process.env.NEXT_PUBLIC_POCKETBASE_URL || ""}>
+    <AppShell user={user} workspaceAccess={workspaceAccess} pocketbaseUrl={process.env.NEXT_PUBLIC_POCKETBASE_URL || ""}>
       {children}
     </AppShell>
   );

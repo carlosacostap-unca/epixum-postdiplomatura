@@ -22,6 +22,11 @@ vi.mock('./pocketbase-service', () => ({
   })),
 }));
 
+vi.mock('./course-teacher-assignment', () => ({
+  validateTeacherSelection: vi.fn(async (_pb, _courseId, ids: string[]) => [...new Set(ids)]),
+  verifyPersistedTeachers: vi.fn(async () => undefined),
+}));
+
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
 import { createCourse, updateCourse } from './actions-courses';

@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
   createServiceClient: vi.fn(),
   revalidatePath: vi.fn(),
+  user: { id: "student-a", role: "estudiante" },
+  course: { id: "course-a", title: "Curso A", teachers: [] as string[] },
 }));
 
 vi.mock("server-only", () => ({}));
@@ -18,13 +20,15 @@ import { joinCourseByKey, updateCourseInvitationPassword } from "./actions-cours
 describe("matrícula inmediata por clave", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.user = { id: "student-a", role: "estudiante" };
+    mocks.course = { id: "course-a", title: "Curso A", teachers: [] };
     process.env.COURSE_ENROLLMENT_SECRET = "test-secret-with-at-least-thirty-two-characters";
     const notFound = Object.assign(new Error("not found"), { status: 404 });
     mocks.createServerClient.mockResolvedValue({
-      authStore: { isValid: true, model: { id: "student-a", role: "estudiante" } },
+      authStore: { isValid: true, model: mocks.user },
       filter: (expression: string) => expression,
       collection: (name: string) => {
-        if (name === "courses") return { getFirstListItem: vi.fn().mockResolvedValue({ id: "course-a", title: "Curso A" }) };
+        if (name === "courses") return { getFirstListItem: vi.fn().mockResolvedValue(mocks.course) };
         if (name === "course_enrollments") return { getFirstListItem: vi.fn().mockRejectedValue(notFound) };
         throw new Error(`Colección inesperada: ${name}`);
       },
@@ -32,8 +36,11 @@ describe("matrícula inmediata por clave", () => {
     mocks.createServiceClient.mockResolvedValue({
       filter: (expression: string) => expression,
       collection: (name: string) => {
-        if (name === "courses") return { getFirstListItem: vi.fn().mockResolvedValue({ id: "course-a", title: "Curso A" }) };
-        if (name === "course_enrollments") return { create: mocks.serviceCreate.mockResolvedValue({ id: "enrollment-a" }) };
+        if (name === "courses") return { getFirstListItem: vi.fn().mockResolvedValue(mocks.course) };
+        if (name === "course_enrollments") return {
+          create: mocks.serviceCreate.mockResolvedValue({ id: "enrollment-a" }),
+          getFirstListItem: vi.fn().mockResolvedValue({ id: "enrollment-a" }),
+        };
         throw new Error(`ColecciÃ³n de servicio inesperada: ${name}`);
       },
     });
@@ -44,6 +51,19 @@ describe("matrícula inmediata por clave", () => {
     expect(mocks.serviceCreate).toHaveBeenCalledWith(expect.objectContaining({ course: "course-a", student: "student-a" }));
     expect(result).toMatchObject({ success: true, courseId: "course-a" });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/estudiantes");
+  });
+
+  it("permite estudiar con una cuenta heredada docente si enseña en otro curso", async () => {
+    mocks.user.role = "docente";
+    const result = await joinCourseByKey("CLAVE-VALIDA");
+    expect(result).toMatchObject({ success: true, courseId: "course-a" });
+  });
+
+  it("rechaza la matrícula si la misma identidad enseña en el curso", async () => {
+    mocks.course.teachers = ["student-a"];
+    const result = await joinCourseByKey("CLAVE-VALIDA");
+    expect(result).toMatchObject({ success: false, error: expect.stringContaining("docente") });
+    expect(mocks.serviceCreate).not.toHaveBeenCalled();
   });
 });
 

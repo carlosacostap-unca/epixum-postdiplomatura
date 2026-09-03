@@ -88,7 +88,7 @@ export default function ProfileModalButton({ children, className, pocketbaseUrl,
   const [errors, setErrors] = useState<ProfileErrors>({});
   const [serverError, setServerError] = useState("");
 
-  const roleLabel = user.role === "admin" ? "Administrador" : user.role === "docente" ? "Docente" : "Estudiante";
+  const roleLabel = user.role === "admin" ? "Administrador" : "Cuenta Epixum";
   const errorMessages = Object.values(errors);
 
   const handleOpenChange = (open: boolean) => {

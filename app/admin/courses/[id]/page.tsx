@@ -1,5 +1,5 @@
 import CourseForm from '@/components/CourseForm';
-import { getCourse, getUsers, getAllClasses, getAllAssignments, getCourseInvitations } from '@/lib/data';
+import { getCourse, getUsers, getAllClasses, getAllAssignments, getCourseInvitations, getCourseStudents } from '@/lib/data';
 import { getInquiries } from '@/lib/actions-inquiries';
 import { notFound } from 'next/navigation';
 import DeleteCourseButton from './DeleteCourseButton';
@@ -23,9 +23,12 @@ export default async function EditCoursePage({ params, searchParams }: { params:
   const inquiries = await getInquiries();
   const invitationStatus = ['pendiente', 'activada', 'revocada'].includes(query.invitaciones || '') ? query.invitaciones as CourseInvitationStatus : undefined;
   const invitationPageNumber = Math.max(1, Number(query.pagina) || 1);
-  const invitationPage = await getCourseInvitations(course.id, invitationPageNumber, invitationStatus);
-  
-  const teachers = users.filter(u => u.role === 'docente' || u.role === 'admin');
+  const [invitationPage, enrolledStudents] = await Promise.all([
+    getCourseInvitations(course.id, invitationPageNumber, invitationStatus),
+    getCourseStudents(course.id),
+  ]);
+  const enrolledIds = new Set(enrolledStudents.map((student) => student.id));
+  const teachers = users.filter((user) => !enrolledIds.has(user.id));
 
   return (
     <div className="mx-auto max-w-5xl p-6 md:p-10 xl:p-12">

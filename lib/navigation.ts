@@ -1,4 +1,4 @@
-import type { UserRole } from "@/types";
+import { workspaceFromPath, type AppWorkspace } from "@/lib/course-roles";
 
 export interface AppNavigationItem {
   href: string;
@@ -13,7 +13,7 @@ export interface RoleNavigationConfig {
   workspaceLabel: string;
 }
 
-export const roleNavigation: Record<UserRole, RoleNavigationConfig> = {
+export const roleNavigation: Record<AppWorkspace, RoleNavigationConfig> = {
   admin: {
     homeHref: "/admin",
     workspaceLabel: "Administración",
@@ -49,8 +49,13 @@ export const roleNavigation: Record<UserRole, RoleNavigationConfig> = {
   },
 };
 
-export function getHomeForRole(role: UserRole) {
-  return roleNavigation[role].homeHref;
+export function getHomeForWorkspace(workspace: AppWorkspace) {
+  return roleNavigation[workspace].homeHref;
+}
+
+export function getNavigationForPath(pathname: string) {
+  const workspace = workspaceFromPath(pathname);
+  return { navigation: roleNavigation[workspace], workspace };
 }
 
 export function isNavigationItemActive(pathname: string, item: AppNavigationItem) {

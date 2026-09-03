@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DocenteClasesPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") redirect("/");
+  if (!user) redirect("/login");
   const courses = await getTeacherCourses(user.id);
   const groups = await Promise.all(courses.map(async (course) => ({ course, classes: await getClassesByCourse(course.id) })));
   const total = groups.reduce((sum, group) => sum + group.classes.length, 0);

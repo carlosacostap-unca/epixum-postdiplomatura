@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function TeacherTpDetailPage({ params }: { params: Promise<{ id: string; tpId: string }> }) {
   const { id, tpId } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") redirect("/");
+  if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course?.teachers?.includes(user.id)) redirect("/docentes");
   const assignment = await getAssignment(tpId).catch(() => null);

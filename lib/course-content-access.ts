@@ -1,19 +1,20 @@
 import type PocketBase from 'pocketbase';
 import type { Course, CourseContent } from '@/types';
+import { isAdmin, isAssignedTeacher } from '@/lib/course-roles';
 
-type AuthUser = { id: string; role?: unknown };
+type AuthUser = { id: string; role?: string };
 
 export async function requireEnabledTeacherCourse(pb: PocketBase, user: AuthUser | null, courseId: string) {
-  if (!user || user.role !== 'docente') throw new Error('No tienes permisos para gestionar contenidos');
+  if (!user) throw new Error('No tienes permisos para gestionar contenidos');
   const course = await pb.collection('courses').getOne<Course>(courseId, { fields: 'id,title,teachers,contentsEnabled' });
-  if (!course.contentsEnabled || !course.teachers?.includes(user.id)) {
+  if (!course.contentsEnabled || (!isAdmin(user) && !isAssignedTeacher(course, user.id))) {
     throw new Error('No tienes permisos para gestionar contenidos en este curso');
   }
   return course;
 }
 
 export async function requireEnabledStudentCourse(pb: PocketBase, user: AuthUser | null, courseId: string) {
-  if (!user || user.role !== 'estudiante') throw new Error('No tienes permisos para consultar contenidos');
+  if (!user) throw new Error('No tienes permisos para consultar contenidos');
   const course = await pb.collection('courses').getOne<Course>(courseId, { fields: 'id,title,contentsEnabled' });
   if (!course.contentsEnabled) throw new Error('Los contenidos no están habilitados en este curso');
   await pb.collection('course_enrollments').getFirstListItem(

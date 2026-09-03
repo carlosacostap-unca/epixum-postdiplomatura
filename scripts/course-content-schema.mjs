@@ -16,24 +16,24 @@ const CONTENT_STUDENT_READ =
 
 const CLASS_READ =
   '(class != "" && (@request.auth.role = "admin" || class.course.teachers.id ?= @request.auth.id || ' +
-  `(@request.auth.role = "estudiante" && ${CLASS_STUDENT_READ})))`;
+  `${CLASS_STUDENT_READ}))`;
 
 const ASSIGNMENT_READ =
   '(assignment != "" && (@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id || ' +
-  `(@request.auth.role = "estudiante" && ${ASSIGNMENT_STUDENT_READ})))`;
+  `${ASSIGNMENT_STUDENT_READ}))`;
 
 const CONTENT_READ =
-  '(content != "" && ((@request.auth.role = "docente" && content.course.teachers.id ?= @request.auth.id && content.course.contentsEnabled = true) || ' +
-  `(@request.auth.role = "estudiante" && ${CONTENT_STUDENT_READ})))`;
+  '(content != "" && (@request.auth.role = "admin" || (content.course.teachers.id ?= @request.auth.id && content.course.contentsEnabled = true) || ' +
+  `${CONTENT_STUDENT_READ}))`;
 
 const CLASS_MANAGE =
-  '(class != "" && (@request.auth.role = "admin" || (@request.auth.role = "docente" && class.course.teachers.id ?= @request.auth.id)))';
+  '(class != "" && (@request.auth.role = "admin" || class.course.teachers.id ?= @request.auth.id))';
 
 const ASSIGNMENT_MANAGE =
-  '(assignment != "" && (@request.auth.role = "admin" || (@request.auth.role = "docente" && assignment.course.teachers.id ?= @request.auth.id)))';
+  '(assignment != "" && (@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id))';
 
 const CONTENT_MANAGE =
-  '(content != "" && @request.auth.role = "docente" && content.course.teachers.id ?= @request.auth.id && content.course.contentsEnabled = true)';
+  '(content != "" && (@request.auth.role = "admin" || content.course.teachers.id ?= @request.auth.id) && content.course.contentsEnabled = true)';
 
 const PARENT_EXCLUSIVE_RULE =
   '((class != "" && assignment = "" && content = "") || ' +
@@ -42,17 +42,17 @@ const PARENT_EXCLUSIVE_RULE =
 
 export const COURSE_CONTENT_RULES = {
   listRule:
-    'course.contentsEnabled = true && ((@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id) || ' +
-    '(@request.auth.role = "estudiante" && course.course_enrollments_via_course.student.id ?= @request.auth.id))',
+    'course.contentsEnabled = true && (@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id || ' +
+    'course.course_enrollments_via_course.student.id ?= @request.auth.id)',
   viewRule:
-    'course.contentsEnabled = true && ((@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id) || ' +
-    '(@request.auth.role = "estudiante" && course.course_enrollments_via_course.student.id ?= @request.auth.id))',
+    'course.contentsEnabled = true && (@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id || ' +
+    'course.course_enrollments_via_course.student.id ?= @request.auth.id)',
   createRule:
-    '@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id && course.contentsEnabled = true',
+    '(@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id) && course.contentsEnabled = true',
   updateRule:
-    '@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id && course.contentsEnabled = true',
+    '(@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id) && course.contentsEnabled = true',
   deleteRule:
-    '@request.auth.role = "docente" && course.teachers.id ?= @request.auth.id && course.contentsEnabled = true',
+    '(@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id) && course.contentsEnabled = true',
 };
 
 export const LINK_RULES = {

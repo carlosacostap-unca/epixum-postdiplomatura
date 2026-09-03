@@ -94,10 +94,8 @@ try {
     () => teacher.pb.collection('courses').update(courseA.id, { organizationMode: 'tradicional' }),
     'el docente no cambia la modalidad',
   );
-  await expectDenied(
-    () => admin.pb.collection('course_weeks').create({ course: courseA.id, number: 99, title: 'No permitida', status: 'borrador' }),
-    'el administrador no crea semanas',
-  );
+  const adminWeek = await admin.pb.collection('course_weeks').create({ course: courseA.id, number: 99, title: 'Administrativa', status: 'borrador' });
+  created.push({ collection: 'course_weeks', id: adminWeek.id });
   await expectDenied(
     () => outsider.pb.collection('course_weeks').create({ course: courseA.id, number: 98, title: 'Ajena', status: 'borrador' }),
     'un docente ajeno no crea semanas',

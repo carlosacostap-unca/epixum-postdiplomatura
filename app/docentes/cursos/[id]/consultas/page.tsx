@@ -14,7 +14,7 @@ type SearchParams = Promise<{ estado?: string; orden?: string; buscar?: string }
 export default async function TeacherCourseInquiriesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") redirect("/");
+  if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course?.teachers?.includes(user.id)) redirect("/docentes");
 

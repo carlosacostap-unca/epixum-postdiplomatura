@@ -106,10 +106,10 @@ test('las migraciones conservan la regla protegida sin importar el orden', async
 });
 
 test('las reglas exigen curso habilitado, alcance y un único padre de recurso', () => {
-  assert.match(COURSE_CONTENT_RULES.createRule, /@request\.auth\.role = "docente"/);
   assert.match(COURSE_CONTENT_RULES.createRule, /course\.teachers\.id/);
   assert.match(COURSE_CONTENT_RULES.createRule, /course\.contentsEnabled = true/);
-  assert.doesNotMatch(COURSE_CONTENT_RULES.createRule, /admin/);
+  assert.match(COURSE_CONTENT_RULES.createRule, /@request\.auth\.role = "admin"/);
+  assert.doesNotMatch(COURSE_CONTENT_RULES.createRule, /role = "docente"/);
   assert.match(COURSE_CONTENT_RULES.listRule, /course_enrollments_via_course\.student\.id/);
   assert.match(LINK_RULES.createRule, /class != "" && assignment = "" && content = ""/);
   assert.match(LINK_RULES.createRule, /content\.course\.contentsEnabled = true/);

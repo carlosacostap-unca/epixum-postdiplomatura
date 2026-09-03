@@ -14,7 +14,7 @@ type SearchParams = Promise<{ buscar?: string; estado?: string }>;
 
 export default async function EstudiantesDashboard({ searchParams }: { searchParams: SearchParams }) {
   const [user, query] = await Promise.all([getCurrentUser(), searchParams]);
-  if (!user || user.role !== "estudiante") redirect("/");
+  if (!user) redirect("/login");
   const [dashboard, pendingInvitations] = await Promise.all([
     getStudentDashboardData(user.id),
     getStudentPendingInvitations(),

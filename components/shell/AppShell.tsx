@@ -7,13 +7,67 @@ import type { ReactNode } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileModalButton from "@/components/ProfileModalButton";
 import { cx } from "@/components/ui/styles";
-import { isNavigationItemActive, roleNavigation } from "@/lib/navigation";
+import type { AppWorkspace, WorkspaceAccess } from "@/lib/course-roles";
+import { getNavigationForPath, isNavigationItemActive, roleNavigation } from "@/lib/navigation";
 import type { User } from "@/types";
 
 export interface AppShellProps {
   children: ReactNode;
   pocketbaseUrl: string;
   user: User;
+  workspaceAccess: WorkspaceAccess;
+  activeWorkspace?: AppWorkspace;
+}
+
+const workspaceIcons: Record<AppWorkspace, string> = {
+  admin: "admin_panel_settings",
+  docente: "co_present",
+  estudiante: "school",
+};
+
+function WorkspaceSwitcher({ access, active, compact = false }: { access: WorkspaceAccess; active: AppWorkspace; compact?: boolean }) {
+  if (access.available.length < 2) return null;
+
+  if (compact) {
+    return (
+      <details className="relative">
+        <summary aria-label="Cambiar espacio" className="touch-target flex cursor-pointer list-none items-center justify-center rounded-full text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]">
+          <span className="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+        </summary>
+        <div className="absolute right-0 top-full z-50 mt-2 min-w-48 rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container-high)] p-2 shadow-[var(--epixum-shadow-floating)]">
+          {access.available.map((workspace) => {
+            const config = roleNavigation[workspace];
+            return (
+              <Link key={workspace} href={config.homeHref} aria-current={workspace === active ? "page" : undefined} className="flex min-h-11 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm font-bold hover:bg-[var(--color-surface-container-highest)]">
+                <span className="material-symbols-outlined text-xl" aria-hidden="true">{workspaceIcons[workspace]}</span>
+                {config.workspaceLabel}
+              </Link>
+            );
+          })}
+        </div>
+      </details>
+    );
+  }
+
+  return (
+    <nav className="mt-4 border-t border-[var(--color-outline)]/30 pt-4" aria-label="Cambiar espacio">
+      <ul className="space-y-1">
+        {access.available.map((workspace) => {
+          const config = roleNavigation[workspace];
+          const selected = workspace === active;
+          return (
+            <li key={workspace}>
+              <Link href={config.homeHref} aria-current={selected ? "page" : undefined} className={cx("flex min-h-11 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm font-bold", selected ? "bg-[var(--color-surface-container-highest)] text-[var(--color-primary)]" : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]")}>
+                <span className="material-symbols-outlined text-xl" aria-hidden="true">{workspaceIcons[workspace]}</span>
+                <span>{config.workspaceLabel}</span>
+                {selected ? <span className="sr-only">(espacio actual)</span> : null}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
 }
 
 function UserAvatar({ user, pocketbaseUrl, compact = false }: { user: User; pocketbaseUrl: string; compact?: boolean }) {
@@ -50,9 +104,11 @@ function UserAvatar({ user, pocketbaseUrl, compact = false }: { user: User; pock
   );
 }
 
-export default function AppShell({ children, pocketbaseUrl, user }: AppShellProps) {
+export default function AppShell({ activeWorkspace, children, pocketbaseUrl, user, workspaceAccess }: AppShellProps) {
   const pathname = usePathname();
-  const navigation = roleNavigation[user.role];
+  const pathNavigation = getNavigationForPath(pathname);
+  const workspace = activeWorkspace ?? pathNavigation.workspace;
+  const navigation = roleNavigation[workspace];
 
   return (
     <div className="relative min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
@@ -84,6 +140,8 @@ export default function AppShell({ children, pocketbaseUrl, user }: AppShellProp
                 </p>
               </div>
             </Link>
+
+            <WorkspaceSwitcher access={workspaceAccess} active={workspace} />
 
             <nav className="mt-8" aria-label={`Secciones de ${navigation.workspaceLabel}`}>
               <ul className="space-y-2">
@@ -142,6 +200,7 @@ export default function AppShell({ children, pocketbaseUrl, user }: AppShellProp
             </Link>
 
             <div className="flex items-center gap-1">
+              <WorkspaceSwitcher access={workspaceAccess} active={workspace} compact />
               <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl} className="touch-target flex items-center justify-center rounded-full">
                 <UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} compact />
                 <span className="sr-only">Abrir mi perfil</span>

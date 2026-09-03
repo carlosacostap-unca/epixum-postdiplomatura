@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { User } from "@/types";
 import { ToastProvider } from "@/components/ui";
 
-const mocks = vi.hoisted(() => ({ updateUserRole: vi.fn(async () => ({ success: true })) }));
-vi.mock("@/lib/actions", () => ({ updateUserRole: mocks.updateUserRole }));
+const mocks = vi.hoisted(() => ({ updateUserAdminAccess: vi.fn(async () => ({ success: true })) }));
+vi.mock("@/lib/actions", () => ({ updateUserAdminAccess: mocks.updateUserAdminAccess }));
 
 import UserRoleSelect from "./UserRoleSelect";
 
@@ -16,12 +16,12 @@ describe("UserRoleSelect", () => {
     const actor = userEvent.setup();
     render(<ToastProvider><UserRoleSelect user={user} /></ToastProvider>);
 
-    await actor.selectOptions(screen.getByRole("combobox", { name: "Rol de Ana" }), "docente");
-    expect(mocks.updateUserRole).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog", { name: "Confirmar cambio de rol" })).toBeInTheDocument();
+    await actor.selectOptions(screen.getByRole("combobox", { name: "Acceso administrativo de Ana" }), "admin");
+    expect(mocks.updateUserAdminAccess).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: "Confirmar acceso administrativo" })).toBeInTheDocument();
 
-    await actor.click(screen.getByRole("button", { name: "Cambiar rol" }));
-    expect(mocks.updateUserRole).toHaveBeenCalledWith("u1", "docente");
-    expect(await screen.findByRole("status")).toHaveTextContent("Rol actualizado");
+    await actor.click(screen.getByRole("button", { name: "Confirmar" }));
+    expect(mocks.updateUserAdminAccess).toHaveBeenCalledWith("u1", true);
+    expect(await screen.findByRole("status")).toHaveTextContent("Acceso actualizado");
   });
 });

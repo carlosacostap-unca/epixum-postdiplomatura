@@ -9,7 +9,7 @@ export default async function NewClassPage({ params, searchParams }: { params: P
   const { id } = await params;
   const { semana } = await searchParams;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") redirect("/");
+  if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course?.teachers?.includes(user.id)) redirect("/docentes");
   const weeks = course.organizationMode === "semanal" ? await getCourseWeeks(course.id) : [];

@@ -8,6 +8,7 @@ import { validateInvitationPassword } from './course-invitations';
 import { hashInvitationPassword } from './course-invitation-password';
 import { createServiceClient } from './pocketbase-service';
 import { getErrorMessage } from './errors';
+import { validateTeacherSelection, verifyPersistedTeachers } from './course-teacher-assignment';
 
 export type UpdateCourseResult =
   | { success: true; courseId: string }
@@ -65,11 +66,13 @@ export async function createCourse(formData: FormData) {
 
   const enrollmentKey = (formData.get('enrollmentKey') as string | null)?.trim() || '';
   const invitationPassword = (formData.get('invitationPassword') as string | null) || '';
-  const teachers = formData.getAll('teachers') as string[];
+  const requestedTeachers = formData.getAll('teachers') as string[];
   const classes = formData.getAll('classes') as string[];
   const assignments = formData.getAll('assignments') as string[];
   const inquiries = formData.getAll('inquiries') as string[];
 
+  const servicePb = await createServiceClient();
+  const teachers = await validateTeacherSelection(servicePb, undefined, requestedTeachers);
   const data = {
     title,
     description,
@@ -101,13 +104,14 @@ export async function createCourse(formData: FormData) {
   try {
     const record = await pb.collection('courses').create<Course>(data);
     if (Object.keys(credentials).length > 0) {
-      const servicePb = await createServiceClient();
       await servicePb.collection('courses').update(record.id, credentials);
     }
+    await verifyPersistedTeachers(servicePb, record.id, teachers);
     revalidateCourseSurfaces(record.id);
     return record;
   } catch (error) {
     console.error('Error creating course:', error);
+    if (error instanceof Error && (error.message.startsWith('Una de las cuentas') || error.message.startsWith('No podés asignar'))) throw error;
     throw new Error('No pudimos crear el curso. Revisá los datos e intentá nuevamente.');
   }
 }
@@ -135,11 +139,13 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
 
   const enrollmentKey = (formData.get('enrollmentKey') as string | null)?.trim() || '';
   const invitationPassword = (formData.get('invitationPassword') as string | null) || '';
-  const teachers = formData.getAll('teachers') as string[];
+  const requestedTeachers = formData.getAll('teachers') as string[];
   const classes = formData.getAll('classes') as string[];
   const assignments = formData.getAll('assignments') as string[];
   const inquiries = formData.getAll('inquiries') as string[];
 
+  const servicePb = await createServiceClient();
+  const teachers = await validateTeacherSelection(servicePb, id, requestedTeachers);
   const data = {
     title,
     description,
@@ -171,9 +177,9 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
   try {
     const record = await pb.collection('courses').update<Course>(id, data);
     if (Object.keys(credentials).length > 0) {
-      const servicePb = await createServiceClient();
       await servicePb.collection('courses').update(id, credentials);
     }
+    await verifyPersistedTeachers(servicePb, id, teachers);
     revalidateCourseSurfaces(id);
     return record;
   } catch (error) {
@@ -192,6 +198,8 @@ export async function updateCourse(id: string, formData: FormData): Promise<Upda
       message.startsWith('La clave debe') ||
       message.startsWith('La contraseña debe') ||
       message.startsWith('La contraseña no puede') ||
+      message.startsWith('Una de las cuentas') ||
+      message.startsWith('No podés asignar') ||
       message.startsWith('No tienes permisos')
         ? message
         : message.includes('COURSE_ENROLLMENT_SECRET')

@@ -128,6 +128,7 @@ test('las reglas separan permisos de admin, docentes y estudiantes invitados', (
   assert.match(INVITATION_RULES.listRule, /course\.enrollmentMode = "invitacion_contrasena"/);
   assert.match(INVITATION_RULES.listRule, /course\.status != "borrador"/);
   assert.doesNotMatch(INVITATION_RULES.listRule, /docente/);
+  assert.doesNotMatch(INVITATION_RULES.listRule, /role = "estudiante"/);
   assert.equal(INVITATION_RULES.createRule, '@request.auth.role = "admin"');
   assert.equal(INVITATION_RULES.updateRule, '@request.auth.role = "admin"');
   assert.equal(INVITATION_RULES.deleteRule, '@request.auth.role = "admin"');

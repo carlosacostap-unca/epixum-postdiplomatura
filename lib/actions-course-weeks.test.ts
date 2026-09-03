@@ -72,6 +72,11 @@ describe('acciones docentes de semanas', () => {
     expect(mocks.createWeek).toHaveBeenCalledWith(expect.objectContaining({ course: 'course-1', status: 'programada', publishAt: '2026-08-10T12:00:00.000Z' }));
   });
 
+  it('deriva el permiso docente de la asignación aunque el rol heredado sea estudiante', async () => {
+    mocks.model = { id: 'teacher-1', role: 'estudiante' };
+    expect((await createCourseWeek('course-1', weekForm())).success).toBe(true);
+  });
+
   it('rechaza números duplicados antes de escribir', async () => {
     mocks.weeks = [{ id: 'existing', course: 'course-1', number: 2 }];
     const result = await createCourseWeek('course-1', weekForm());

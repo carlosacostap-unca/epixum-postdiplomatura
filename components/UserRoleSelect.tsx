@@ -1,25 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { updateUserRole } from "@/lib/actions";
-import type { User, UserRole } from "@/types";
+import { updateUserAdminAccess } from "@/lib/actions";
+import type { User } from "@/types";
 import { ConfirmDialog, Select, useToast } from "@/components/ui";
 
 export default function UserRoleSelect({ user }: { user: User }) {
   const { notify } = useToast();
-  const [currentRole, setCurrentRole] = useState<UserRole>(user.role);
-  const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
+  const [isAdministrator, setIsAdministrator] = useState(user.role === "admin");
+  const [pendingAccess, setPendingAccess] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
   const confirmChange = async () => {
-    if (!pendingRole) return;
+    if (pendingAccess === null) return;
     setLoading(true);
     try {
-      const result = await updateUserRole(user.id, pendingRole);
-      if (!result.success) throw new Error(result.error || "No se pudo cambiar el rol.");
-      setCurrentRole(pendingRole);
-      notify({ title: "Rol actualizado", description: `${user.name || user.email} ahora tiene el rol ${pendingRole}.`, tone: "success" });
-      setPendingRole(null);
+      const result = await updateUserAdminAccess(user.id, pendingAccess);
+      if (!result.success) throw new Error(result.error || "No se pudo cambiar el acceso.");
+      setIsAdministrator(pendingAccess);
+      notify({ title: "Acceso actualizado", description: `${user.name || user.email} ${pendingAccess ? "ahora administra la plataforma" : "ya no tiene privilegios administrativos"}.`, tone: "success" });
+      setPendingAccess(null);
     } catch (error: unknown) {
       notify({ title: "No pudimos cambiar el rol", description: error instanceof Error ? error.message : "Intentá nuevamente.", tone: "error", duration: null });
     } finally {
@@ -29,10 +29,10 @@ export default function UserRoleSelect({ user }: { user: User }) {
 
   return (
     <>
-      <Select aria-label={`Rol de ${user.name || user.email}`} value={currentRole} onChange={(event) => setPendingRole(event.target.value as UserRole)} disabled={loading}>
-        <option value="estudiante">Estudiante</option><option value="docente">Docente</option><option value="admin">Administrador</option>
+      <Select aria-label={`Acceso administrativo de ${user.name || user.email}`} value={isAdministrator ? "admin" : "cuenta"} onChange={(event) => setPendingAccess(event.target.value === "admin")} disabled={loading}>
+        <option value="cuenta">Cuenta Epixum</option><option value="admin">Administrador</option>
       </Select>
-      <ConfirmDialog open={Boolean(pendingRole)} onOpenChange={(open) => !open && setPendingRole(null)} title="Confirmar cambio de rol" description={<>Vas a cambiar el acceso de <strong>{user.name || user.email}</strong> de {currentRole} a {pendingRole}. El cambio afecta sus permisos inmediatamente.</>} confirmLabel="Cambiar rol" onConfirm={confirmChange} isPending={loading} tone={pendingRole === "admin" ? "danger" : "default"} />
+      <ConfirmDialog open={pendingAccess !== null} onOpenChange={(open) => !open && setPendingAccess(null)} title="Confirmar acceso administrativo" description={<>Vas a {pendingAccess ? "conceder" : "retirar"} el privilegio administrativo de <strong>{user.name || user.email}</strong>. Sus cursos como docente y estudiante se conservarán.</>} confirmLabel="Confirmar" onConfirm={confirmChange} isPending={loading} tone={pendingAccess ? "danger" : "default"} />
     </>
   );
 }

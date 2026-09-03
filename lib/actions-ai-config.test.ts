@@ -55,6 +55,11 @@ describe('configuración docente de preevaluación', () => {
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ assignment: 'assignment-1', version: 1 }));
   });
 
+  it('autoriza por asignación docente y no por el rol global heredado', async () => {
+    mocks.user = { id: 'teacher-1', role: 'estudiante' };
+    await expect(saveAssignmentAIConfig('assignment-1', { ...valid, allowedVerdicts: [...valid.allowedVerdicts] })).resolves.toMatchObject({ success: true });
+  });
+
   it('incrementa la versión al editar', async () => {
     mocks.config = { id: 'config-1', assignment: 'assignment-1', version: 4, ...valid };
     const result = await saveAssignmentAIConfig('assignment-1', { ...valid, allowedVerdicts: [...valid.allowedVerdicts] });

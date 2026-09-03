@@ -8,7 +8,7 @@ import NewResourceForm from "./NewResourceForm";
 export default async function TeacherNewResourcePage({ params }: { params: Promise<{ id: string; classId: string }> }) {
   const { id, classId } = await params;
   const user = await getCurrentUser();
-  if (!user || user.role !== "docente") redirect("/");
+  if (!user) redirect("/login");
   const [course, classData] = await Promise.all([getCourse(id), getClass(classId)]);
   if (!course?.teachers?.includes(user.id) || classData.course !== course.id) redirect("/docentes");
 

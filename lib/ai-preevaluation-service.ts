@@ -64,7 +64,7 @@ async function authorizeDelivery(deliveryId: string): Promise<AuthorizedContext>
   if (!/^[a-z0-9]{15}$/i.test(deliveryId)) throw new Error('No autorizado');
   const pb = await createServerClient();
   const user = pb.authStore.model;
-  if (!user || (user.role !== 'docente' && user.role !== 'admin')) throw new Error('No autorizado');
+  if (!user) throw new Error('No autorizado');
   const delivery = await pb.collection('deliveries').getOne<Delivery>(deliveryId, { fields: 'id,assignment,repositoryUrl,created,updated' });
   const assignment = await pb.collection('assignments').getOne<Assignment>(delivery.assignment, { fields: 'id,title,description,course' });
   if (!assignment.course) throw new Error('No autorizado');

@@ -13,7 +13,7 @@ type SearchParams = Promise<{ buscar?: string; estado?: string; autor?: string; 
 export default async function EstudianteCourseInquiriesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: SearchParams }) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const user = await getCurrentUser();
-  if (!user || user.role !== "estudiante") redirect("/");
+  if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course || !(await isStudentEnrolled(course.id, user.id))) redirect("/estudiantes");
   const weekly = course.organizationMode === "semanal";

@@ -31,8 +31,8 @@ export async function joinCourseByKey(key: string): Promise<EnrollmentActionResu
   const pb = await createServerClient();
   const user = pb.authStore.model as unknown as User | null;
 
-  if (!pb.authStore.isValid || !user || user.role !== "estudiante") {
-    return { success: false, error: "Debes ingresar como estudiante para matricularte." };
+  if (!pb.authStore.isValid || !user) {
+    return { success: false, error: "Debes ingresar para matricularte." };
   }
 
   try {
@@ -41,6 +41,10 @@ export async function joinCourseByKey(key: string): Promise<EnrollmentActionResu
     const course = await servicePb.collection("courses").getFirstListItem<Course>(
       servicePb.filter('enrollmentMode = "clave" && enrollmentKeyHash = {:keyHash} && status != "borrador"', { keyHash }),
     );
+
+    if (course.teachers?.includes(user.id)) {
+      return { success: false, error: "No podés matricularte como estudiante en un curso donde sos docente." };
+    }
 
     try {
       await pb.collection("course_enrollments").getFirstListItem(
@@ -82,6 +86,14 @@ export async function joinCourseByKey(key: string): Promise<EnrollmentActionResu
       }
     }
 
+    await servicePb.collection("course_enrollments").getFirstListItem(
+      servicePb.filter("course = {:courseId} && student = {:studentId}", {
+        courseId: course.id,
+        studentId: user.id,
+      }),
+      { fields: "id" },
+    );
+
     revalidatePath("/estudiantes");
     revalidatePath(`/estudiantes/cursos/${course.id}`);
 
@@ -110,7 +122,7 @@ export async function updateCourseEnrollmentKey(
   const pb = await createServerClient();
   const user = pb.authStore.model as unknown as User | null;
 
-  if (!pb.authStore.isValid || !user || !["docente", "admin"].includes(user.role)) {
+  if (!pb.authStore.isValid || !user) {
     return { success: false, error: "No tienes permisos para gestionar esta clave." };
   }
 
@@ -149,7 +161,7 @@ export async function updateCourseInvitationPassword(
 
   const pb = await createServerClient();
   const user = pb.authStore.model as unknown as User | null;
-  if (!pb.authStore.isValid || !user || !["docente", "admin"].includes(user.role)) {
+  if (!pb.authStore.isValid || !user) {
     return { success: false, error: "No tienes permisos para gestionar esta contraseña." };
   }
 

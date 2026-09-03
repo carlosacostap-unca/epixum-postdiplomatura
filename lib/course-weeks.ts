@@ -70,7 +70,7 @@ export function teacherCanManageWeeks(
   course: Pick<Course, 'teachers' | 'organizationMode'>,
   user: { id: string; role?: string },
 ) {
-  return courseUsesWeeks(course) && user.role === 'docente' && Boolean(course.teachers?.includes(user.id));
+  return courseUsesWeeks(course) && (user.role === 'admin' || Boolean(course.teachers?.includes(user.id)));
 }
 
 export function weekBelongsToCourse(week: Pick<CourseWeek, 'course'>, courseId: string) {
