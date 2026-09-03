@@ -31,43 +31,38 @@ const course: Course = {
 
 describe("CourseForm", () => {
   it("muestra contenidos deshabilitados por defecto y explica que conserva los datos", () => {
-    render(<ToastProvider><CourseForm teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    render(<ToastProvider><CourseForm availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     expect(screen.getByRole("checkbox", { name: /habilitar contenidos/i })).not.toBeChecked();
     expect(screen.getByText(/contenidos y sus recursos se conservan ocultos/i)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /habilitar preevaluación asistida por ia/i })).not.toBeChecked();
   });
 
   it("refleja la habilitación administrativa de IA guardada", () => {
-    render(<ToastProvider><CourseForm course={{ ...course, aiPreevaluationEnabled: true }} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    render(<ToastProvider><CourseForm course={{ ...course, aiPreevaluationEnabled: true }} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     expect(screen.getByRole("checkbox", { name: /habilitar preevaluación asistida por ia/i })).toBeChecked();
   });
 
   it("refleja la configuración guardada del curso", () => {
-    render(<ToastProvider><CourseForm course={{ ...course, contentsEnabled: true }} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    render(<ToastProvider><CourseForm course={{ ...course, contentsEnabled: true }} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     expect(screen.getByRole("checkbox", { name: /habilitar contenidos/i })).toBeChecked();
   });
 
-  it("muestra la modalidad por clave por defecto y permite elegir doble validación", async () => {
-    const user = userEvent.setup();
-    render(<ToastProvider><CourseForm teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
-    const mode = screen.getByRole("combobox", { name: "Modalidad de matrícula" });
-    expect(mode).toHaveValue("clave");
-    expect(screen.getByLabelText("Clave de matriculación")).toBeInTheDocument();
-    await user.selectOptions(mode, "invitacion_contrasena");
-    expect(screen.getByLabelText("Contraseña compartida del curso")).toHaveAttribute("type", "password");
-    expect(screen.getByText(/no elimina matrículas ni invitaciones/i)).toBeInTheDocument();
-    expect(screen.getByText(/comunicación se realiza fuera de Epixum/i)).toBeInTheDocument();
+  it("separa docentes y acceso de la configuración general", () => {
+    render(<ToastProvider><CourseForm availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    expect(screen.queryByLabelText("Docentes Asignados")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Modalidad de matrícula")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Clave de matriculación")).not.toBeInTheDocument();
   });
 
   it("envía la actualización al presionar el botón", async () => {
     const user = userEvent.setup();
     vi.mocked(updateCourse).mockResolvedValue({ success: true, courseId: course.id });
 
-    render(<ToastProvider><CourseForm course={course} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    render(<ToastProvider><CourseForm course={course} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     await user.click(screen.getByRole("button", { name: "Actualizar curso" }));
 
     expect(updateCourse).toHaveBeenCalledWith("course-1", expect.any(FormData));
-    expect(mocks.push).toHaveBeenCalledWith("/admin/courses");
+    expect(mocks.push).toHaveBeenCalledWith("/admin/courses/course-1");
   });
 
   it("muestra el error junto al botón cuando la actualización falla", async () => {
@@ -75,7 +70,7 @@ describe("CourseForm", () => {
     vi.mocked(updateCourse).mockResolvedValue({ success: false, error: "No tienes permisos para administrar cursos" });
     Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", { configurable: true, value: vi.fn() });
 
-    render(<ToastProvider><CourseForm course={course} teachers={[]} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    render(<ToastProvider><CourseForm course={course} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     await user.click(screen.getByRole("button", { name: "Actualizar curso" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("No tienes permisos para administrar cursos");

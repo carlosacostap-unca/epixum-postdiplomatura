@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Course, User } from "@/types";
+import { Course, CourseEnrollmentMode, User } from "@/types";
 import { createServerClient } from "./pocketbase-server";
 import { createServiceClient } from "./pocketbase-service";
 import { hashEnrollmentKey, validateEnrollmentKey } from "./course-enrollment-key";
@@ -14,6 +14,32 @@ export type EnrollmentActionResult = {
   error?: string;
   courseId?: string;
 };
+
+export async function updateCourseEnrollmentMode(
+  courseId: string,
+  mode: CourseEnrollmentMode,
+): Promise<EnrollmentActionResult> {
+  if (mode !== "clave" && mode !== "invitacion_contrasena") {
+    return { success: false, error: "La modalidad seleccionada no es válida." };
+  }
+  const pb = await createServerClient();
+  const user = pb.authStore.model as unknown as User | null;
+  if (!pb.authStore.isValid || !user || user.role !== "admin") {
+    return { success: false, error: "Solo los administradores pueden cambiar la modalidad de acceso." };
+  }
+  try {
+    await pb.collection("courses").update(courseId, { enrollmentMode: mode });
+    const persisted = await pb.collection("courses").getOne<Course>(courseId, { fields: "id,enrollmentMode" });
+    if (persisted.enrollmentMode !== mode) return { success: false, error: "No pudimos verificar la modalidad guardada." };
+    revalidatePath(`/admin/courses/${courseId}`);
+    revalidatePath(`/admin/courses/${courseId}/access`);
+    revalidatePath("/estudiantes", "layout");
+    return { success: true, message: "Modalidad de acceso actualizada." };
+  } catch (error) {
+    console.error("Error al actualizar la modalidad de acceso:", error);
+    return { success: false, error: "No pudimos actualizar la modalidad de acceso." };
+  }
+}
 
 function isNotFound(error: unknown) {
   return (

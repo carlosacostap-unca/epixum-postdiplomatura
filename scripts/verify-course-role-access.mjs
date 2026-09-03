@@ -53,6 +53,7 @@ try {
   const legacyStudent = await createUser('legacy-student', 'docente');
   const outsiderTeacher = await createUser('outsider-teacher', 'docente');
   const outsiderStudent = await createUser('outsider-student', 'estudiante');
+  const directStudent = await createUser('direct-student', 'docente');
 
   const courseA = await fixture('courses', { title: `Rol A ${suffix}`, status: 'en curso', organizationMode: 'tradicional', teachers: [mixed.user.id] });
   const courseB = await fixture('courses', { title: `Rol B ${suffix}`, status: 'en curso', organizationMode: 'tradicional', teachers: [] });
@@ -71,6 +72,15 @@ try {
   await denied(() => outsiderTeacher.pb.collection('classes').getOne(classA.id), 'rol docente global no concede acceso');
   await denied(() => outsiderStudent.pb.collection('classes').getOne(classA.id), 'estudiante ajeno no accede');
   await denied(() => mixed.pb.collection('course_enrollments').create({ course: courseA.id, student: mixed.user.id }), 'matrícula directa bloqueada');
+  await denied(() => admin.pb.collection('course_enrollments').create({ course: courseB.id, student: directStudent.user.id }), 'admin regular tampoco evita la Server Action');
+  const regularAdminBatch = admin.pb.createBatch();
+  regularAdminBatch.collection('course_enrollments').create({ course: courseB.id, student: directStudent.user.id });
+  await denied(() => regularAdminBatch.send(), 'admin regular tampoco evita la Server Action mediante batch');
+
+  assert.ok(!courseB.teachers?.includes(directStudent.user.id), 'la cuenta administrativa debe validar exclusividad antes de matricular');
+  const directEnrollment = await fixture('course_enrollments', { course: courseB.id, student: directStudent.user.id });
+  const persistedDirectEnrollment = await superPb.collection('course_enrollments').getOne(directEnrollment.id, { fields: 'id,course,student' });
+  assert.equal(persistedDirectEnrollment.student, directStudent.user.id, 'el cliente de servicio puede persistir la matrícula administrativa validada');
 
   const anonymous = new PocketBase(url);
   const anonymousCourses = await anonymous.collection('courses').getList(1, 1);

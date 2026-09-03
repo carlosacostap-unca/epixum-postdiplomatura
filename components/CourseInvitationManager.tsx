@@ -11,6 +11,7 @@ import { Badge, Button, ConfirmDialog, EmptyState, useToast } from "@/components
 const statusTone = { pendiente: "warning", activada: "success", revocada: "neutral" } as const;
 
 export interface CourseInvitationManagerProps {
+  basePath?: string;
   courseId: string;
   enabled: boolean;
   invitations: CourseEnrollmentInvitation[];
@@ -19,7 +20,7 @@ export interface CourseInvitationManagerProps {
   status?: CourseInvitationStatus;
 }
 
-export default function CourseInvitationManager({ courseId, enabled, invitations, page, totalPages, status }: CourseInvitationManagerProps) {
+export default function CourseInvitationManager({ basePath, courseId, enabled, invitations, page, totalPages, status }: CourseInvitationManagerProps) {
   const router = useRouter();
   const { notify } = useToast();
   const [singleEmail, setSingleEmail] = useState("");
@@ -62,7 +63,7 @@ export default function CourseInvitationManager({ courseId, enabled, invitations
     });
   }
 
-  const filterHref = (next?: CourseInvitationStatus) => `/admin/courses/${courseId}${next ? `?invitaciones=${next}` : ""}`;
+  const filterHref = (next?: CourseInvitationStatus) => `${basePath || `/admin/courses/${courseId}`}${next ? `?invitaciones=${next}` : ""}`;
 
   return (
     <section aria-labelledby="invitation-manager-title" className="mt-8 space-y-6 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-6 md:p-8">

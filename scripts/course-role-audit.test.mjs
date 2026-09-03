@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildCourseRoleAudit, compareCourseRoleAudits } from './course-role-audit.mjs';
+import { buildCourseRoleAudit, compareCourseRoleAudits, comparePreservedCourseHistory, findDestructiveEnrollmentRelations } from './course-role-audit.mjs';
 
 const base = {
   users: [{ id: 'user-1' }, { id: 'user-2' }, { id: 'user-3' }],
@@ -66,4 +66,41 @@ test('la comparación informa exactamente qué conjunto cambió', () => {
   const comparison = compareCourseRoleAudits(before, after);
   assert.equal(comparison.equal, false);
   assert.deepEqual(comparison.differences.map((difference) => difference.field), ['teacherAssignments']);
+});
+
+test('detecta una relación que borraría historia al eliminar una matrícula', () => {
+  const collections = [
+    { id: 'enrollments-id', name: 'course_enrollments', fields: [] },
+    { id: 'deliveries-id', name: 'deliveries', fields: [
+      { name: 'enrollment', type: 'relation', collectionId: 'enrollments-id', cascadeDelete: true },
+    ] },
+    { id: 'inquiries-id', name: 'inquiries', fields: [
+      { name: 'enrollment', type: 'relation', collectionId: 'enrollments-id', cascadeDelete: false },
+    ] },
+  ];
+
+  assert.deepEqual(findDestructiveEnrollmentRelations(collections), ['deliveries.enrollment']);
+  const audit = buildCourseRoleAudit({ ...base, collections });
+  assert.equal(audit.compatible, false);
+  assert.deepEqual(audit.issues.destructiveEnrollmentRelations, ['deliveries.enrollment']);
+});
+
+test('compara la conservación histórica aunque se retire una matrícula', () => {
+  const history = {
+    deliveries: [{ id: 'delivery-1', course: 'course-b', student: 'user-1' }],
+    inquiries: [{ id: 'inquiry-1', course: 'course-b', author: 'user-1' }],
+    inquiry_responses: [{ id: 'response-1', inquiry: 'inquiry-1', author: 'user-2' }],
+    ai_preevaluation_attempts: [{ id: 'attempt-1', course: 'course-b', student: 'user-1', assignment: 'assignment-1' }],
+  };
+  const before = buildCourseRoleAudit({ ...base, history });
+  const after = buildCourseRoleAudit({ ...base, enrollments: [], history });
+
+  assert.deepEqual(comparePreservedCourseHistory(before, after), { equal: true, differences: [] });
+  assert.equal(compareCourseRoleAudits(before, after).equal, false);
+});
+
+test('informa exactamente la colección histórica modificada', () => {
+  const before = buildCourseRoleAudit({ ...base, history: { deliveries: [{ id: 'delivery-1' }] } });
+  const after = buildCourseRoleAudit({ ...base, history: { deliveries: [] } });
+  assert.deepEqual(comparePreservedCourseHistory(before, after).differences.map((item) => item.name), ['deliveries']);
 });

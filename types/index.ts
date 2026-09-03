@@ -329,6 +329,42 @@ export interface CourseEnrollment extends BaseModel {
   };
 }
 
+export type CourseParticipantKind = 'students' | 'teachers';
+export type CourseCandidateState = 'available' | 'current' | 'incompatible';
+
+export interface CourseParticipant {
+  id: string;
+  userId: string;
+  enrollmentId?: string;
+  name: string;
+  email: string;
+  username: string;
+  globalRole: UserRole;
+}
+
+export interface CourseParticipantCandidate extends CourseParticipant {
+  state: CourseCandidateState;
+  reason?: string;
+}
+
+export interface CourseParticipantPage<T = CourseParticipant> {
+  items: T[];
+  page: number;
+  perPage: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface CourseParticipantCounts {
+  students: number;
+  teachers: number;
+  invitations: number;
+}
+
+export type CourseParticipantMutationResult =
+  | { status: 'success'; message: string; affectedIds: string[] }
+  | { status: 'conflict' | 'not-found' | 'forbidden' | 'error'; message: string };
+
 export interface CourseEnrollmentInvitation extends BaseModel {
   course: string;
   emailNormalized: string;

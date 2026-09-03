@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Course, User, Class, Assignment, Inquiry, CourseEnrollmentMode } from '@/types';
+import { Course, Class, Assignment, Inquiry } from '@/types';
 import { createCourse, updateCourse } from '@/lib/actions-courses';
 import RichTextEditor from '@/components/RichTextEditor';
 import Link from 'next/link';
@@ -10,7 +10,6 @@ import { Button, useToast } from '@/components/ui';
 
 interface CourseFormProps {
   course?: Course;
-  teachers: User[];
   availableClasses: Class[];
   availableAssignments: Assignment[];
   availableInquiries: Inquiry[];
@@ -18,7 +17,6 @@ interface CourseFormProps {
 
 export default function CourseForm({ 
   course, 
-  teachers, 
   availableClasses, 
   availableAssignments, 
   availableInquiries 
@@ -31,8 +29,6 @@ export default function CourseForm({
   
   // Usar estado para la descripción del RichTextEditor
   const [description, setDescription] = useState(course?.description || '');
-  const [enrollmentMode, setEnrollmentMode] = useState<CourseEnrollmentMode>(course?.enrollmentMode || 'clave');
-
   const isEdit = !!course;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,11 +45,11 @@ export default function CourseForm({
         const result = await updateCourse(course.id, formData);
         if (!result.success) throw new Error(result.error);
         notify({ title: 'Curso actualizado', description: 'Los cambios ya están visibles.', tone: 'success' });
-        router.push('/admin/courses');
+        router.push(`/admin/courses/${course.id}`);
       } else {
-        await createCourse(formData);
+        const created = await createCourse(formData);
         notify({ title: 'Curso creado', description: 'El nuevo curso ya figura en el catálogo.', tone: 'success' });
-        router.push('/admin/courses');
+        router.push(`/admin/courses/${created.id}/participants`);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al guardar el curso');
@@ -182,78 +178,6 @@ export default function CourseForm({
             </span>
           </span>
         </label>
-      </div>
-
-      <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
-        <label htmlFor="enrollmentMode" className={labelClass}>Modalidad de matrícula</label>
-        <select
-          id="enrollmentMode"
-          name="enrollmentMode"
-          value={enrollmentMode}
-          onChange={(event) => setEnrollmentMode(event.target.value as CourseEnrollmentMode)}
-          className={inputClass}
-        >
-          <option value="clave">Clave compartida · matrícula inmediata</option>
-          <option value="invitacion_contrasena">Email autorizado + contraseña · doble validación</option>
-        </select>
-        <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
-          Cambiar la modalidad no elimina matrículas ni invitaciones. En doble validación, los administradores cargan los emails y la comunicación se realiza fuera de Epixum.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-        <div>
-          <label htmlFor="teachers" className={labelClass}>Docentes Asignados</label>
-          <select
-            id="teachers"
-            name="teachers"
-            multiple
-            defaultValue={course?.teachers || []}
-            className={`${inputClass} h-32`}
-          >
-            {teachers.map(teacher => (
-              <option key={teacher.id} value={teacher.id}>
-                {teacher.name || teacher.username} {teacher.role === 'admin' ? '(Admin)' : ''}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Mantén presionado Ctrl o Cmd para seleccionar múltiples</p>
-        </div>
-
-        <div>
-          <label htmlFor={enrollmentMode === 'clave' ? 'enrollmentKey' : 'invitationPassword'} className={labelClass}>
-            {enrollmentMode === 'clave' ? 'Clave de matriculación' : 'Contraseña compartida del curso'}
-          </label>
-          {enrollmentMode === 'clave' ? <>
-            <input
-              type="text"
-              id="enrollmentKey"
-              name="enrollmentKey"
-              minLength={6}
-              maxLength={64}
-              autoComplete="off"
-              placeholder={isEdit ? "Dejala vacía para conservar la clave actual" : "Ej.: EPIXUM-2026"}
-              className={inputClass}
-            />
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              Los estudiantes que ingresen esta clave quedarán matriculados inmediatamente.
-            </p>
-          </> : <>
-            <input
-              type="password"
-              id="invitationPassword"
-              name="invitationPassword"
-              minLength={8}
-              maxLength={64}
-              autoComplete="new-password"
-              placeholder={isEdit ? "Dejala vacía para conservar la contraseña actual" : "Entre 8 y 64 caracteres"}
-              className={inputClass}
-            />
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              Distingue mayúsculas y minúsculas. Sólo los emails cargados por un administrador podrán utilizarla.
-            </p>
-          </>}
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">

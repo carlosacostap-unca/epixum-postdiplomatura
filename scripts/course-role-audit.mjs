@@ -13,7 +13,30 @@ function uniqueSorted(values) {
   return [...new Set(values)].sort();
 }
 
-export function buildCourseRoleAudit({ users, courses, enrollments, invitations = [] }) {
+const HISTORY_COLLECTIONS = [
+  'deliveries',
+  'inquiries',
+  'inquiry_responses',
+  'ai_preevaluation_attempts',
+];
+
+function collectionFields(collection) {
+  return collection?.fields || collection?.schema || [];
+}
+
+function stableRecordIdentity(record) {
+  return [record.id, record.course || '', record.student || '', record.author || '', record.assignment || '', record.inquiry || ''].join(':');
+}
+
+export function findDestructiveEnrollmentRelations(collections = []) {
+  const enrollments = collections.find((collection) => collection.name === 'course_enrollments');
+  if (!enrollments) return [];
+  return uniqueSorted(collections.flatMap((collection) => collectionFields(collection)
+    .filter((field) => field.type === 'relation' && field.collectionId === enrollments.id && field.cascadeDelete)
+    .map((field) => `${collection.name}.${field.name}`)));
+}
+
+export function buildCourseRoleAudit({ users, courses, enrollments, invitations = [], collections = [], history = {} }) {
   const userIds = new Set(users.map((user) => user.id));
   const courseIds = new Set(courses.map((course) => course.id));
   const invitationIds = new Set(invitations.map((invitation) => invitation.id));
@@ -28,6 +51,7 @@ export function buildCourseRoleAudit({ users, courses, enrollments, invitations 
     danglingInvitations: [],
     duplicateEnrollments: [],
     legacyStudentsWithoutEnrollment: [],
+    destructiveEnrollmentRelations: findDestructiveEnrollmentRelations(collections),
   };
 
   for (const course of courses) {
@@ -86,6 +110,7 @@ export function buildCourseRoleAudit({ users, courses, enrollments, invitations 
       teacherAssignments: teacherPairs.length,
       enrollments: enrollments.length,
       invitations: invitations.length,
+      history: Object.fromEntries(HISTORY_COLLECTIONS.map((name) => [name, history[name]?.length || 0])),
       issues: issueCount,
     },
     digests: {
@@ -93,9 +118,20 @@ export function buildCourseRoleAudit({ users, courses, enrollments, invitations 
       courseIds: digest(courses.map((course) => course.id)),
       teacherAssignments: digest(teacherPairs),
       enrollments: digest(enrollmentIdentity),
+      history: Object.fromEntries(HISTORY_COLLECTIONS.map((name) => [
+        name,
+        digest((history[name] || []).map(stableRecordIdentity)),
+      ])),
     },
     issues,
   };
+}
+
+export function comparePreservedCourseHistory(before, after) {
+  const differences = HISTORY_COLLECTIONS
+    .filter((name) => before.digests?.history?.[name] !== after.digests?.history?.[name])
+    .map((name) => ({ name, before: before.digests?.history?.[name], after: after.digests?.history?.[name] }));
+  return { equal: differences.length === 0, differences };
 }
 
 export function compareCourseRoleAudits(before, after) {
@@ -130,22 +166,26 @@ async function run() {
   const pb = new PocketBase(url);
   pb.autoCancellation(false);
   await pb.collection('_superusers').authWithPassword(email, password);
-  const [users, courses, enrollments, invitations] = await Promise.all([
+  const [users, courses, enrollments, invitations, collections, ...historyLists] = await Promise.all([
     pb.collection('users').getFullList({ fields: 'id' }),
     pb.collection('courses').getFullList({ fields: 'id,teachers,students' }),
     pb.collection('course_enrollments').getFullList({ fields: 'id,course,student,invitation,created,updated' }),
     optionalFullList(pb, 'course_enrollment_invitations', { fields: 'id' }),
+    pb.collections.getFullList(),
+    ...HISTORY_COLLECTIONS.map((name) => optionalFullList(pb, name, { fields: 'id,course,student,author,assignment,inquiry' })),
   ]);
+  const history = Object.fromEntries(HISTORY_COLLECTIONS.map((name, index) => [name, historyLists[index]]));
 
   const audit = {
     generatedAt: new Date().toISOString(),
     targetHost: new URL(url).host,
-    ...buildCourseRoleAudit({ users, courses, enrollments, invitations }),
+    ...buildCourseRoleAudit({ users, courses, enrollments, invitations, collections, history }),
   };
   const compareIndex = process.argv.indexOf('--compare');
   if (compareIndex >= 0) {
     const before = JSON.parse(await readFile(path.resolve(process.argv[compareIndex + 1]), 'utf8'));
     audit.comparison = compareCourseRoleAudits(before, audit);
+    audit.historyComparison = comparePreservedCourseHistory(before, audit);
   }
 
   const outputIndex = process.argv.indexOf('--output');
@@ -156,7 +196,7 @@ async function run() {
   }
 
   process.stdout.write(`${JSON.stringify(audit, null, 2)}\n`);
-  if (!audit.compatible || audit.comparison?.equal === false) process.exitCode = 2;
+  if (!audit.compatible || audit.comparison?.equal === false || audit.historyComparison?.equal === false) process.exitCode = 2;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

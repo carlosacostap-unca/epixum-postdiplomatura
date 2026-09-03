@@ -22,6 +22,7 @@
     "schema:course-roles:audit": "node scripts/course-role-audit.mjs",
     "schema:course-roles:apply": "node scripts/setup-course-role-schema.mjs",
     "schema:course-roles:verify": "node scripts/verify-course-role-access.mjs",
+    "schema:course-participants:batch": "node scripts/configure-course-participant-batch.mjs",
     "schema:invitation:snapshot": "node scripts/pocketbase-invitation-snapshot.mjs",
     "schema:invitation:verify": "node scripts/verify-invitation-access.mjs",
     "schema:access-test": "node scripts/verify-weekly-access.mjs",

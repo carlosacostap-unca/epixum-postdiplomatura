@@ -40,7 +40,6 @@ function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' |
   if (enrollmentMode) form.set('enrollmentMode', enrollmentMode);
   if (contentsEnabled) form.set('contentsEnabled', 'true');
   if (aiPreevaluationEnabled) form.set('aiPreevaluationEnabled', 'true');
-  form.append('teachers', 'teacher-1');
   form.append('classes', 'class-1');
   form.append('assignments', 'assignment-1');
   form.append('inquiries', 'inquiry-1');
@@ -78,20 +77,15 @@ describe('modalidad administrativa del curso', () => {
     expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ aiPreevaluationEnabled: true }));
   });
 
-  it('alterna la modalidad de matrícula sin limpiar credenciales existentes', async () => {
-    await updateCourse('course-1', courseForm('tradicional', 'invitacion_contrasena'));
-    expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ enrollmentMode: 'invitacion_contrasena' }));
-    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('enrollmentKeyHash');
-    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('invitationPasswordHash');
-  });
-
-  it('alterna modalidad conservando relaciones enviadas', async () => {
+  it('actualiza la configuración sin tocar docentes ni modalidad de acceso', async () => {
     await updateCourse('course-1', courseForm('semanal'));
     await updateCourse('course-1', courseForm('tradicional'));
 
     expect(mocks.update).toHaveBeenNthCalledWith(1, 'course-1', expect.objectContaining({
-      organizationMode: 'semanal', teachers: ['teacher-1'], classes: ['class-1'], assignments: ['assignment-1'], inquiries: ['inquiry-1'],
+      organizationMode: 'semanal', classes: ['class-1'], assignments: ['assignment-1'], inquiries: ['inquiry-1'],
     }));
+    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('teachers');
+    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('enrollmentMode');
     expect(mocks.update).toHaveBeenNthCalledWith(2, 'course-1', expect.objectContaining({ organizationMode: 'tradicional' }));
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/docentes', 'layout');
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/estudiantes', 'layout');
@@ -106,30 +100,13 @@ describe('modalidad administrativa del curso', () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it('devuelve un error accionable cuando falta el secreto de matrículas', async () => {
-    delete process.env.COURSE_ENROLLMENT_SECRET;
+  it('ignora campos de docentes y credenciales enviados manualmente en una edición general', async () => {
     const form = courseForm('tradicional', 'invitacion_contrasena');
+    form.append('teachers', 'teacher-manipulated');
     form.set('invitationPassword', 'Segura-123');
-
-    await expect(updateCourse('course-1', form)).resolves.toEqual({
-      success: false,
-      error: expect.stringContaining('COURSE_ENROLLMENT_SECRET'),
-    });
-    expect(mocks.update).not.toHaveBeenCalled();
-  });
-
-  it('persiste credenciales ocultas solamente mediante el cliente de servicio', async () => {
-    const form = courseForm('tradicional', 'invitacion_contrasena');
-    form.set('enrollmentKey', 'CLAVE-1');
-    form.set('invitationPassword', 'Segura-123');
-
     await updateCourse('course-1', form);
-
-    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('enrollmentKeyHash');
+    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('teachers');
     expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('invitationPasswordHash');
-    expect(mocks.serviceUpdate).toHaveBeenCalledWith('course-1', expect.objectContaining({
-      enrollmentKeyHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-      invitationPasswordHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-    }));
+    expect(mocks.serviceUpdate).not.toHaveBeenCalled();
   });
 });
