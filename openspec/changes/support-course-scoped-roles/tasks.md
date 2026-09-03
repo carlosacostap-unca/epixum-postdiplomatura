@@ -59,6 +59,6 @@
 - [x] 8.1 Ejecutar pruebas unitarias, de componentes, de esquema y de integración relevantes, además de lint y build, y corregir cualquier regresión.
 - [x] 8.2 Ejecutar la auditoría previa sobre PocketBase remoto en modo lectura y revisar manualmente cualquier conflicto antes de autorizar escrituras.
 - [x] 8.3 Confirmar un respaldo completo recuperable y aplicar primero la migración idempotente de reglas, conservando evidencia sanitizada de la ejecución.
-- [ ] 8.4 Desplegar la aplicación y ejecutar recorridos reales de administración, docencia, estudio, matrícula y cambio de espacio con datos sintéticos.
+- [x] 8.4 Desplegar la aplicación y ejecutar recorridos reales de administración, docencia, estudio, matrícula y cambio de espacio con datos sintéticos.
 - [x] 8.5 Ejecutar la auditoría posterior y exigir igualdad exacta de IDs, asignaciones docentes y matrículas preexistentes respecto del reporte previo.
 - [x] 8.6 Documentar resultados, conteos, rollback disponible y cualquier limitación residual sin incluir credenciales ni información personal.

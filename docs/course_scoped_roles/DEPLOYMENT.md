@@ -19,9 +19,10 @@
 - Migración remota aplicada sobre 14 colecciones: sólo se actualizaron reglas de autorización.
 - Matriz remota superada para administrador, docente asignado y ajeno, estudiante matriculado y ajeno, cuenta mixta y cliente anónimo; los fixtures fueron eliminados.
 - Auditoría posterior guardada en `backups/pocketbase/course-role-post-20260903.json`: `comparison.equal` es `true`, sin diferencias respecto de usuarios, cursos, asignaciones docentes ni matrículas previas.
-- Pendiente: desplegar la versión de la aplicación que consume estas reglas y completar los recorridos visuales en ese entorno.
+- Aplicación publicada desde `main` con el commit `937ab5c`; el funcionamiento en el entorno publicado fue confirmado por el usuario el 2026-09-03.
+- Los recorridos funcionales de administración, docencia, estudio, matrícula y cambio de espacio quedaron conformes, complementando la matriz remota con datos sintéticos ya superada.
 
-La actualización remota fue autorizada explícitamente después de verificar ambos respaldos. La aplicación web permanece pendiente de su mecanismo normal de publicación.
+La actualización remota fue autorizada explícitamente después de verificar ambos respaldos. Las reglas y la aplicación quedaron publicadas y verificadas sin cambios en las participaciones preexistentes.
 
 ## Orden de despliegue
 
