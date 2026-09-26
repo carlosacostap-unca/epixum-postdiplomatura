@@ -20,7 +20,9 @@ export function legacyResubmissionCandidate(delivery, windowMs = CANDIDATE_WINDO
   const submission = githubStudentUpdate(delivery.repositoryUrl);
   if (!submission) return false;
   const captureTime = Date.parse(submission.commitCapturedAt);
-  const updatedTime = Date.parse(delivery.updated);
+  // The schema backfill preserves the pre-migration `updated` value in
+  // `evaluatedAt`; subsequent PocketBase updates replace `updated` itself.
+  const updatedTime = Date.parse(validDate(delivery.evaluatedAt) ? delivery.evaluatedAt : delivery.updated);
   return Number.isFinite(updatedTime) && Math.abs(updatedTime - captureTime) <= windowMs;
 }
 

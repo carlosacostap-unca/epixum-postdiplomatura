@@ -40,6 +40,17 @@ test('informa solamente actualizaciones GitHub cuya captura coincide con la últ
   assert.equal(legacyResubmissionCandidate(candidate({ resubmissionCount: 1 })), false);
 });
 
+test('conserva el candidato después del backfill usando la fecha original de evaluación', () => {
+  assert.equal(legacyResubmissionCandidate(candidate({
+    updated: '2026-09-26T23:55:00.000Z',
+    evaluatedAt: '2026-08-10T10:00:30.000Z',
+  })), true);
+  assert.equal(legacyResubmissionCandidate(candidate({
+    updated: '2026-09-26T23:55:00.000Z',
+    evaluatedAt: '2026-08-11T10:00:00.000Z',
+  })), false);
+});
+
 test('convierte únicamente un candidato confirmado sin inventar el contenido anterior', () => {
   const patch = confirmedLegacyResubmissionPatch(candidate());
   assert.deepEqual({
