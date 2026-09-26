@@ -128,15 +128,23 @@ La guía operativa, los permisos, la estrategia de rollback y los criterios de a
     - `assignment`: Relation (Single, Required) -> Collection: `assignments`
     - `student`: Relation (Single, Required) -> Collection: `users`
     - `repositoryUrl`: URL (Required)
+    - `status`: Select (`pending`, `draft`, `published`)
+    - `submissionVersion`: Number (versión vigente, comienza en 1)
+    - `evaluatedVersion`: Number (última versión evaluada; 0 si todavía no existe)
+    - `submittedAt`: Date (fecha del intento vigente)
+    - `evaluatedAt`: Date (fecha de la evaluación vigente)
+    - `resubmissionCount`: Number
+    - `history`: JSON (intentos y devoluciones anteriores)
 - **Constraints**:
     - Unique index on `assignment` + `student` (Un estudiante solo puede tener una entrega por TP)
 - **API Rules**:
-    - **List/View Rule**: `student = @request.auth.id || @request.auth.role = "docente" || @request.auth.role = "admin"`
-        - *Nota*: Los estudiantes solo ven sus entregas; docentes/admins ven todas.
-    - **Create Rule**: `@request.auth.id != "" && @request.auth.role = "estudiante"`
-    - **Update Rule**: `student = @request.auth.id || @request.auth.role = "admin"`
-        - *Nota*: Estudiantes pueden modificar su entrega.
-    - **Delete Rule**: `student = @request.auth.id || @request.auth.role = "admin"`
+    - **List/View Rule**: `@request.auth.role = "admin" || student = @request.auth.id || assignment.course.teachers.id ?= @request.auth.id`
+        - *Nota*: Cada docente ve únicamente las entregas de sus cursos.
+    - **Create/Update/Delete Rule**: bloqueadas (`null`). Las escrituras pasan por acciones del servidor para validar propiedad, plazo, versión y transición de estado.
+
+### Flujo de reenvíos
+
+La migración idempotente y el procedimiento para auditar la cohorte histórica están documentados en [`docs/delivery-resubmissions.md`](docs/delivery-resubmissions.md).
 
 ## 6. Colección: `teams`
 - **Name**: `teams`

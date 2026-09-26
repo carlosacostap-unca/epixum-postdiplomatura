@@ -5,9 +5,11 @@ import { revalidatePath } from "next/cache";
 import { getPresignedUploadUrl, getPresignedDownloadUrl, configureBucketCors } from "./s3";
 import {
   isValidDeliveryUrl,
+  isGithubDeliverySubmission,
   parseDeliverySubmission,
   type AIVerdict,
   type CourseWeek,
+  type Delivery,
 } from "@/types";
 import { teacherCanManageCourse } from "./teacher-scope";
 import { getErrorResponse } from "./errors";
@@ -16,6 +18,7 @@ import { getExclusiveResourceParent, resourceParentField, type ResourceParent } 
 import { serializeDeliveryUrlForAssignment } from "./delivery-github";
 import { GithubRepositoryError } from "./github-repository";
 import { createServiceClient } from "./pocketbase-service";
+import { initialDeliveryWorkflow, normalizeDeliveryWorkflow, prepareDeliveryRevision } from "./delivery-workflow";
 
 type ServerPocketBase = Awaited<ReturnType<typeof createServerClient>>;
 
@@ -77,6 +80,46 @@ async function classCourseId(pb: ServerPocketBase, classId: string) {
 async function assignmentCourseId(pb: ServerPocketBase, assignmentId: string) {
   const record = await pb.collection("assignments").getOne(assignmentId, { fields: "course" });
   return record.course as string | undefined;
+}
+
+function revalidateDeliveryViews(courseId: string | undefined, assignmentId: string, deliveryId?: string) {
+  revalidatePath(`/assignments/${assignmentId}`);
+  if (deliveryId) revalidatePath(`/assignments/${assignmentId}/deliveries/${deliveryId}`);
+  if (courseId) {
+    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
+    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+  }
+  revalidatePath('/docentes', 'layout');
+  revalidatePath('/estudiantes', 'layout');
+}
+
+async function createVersionedDelivery(assignmentId: string, studentId: string, repositoryUrl: string) {
+  const servicePb = await createServiceClient();
+  const now = new Date().toISOString();
+  return servicePb.collection('deliveries').create({
+    assignment: assignmentId,
+    student: studentId,
+    repositoryUrl,
+    ...initialDeliveryWorkflow(now),
+  });
+}
+
+async function updateVersionedDelivery(
+  deliveryId: string,
+  expectedStudentId: string,
+  expectedAssignmentId: string,
+  repositoryUrl: string,
+  isPastDue: boolean,
+) {
+  const servicePb = await createServiceClient();
+  const current = await servicePb.collection('deliveries').getOne<Delivery>(deliveryId);
+  if (current.student !== expectedStudentId || current.assignment !== expectedAssignmentId) {
+    return { success: false as const, error: 'No autorizado' };
+  }
+  const transition = prepareDeliveryRevision(current, repositoryUrl, new Date().toISOString(), isPastDue);
+  if (!transition.success) return transition;
+  await servicePb.collection('deliveries').update(deliveryId, transition.patch);
+  return { success: true as const, correctionResubmission: transition.correctionResubmission };
 }
 
 async function contentCourseId(pb: ServerPocketBase, contentId: string) {
@@ -826,15 +869,8 @@ export async function createDelivery(formData: FormData) {
         return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
-    const data: Record<string, unknown> = {
-      assignment: assignmentId,
-      student: user.id,
-      repositoryUrl,
-    };
-    
-    await pb.collection('deliveries').create(data);
-    
-    revalidatePath(`/assignments/${assignmentId}`);
+    await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    revalidateDeliveryViews(assignment.course, assignmentId);
     return { success: true };
   } catch (error) {
     console.error('Failed to create delivery:', error);
@@ -868,14 +904,8 @@ export async function createDeliveryWithFiles(assignmentId: string, courseId: st
     }
 
     const repositoryUrl = JSON.stringify(files);
-    await pb.collection('deliveries').create({
-      assignment: assignmentId,
-      student: user.id,
-      repositoryUrl,
-    });
-
-    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
-    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+    await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    revalidateDeliveryViews(courseId, assignmentId);
     return { success: true };
   } catch (error) {
     console.error('Failed to create delivery with files:', error);
@@ -907,17 +937,16 @@ export async function updateDeliveryWithFiles(deliveryId: string, courseId: stri
     if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, "assignments", assignmentId))) {
       return { success: false, error: "No estás matriculado en este curso" };
     }
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
-      return { success: false, error: 'El plazo de entrega ha finalizado' };
-    }
-
-    await pb.collection('deliveries').update(deliveryId, {
-      repositoryUrl: JSON.stringify(files),
-    });
-
-    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
-    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
-    return { success: true };
+    const result = await updateVersionedDelivery(
+      deliveryId,
+      user.id,
+      assignmentId,
+      JSON.stringify(files),
+      Boolean(assignment.dueDate && new Date() > new Date(assignment.dueDate)),
+    );
+    if (!result.success) return result;
+    revalidateDeliveryViews(courseId, assignmentId, deliveryId);
+    return { success: true, resubmitted: result.correctionResubmission };
   } catch (error) {
     console.error('Failed to update delivery with files:', error);
     return { success: false, error: 'Error al actualizar la entrega' };
@@ -947,14 +976,8 @@ export async function createDeliveryWithUrl(assignmentId: string, courseId: stri
     }
 
     const repositoryUrl = await serializeDeliveryUrlForAssignment(assignmentId, courseId, url, 'student-submission');
-    await pb.collection('deliveries').create({
-      assignment: assignmentId,
-      student: user.id,
-      repositoryUrl,
-    });
-
-    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
-    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
+    await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    revalidateDeliveryViews(courseId, assignmentId);
     return { success: true };
   } catch (error) {
     console.error('Failed to create delivery with URL:', error);
@@ -991,34 +1014,42 @@ export async function updateDeliveryWithUrl(deliveryId: string, courseId: string
     if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, 'assignments', assignmentId))) {
       return { success: false, error: 'No estás matriculado en este curso' };
     }
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
-      return { success: false, error: 'El plazo de entrega ha finalizado' };
-    }
-
     const repositoryUrl = await serializeDeliveryUrlForAssignment(assignmentId, courseId, url, 'student-update');
-    await pb.collection('deliveries').update(deliveryId, {
+    const result = await updateVersionedDelivery(
+      deliveryId,
+      user.id,
+      assignmentId,
       repositoryUrl,
-    });
-
-    revalidatePath(`/estudiantes/cursos/${courseId}/tps/${assignmentId}`);
-    revalidatePath(`/docentes/cursos/${courseId}/tps/${assignmentId}`);
-    return { success: true };
+      Boolean(assignment.dueDate && new Date() > new Date(assignment.dueDate)),
+    );
+    if (!result.success) return result;
+    revalidateDeliveryViews(courseId, assignmentId, deliveryId);
+    return { success: true, resubmitted: result.correctionResubmission };
   } catch (error) {
     console.error('Failed to update delivery with URL:', error);
     return { success: false, error: error instanceof GithubRepositoryError || (error instanceof Error && error.message.startsWith('Este trabajo requiere')) ? error.message : 'Error al actualizar la entrega' };
   }
 }
 
-export async function getStudentDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number) {
+function repositoryUrlForDeliveryVersion(delivery: Delivery, version?: number) {
+  const workflow = normalizeDeliveryWorkflow(delivery);
+  if (version === undefined || version === workflow.submissionVersion) return delivery.repositoryUrl;
+  const historical = workflow.history.find((entry) => entry.version === version);
+  return historical?.repositoryUrl;
+}
+
+export async function getStudentDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number, version?: number) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
   if (!user) return { success: false, error: 'No autorizado' };
 
   try {
-    const delivery = await pb.collection("deliveries").getOne(deliveryId);
+    const delivery = await pb.collection("deliveries").getOne<Delivery>(deliveryId);
     if (delivery.student !== user.id) return { success: false, error: "No autorizado" };
     if (!(await studentCanAccessContent(pb, user, "assignments", delivery.assignment))) return { success: false, error: "No autorizado para este curso" };
-    const submission = parseDeliverySubmission(delivery.repositoryUrl);
+    const repositoryUrl = repositoryUrlForDeliveryVersion(delivery, version);
+    if (!repositoryUrl) return { success: false, error: 'El contenido de ese intento histórico no está disponible' };
+    const submission = parseDeliverySubmission(repositoryUrl);
     if (submission.type !== 'files') return { success: false, error: 'Esta entrega corresponde a un enlace externo' };
     const file = submission.files[fileIndex];
     if (!file?.url) return { success: false, error: "Archivo de entrega inválido" };
@@ -1032,7 +1063,7 @@ export async function getStudentDeliveryFileDownloadUrl(deliveryId: string, file
   }
 }
 
-export async function getTeacherDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number) {
+export async function getTeacherDeliveryFileDownloadUrl(deliveryId: string, fileIndex: number, version?: number) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
@@ -1041,12 +1072,14 @@ export async function getTeacherDeliveryFileDownloadUrl(deliveryId: string, file
   }
 
   try {
-    const delivery = await pb.collection('deliveries').getOne(deliveryId);
+    const delivery = await pb.collection('deliveries').getOne<Delivery>(deliveryId);
     const courseId = await assignmentCourseId(pb, delivery.assignment);
     if (!(await canManageCourse(pb, user, courseId))) {
       return { success: false, error: "No autorizado para este curso" };
     }
-    const submission = parseDeliverySubmission(delivery.repositoryUrl);
+    const repositoryUrl = repositoryUrlForDeliveryVersion(delivery, version);
+    if (!repositoryUrl) return { success: false, error: 'El contenido de ese intento histórico no está disponible' };
+    const submission = parseDeliverySubmission(repositoryUrl);
     if (submission.type !== 'files') {
       return { success: false, error: 'Esta entrega corresponde a un enlace externo' };
     }
@@ -1081,7 +1114,6 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
   // although PocketBase API rules should handle this, it's good to be explicit or just try/catch
   
   const repositoryUrl = (formData.get('repositoryUrl') as string)?.trim();
-  const assignmentId = (formData.get('assignmentId') as string)?.trim(); // Needed for revalidation
 
   if (!repositoryUrl) {
      return { success: false, error: 'Repository URL is required' };
@@ -1095,25 +1127,31 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
       return { success: false, error: "No autorizado" };
     }
     
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
-        return { success: false, error: 'El plazo de entrega ha finalizado' };
-    }
-
-    const data = {
+    const result = await updateVersionedDelivery(
+      deliveryId,
+      user.id,
+      currentDelivery.assignment,
       repositoryUrl,
-    };
-
-    await pb.collection('deliveries').update(deliveryId, data);
-    
-    if (assignmentId) revalidatePath(`/assignments/${assignmentId}`);
-    return { success: true };
+      Boolean(assignment.dueDate && new Date() > new Date(assignment.dueDate)),
+    );
+    if (!result.success) return result;
+    revalidateDeliveryViews(assignment.course, currentDelivery.assignment, deliveryId);
+    return { success: true, resubmitted: result.correctionResubmission };
   } catch (error) {
     console.error('Failed to update delivery:', error);
     return { success: false, error: 'Failed to update delivery' };
   }
 }
 
-export async function updateDeliveryEvaluation(deliveryId: string, grade: number | null, feedback: string, verdict: AIVerdict | undefined, status: 'draft' | 'published', attemptId?: string) {
+export async function updateDeliveryEvaluation(
+  deliveryId: string,
+  grade: number | null,
+  feedback: string,
+  verdict: AIVerdict | undefined,
+  status: 'draft' | 'published',
+  expectedVersion: number,
+  attemptId?: string,
+) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
@@ -1124,6 +1162,7 @@ export async function updateDeliveryEvaluation(deliveryId: string, grade: number
   if (!deliveryId || deliveryId.length !== 15) {
     return { success: false, error: 'Invalid delivery ID' };
   }
+  if (!Number.isInteger(expectedVersion) || expectedVersion < 1) return { success: false, error: 'La versión de la entrega no es válida' };
   if (grade !== null && !Number.isFinite(grade)) return { success: false, error: 'La nota no es válida' };
   if (verdict && !['Aprobado', 'Desaprobado', 'Corregir y reenviar'].includes(verdict)) return { success: false, error: 'El veredicto no es válido' };
   if (status === 'published' && (!feedback.trim() || !verdict)) return { success: false, error: 'La publicación requiere devolución y veredicto' };
@@ -1134,34 +1173,44 @@ export async function updateDeliveryEvaluation(deliveryId: string, grade: number
     if (!(await canManageCourse(pb, user, courseId))) {
       return { success: false, error: "No autorizado para evaluar esta entrega" };
     }
-    let attempt: { id: string; delivery: string; status: string } | null = null;
-    let servicePb: Awaited<ReturnType<typeof createServiceClient>> | null = null;
+    const servicePb = await createServiceClient();
+    const currentDelivery = await servicePb.collection('deliveries').getOne<Delivery>(deliveryId);
+    const workflow = normalizeDeliveryWorkflow(currentDelivery);
+    if (workflow.submissionVersion !== expectedVersion) {
+      return { success: false, error: 'La entrega cambió mientras la estabas evaluando. Revisá la versión vigente antes de continuar.' };
+    }
+    if (status === 'draft' && workflow.status === 'published') {
+      return { success: false, error: 'Una evaluación publicada no puede volver a borrador. Editala y publicala nuevamente.' };
+    }
+    let attempt: { id: string; delivery: string; status: string; commitSha: string } | null = null;
     if (attemptId) {
-      servicePb = await createServiceClient();
-      const selectedAttempt = await servicePb.collection('ai_preevaluations').getOne<{ id: string; delivery: string; status: string }>(attemptId, { fields: 'id,delivery,status' });
+      const selectedAttempt = await servicePb.collection('ai_preevaluations').getOne<{ id: string; delivery: string; status: string; commitSha: string }>(attemptId, { fields: 'id,delivery,status,commitSha' });
       if (selectedAttempt.delivery !== deliveryId || selectedAttempt.status !== 'completed') return { success: false, error: 'La sugerencia de IA no corresponde a esta entrega' };
+      const submission = parseDeliverySubmission(currentDelivery.repositoryUrl);
+      if (!isGithubDeliverySubmission(submission) || submission.commitSha !== selectedAttempt.commitSha) {
+        return { success: false, error: 'La sugerencia de IA corresponde a una versión anterior. Solicitá una nueva preevaluación.' };
+      }
       attempt = selectedAttempt;
     }
-    
-    await pb.collection('deliveries').update(deliveryId, {
+
+    const now = new Date().toISOString();
+    await servicePb.collection('deliveries').update(deliveryId, {
       grade,
       feedback,
-      verdict,
-      status
+      verdict: verdict || '',
+      status,
+      evaluatedVersion: status === 'published' ? workflow.submissionVersion : workflow.evaluatedVersion,
+      evaluatedAt: status === 'published' ? now : '',
     });
-    if (attempt && servicePb) {
+    if (attempt) {
       await servicePb.collection('ai_preevaluations').update(attempt.id, {
-        adoptedAt: new Date().toISOString(),
+        adoptedAt: now,
         adoptedBy: user.id,
         adoptedAs: status,
       });
     }
     
-    revalidatePath(`/assignments/${delivery.assignment}`);
-    revalidatePath(`/assignments/${delivery.assignment}/deliveries/${deliveryId}`);
-    // Revalidate course-scoped TP pages
-    revalidatePath('/docentes', 'layout');
-    revalidatePath('/estudiantes', 'layout');
+    revalidateDeliveryViews(courseId, delivery.assignment, deliveryId);
     return { success: true };
   } catch (error) {
     console.error('Failed to update delivery evaluation:', error);

@@ -202,8 +202,12 @@ export async function getLatestAIPreevaluationForDelivery(deliveryId: string): P
   const context = await authorizeDelivery(deliveryId);
   const servicePb = await createServiceClient();
   try {
-    const record = await servicePb.collection('ai_preevaluations').getFirstListItem<AIPreevaluationAttempt>(servicePb.filter('delivery = {:deliveryId}', { deliveryId }), { sort: '-created' });
     const submission = parseDeliverySubmission(context.delivery.repositoryUrl);
+    if (!isGithubDeliverySubmission(submission)) return null;
+    const record = await servicePb.collection('ai_preevaluations').getFirstListItem<AIPreevaluationAttempt>(
+      servicePb.filter('delivery = {:deliveryId} && commitSha = {:commitSha}', { deliveryId, commitSha: submission.commitSha }),
+      { sort: '-created' },
+    );
     const source = isGithubDeliverySubmission(submission) ? submission.captureSource : 'student-submission';
     return dto(record, source);
   } catch (error) { if ((error as { status?: number }).status === 404) return null; throw error; }

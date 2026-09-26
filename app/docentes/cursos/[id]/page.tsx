@@ -14,6 +14,8 @@ import {
   getDeliveries,
 } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
+import { isDeliveryPendingReview, normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
+import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
 import { redirect } from "next/navigation";
 
 const primaryLink = "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]";
@@ -43,7 +45,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
         getInquiries({ courseId: course.id }),
       ]);
   const deliveries = (await Promise.all(assignments.map((assignment) => getDeliveries(assignment.id)))).flat();
-  const pendingDeliveries = deliveries.filter((delivery) => delivery.status !== "published");
+  const pendingDeliveries = deliveries.filter(isDeliveryPendingReview);
   const pendingInquiries = inquiries.filter((inquiry) => inquiry.status === "Pendiente");
 
   return (
@@ -70,12 +72,14 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
           <div className="grid gap-4 md:grid-cols-2">
             {pendingDeliveries.slice(0, 3).map((delivery) => {
               const assignment = assignments.find((item) => item.id === delivery.assignment);
+              const presentation = teacherDeliveryPresentation(delivery);
+              const workflow = normalizeDeliveryWorkflow(delivery);
               return (
                 <Link key={delivery.id} href={`/docentes/cursos/${course.id}/tps/${delivery.assignment}#entregas`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                   <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
-                    <Badge tone={delivery.status === "draft" ? "info" : "warning"}>{delivery.status === "draft" ? "Evaluación en borrador" : "Sin evaluar"}</Badge>
+                    <Badge tone={presentation.tone}>{presentation.label}</Badge>
                     <h3 className="mt-4 font-bold">{assignment?.title || "Trabajo práctico"}</h3>
-                    <p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">{delivery.expand?.student?.name || "Estudiante"} · <FormattedDate date={delivery.created} /></p>
+                    <p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">{delivery.expand?.student?.name || "Estudiante"} · Versión {workflow.submissionVersion} · <FormattedDate date={workflow.submittedAt} /></p>
                   </CardContent></Card>
                 </Link>
               );
@@ -127,7 +131,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
           <div className="grid gap-4 md:grid-cols-2">
             {assignments.map((assignment) => {
               const assignmentDeliveries = deliveries.filter((delivery) => delivery.assignment === assignment.id);
-              const pendingCount = assignmentDeliveries.filter((delivery) => delivery.status !== "published").length;
+              const pendingCount = assignmentDeliveries.filter(isDeliveryPendingReview).length;
               return (
                 <Link key={assignment.id} href={`/docentes/cursos/${course.id}/tps/${assignment.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                   <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>

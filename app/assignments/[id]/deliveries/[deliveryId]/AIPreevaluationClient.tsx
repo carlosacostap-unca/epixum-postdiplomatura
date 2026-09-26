@@ -11,6 +11,7 @@ import { Badge, Button, Card, CardContent, ConfirmDialog, Field, Select, useToas
 
 interface Props {
   deliveryId: string;
+  submissionVersion: number;
   aiEligible: boolean;
   repositoryUrl?: string;
   repositoryFullName?: string;
@@ -73,7 +74,7 @@ export default function AIPreevaluationClient(props: Props) {
     if (numericGrade !== null && !Number.isFinite(numericGrade)) { setError('La nota debe ser un número o quedar vacía.'); return; }
     setSaving(status);
     setError('');
-    const result = await updateDeliveryEvaluation(props.deliveryId, numericGrade, feedback.trim(), verdict || undefined, status, attempt?.status === 'completed' ? attempt.id : undefined);
+    const result = await updateDeliveryEvaluation(props.deliveryId, numericGrade, feedback.trim(), verdict || undefined, status, props.submissionVersion, attempt?.status === 'completed' ? attempt.id : undefined);
     setSaving(null);
     setConfirmPublish(false);
     if (!result.success) { setError(result.error || 'No se pudo guardar la evaluación.'); return; }

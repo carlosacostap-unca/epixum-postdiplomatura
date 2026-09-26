@@ -16,7 +16,7 @@ const attempt = {
   result: { verdict: 'Corregir y reenviar' as const, suggestedGrade: null, criteria: [{ criterionId: 'c1', criterion: 'Código', outcome: 'parcial' as const, observation: 'Falta validar' }], strengths: ['Buena estructura'], corrections: ['Agregar validación'], warnings: ['No se ejecutó'], proposedMessage: 'Revisá la validación.' },
 };
 
-const base = { deliveryId: 'delivery0000001', aiEligible: true, repositoryUrl: 'https://github.com/epixum/tp', repositoryFullName: 'epixum/tp', providerStatus: { openaiConfigured: true, githubTokenConfigured: true, githubPublicAccessAvailable: true }, initialGrade: null, initialFeedback: '', initialStatus: 'pending' as const };
+const base = { deliveryId: 'delivery0000001', submissionVersion: 2, aiEligible: true, repositoryUrl: 'https://github.com/epixum/tp', repositoryFullName: 'epixum/tp', providerStatus: { openaiConfigured: true, githubTokenConfigured: true, githubPublicAccessAvailable: true }, initialGrade: null, initialFeedback: '', initialStatus: 'pending' as const };
 
 describe('AIPreevaluationClient', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -56,10 +56,10 @@ describe('AIPreevaluationClient', () => {
     const user = userEvent.setup();
     render(<ToastProvider><AIPreevaluationClient {...base} initialAttempt={attempt} /></ToastProvider>);
     await user.click(screen.getByRole('button', { name: /guardar borrador/i }));
-    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, 'Revisá la validación.', 'Corregir y reenviar', 'draft', 'attempt-1');
+    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, 'Revisá la validación.', 'Corregir y reenviar', 'draft', 2, 'attempt-1');
     await user.click(screen.getByRole('button', { name: /publicar evaluación/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
-    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, 'Revisá la validación.', 'Corregir y reenviar', 'published', 'attempt-1');
+    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, 'Revisá la validación.', 'Corregir y reenviar', 'published', 2, 'attempt-1');
   });
 });

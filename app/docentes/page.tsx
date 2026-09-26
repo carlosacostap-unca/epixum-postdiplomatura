@@ -9,6 +9,8 @@ import {
   StatCard,
 } from "@/components/ui";
 import { getTeacherDashboardData } from "@/lib/data";
+import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
+import { normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 
 function studentName(delivery: Awaited<ReturnType<typeof getTeacherDashboardData>>["pendingDeliveries"][number]) {
@@ -83,15 +85,17 @@ export default async function DocentesPage() {
               <div className="space-y-3">
                 {dashboard.pendingDeliveries.map((delivery) => {
                   const assignment = delivery.expand?.assignment;
+                  const presentation = teacherDeliveryPresentation(delivery);
+                  const workflow = normalizeDeliveryWorkflow(delivery);
                   return (
                     <Link key={delivery.id} href={`/docentes/cursos/${assignment?.course}/tps/${delivery.assignment}#entregas`} className="block rounded-[var(--epixum-radius-lg)] focus-visible:outline-offset-4">
                       <Card className="transition-colors hover:bg-[var(--color-surface-container)]">
                         <CardContent className="flex items-center justify-between gap-4 py-5">
                           <div className="min-w-0">
                             <p className="truncate font-bold">{assignment?.title || "Trabajo práctico"}</p>
-                            <p className="mt-1 truncate text-sm text-[var(--color-on-surface-variant)]">{studentName(delivery)} · Entregada <FormattedDate date={delivery.created} /></p>
+                            <p className="mt-1 truncate text-sm text-[var(--color-on-surface-variant)]">{studentName(delivery)} · Versión {workflow.submissionVersion} enviada <FormattedDate date={workflow.submittedAt} /></p>
                           </div>
-                          <Badge tone={delivery.status === "draft" ? "info" : "warning"}>{delivery.status === "draft" ? "Borrador" : "Sin evaluar"}</Badge>
+                          <Badge tone={presentation.tone}>{presentation.label}</Badge>
                         </CardContent>
                       </Card>
                     </Link>

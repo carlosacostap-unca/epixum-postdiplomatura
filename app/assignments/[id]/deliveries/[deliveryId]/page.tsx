@@ -12,6 +12,7 @@ import { assignmentAIConfigInputSchema } from "@/lib/ai-preevaluation-schema";
 import { getAIPreevaluationProviderStatus, getLatestAIPreevaluation } from "@/app/actions/openai";
 import { parseGithubRepositoryUrl } from "@/lib/github-url";
 import { isAdmin, isAssignedTeacher } from "@/lib/course-roles";
+import { normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 
 export const dynamic = 'force-dynamic';
 
@@ -136,6 +137,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
 
           <AIPreevaluationClient
             deliveryId={delivery.id}
+            submissionVersion={normalizeDeliveryWorkflow(delivery).submissionVersion}
             aiEligible={aiEligible}
             repositoryUrl={submission.type === 'url' ? submission.url : undefined}
             repositoryFullName={isGithubDeliverySubmission(submission) ? submission.repositoryFullName : githubCandidate?.fullName}

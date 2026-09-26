@@ -147,7 +147,7 @@ export async function getTeacherDashboardData(teacherId: string): Promise<Teache
   const deliveryPromise = assignments.length > 0
     ? pb.collection("deliveries").getList<TeacherDashboardDelivery>(1, 6, {
         filter: `${relationFilter(pb, "assignment", assignments.map((assignment) => assignment.id))} && status != "published"`,
-        sort: "created",
+        sort: "-updated",
         expand: "student,assignment",
       })
     : Promise.resolve({ items: [], totalItems: 0 });

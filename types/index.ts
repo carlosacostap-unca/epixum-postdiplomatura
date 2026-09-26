@@ -95,6 +95,21 @@ export function isGithubDeliverySubmission(submission: DeliverySubmission): subm
     && typeof submission.captureSource === 'string';
 }
 
+export interface DeliveryPublishedEvaluation {
+  grade?: number;
+  feedback: string;
+  verdict: AIVerdict;
+  evaluatedAt?: string;
+}
+
+export interface DeliveryHistoryEntry {
+  version: number;
+  submittedAt: string;
+  repositoryUrl?: string;
+  contentUnavailable?: boolean;
+  evaluation?: DeliveryPublishedEvaluation;
+}
+
 export interface Delivery extends BaseModel {
   assignment: string;
   student: string;
@@ -103,6 +118,12 @@ export interface Delivery extends BaseModel {
   feedback?: string;
   verdict?: AIVerdict;
   status?: 'pending' | 'draft' | 'published';
+  submissionVersion?: number;
+  evaluatedVersion?: number;
+  submittedAt?: string;
+  evaluatedAt?: string;
+  resubmissionCount?: number;
+  history?: DeliveryHistoryEntry[];
   expand?: {
     student?: User;
   };

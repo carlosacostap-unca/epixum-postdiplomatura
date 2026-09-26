@@ -8,6 +8,7 @@ import { isWeekEffectivelyVisible } from "@/lib/course-weeks";
 import { getAssignmentsByCourse, getClassesByCourse, getCourse, getCourseOrganizationData, getUserDelivery, isStudentEnrolled } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { getDeadlineState } from "@/lib/student-learning";
+import { studentDeliveryPresentation } from "@/lib/delivery-presentation";
 import type { Assignment, Class, CourseWeek, Delivery, Inquiry } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ function ClassCard({ courseId, item, nextClass, now }: { courseId: string; item:
 function AssignmentCard({ courseId, assignment, delivery, now }: { courseId: string; assignment: Assignment; delivery?: Delivery | null; now: Date }) {
   const deadline = getDeadlineState(assignment.dueDate, now);
   const badge = delivery
-    ? { tone: delivery.status === "published" ? "success" as const : "info" as const, label: delivery.status === "published" ? "Evaluado" : "Entregado" }
+    ? studentDeliveryPresentation(delivery)
     : deadline === "overdue" ? { tone: "error" as const, label: "Vencido sin entrega" }
       : deadline === "due-soon" ? { tone: "warning" as const, label: "Vence en menos de 72 h" }
         : { tone: "neutral" as const, label: "Pendiente" };
