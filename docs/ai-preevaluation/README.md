@@ -28,6 +28,14 @@ GITHUB_API_TOKEN=
 
 Se excluyen secretos, `.env`, claves, binarios, dependencias, directorios generados, mapas, archivos minificados y lockfiles voluminosos. Toda omisión se presenta como cobertura al docente.
 
+### Vistas EJS
+
+El selector compartido admite archivos `.ejs` en cualquier ruta del proyecto, incluidos layouts, parciales y vistas anidadas. Se envía su contenido literal como evidencia no confiable: no se renderizan plantillas ni se ejecutan sus expresiones JavaScript. Esto permite analizar formularios, navegación, accesibilidad, interpolación y uso de layouts/includes cuando la rúbrica los requiere, como en los TP4 y TP5 de Desarrollo Back End con Node.js (Cohorte 6).
+
+Las vistas conservan los mismos límites de tamaño y exclusiones de secretos, dependencias y directorios generados que el resto de las fuentes. Si un archivo aparece en la cobertura como omitido, esa ausencia en la evidencia no demuestra que falte en el repositorio.
+
+Los intentos guardados antes de este ajuste conservan su resultado y cobertura originales. Para incluir las vistas en una entrega ya preevaluada, una vez desplegado el cambio se debe solicitar una nueva preevaluación del commit capturado y revisar su resultado antes de publicar; no se modifican automáticamente las notas ni las devoluciones anteriores.
+
 ## Preparación del esquema
 
 ```powershell
@@ -48,6 +56,16 @@ La migración es idempotente. Agrega la habilitación por curso y las coleccione
 6. Solicitar una preevaluación de prueba; revisar commit, cobertura, advertencias y todos los criterios.
 7. Editar la propuesta y guardarla como borrador. Publicar solo después de una revisión docente independiente.
 8. Validar con entregas históricas anonimizadas o fixtures antes de habilitar entregas reales.
+
+## Publicación del informe completo
+
+Las nuevas sugerencias preparan por defecto en el campo **Devolución para el estudiante** el mensaje y un informe completo: alcance estático, commit, versión de rúbrica, resultados y observaciones de todos los criterios, descripción y peso disponibles en la rúbrica histórica, fortalezas, correcciones o recomendaciones, advertencias y cobertura de archivos incluidos/omitidos. No se inventan puntajes por criterio ni se publica un registro de razonamiento interno de la IA.
+
+El docente puede editar todo el texto, guardar un borrador y confirmar su publicación. Debe revisar su coherencia con la nota y el veredicto elegidos, especialmente si cambia la sugerencia original. Las recomendaciones de un trabajo aprobado no se presentan como condiciones de reenvío.
+
+El texto confirmado se persiste íntegramente en `deliveries.feedback`, se muestra como devolución publicada y se conserva en el historial de la versión cuando el alumno reenvía. No cambia el esquema ni los permisos de la colección privada `ai_preevaluations`, ni se publican sus metadatos administrativos o uso del proveedor. La lectura estudiantil usa la devolución de su propia entrega por el flujo existente.
+
+Al abrir una evaluación o borrador guardado se conserva su texto; no se amplían devoluciones antiguas automáticamente. Solicitar explícitamente una nueva preevaluación sí genera una nueva propuesta completa, que debe revisarse antes de publicar. La evaluación manual sigue disponible sin informe generado. Para procesos por lotes autorizados, componer también el texto con `buildAIPreevaluationFeedback` antes de usar la operación de publicación, en lugar de enviar sólo `result.proposedMessage`.
 
 ## Smoke tests opt-in
 

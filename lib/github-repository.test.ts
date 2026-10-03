@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { describe, expect, it, vi } from 'vitest';
 import {
   downloadGithubZipball,
+  GITHUB_INGESTION_LIMITS,
   GithubRepositoryError,
   prepareRepositoryEvidence,
   resolvePublicGithubRepository,
@@ -93,6 +94,44 @@ describe('preparación de evidencia', () => {
     zip.file(`epixum-tp-${sha}/../secret.ts`, 'export const secret = true;');
     const bytes = await zip.generateAsync({ type: 'uint8array' });
     await expect(prepareRepositoryEvidence(bytes, sha)).rejects.toMatchObject({ category: 'repository_limits' });
+  });
+
+  it('incluye vistas, layouts y parciales EJS como evidencia estática no confiable', async () => {
+    const files = {
+      'views/inicio.ejs': '<h1><%= titulo %></h1><%- include("partials/encabezado") %>',
+      'views/layouts/main.ejs': '<html lang="es"><body><%- body %></body></html>',
+      'views/partials/encabezado.ejs': '<nav><a href="/reservas">Reservas</a></nav>',
+      'views/reservas/nueva.ejs': '<form method="post" action="/reservas"><label for="email">Email</label><input id="email" name="email" value="<%= valores.email %>"><p role="alert"><%= error %></p></form>',
+      'views/no-encontrado.ejs': '<% throw new Error("La plantilla no debe ejecutarse"); %><h1>404</h1>',
+    };
+    const result = await prepareRepositoryEvidence(await archive(files), sha);
+
+    expect(result.coverage.includedFiles).toEqual(Object.keys(files).sort());
+    expect(result.coverage.omittedFiles).toEqual([]);
+    expect(result.coverage.partial).toBe(false);
+    for (const [path, content] of Object.entries(files)) {
+      expect(result.text).toContain(`<<<ARCHIVO_NO_CONFIABLE ruta="${path}">>>\n${content}\n<<<FIN_ARCHIVO_NO_CONFIABLE>>>`);
+    }
+  });
+
+  it('mantiene exclusiones y límites de tamaño al admitir EJS', async () => {
+    const result = await prepareRepositoryEvidence(await archive({
+      'views/inicio.ejs': '<h1>Vista propia de la entrega</h1>',
+      'node_modules/ejemplo/views/template.ejs': '<h1>Dependencia excluida</h1>',
+      'dist/views/inicio.ejs': '<h1>Artefacto de build excluido</h1>',
+      'views/secrets.ejs': 'SECRETO_NO_ENVIAR',
+      'views/grande.ejs': 'x'.repeat(GITHUB_INGESTION_LIMITS.maxTextFileBytes + 1),
+    }), sha);
+
+    expect(result.coverage.includedFiles).toEqual(['views/inicio.ejs']);
+    expect(result.coverage.omittedFiles).toEqual(expect.arrayContaining([
+      { path: 'node_modules/ejemplo/views/template.ejs', reason: 'directorio excluido' },
+      { path: 'dist/views/inicio.ejs', reason: 'directorio excluido' },
+      { path: 'views/secrets.ejs', reason: 'archivo sensible' },
+      { path: 'views/grande.ejs', reason: 'archivo de texto fuera de límite' },
+    ]));
+    expect(result.text).not.toContain('SECRETO_NO_ENVIAR');
+    expect(result.coverage.partial).toBe(true);
   });
 
   it('rechaza proyectos sin evidencia suficiente', async () => {

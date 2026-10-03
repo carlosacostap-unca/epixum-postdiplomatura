@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { requestAIPreevaluation } from '@/app/actions/openai';
 import { updateDeliveryEvaluation } from '@/lib/actions';
 import type { AIPreevaluationDTO } from '@/lib/ai-preevaluation-service';
+import { buildAIPreevaluationFeedback } from '@/lib/ai-preevaluation-report';
 import type { AIVerdict } from '@/types';
 import { Badge, Button, Card, CardContent, ConfirmDialog, Field, Select, useToast } from '@/components/ui';
 
@@ -35,7 +36,13 @@ export default function AIPreevaluationClient(props: Props) {
   const [attempt, setAttempt] = useState(props.initialAttempt);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
-  const [feedback, setFeedback] = useState(props.initialFeedback || props.initialAttempt?.result?.proposedMessage || '');
+  const [feedback, setFeedback] = useState(() => {
+    if (props.initialFeedback || props.initialStatus === 'published') return props.initialFeedback || '';
+    const initial = props.initialAttempt;
+    return initial?.status === 'completed' && initial.result
+      ? buildAIPreevaluationFeedback({ ...initial, result: initial.result })
+      : '';
+  });
   const [grade, setGrade] = useState(props.initialGrade !== null && props.initialGrade !== undefined
     ? String(props.initialGrade)
     : props.initialAttempt?.result?.suggestedGrade !== null && props.initialAttempt?.result?.suggestedGrade !== undefined
@@ -58,7 +65,7 @@ export default function AIPreevaluationClient(props: Props) {
     }
     setAttempt(result.attempt);
     if (result.attempt.result) {
-      setFeedback(result.attempt.result.proposedMessage);
+      setFeedback(buildAIPreevaluationFeedback({ ...result.attempt, result: result.attempt.result }));
       setGrade(result.attempt.result.suggestedGrade === null ? '' : String(result.attempt.result.suggestedGrade));
       setVerdict(result.attempt.result.verdict);
     }
@@ -123,10 +130,11 @@ export default function AIPreevaluationClient(props: Props) {
       <div><h2 className="font-headline text-2xl font-bold">Evaluación oficial</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Podés evaluar manualmente o editar la sugerencia. Nada se publica sin tu confirmación.</p></div>
       {error && !props.aiEligible && <p role="alert" className="rounded-[var(--epixum-radius-md)] bg-[var(--color-error)]/10 p-3 text-sm text-[var(--color-error)]">{error}</p>}
       <div className="grid gap-4 sm:grid-cols-[10rem_minmax(0,1fr)]"><Field label="Nota opcional" id="official-grade"><input id="official-grade" type="number" value={grade} onChange={(event) => setGrade(event.target.value)} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" /></Field><Field label="Veredicto" id="official-verdict"><Select id="official-verdict" value={verdict} onChange={(event) => setVerdict(event.target.value as AIVerdict | '')}><option value="">Seleccionar</option><option value="Aprobado">Aprobado</option><option value="Desaprobado">Desaprobado</option><option value="Corregir y reenviar">Corregir y reenviar</option></Select></Field></div>
-      <Field label="Devolución para el estudiante" id="official-feedback"><textarea id="official-feedback" rows={8} value={feedback} onChange={(event) => setFeedback(event.target.value)} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] p-4" /></Field>
+      <Field label="Devolución para el estudiante" id="official-feedback"><textarea id="official-feedback" rows={16} value={feedback} onChange={(event) => setFeedback(event.target.value)} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] p-4" /></Field>
+      <p className="text-sm text-[var(--color-on-surface-variant)]">Las nuevas sugerencias de IA incorporan aquí el mensaje y el informe detallado. Podés editar todo el texto. Revisá su coherencia con la nota y el veredicto: el estudiante verá exactamente la devolución que confirmes, incluidos los criterios, las observaciones y la cobertura.</p>
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="secondary" onClick={() => save('draft')} isPending={saving === 'draft'} pendingLabel="Guardando…">Guardar borrador</Button><Button onClick={() => setConfirmPublish(true)} isPending={saving === 'published'} pendingLabel="Publicando…">Publicar evaluación</Button></div>
       <p className="text-sm text-[var(--color-on-surface-variant)]">Estado actual: {props.initialStatus === 'published' ? 'publicada' : props.initialStatus === 'draft' ? 'borrador' : 'sin publicar'}.</p>
     </CardContent></Card>
-    <ConfirmDialog open={confirmPublish} onOpenChange={setConfirmPublish} title="Publicar evaluación" description="El veredicto, la nota si existe y la devolución quedarán visibles para el estudiante." confirmLabel="Publicar ahora" isPending={saving === 'published'} onConfirm={() => save('published')} />
+    <ConfirmDialog open={confirmPublish} onOpenChange={setConfirmPublish} title="Publicar evaluación" description="El veredicto, la nota si existe y todo el texto de la devolución, incluido el informe detallado que hayas revisado, quedarán visibles para el estudiante." confirmLabel="Publicar ahora" isPending={saving === 'published'} onConfirm={() => save('published')} />
   </div>;
 }

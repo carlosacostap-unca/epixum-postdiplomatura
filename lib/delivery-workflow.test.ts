@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Delivery } from '@/types';
+import { buildAIPreevaluationFeedback } from './ai-preevaluation-report';
+import { reportFixture } from '@/test/ai-preevaluation-report-fixture';
 import {
   canStudentModifyDelivery,
   getStudentDeliveryState,
@@ -77,6 +79,16 @@ describe('flujo versionado de entregas', () => {
     const current = delivery({ status: 'pending', submissionVersion: 2, evaluatedVersion: 1, resubmissionCount: 1 });
     expect(canStudentModifyDelivery(current, true)).toBe(false);
     expect(prepareDeliveryRevision(current, 'nuevo', '2026-09-10T12:00:00.000Z', true)).toMatchObject({ success: false });
+  });
+
+  it('conserva el informe completo de la versión corregida en el historial', () => {
+    const feedback = buildAIPreevaluationFeedback(reportFixture);
+    const current = delivery({ status: 'published', verdict: 'Corregir y reenviar', feedback, grade: 5, submissionVersion: 1, evaluatedVersion: 1 });
+    const revised = prepareDeliveryRevision(current, 'https://github.com/example/v2', '2026-09-10T12:00:00.000Z', true);
+    expect(revised.success).toBe(true);
+    if (!revised.success) return;
+    expect(revised.patch.history[0].evaluation?.feedback).toBe(feedback);
+    expect(latestPublishedEvaluation(delivery({ ...revised.patch, grade: undefined, verdict: undefined }))).toMatchObject({ feedback });
   });
 
   it.each(['Aprobado', 'Desaprobado'] as const)('cierra una entrega con resultado final %s', (verdict) => {

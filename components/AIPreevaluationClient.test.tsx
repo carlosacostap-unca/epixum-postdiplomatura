@@ -5,6 +5,7 @@ import { ToastProvider } from '@/components/ui';
 import AIPreevaluationClient from '@/app/assignments/[id]/deliveries/[deliveryId]/AIPreevaluationClient';
 import { requestAIPreevaluation } from '@/app/actions/openai';
 import { updateDeliveryEvaluation } from '@/lib/actions';
+import { buildAIPreevaluationFeedback } from '@/lib/ai-preevaluation-report';
 
 vi.mock('@/app/actions/openai', () => ({ requestAIPreevaluation: vi.fn() }));
 vi.mock('@/lib/actions', () => ({ updateDeliveryEvaluation: vi.fn() }));
@@ -12,6 +13,7 @@ vi.mock('@/lib/actions', () => ({ updateDeliveryEvaluation: vi.fn() }));
 const attempt = {
   id: 'attempt-1', status: 'completed' as const, commitSha: 'a'.repeat(40), captureSource: 'student-submission' as const,
   model: 'gpt-5.6-luna', configVersion: 2, created: '2026-08-22', updated: '2026-08-22',
+  rubric: [{ id: 'c1', title: 'Código', description: 'Validación y claridad.', weight: 100 }],
   coverage: { commitSha: 'a'.repeat(40), includedFiles: ['src/index.ts'], omittedFiles: [{ path: '.env', reason: 'archivo sensible' }], includedBytes: 100, expandedBytes: 200, totalEntries: 2, partial: true },
   result: { verdict: 'Corregir y reenviar' as const, suggestedGrade: null, criteria: [{ criterionId: 'c1', criterion: 'Código', outcome: 'parcial' as const, observation: 'Falta validar' }], strengths: ['Buena estructura'], corrections: ['Agregar validación'], warnings: ['No se ejecutó'], proposedMessage: 'Revisá la validación.' },
 };
@@ -25,7 +27,7 @@ describe('AIPreevaluationClient', () => {
     render(<ToastProvider><AIPreevaluationClient {...base} initialAttempt={attempt} /></ToastProvider>);
     expect(screen.getByText('Cobertura analizada')).toBeInTheDocument();
     expect(screen.getAllByText(/Revisá la validación/).length).toBeGreaterThan(0);
-    expect(screen.getByDisplayValue('Revisá la validación.')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Devolución para el estudiante' })).toHaveValue(buildAIPreevaluationFeedback(attempt));
     await user.click(screen.getByRole('button', { name: /descartar sugerencia/i }));
     expect(screen.queryByText('Resultados por criterio')).not.toBeInTheDocument();
     expect(updateDeliveryEvaluation).not.toHaveBeenCalled();
@@ -56,10 +58,45 @@ describe('AIPreevaluationClient', () => {
     const user = userEvent.setup();
     render(<ToastProvider><AIPreevaluationClient {...base} initialAttempt={attempt} /></ToastProvider>);
     await user.click(screen.getByRole('button', { name: /guardar borrador/i }));
-    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, 'Revisá la validación.', 'Corregir y reenviar', 'draft', 2, 'attempt-1');
+    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, buildAIPreevaluationFeedback(attempt), 'Corregir y reenviar', 'draft', 2, 'attempt-1');
     await user.click(screen.getByRole('button', { name: /publicar evaluación/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
-    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, 'Revisá la validación.', 'Corregir y reenviar', 'published', 2, 'attempt-1');
+    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, buildAIPreevaluationFeedback(attempt), 'Corregir y reenviar', 'published', 2, 'attempt-1');
+  });
+
+  it('compone el informe tras una nueva solicitud y publica sólo el texto editado y confirmado', async () => {
+    vi.mocked(requestAIPreevaluation).mockResolvedValue({ success: true, attempt });
+    vi.mocked(updateDeliveryEvaluation).mockResolvedValue({ success: true });
+    const user = userEvent.setup();
+    render(<ToastProvider><AIPreevaluationClient {...base} initialAttempt={null} /></ToastProvider>);
+    await user.click(screen.getByRole('button', { name: /solicitar preevaluación con ia/i }));
+    const editor = screen.getByRole('textbox', { name: 'Devolución para el estudiante' });
+    expect(editor).toHaveValue(buildAIPreevaluationFeedback(attempt));
+    expect(updateDeliveryEvaluation).not.toHaveBeenCalled();
+    const edited = `${buildAIPreevaluationFeedback(attempt)}\n\nAclaración docente: revisá el caso vacío.`;
+    // paste avoids thousands of simulated keystrokes for a full report.
+    await user.click(editor);
+    await user.clear(editor);
+    await user.paste(edited);
+    await user.click(screen.getByRole('button', { name: /publicar evaluación/i }));
+    expect(updateDeliveryEvaluation).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toHaveTextContent('todo el texto');
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, edited, 'Corregir y reenviar', 'published', 2, 'attempt-1');
+  });
+
+  it.each(['draft', 'published'] as const)('no reemplaza automáticamente una devolución %s guardada', (status) => {
+    render(<ToastProvider><AIPreevaluationClient {...base} initialStatus={status} initialFeedback="Devolución original editada por el docente." initialAttempt={attempt} /></ToastProvider>);
+    expect(screen.getByRole('textbox', { name: 'Devolución para el estudiante' })).toHaveValue('Devolución original editada por el docente.');
+    expect(updateDeliveryEvaluation).not.toHaveBeenCalled();
+  });
+
+  it('conserva la evaluación manual sin un informe de IA', async () => {
+    vi.mocked(updateDeliveryEvaluation).mockResolvedValue({ success: true });
+    const user = userEvent.setup();
+    render(<ToastProvider><AIPreevaluationClient {...base} aiEligible={false} initialAttempt={null} initialFeedback="Devolución manual." initialVerdict="Aprobado" /></ToastProvider>);
+    await user.click(screen.getByRole('button', { name: /guardar borrador/i }));
+    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, 'Devolución manual.', 'Aprobado', 'draft', 2, undefined);
   });
 });

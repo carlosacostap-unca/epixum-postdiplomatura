@@ -191,7 +191,7 @@ export async function downloadGithubZipball(
 }
 
 const ALLOWED_EXTENSIONS = new Set([
-  '.c', '.cc', '.cpp', '.cs', '.css', '.go', '.h', '.hpp', '.html', '.java', '.js', '.jsx', '.kt', '.kts',
+  '.c', '.cc', '.cpp', '.cs', '.css', '.ejs', '.go', '.h', '.hpp', '.html', '.java', '.js', '.jsx', '.kt', '.kts',
   '.md', '.mjs', '.mts', '.php', '.properties', '.py', '.rb', '.rs', '.scss', '.sh', '.sql', '.swift',
   '.toml', '.ts', '.tsx', '.txt', '.vue', '.xml', '.yaml', '.yml', '.json', '.graphql', '.gql', '.prisma',
 ]);

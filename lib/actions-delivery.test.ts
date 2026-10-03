@@ -34,6 +34,8 @@ vi.mock('./s3', () => ({ getPresignedUploadUrl: vi.fn(), getPresignedDownloadUrl
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 import { updateDeliveryEvaluation } from './actions';
+import { buildAIPreevaluationFeedback } from './ai-preevaluation-report';
+import { reportFixture } from '@/test/ai-preevaluation-report-fixture';
 
 describe('evaluación versionada de entregas', () => {
   beforeEach(() => {
@@ -76,5 +78,12 @@ describe('evaluación versionada de entregas', () => {
     const result = await updateDeliveryEvaluation('delivery0000001', 8, 'Bien.', 'Aprobado', 'published', 2);
     expect(result).toMatchObject({ success: false, error: expect.stringContaining('No autorizado') });
     expect(mocks.serviceClient).not.toHaveBeenCalled();
+  });
+
+  it('persiste íntegramente el informe revisado sin reducirlo al mensaje de la IA', async () => {
+    const feedback = `${buildAIPreevaluationFeedback(reportFixture)}\n\nAclaración docente: verificá la validación.`;
+    const result = await updateDeliveryEvaluation('delivery0000001', 5, feedback, 'Corregir y reenviar', 'published', 2, 'attempt-1');
+    expect(result).toEqual({ success: true });
+    expect(mocks.deliveryUpdate).toHaveBeenCalledWith('delivery0000001', expect.objectContaining({ feedback, grade: 5, verdict: 'Corregir y reenviar', status: 'published', evaluatedVersion: 2 }));
   });
 });

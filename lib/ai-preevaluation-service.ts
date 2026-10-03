@@ -17,6 +17,7 @@ import {
   type AIPreevaluationAttempt,
   type AIPreevaluationErrorCategory,
   type AIPreevaluationResult,
+  type AIEvaluationCriterion,
   type Assignment,
   type AssignmentAIConfig,
   type Course,
@@ -36,6 +37,7 @@ export interface AIPreevaluationDTO {
   configVersion: number;
   coverage?: RepositoryCoverage;
   result?: AIPreevaluationResult;
+  rubric?: AIEvaluationCriterion[];
   errorCategory?: AIPreevaluationErrorCategory;
   errorMessage?: string;
   created: string;
@@ -56,6 +58,7 @@ function dto(record: Partial<AIPreevaluationAttempt>, captureSource: AIPreevalua
     id: String(record.id || ''), status: record.status || 'failed', commitSha: String(record.commitSha || ''), captureSource,
     model: String(record.model || MODEL), configVersion: Number(record.configVersion || 1), coverage: record.coverage,
     result: record.result, errorCategory: record.errorCategory, errorMessage: record.errorMessage,
+    rubric: record.configSnapshot?.criteria?.map(({ id, title, description, weight }) => ({ id, title, description, weight })),
     created: String(record.created || ''), updated: String(record.updated || ''), adoptedAt: record.adoptedAt, adoptedAs: record.adoptedAs,
   };
 }

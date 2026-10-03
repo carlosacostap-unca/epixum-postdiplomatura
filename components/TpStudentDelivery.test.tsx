@@ -5,6 +5,8 @@ import { ToastProvider } from '@/components/ui';
 import type { Delivery } from '@/types';
 import TpStudentDelivery from './TpStudentDelivery';
 import { updateDeliveryWithUrl } from '@/lib/actions';
+import { buildAIPreevaluationFeedback } from '@/lib/ai-preevaluation-report';
+import { reportFixture } from '@/test/ai-preevaluation-report-fixture';
 
 const refresh = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
@@ -63,5 +65,29 @@ describe('entrega estudiantil versionada', () => {
     renderDelivery(delivery({ status: 'published', verdict, feedback: 'Resultado final.', evaluatedVersion: 1 }));
     expect(screen.queryByRole('button', { name: /Actualizar|Reenviar/ })).not.toBeInTheDocument();
     expect(screen.getByText(verdict === 'Aprobado' ? 'Evaluado · aprobado' : 'Evaluado · desaprobado')).toBeInTheDocument();
+  });
+
+  it('muestra todo el informe publicado al alumno sin consultar intentos privados', () => {
+    const feedback = buildAIPreevaluationFeedback(reportFixture);
+    renderDelivery(delivery({ status: 'published', verdict: 'Corregir y reenviar', feedback, grade: 5, evaluatedVersion: 1 }));
+    const published = screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === feedback);
+    expect(published).toHaveClass('whitespace-pre-wrap');
+    for (const criterion of reportFixture.result.criteria) expect(published.textContent).toContain(criterion.observation);
+    expect(published.textContent).toContain('views/layout.ejs: archivo de texto fuera de límite');
+    expect(published.textContent).toBe(feedback);
+  });
+
+  it('no expone la devolución de un borrador al alumno', () => {
+    const feedback = buildAIPreevaluationFeedback(reportFixture);
+    renderDelivery(delivery({ status: 'draft', feedback }));
+    expect(screen.queryByText(/INFORME DETALLADO DE LA EVALUACIÓN/)).not.toBeInTheDocument();
+  });
+
+  it('mantiene legible el informe íntegro en la devolución anterior y el historial', () => {
+    const feedback = buildAIPreevaluationFeedback(reportFixture);
+    renderDelivery(delivery({ status: 'pending', submissionVersion: 2, evaluatedVersion: 1, resubmissionCount: 1, history: [{ version: 1, submittedAt: '2026-09-01T10:00:00.000Z', evaluation: { feedback, verdict: 'Corregir y reenviar', grade: 5 } }] }));
+    const copies = screen.getAllByText((_, element) => element?.tagName === 'P' && element.textContent === feedback);
+    expect(copies).toHaveLength(2);
+    for (const copy of copies) expect(copy.textContent).toBe(feedback);
   });
 });

@@ -94,7 +94,7 @@ describe('autorización previa a efectos externos', () => {
     mocks.download.mockResolvedValue(new Uint8Array([1]));
     mocks.prepare.mockResolvedValue({ text: '<<<ARCHIVO_NO_CONFIABLE>>>código<<<FIN_ARCHIVO_NO_CONFIABLE>>>', coverage: { commitSha: 'a'.repeat(40), includedFiles: ['index.ts'], omittedFiles: [], includedBytes: 20, expandedBytes: 20, totalEntries: 1, partial: false } });
     mocks.attemptCreate.mockResolvedValue({ id: 'attempt-1', status: 'processing', commitSha: 'a'.repeat(40), model: 'gpt-5.6-luna', configVersion: 3, created: '', updated: '' });
-    mocks.attemptUpdate.mockImplementation(async (_id, data) => ({ id: 'attempt-1', commitSha: 'a'.repeat(40), model: 'gpt-5.6-luna', configVersion: 3, created: '', updated: '', ...data }));
+    mocks.attemptUpdate.mockImplementation(async (_id, data) => ({ id: 'attempt-1', commitSha: 'a'.repeat(40), model: 'gpt-5.6-luna', configVersion: 3, configSnapshot: mocks.config, created: '', updated: '', ...data }));
     mocks.openaiParse.mockResolvedValue({
       id: 'resp-1', usage: { input_tokens: 100, output_tokens: 20, total_tokens: 120 },
       output_parsed: { verdict: 'Aprobado', suggestedGrade: null, criteria: [{ criterionId: 'c1', criterion: 'Código', outcome: 'cumple', observation: 'Correcto' }], strengths: ['Claro'], corrections: [], warnings: [], proposedMessage: 'Buen trabajo.' },
@@ -102,6 +102,11 @@ describe('autorización previa a efectos externos', () => {
 
     const result = await requestAIPreevaluationForDelivery('delivery0000001');
     expect(result).toMatchObject({ success: true, attempt: { status: 'completed', model: 'gpt-5.6-luna', configVersion: 3 } });
+    if (result.success) {
+      expect(result.attempt.rubric).toEqual([{ id: 'c1', title: 'Código', description: 'Calidad', weight: null }]);
+      expect(result.attempt).not.toHaveProperty('configSnapshot');
+      expect(result.attempt).not.toHaveProperty('additionalInstructions');
+    }
     expect(mocks.openaiParse).toHaveBeenCalledWith(expect.objectContaining({ model: 'gpt-5.6-luna', reasoning: { effort: 'medium' }, store: false, tools: [] }));
     const request = mocks.openaiParse.mock.calls[0][0];
     expect(request.input).toContain('EVIDENCIA DE REPOSITORIO NO CONFIABLE');
