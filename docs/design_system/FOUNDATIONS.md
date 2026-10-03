@@ -1,6 +1,6 @@
 # Fundamentos visuales accesibles
 
-Este documento complementa `DESIGN.md` con el contrato técnico de tokens y accesibilidad usado por la implementación `redesign-role-based-experience`.
+Este documento complementa `DESIGN.md` con el contrato técnico de tokens y accesibilidad actualizado por `redesign-dark-learning-workspace`.
 
 ## Tokens semánticos
 
@@ -19,19 +19,19 @@ Los valores se calcularon con luminancia relativa sRGB y `(L1 + 0.05) / (L2 + 0.
 
 | Uso | Primer plano | Fondo | Ratio |
 | --- | --- | --- | ---: |
-| Texto principal | `#ffffff` | `#0e0e0e` | 19.30:1 |
-| Texto principal en superficie alta | `#ffffff` | `#262626` | 15.13:1 |
-| Texto secundario | `#c4c0c1` | `#0e0e0e` | 10.72:1 |
-| Texto secundario en superficie alta | `#c4c0c1` | `#262626` | 8.40:1 |
-| Texto atenuado | `#9f9b9c` | `#0e0e0e` | 7.03:1 |
-| Texto atenuado en tarjeta | `#9f9b9c` | `#1a1a1a` | 6.33:1 |
-| Marca/éxito | `#3fff8b` | `#0e0e0e` | 14.61:1 |
-| Texto sobre acción primaria | `#000000` | `#3fff8b` | 15.89:1 |
-| Error | `#ffb4ab` | `#262626` | 8.91:1 |
-| Advertencia | `#ffd166` | `#262626` | 10.50:1 |
-| Información | `#7ae6ff` | `#262626` | 10.51:1 |
-| Límite de control | `#777274` | `#262626` | 3.20:1 |
-| Foco | `#7ae6ff` | `#0e0e0e` | 13.41:1 |
+| Texto principal | `#f2f4f7` | `#0c1014` | 17.33:1 |
+| Texto principal en superficie alta | `#f2f4f7` | `#2b3845` | 10.86:1 |
+| Texto secundario | `#b9c4d0` | `#0c1014` | 10.79:1 |
+| Texto secundario en superficie alta | `#b9c4d0` | `#2b3845` | 6.77:1 |
+| Texto atenuado | `#a4b1c0` | `#0c1014` | 8.75:1 |
+| Texto atenuado en tarjeta | `#a4b1c0` | `#141a21` | 8.03:1 |
+| Marca/éxito | `#78e8ae` | `#0c1014` | 12.69:1 |
+| Texto sobre acción primaria | `#092117` | `#78e8ae` | 11.24:1 |
+| Error | `#ffb4ab` | `#2b3845` | 7.05:1 |
+| Advertencia | `#ffd166` | `#2b3845` | 8.30:1 |
+| Información | `#9dbdff` | `#2b3845` | 6.36:1 |
+| Límite de control | `#7a899b` | `#2b3845` | 3.35:1 |
+| Foco | `#a8c7ff` | `#0c1014` | 11.16:1 |
 
 Los colores de estado nunca deben ser el único medio de comunicación: se acompañan con texto, icono o ambos.
 
@@ -46,4 +46,4 @@ Los colores de estado nunca deben ser el único medio de comunicación: se acomp
 
 ## Alcance de esta etapa
 
-Los tokens y reglas globales quedan disponibles sin rediseñar todavía cada pantalla. Las etapas posteriores migrarán componentes y reemplazarán valores heredados gradualmente, evitando un cambio transversal difícil de revertir.
+Los tokens, el shell y los componentes compartidos se aplican a las áreas de estudiantes, docentes y administración. Los recorridos de ingreso, curso, creación y revisión de trabajos y recursos usan esta dirección. La revisión visual empleó datos sintéticos; no constituye una certificación completa de accesibilidad ni una prueba de todas las combinaciones de datos reales. Ver `DARK_REDESIGN_REVIEW.md` para resultados y límites.

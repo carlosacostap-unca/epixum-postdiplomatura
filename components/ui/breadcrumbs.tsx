@@ -13,10 +13,10 @@ export function Breadcrumbs({ items, label = "Migas de pan" }: { items: Breadcru
         {items.map((item, index) => {
           const isCurrent = index === items.length - 1;
           return (
-            <li key={`${index}-${String(item.href ?? item.label)}`} className="flex min-w-0 items-center gap-2">
+            <li key={`${index}-${String(item.href ?? item.label)}`} className={index > 0 && !isCurrent ? "hidden min-w-0 items-center gap-2 sm:flex" : "flex min-w-0 items-center gap-2"}>
               {index > 0 ? <span aria-hidden="true">/</span> : null}
               {item.href && !isCurrent ? (
-                <Link href={item.href} className="rounded-md hover:text-[var(--color-primary)]">
+                <Link href={item.href} className="max-w-sm truncate rounded-md hover:text-[var(--color-primary)]" title={typeof item.label === "string" ? item.label : undefined}>
                   {item.label}
                 </Link>
               ) : (

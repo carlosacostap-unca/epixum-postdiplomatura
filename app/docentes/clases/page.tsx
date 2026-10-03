@@ -15,7 +15,7 @@ export default async function DocenteClasesPage() {
   const total = groups.reduce((sum, group) => sum + group.classes.length, 0);
 
   return (
-    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <div className="page-container space-y-8">
       <PageHeader eyebrow="Panel docente" title="Clases" description="Todas las clases de tus cursos asignados, agrupadas por contexto." metadata={<Badge tone="info">{total} {total === 1 ? "clase" : "clases"}</Badge>} />
       {groups.length === 0 ? (
         <EmptyState icon="school" title="No tenés cursos asignados" description="Cuando un administrador te asigne un curso, sus clases aparecerán aquí." />

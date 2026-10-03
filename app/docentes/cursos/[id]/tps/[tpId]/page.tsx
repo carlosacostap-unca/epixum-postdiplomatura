@@ -32,7 +32,7 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
   const pending = deliveries.filter((delivery) => delivery.status !== "published").length;
 
   return (
-    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <div className="page-container space-y-8">
       <TeacherCourseContext
         course={course}
         current="trabajos"
@@ -47,7 +47,7 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
         <Badge tone="info">{deliveries.length} {deliveries.length === 1 ? "entrega" : "entregas"}</Badge>
       </div>
 
-      {assignment.description && <Card><CardContent><h2 className="font-headline text-2xl font-bold">Enunciado</h2><div className="prose prose-invert mt-5 max-w-none text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: assignment.description }} /></CardContent></Card>}
+      {assignment.description && <Card><CardContent><h2 className="font-headline text-2xl font-bold">Enunciado</h2><div className="reading-content prose prose-invert mt-5 text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: assignment.description }} /></CardContent></Card>}
 
       <AssignmentAIConfigPanel assignmentId={assignment.id} courseEnabled={Boolean(course.aiPreevaluationEnabled)} initialConfig={aiConfig || emptyAssignmentAIConfig()} />
 

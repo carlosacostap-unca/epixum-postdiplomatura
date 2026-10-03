@@ -10,6 +10,22 @@ const course: Course = {
 };
 
 describe('navegación de contenidos', () => {
+  it.each([TeacherCourseContext, StudentCourseContext])('lleva al listado real de unidades y marca el contexto al abrir un trabajo', (Context) => {
+    render(<Context course={course} current="trabajos" />);
+    const units = screen.getByRole('link', { name: /unidades/i });
+    expect(units.getAttribute('href')).toMatch(/#semanas$/);
+    expect(units).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('link', { name: /^clases$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^trabajos$/i })).not.toBeInTheDocument();
+  });
+
+  it.each([TeacherCourseContext, StudentCourseContext])('conserva los destinos separados en cursos tradicionales', (Context) => {
+    render(<Context course={{ ...course, organizationMode: 'tradicional' }} current="clases" />);
+    expect(screen.getByRole('link', { name: /^clases$/i }).getAttribute('href')).toMatch(/#clases$/);
+    expect(screen.getByRole('link', { name: /^trabajos$/i }).getAttribute('href')).toMatch(/#trabajos$/);
+    expect(screen.queryByRole('link', { name: /unidades/i })).not.toBeInTheDocument();
+  });
+
   it('muestra la pestaña a docentes y estudiantes cuando está habilitada, incluso en modo semanal', () => {
     const { unmount } = render(<TeacherCourseContext course={course} current="contenidos" />);
     expect(screen.getByRole('link', { name: /contenidos/i })).toHaveAttribute('href', '/docentes/cursos/course-1/contenidos');

@@ -86,7 +86,7 @@ export default function TpResourceManager({ links, assignmentId }: TpResourceMan
             key={link.id}
             className="bg-[var(--color-surface-container-low)] rounded-[2rem] p-5 border border-[var(--color-outline-variant)] flex items-center gap-3 group"
           >
-            <span className={`material-symbols-outlined text-[20px] shrink-0 ${isFileResource(link) ? 'text-[var(--color-primary)]' : 'text-blue-400'}`}>
+            <span className={`material-symbols-outlined text-[20px] shrink-0 ${isFileResource(link) ? 'text-[var(--color-primary)]' : 'text-[var(--color-primary)]'}`}>
               {isFileResource(link) ? 'description' : 'link'}
             </span>
             <a

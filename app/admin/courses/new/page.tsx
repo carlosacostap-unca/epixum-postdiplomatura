@@ -9,7 +9,7 @@ export default async function NewCoursePage() {
   const inquiries = await getInquiries();
   
   return (
-    <div className="mx-auto max-w-5xl p-6 md:p-10 xl:p-12">
+    <div className="mx-auto max-w-5xl page-container">
       <Breadcrumbs items={[{ href: '/admin/courses', label: 'Cursos' }, { label: 'Nuevo curso' }]} />
       <PageHeader className="mt-6" eyebrow="Administración" title="Crear curso" description="Definí la información, docentes y acceso inicial." />
       <Card className="mt-8 overflow-hidden">

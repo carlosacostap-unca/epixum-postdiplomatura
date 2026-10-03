@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Course } from "@/types";
 import { Badge, Breadcrumbs, PageHeader, Tabs, type TabItem } from "@/components/ui";
+import { courseLearningNavigation } from "@/lib/course-navigation";
 
 export type StudentCourseSection = "resumen" | "clases" | "trabajos" | "contenidos" | "consultas";
 
@@ -10,8 +11,7 @@ function items(course: Course, current: StudentCourseSection): TabItem[] {
   const base = `/estudiantes/cursos/${course.id}`;
   const result: TabItem[] = [
     { href: base, label: "Resumen", icon: "dashboard", isActive: current === "resumen" },
-    { href: `${base}#clases`, label: "Clases", icon: "menu_book", isActive: current === "clases" },
-    { href: `${base}#trabajos`, label: "Trabajos", icon: "assignment", isActive: current === "trabajos" },
+    ...courseLearningNavigation(course, base, current),
   ];
   if (course.contentsEnabled) result.push({ href: `${base}/contenidos`, label: "Contenidos", icon: "library_books", isActive: current === "contenidos" });
   result.push({ href: `${base}/consultas`, label: "Consultas", icon: "forum", isActive: current === "consultas" });

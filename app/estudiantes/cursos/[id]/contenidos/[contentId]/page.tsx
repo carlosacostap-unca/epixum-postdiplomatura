@@ -15,9 +15,9 @@ export default async function StudentCourseContentPage({ params }: { params: Pro
   const result = await getCourseContentWithResources(course.id, contentId);
   if (!result) notFound();
 
-  return <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+  return <div className="page-container space-y-8">
     <StudentCourseContext course={course} current="contenidos" title={result.content.title} description="Material de estudio del curso." />
-    <Card><CardContent><h2 className="font-headline text-2xl font-bold">Contenido</h2>{result.content.description ? <div className="prose prose-invert mt-5 max-w-none text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: result.content.description }} /> : <EmptyState className="mt-5" icon="description" title="Sin descripción" description="Este contenido todavía no tiene una explicación adicional." />}</CardContent></Card>
+    <Card><CardContent><h2 className="font-headline text-2xl font-bold">Contenido</h2>{result.content.description ? <div className="reading-content prose prose-invert mt-5 text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: result.content.description }} /> : <EmptyState className="mt-5" icon="description" title="Sin descripción" description="Este contenido todavía no tiene una explicación adicional." />}</CardContent></Card>
     <ResourceReader links={result.links} emptyDescription="Este contenido todavía no tiene archivos ni enlaces." />
   </div>;
 }

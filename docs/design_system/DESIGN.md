@@ -1,96 +1,36 @@
-# Design System Document: The Luminescent Curator
+# Sistema de diseño del campus Epixum
 
-## 1. Overview & Creative North Star
-The Creative North Star for this design system is **"The Luminescent Curator."** 
+Esta dirección reemplaza «The Luminescent Curator» para el cambio `redesign-dark-learning-workspace`. El campus mantiene el tema oscuro y prioriza completar tareas, orientarse dentro de un curso y leer contenido educativo en computadora y celular.
 
-In an enterprise environment, data density often leads to cognitive overload. This system rejects the traditional "dashboard-of-widgets" approach in favor of a high-end editorial experience. We treat course management not as a spreadsheet, but as a gallery. By utilizing deep charcoal foundations and piercing neon accents, we create a "darkroom" effect where the content—the educational material—is the only thing that glows.
+## Color y superficies
 
-We break the "template" look through **intentional asymmetry** and **tonal depth**. Instead of rigid, centered grids, we use generous, sweeping whitespace (using the `20` and `24` spacing tokens) to let elements breathe. Layers overlap with organic fluidity, and the extreme roundedness of the components (`xl` and `lg` radii) softens the "enterprise" coldness, making the sophisticated tech feel approachable and human.
+El fondo es `#0c1014`. Las superficies progresan desde `#141a21` hasta `#2b3845`, con texto principal `#f2f4f7`, secundario `#b9c4d0` y atenuado `#a4b1c0`. El verde `#78e8ae` identifica acciones y selección; el azul `#9dbdff` acompaña información.
 
----
+Usar nombres semánticos definidos en `app/globals.css`. Las tarjetas pueden tener bordes sutiles para separar contenido. Los campos usan `outline` con contraste verificable y el foco de teclado usa un contorno de 3 px. Las acciones primarias tienen fondo sólido. Los estados incluyen texto; el color por sí solo no expresa el resultado.
 
-## 2. Colors & Surface Philosophy
-This system is built on high-contrast foundations and vibrant, electric energy. 
+## Jerarquía y ritmo
 
-### The Palette
-- **Background (`#0e0e0e`):** A deep, true charcoal that serves as our infinite canvas.
-- **Primary (`#3fff8b`):** "Electric Emerald." Used sparingly for high-impact actions and status.
-- **Tertiary (`#7ae6ff`):** "Oxygen Blue." Used for secondary data visualizations and interactive highlights.
+Mantener Manrope en títulos e Inter en cuerpo. Los títulos de página se adaptan de 1.5 a 2.5 rem; los títulos de sección suelen usar 1.25 rem. Las descripciones apoyan la siguiente acción sin repetir el encabezado.
 
-### The "No-Line" Rule
-**Explicit Instruction:** You are prohibited from using 1px solid borders to define sections. Traditional "boxed" layouts look cheap and dated. Boundaries must be defined solely through background color shifts. 
-- A `surface-container-low` section sitting on a `background` provides all the separation the eye needs. 
-- Use the `surface-container` tiers to create a "nested" hierarchy.
+El contenedor `page-container` centraliza el margen adaptable de 1 a 2.75 rem. Las tarjetas usan radios de 1.25 rem y controles de 0.625 rem. El contenido de lectura tiene un ancho máximo de 75 caracteres aproximados. Reservar las cápsulas para etiquetas y estados.
 
-### The Glass & Gradient Rule
-To move beyond a "standard" dark mode, use **Glassmorphism** for floating elements (e.g., Modals, Dropdowns). 
-- Use a semi-transparent `surface-variant` with a `backdrop-blur` of 20px. 
-- **Signature Textures:** Main CTAs should not be flat. Apply a subtle linear gradient from `primary` to `primary-container` at a 135-degree angle to give buttons a "liquid light" feel.
+## Navegación
 
----
+En computadora, la barra lateral muestra secciones, espacios disponibles y perfil. La cabecera mantiene la ubicación y acceso al perfil. En celular, un botón abre el menú de navegación mediante el diálogo compartido, con manejo de foco y cierre con Escape.
 
-## 3. Typography
-We utilize a dual-typeface system to balance editorial authority with functional clarity.
+El curso conserva sus pestañas. En cursos semanales, «Unidades» lleva al listado; en cursos tradicionales, «Clases» y «Trabajos» llevan a sus respectivas secciones. Las pestañas permiten desplazamiento horizontal local con una barra fina. Las migas de pan muestran la ruta completa en computadora y una versión breve en celular.
 
-- **Display & Headlines (Manrope):** We use Manrope for all headers (`display-lg` through `headline-sm`). Its geometric yet slightly condensed nature feels premium and modern. Use `display-lg` (3.5rem) for hero stats or course titles to create an "Editorial" impact.
-- **Body & Labels (Inter):** Inter is our functional workhorse. Use `body-lg` for primary course descriptions and `label-sm` for metadata. 
-- **The Hierarchy:** By pairing a massive `display-md` headline with a tiny, uppercase `label-md` tracking at 0.05em, we create a sophisticated tension that signals high-end design.
+## Recorridos
 
----
+- **Estudiantes:** próxima actividad antes de indicadores; unidades plegables con cantidades visibles; entregas con instrucciones breves y estado de revisión.
+- **Docentes:** pendientes operativos; unidades con contenido y acciones de gestión; entregas con estudiante, versión, fecha y estado.
+- **Administración:** estado del campus, accesos de gestión y cursos en preparación.
+- **Ingreso:** marca, propósito y acceso con Google; nombre accesible durante la espera y errores visibles.
+- **Formularios:** etiquetas explícitas, controles táctiles y selección múltiple con casillas. Evitar instrucciones dependientes de Ctrl/Cmd.
+- **Recursos:** títulos legibles, acción de abrir o descargar y errores persistentes que permitan reintentar.
 
-## 4. Elevation & Depth
-In this design system, depth is not "fake height"; it is **Tonal Layering.**
+## Adaptación y accesibilidad
 
-- **The Layering Principle:** Stacking is our primary tool. 
-    - Base: `surface` (#0e0e0e)
-    - Section: `surface-container-low` (#131313)
-    - Card: `surface-container` (#1a1a1a)
-    - Active Element: `surface-container-highest` (#262626)
-- **Ambient Shadows:** For "floating" elements like popovers, use a shadow with a 40px blur and only 6% opacity, tinted with `primary` to simulate the green glow of the UI hitting the surface.
-- **The "Ghost Border" Fallback:** If accessibility requirements demand a container edge, use the **Ghost Border**: the `outline-variant` token at 15% opacity. Never use 100% opaque lines.
+Los componentes deben caber en 320 px sin recortar el margen derecho, incluso con una barra de desplazamiento vertical clásica. Las filas se apilan y las tablas ofrecen tarjetas en celular. Los diálogos y las unidades nativas se operan con teclado.
 
----
-
-## 5. Components
-
-### Buttons
-- **Primary:** Gradient fill (`primary` to `primary-container`), `full` rounded corners (9999px), and `title-sm` typography. 
-- **Secondary:** `surface-container-highest` fill with `on-surface` text. No border.
-- **Ghost:** No fill, `on-surface` text. On hover, transition to `surface-container-low`.
-
-### Cards (The "Curved" Container)
-- **Radius:** Always use `lg` (2rem) or `xl` (3rem) for containers.
-- **Spacing:** Minimum padding of `6` (2rem) inside cards. 
-- **Rule:** Never use dividers between card content. Use spacing `3` (1rem) to separate text from actions.
-
-### Input Fields
-- **Aesthetic:** A "well" effect. Use `surface-container-lowest` (#000000) for the field background with a `md` (1.5rem) corner radius.
-- **Active State:** Change the ghost border from 15% opacity to 100% `primary`.
-
-### Navigation Rails
-- Avoid a standard sidebar. Use a slim, floating rail using Glassmorphism anchored to the left, with `2.5` spacing between icons.
-
-### Progress Gauges
-- For course completion, use thick, `lg` rounded stroke tracks in `surface-variant` with a `primary` glow.
-
----
-
-## 6. Do's and Don'ts
-
-### Do:
-- **Use Asymmetry:** Place a large headline on the left and a small "floating" card on the right with a large `20` (7rem) gap.
-- **Embrace the Curve:** Ensure even the smallest elements like chips use `full` (9999px) or `md` (1.5rem) radii.
-- **Prioritize Breathing Room:** If in doubt, add more whitespace. The "Enterprise" feel comes from the scale, not the density.
-
-### Don't:
-- **Don't use 1px dividers.** Ever. Use vertical whitespace (`spacing-8` or `spacing-10`) to separate modules.
-- **Don't use pure white for body text.** Use `on-surface-variant` (#adaaaa) for long-form reading to prevent eye strain against the black background.
-- **Don't use "Drop Shadows."** Use tonal shifts. Only use shadows for elements that physically "hover" over the entire layout (Modals, Tooltips).
-
----
-
-## 7. Scaling & Spacing
-Consistency is maintained through a rigid adherence to the spacing scale.
-- **Module Spacing:** `10` (3.5rem) or `12` (4rem).
-- **Internal Component Spacing:** `3` (1rem) or `4` (1.4rem).
-- **Touch Targets:** Minimum height of `8` (2.75rem) for all interactive chips and buttons.
+Mantener controles de al menos 44 px de alto, foco visible, etiquetas comprensibles y respeto de `prefers-reduced-motion`. Ver [FOUNDATIONS.md](FOUNDATIONS.md) para los contrastes calculados y [DARK_REDESIGN_REVIEW.md](DARK_REDESIGN_REVIEW.md) para la auditoría de este cambio.

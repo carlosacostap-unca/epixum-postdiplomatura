@@ -18,6 +18,7 @@ export const roleNavigation: Record<AppWorkspace, RoleNavigationConfig> = {
     homeHref: "/admin",
     workspaceLabel: "Administración",
     items: [
+      { href: "/admin", label: "Inicio", icon: "space_dashboard" },
       { href: "/admin/courses", label: "Cursos", icon: "school" },
       { href: "/admin/users", label: "Usuarios", icon: "group" },
     ],
@@ -61,5 +62,5 @@ export function getNavigationForPath(pathname: string) {
 export function isNavigationItemActive(pathname: string, item: AppNavigationItem) {
   if (pathname === item.href) return true;
   if (item.matchPrefixes?.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return true;
-  return item.href !== "/docentes" && item.href !== "/estudiantes" && pathname.startsWith(`${item.href}/`);
+  return item.href !== "/admin" && item.href !== "/docentes" && item.href !== "/estudiantes" && pathname.startsWith(`${item.href}/`);
 }

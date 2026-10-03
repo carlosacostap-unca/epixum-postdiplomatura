@@ -25,7 +25,7 @@ export default async function TeacherCourseInquiriesPage({ params, searchParams 
   const pendingCount = inquiries.filter((inquiry) => inquiry.status === "Pendiente").length;
 
   return (
-    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <div className="page-container space-y-8">
       <TeacherCourseContext
         course={course}
         current="consultas"
@@ -34,7 +34,7 @@ export default async function TeacherCourseInquiriesPage({ params, searchParams 
         actions={<Link href={`/docentes/cursos/${course.id}/consultas/nueva`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Nueva consulta</Link>}
       />
 
-      <form method="get" className="grid gap-4 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-5 md:grid-cols-[minmax(0,1fr)_13rem_13rem_auto] md:items-end">
+      <form method="get" className="grid gap-4 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-5 xl:grid-cols-[minmax(0,1fr)_11rem_11rem_auto] sm:grid-cols-2 md:items-end">
         <Field label="Buscar" id="inquiry-search"><input id="inquiry-search" name="buscar" type="search" defaultValue={search} placeholder="Título, autor o contenido" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" /></Field>
         <Field label="Estado" id="inquiry-status"><Select id="inquiry-status" name="estado" defaultValue={status || "all"}><option value="all">Todas</option><option value="Pendiente">Pendientes</option><option value="Resuelta">Resueltas</option></Select></Field>
         <Field label="Orden" id="inquiry-order"><Select id="inquiry-order" name="orden" defaultValue={sort}><option value="oldest">Más antiguas primero</option><option value="recent">Más recientes primero</option></Select></Field>

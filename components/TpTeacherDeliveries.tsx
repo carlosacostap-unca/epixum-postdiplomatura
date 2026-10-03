@@ -106,12 +106,12 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
 
             return (
               <article key={delivery.id} className="overflow-hidden rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)]">
-                <button type="button" aria-expanded={isExpanded} aria-controls={`delivery-${delivery.id}`} onClick={() => setExpandedDelivery(isExpanded ? null : delivery.id)} className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-[var(--color-surface-container)] md:p-6">
+                <button type="button" aria-expanded={isExpanded} aria-controls={`delivery-${delivery.id}`} onClick={() => setExpandedDelivery(isExpanded ? null : delivery.id)} className="flex w-full flex-col items-start justify-between gap-3 p-4 text-left hover:bg-[var(--color-surface-container)] sm:flex-row sm:items-center md:p-5">
                   <div className="flex min-w-0 items-center gap-4">
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{studentLabel.charAt(0).toUpperCase()}</span>
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{studentLabel.charAt(0).toUpperCase()}</span>
                     <span className="min-w-0"><span className="block truncate font-bold">{studentLabel}</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Versión {workflow.submissionVersion} · {submission.type === "url" ? "Enlace" : `${files.length} ${files.length === 1 ? "archivo" : "archivos"}`} · <FormattedDate date={workflow.submittedAt} showTime /></span></span>
                   </div>
-                  <span className="flex shrink-0 items-center gap-3"><Badge tone={presentation.tone}>{presentation.label}</Badge><span className={`material-symbols-outlined transition-transform ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true">expand_more</span></span>
+                  <span className="flex max-w-full items-center gap-3 self-end"><Badge tone={presentation.tone}>{presentation.label}</Badge><span className={`material-symbols-outlined shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true">expand_more</span></span>
                 </button>
 
                 {isExpanded && (

@@ -4,6 +4,7 @@ import { createAssignmentForCourse } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import RichTextEditor from "@/components/RichTextEditor";
+import { Button } from "@/components/ui";
 import type { CourseWeek } from "@/types";
 
 export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { courseId: string; weeks: CourseWeek[]; initialWeekId?: string }) {
@@ -37,15 +38,15 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
   }
 
   return (
-    <form action={handleSubmit} className="max-w-2xl flex flex-col gap-8">
+    <form action={handleSubmit} className="flex w-full max-w-3xl flex-col gap-6">
       {error && (
-        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <div role="alert" className="rounded-xl bg-[var(--color-error)]/10 p-4 text-sm text-[var(--color-error)]">
           {error}
         </div>
       )}
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="title" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
+        <label htmlFor="title" className="text-sm font-semibold text-[var(--color-on-surface)]">
           Título *
         </label>
         <input
@@ -53,13 +54,13 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
           name="title"
           required
           placeholder="Ej: Trabajo Práctico N°1"
-          className="w-full px-5 py-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] text-[var(--color-on-surface)] placeholder:text-[var(--color-on-surface-variant)]/50 focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+          className="w-full px-4 py-3 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-low)] border border-[var(--color-outline)] text-[var(--color-on-surface)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
         />
       </div>
 
       {weeks.length > 0 ? <div className="flex flex-col gap-2">
-        <label htmlFor="week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Unidad</label>
-        <select id="week" name="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full px-5 py-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors">
+        <label htmlFor="week" className="text-sm font-semibold text-[var(--color-on-surface)]">Unidad</label>
+        <select id="week" name="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full px-4 py-3 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-low)] border border-[var(--color-outline)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors">
           <option value="">Sin unidad</option>
           {weeks.map((item) => <option key={item.id} value={item.id}>Unidad {item.number}: {item.title}</option>)}
         </select>
@@ -67,7 +68,7 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
       </div> : null}
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
+        <label className="text-sm font-semibold text-[var(--color-on-surface)]">
           Enunciado
         </label>
         <div className="rounded-2xl overflow-hidden border border-[var(--color-outline-variant)]">
@@ -76,37 +77,20 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="dueDate" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">
+        <label htmlFor="dueDate" className="text-sm font-semibold text-[var(--color-on-surface)]">
           Fecha límite de entrega
         </label>
         <input
           id="dueDate"
           name="dueDate"
           type="datetime-local"
-          className="w-full px-5 py-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+          className="w-full px-4 py-3 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-low)] border border-[var(--color-outline)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
         />
       </div>
 
-      <div className="flex gap-4 pt-4">
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-8 py-4 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[#000000] font-bold rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-        >
-          {loading ? (
-            <span className="material-symbols-outlined animate-spin text-[20px]">refresh</span>
-          ) : (
-            <span className="material-symbols-outlined text-[20px]">save</span>
-          )}
-          {loading ? "Guardando..." : "Crear Trabajo Práctico"}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="px-8 py-4 bg-[var(--color-surface-container-low)] text-[var(--color-on-surface-variant)] font-bold rounded-full hover:bg-[var(--color-surface-container)] transition-colors border border-[var(--color-outline-variant)]"
-        >
-          Cancelar
-        </button>
+      <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
+        <Button variant="ghost" disabled={loading} onClick={() => router.back()}>Cancelar</Button>
+        <Button type="submit" isPending={loading} pendingLabel="Guardando…" leadingIcon={<span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>}>Crear trabajo práctico</Button>
       </div>
     </form>
   );

@@ -14,7 +14,7 @@ export default async function NewClassPage({ params, searchParams }: { params: P
   if (!course?.teachers?.includes(user.id)) redirect("/docentes");
   const weeks = course.organizationMode === "semanal" ? await getCourseWeeks(course.id) : [];
 
-  return <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+  return <div className="page-container space-y-8">
     <TeacherCourseContext course={course} current="clases" title="Programar nueva clase" description={`Añadí una nueva sesión a ${course.title}.`} />
     <Card className="max-w-3xl"><CardContent><NewClassForm courseId={course.id} weeks={weeks} initialWeekId={semana} /></CardContent></Card>
   </div>;

@@ -12,7 +12,7 @@ export default async function TeacherNewResourcePage({ params }: { params: Promi
   const [course, classData] = await Promise.all([getCourse(id), getClass(classId)]);
   if (!course?.teachers?.includes(user.id) || classData.course !== course.id) redirect("/docentes");
 
-  return <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+  return <div className="page-container space-y-8">
     <TeacherCourseContext course={course} current="clases" title="Añadir recurso" description={`Material para ${classData.title}.`} />
     <Card className="max-w-3xl"><CardContent><NewResourceForm courseId={course.id} classId={classData.id} /></CardContent></Card>
   </div>;

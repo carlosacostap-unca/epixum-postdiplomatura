@@ -11,6 +11,7 @@ import Image from "next/image";
 interface ProfileModalButtonProps {
   children?: ReactNode;
   className?: string;
+  compact?: boolean;
   pocketbaseUrl: string;
   user: User;
 }
@@ -78,7 +79,7 @@ function ProfileAvatar({ user, pocketbaseUrl }: { user: User; pocketbaseUrl: str
   );
 }
 
-export default function ProfileModalButton({ children, className, pocketbaseUrl, user }: ProfileModalButtonProps) {
+export default function ProfileModalButton({ children, className, compact = false, pocketbaseUrl, user }: ProfileModalButtonProps) {
   const router = useRouter();
   const { notify } = useToast();
   const [isOpen, setIsOpen] = useState(false);
@@ -147,7 +148,8 @@ export default function ProfileModalButton({ children, className, pocketbaseUrl,
         type="button"
         onClick={() => setIsOpen(true)}
         className={cx(
-          "flex min-h-14 w-full items-center gap-3 rounded-[var(--epixum-radius-lg)] px-3 text-left transition-colors hover:bg-[var(--color-surface-container)]",
+          "flex items-center gap-3 text-left transition-colors hover:bg-[var(--color-surface-container)]",
+          compact ? "size-11 shrink-0 justify-center rounded-full" : "min-h-14 w-full rounded-[var(--epixum-radius-lg)] px-3",
           className,
         )}
         aria-label="Abrir mi perfil"

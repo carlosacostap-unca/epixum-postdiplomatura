@@ -24,18 +24,18 @@ export function StatCard({ className, description, href, icon, label, tone = "ne
   const content = (
     <div
       className={cx(
-        "flex h-full items-start justify-between gap-5 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-6 transition-colors md:p-7",
+        "flex h-full min-w-0 items-start justify-between gap-3 rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5 transition-colors",
         href && "hover:bg-[var(--color-surface-container)]",
         className,
       )}
     >
       <div className="min-w-0">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-on-surface-variant)]">{label}</p>
-        <div className={cx("mt-3 font-headline text-4xl font-bold tracking-tight", toneClasses[tone])}>{value}</div>
+        <p className="text-sm font-medium text-[var(--color-on-surface-variant)]">{label}</p>
+        <div className={cx("mt-2 font-headline text-3xl font-bold tracking-tight", toneClasses[tone])}>{value}</div>
         {description ? <div className="mt-2 text-sm text-[var(--color-on-surface-variant)]">{description}</div> : null}
       </div>
       {icon ? (
-        <span className={cx("material-symbols-outlined text-3xl", toneClasses[tone])} aria-hidden="true">{icon}</span>
+        <span className={cx("material-symbols-outlined flex size-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-container)] text-xl", toneClasses[tone])} aria-hidden="true">{icon}</span>
       ) : null}
     </div>
   );

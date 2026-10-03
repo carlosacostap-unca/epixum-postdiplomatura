@@ -32,12 +32,12 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
   const responses = await getInquiryResponses(params.inquiryId);
 
   return (
-    <div className="flex-1 p-6 md:p-12 overflow-y-auto w-full h-full flex flex-col">
+    <div className="page-container space-y-8">
       <TeacherCourseContext course={course} current="consultas" title={inquiry.title} description="Conversación y estado de atención." />
 
-      <div className="max-w-4xl w-full mx-auto flex flex-col gap-12">
+      <div className="w-full max-w-4xl space-y-6">
         {/* Inquiry Detail */}
-        <section className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-6 md:p-10 border border-[var(--color-outline-variant)] relative overflow-hidden">
+        <section className="bg-[var(--color-surface-container-low)] rounded-[var(--epixum-radius-xl)] p-5 md:p-6 border border-[var(--color-outline-variant)] relative overflow-hidden">
           <div className="absolute top-0 left-0 w-32 h-32 bg-[var(--color-primary)]/5 blur-[40px] -z-10 rounded-full pointer-events-none"></div>
           
           <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -57,9 +57,6 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
             )}
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-headline tracking-tight text-[var(--color-on-surface)] mb-6 leading-tight">
-            {inquiry.title}
-          </h1>
 
           <div className="flex items-center gap-4 mb-8 pb-8 border-b border-[var(--color-outline-variant)]">
             {inquiry.expand?.author?.avatar ? (
@@ -106,13 +103,13 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
               return (
                 <div 
                   key={response.id} 
-                  className={`p-6 rounded-[2rem] border ${
+                  className={`p-6 rounded-[var(--epixum-radius-xl)] border ${
                     isTeacherResponse 
                     ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/20 ml-0 md:ml-12" 
                     : "bg-[var(--color-surface-container-lowest)] border-[var(--color-outline-variant)] mr-0 md:mr-12"
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       {response.expand?.author?.avatar ? (
                         <Image
@@ -133,7 +130,7 @@ export default async function TeacherInquiryDetailPage(props: { params: Promise<
                         </div>
                       )}
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className={`font-bold ${isTeacherResponse ? "text-[var(--color-primary)]" : "text-[var(--color-on-surface)]"}`}>
                             {response.expand?.author?.name || [response.expand?.author?.firstName, response.expand?.author?.lastName].filter(Boolean).join(" ") || "Usuario"}
                           </span>

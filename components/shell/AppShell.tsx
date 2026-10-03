@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileModalButton from "@/components/ProfileModalButton";
+import { Dialog, IconButton } from "@/components/ui";
 import { cx } from "@/components/ui/styles";
 import type { AppWorkspace, WorkspaceAccess } from "@/lib/course-roles";
 import { getNavigationForPath, isNavigationItemActive, roleNavigation } from "@/lib/navigation";
@@ -20,231 +21,84 @@ export interface AppShellProps {
 }
 
 const workspaceIcons: Record<AppWorkspace, string> = {
-  admin: "admin_panel_settings",
-  docente: "co_present",
-  estudiante: "school",
+  admin: "admin_panel_settings", docente: "co_present", estudiante: "school",
 };
 
-function WorkspaceSwitcher({ access, active, compact = false }: { access: WorkspaceAccess; active: AppWorkspace; compact?: boolean }) {
+function WorkspaceSwitcher({ access, active, onNavigate }: { access: WorkspaceAccess; active: AppWorkspace; onNavigate?: () => void }) {
   if (access.available.length < 2) return null;
-
-  if (compact) {
-    return (
-      <details className="relative">
-        <summary aria-label="Cambiar espacio" className="touch-target flex cursor-pointer list-none items-center justify-center rounded-full text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]">
-          <span className="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
-        </summary>
-        <div className="absolute right-0 top-full z-50 mt-2 min-w-48 rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container-high)] p-2 shadow-[var(--epixum-shadow-floating)]">
-          {access.available.map((workspace) => {
-            const config = roleNavigation[workspace];
-            return (
-              <Link key={workspace} href={config.homeHref} aria-current={workspace === active ? "page" : undefined} className="flex min-h-11 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm font-bold hover:bg-[var(--color-surface-container-highest)]">
-                <span className="material-symbols-outlined text-xl" aria-hidden="true">{workspaceIcons[workspace]}</span>
-                {config.workspaceLabel}
-              </Link>
-            );
-          })}
-        </div>
-      </details>
-    );
-  }
-
-  return (
-    <nav className="mt-4 border-t border-[var(--color-outline)]/30 pt-4" aria-label="Cambiar espacio">
-      <ul className="space-y-1">
-        {access.available.map((workspace) => {
-          const config = roleNavigation[workspace];
-          const selected = workspace === active;
-          return (
-            <li key={workspace}>
-              <Link href={config.homeHref} aria-current={selected ? "page" : undefined} className={cx("flex min-h-11 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm font-bold", selected ? "bg-[var(--color-surface-container-highest)] text-[var(--color-primary)]" : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]")}>
-                <span className="material-symbols-outlined text-xl" aria-hidden="true">{workspaceIcons[workspace]}</span>
-                <span>{config.workspaceLabel}</span>
-                {selected ? <span className="sr-only">(espacio actual)</span> : null}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+  return <nav className="space-y-2" aria-label="Cambiar espacio">
+    <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Tus espacios</p>
+    <ul className="space-y-1">{access.available.map((workspace) => {
+      const config = roleNavigation[workspace];
+      const selected = workspace === active;
+      return <li key={workspace}><Link href={config.homeHref} onClick={onNavigate} aria-current={selected ? "page" : undefined} className={cx("flex min-h-11 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm transition-colors", selected ? "bg-[var(--color-surface-container)] font-semibold text-[var(--color-on-surface)]" : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]")}><span className="material-symbols-outlined text-xl" aria-hidden="true">{workspaceIcons[workspace]}</span>{config.workspaceLabel}{selected && <span className="material-symbols-outlined ml-auto text-base text-[var(--color-primary)]" aria-hidden="true">check</span>}</Link></li>;
+    })}</ul>
+  </nav>;
 }
 
-function UserAvatar({ user, pocketbaseUrl, compact = false }: { user: User; pocketbaseUrl: string; compact?: boolean }) {
-  const initials = (user.firstName || user.name || user.email || "U")
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-  const sizeClass = compact ? "size-9 text-xs" : "size-11 text-sm";
-
-  if (user.avatar) {
-    return (
-      <Image
-        unoptimized
-        src={`${pocketbaseUrl}/api/files/_pb_users_auth_/${user.id}/${user.avatar}`}
-        alt=""
-        width={44}
-        height={44}
-        className={cx(sizeClass, "rounded-full object-cover")}
-      />
-    );
-  }
-
-  return (
-    <span
-      className={cx(
-        sizeClass,
-        "inline-flex items-center justify-center rounded-full bg-[var(--color-primary)] font-black text-[var(--color-on-primary)]",
-      )}
-      aria-hidden="true"
-    >
-      {initials}
-    </span>
-  );
+function UserAvatar({ user, pocketbaseUrl }: { user: User; pocketbaseUrl: string }) {
+  const initials = [user.firstName || user.name || user.email || "U", user.lastName].filter(Boolean).join(" ").split(/\s+/).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
+  return user.avatar
+    ? <Image unoptimized src={`${pocketbaseUrl}/api/files/_pb_users_auth_/${user.id}/${user.avatar}`} alt="" width={40} height={40} className="size-10 shrink-0 rounded-full object-cover" />
+    : <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/15 text-sm font-bold text-[var(--color-primary)]" aria-hidden="true">{initials}</span>;
 }
 
 export default function AppShell({ activeWorkspace, children, pocketbaseUrl, user, workspaceAccess }: AppShellProps) {
   const pathname = usePathname();
-  const pathNavigation = getNavigationForPath(pathname);
-  const workspace = activeWorkspace ?? pathNavigation.workspace;
+  const workspace = activeWorkspace ?? getNavigationForPath(pathname).workspace;
   const navigation = roleNavigation[workspace];
+  const [menuOpen, setMenuOpen] = useState(false);
+  const activeItem = navigation.items.find((item) => isNavigationItemActive(pathname, item));
+  const closeMenu = () => setMenuOpen(false);
 
-  return (
-    <div className="relative min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
-      <a
-        href="#main-content"
-        className="fixed left-4 top-4 z-[300] -translate-y-24 rounded-[var(--epixum-radius-pill)] bg-[var(--color-primary)] px-5 py-3 font-bold text-[var(--color-on-primary)] transition-transform focus:translate-y-0"
-      >
-        Saltar al contenido
-      </a>
+  function navigationLinks(mobile = false) {
+    return <nav aria-label={mobile ? `Navegación móvil de ${navigation.workspaceLabel}` : `Secciones de ${navigation.workspaceLabel}`}>
+      <ul className="space-y-1">{navigation.items.map((item) => {
+        const active = isNavigationItemActive(pathname, item);
+        return <li key={item.href}><Link href={item.href} onClick={mobile ? closeMenu : undefined} aria-current={active ? "page" : undefined} className={cx("flex min-h-12 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm font-semibold transition-colors", active ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)]")}><span className="material-symbols-outlined text-xl" aria-hidden="true">{item.icon}</span><span>{item.label}</span>{active && <span className="ml-auto size-1.5 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />}</Link></li>;
+      })}</ul>
+    </nav>;
+  }
 
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-        <div className="absolute -left-[20%] -top-[30%] size-[60vw] rounded-full bg-[var(--color-primary)]/5 blur-[100px]" />
-        <div className="absolute -bottom-[30%] -right-[20%] size-[60vw] rounded-full bg-[var(--color-tertiary)]/5 blur-[100px]" />
-      </div>
-
-      <div className="content-shell flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col px-5 py-6 lg:flex" aria-label="Navegación principal">
-          <div className="flex min-h-0 flex-1 flex-col rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-variant)] p-4 shadow-[0_16px_48px_rgb(0_0_0/20%)] backdrop-blur-2xl">
-            <Link
-              href={navigation.homeHref}
-              aria-label={`Ir al inicio de ${navigation.workspaceLabel}`}
-              className="flex min-h-14 items-center gap-3 rounded-[var(--epixum-radius-lg)] px-3 hover:bg-[var(--color-surface-container)]"
-            >
-              <Image src="/epixum-logo.png" alt="" width={40} height={40} className="size-10 object-contain" />
-              <div className="min-w-0">
-                <p className="font-headline text-lg font-bold tracking-tight">Epixum</p>
-                <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-on-surface-variant)]">
-                  {navigation.workspaceLabel}
-                </p>
-              </div>
-            </Link>
-
-            <WorkspaceSwitcher access={workspaceAccess} active={workspace} />
-
-            <nav className="mt-8" aria-label={`Secciones de ${navigation.workspaceLabel}`}>
-              <ul className="space-y-2">
-                {navigation.items.map((item) => {
-                  const active = isNavigationItemActive(pathname, item);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        aria-current={active ? "page" : undefined}
-                        className={cx(
-                          "flex min-h-12 items-center gap-3 rounded-[var(--epixum-radius-lg)] px-4 text-sm font-bold transition-colors",
-                          active
-                            ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                            : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)]",
-                        )}
-                      >
-                        <span className="material-symbols-outlined text-xl" aria-hidden="true">{item.icon}</span>
-                        <span>{item.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-
-            <div className="mt-auto space-y-2 pt-8">
-              <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl}>
-                <UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} />
-                <span className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-sm font-bold text-[var(--color-on-surface)]">{user.name || user.email}</span>
-                  <span className="block text-xs text-[var(--color-on-surface-variant)]">Mi perfil</span>
-                </span>
-                <span className="material-symbols-outlined text-lg text-[var(--color-on-surface-variant)]" aria-hidden="true">chevron_right</span>
-              </ProfileModalButton>
-
-              <LogoutButton className="flex min-h-12 w-full items-center gap-3 rounded-[var(--epixum-radius-lg)] px-4 text-sm font-bold text-[var(--color-on-surface-variant)] transition-colors hover:bg-[var(--color-surface-container)] hover:text-[var(--color-error)]" />
-            </div>
-          </div>
-        </aside>
-
-        <div className="min-w-0 flex-1 pb-24 lg:pb-0">
-          <header className="sticky top-0 z-40 flex min-h-16 items-center justify-between bg-[var(--color-surface-variant)] px-4 backdrop-blur-2xl lg:hidden">
-            <Link
-              href={navigation.homeHref}
-              aria-label={`Ir al inicio de ${navigation.workspaceLabel}`}
-              className="flex min-h-11 items-center gap-3 rounded-[var(--epixum-radius-md)]"
-            >
-              <Image src="/epixum-logo.png" alt="" width={36} height={36} className="size-9 object-contain" />
-              <div>
-                <p className="font-headline font-bold leading-none">Epixum</p>
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-on-surface-variant)]">
-                  {navigation.workspaceLabel}
-                </p>
-              </div>
-            </Link>
-
-            <div className="flex items-center gap-1">
-              <WorkspaceSwitcher access={workspaceAccess} active={workspace} compact />
-              <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl} className="touch-target flex items-center justify-center rounded-full">
-                <UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} compact />
-                <span className="sr-only">Abrir mi perfil</span>
-              </ProfileModalButton>
-              <LogoutButton
-                iconOnly
-                className="touch-target flex items-center justify-center rounded-full text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-error)]"
-              />
-            </div>
-          </header>
-
-          <main id="main-content" tabIndex={-1} className="min-h-full focus:outline-none">
-            {children}
-          </main>
+  return <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
+    <a href="#main-content" className="fixed left-4 top-4 z-[300] -translate-y-24 rounded-xl bg-[var(--color-primary)] px-5 py-3 font-bold text-[var(--color-on-primary)] transition-transform focus:translate-y-0">Saltar al contenido</a>
+    <div className="content-shell flex min-h-screen">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface-variant)] px-4 py-6 lg:flex" aria-label="Navegación principal">
+        <Link href={navigation.homeHref} aria-label={`Ir al inicio de ${navigation.workspaceLabel}`} className="mb-9 flex min-h-12 items-center gap-3 rounded-xl px-3">
+          <Image src="/epixum-logo.png" alt="" width={36} height={36} className="size-9 object-contain" />
+          <div><p className="font-headline text-xl font-bold tracking-tight">epixum<span className="text-[var(--color-primary)]">.</span></p><p className="text-xs text-[var(--color-text-muted)]">Campus virtual</p></div>
+        </Link>
+        <div className="min-h-0 flex-1 space-y-8 overflow-y-auto">
+          <div><p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">{navigation.workspaceLabel}</p>{navigationLinks()}</div>
+          <WorkspaceSwitcher access={workspaceAccess} active={workspace} />
         </div>
-      </div>
+        <div className="mt-6 space-y-2 border-t border-[var(--color-outline-variant)] pt-4">
+          <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl}><UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} /><span className="min-w-0 flex-1 text-left"><span className="block truncate text-sm font-semibold">{user.firstName || user.name || user.email}</span><span className="block text-xs text-[var(--color-text-muted)]">Mi perfil</span></span><span className="material-symbols-outlined text-lg text-[var(--color-text-muted)]" aria-hidden="true">settings</span></ProfileModalButton>
+          <LogoutButton className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-error)]" />
+        </div>
+      </aside>
 
-      <nav
-        aria-label={`Navegación móvil de ${navigation.workspaceLabel}`}
-        className="fixed inset-x-3 bottom-3 z-50 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-variant)] p-2 shadow-[var(--epixum-shadow-floating)] backdrop-blur-2xl lg:hidden"
-      >
-        <ul className="grid grid-flow-col auto-cols-fr gap-1">
-          {navigation.items.map((item) => {
-            const active = isNavigationItemActive(pathname, item);
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cx(
-                    "flex min-h-14 flex-col items-center justify-center gap-1 rounded-[var(--epixum-radius-lg)] px-2 text-[11px] font-bold transition-colors",
-                    active
-                      ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                      : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)]",
-                  )}
-                >
-                  <span className="material-symbols-outlined text-xl" aria-hidden="true">{item.icon}</span>
-                  <span className="truncate">{item.label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      <div className="min-w-0 flex-1">
+        <header className="sticky top-0 z-40 flex min-h-16 items-center justify-between gap-3 border-b border-[var(--color-outline-variant)] bg-[var(--color-surface-variant)] px-4 backdrop-blur-xl md:px-7">
+          <div className="flex min-w-0 items-center gap-3">
+            <IconButton label="Abrir menú de navegación" icon={<span className="material-symbols-outlined">menu</span>} variant="ghost" className="lg:hidden" onClick={() => setMenuOpen(true)} aria-expanded={menuOpen} aria-haspopup="dialog" />
+            <div className="min-w-0"><p className="truncate text-xs text-[var(--color-text-muted)]">{navigation.workspaceLabel}</p><p className="truncate text-sm font-semibold">{activeItem?.label || "Inicio"}</p></div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:block">{workspace === "admin" ? "Gestión del campus" : workspace === "docente" ? "Tu espacio de docencia" : "Tu espacio de aprendizaje"}</span>
+            <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl} compact><UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} /><span className="sr-only">Abrir mi perfil</span></ProfileModalButton>
+          </div>
+        </header>
+        <main id="main-content" tabIndex={-1} className="min-h-[calc(100dvh-4rem)] min-w-0 focus:outline-none">{children}</main>
+      </div>
     </div>
-  );
+
+    <Dialog open={menuOpen} onOpenChange={setMenuOpen} title="Navegación" description={navigation.workspaceLabel}>
+      <div className="space-y-6 pb-6">
+        {navigationLinks(true)}
+        <WorkspaceSwitcher access={workspaceAccess} active={workspace} onNavigate={closeMenu} />
+        <LogoutButton className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-error)]" />
+      </div>
+    </Dialog>
+  </div>;
 }

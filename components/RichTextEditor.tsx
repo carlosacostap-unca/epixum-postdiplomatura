@@ -1,6 +1,6 @@
 "use client";
 
-import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import { useEditor, useEditorState, EditorContent, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import { useEffect } from 'react';
@@ -12,22 +12,37 @@ interface RichTextEditorProps {
 }
 
 const MenuBar = ({ editor }: { editor: Editor | null }) => {
+  useEditorState({
+    editor,
+    selector: ({ editor: current }) => current ? {
+      bold: current.isActive('bold'),
+      italic: current.isActive('italic'),
+      strike: current.isActive('strike'),
+      heading2: current.isActive('heading', { level: 2 }),
+      heading3: current.isActive('heading', { level: 3 }),
+      bulletList: current.isActive('bulletList'),
+      orderedList: current.isActive('orderedList'),
+      canBold: current.can().toggleBold(),
+      canItalic: current.can().toggleItalic(),
+      canStrike: current.can().toggleStrike(),
+    } : null,
+  });
   if (!editor) {
     return null;
   }
 
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-700 p-2 flex gap-2 flex-wrap bg-zinc-50 dark:bg-zinc-800 rounded-t-md">
+    <div className="border-b border-[var(--color-outline-variant)] p-2 flex gap-2 flex-wrap bg-[var(--color-surface-container-low)] rounded-t-md">
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
-        className={`p-1.5 rounded text-sm font-medium transition-colors ${
-          editor.isActive('bold') 
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-            : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+        className={`min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium transition-colors ${
+          editor.isActive('bold')
+            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]'
         }`}
-        title="Bold"
+        title="Negrita" aria-label="Negrita" aria-pressed={editor.isActive('bold')}
       >
         <strong>B</strong>
       </button>
@@ -35,12 +50,12 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleItalic().run()}
         disabled={!editor.can().chain().focus().toggleItalic().run()}
-        className={`p-1.5 rounded text-sm font-medium transition-colors ${
-          editor.isActive('italic') 
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-            : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+        className={`min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium transition-colors ${
+          editor.isActive('italic')
+            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]'
         }`}
-        title="Italic"
+        title="Cursiva" aria-label="Cursiva" aria-pressed={editor.isActive('italic')}
       >
         <em>I</em>
       </button>
@@ -48,68 +63,68 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         type="button"
         onClick={() => editor.chain().focus().toggleStrike().run()}
         disabled={!editor.can().chain().focus().toggleStrike().run()}
-        className={`p-1.5 rounded text-sm font-medium transition-colors ${
-          editor.isActive('strike') 
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-            : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+        className={`min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium transition-colors ${
+          editor.isActive('strike')
+            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]'
         }`}
-        title="Strike"
+        title="Tachado" aria-label="Tachado" aria-pressed={editor.isActive('strike')}
       >
         <s>S</s>
       </button>
-      
-      <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-600 mx-1 self-center" />
+
+      <div className="w-px h-6 bg-[var(--color-surface-container-highest)] mx-1 self-center" />
 
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        className={`p-1.5 rounded text-sm font-medium transition-colors ${
-          editor.isActive('heading', { level: 2 }) 
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-            : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+        className={`min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium transition-colors ${
+          editor.isActive('heading', { level: 2 })
+            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]'
         }`}
-        title="Heading 2"
+        title="Título de nivel 2" aria-label="Título de nivel 2" aria-pressed={editor.isActive('heading', { level: 2 })}
       >
         H2
       </button>
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        className={`p-1.5 rounded text-sm font-medium transition-colors ${
-          editor.isActive('heading', { level: 3 }) 
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-            : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+        className={`min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium transition-colors ${
+          editor.isActive('heading', { level: 3 })
+            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]'
         }`}
-        title="Heading 3"
+        title="Título de nivel 3" aria-label="Título de nivel 3" aria-pressed={editor.isActive('heading', { level: 3 })}
       >
         H3
       </button>
 
-      <div className="w-px h-6 bg-zinc-300 dark:bg-zinc-600 mx-1 self-center" />
+      <div className="w-px h-6 bg-[var(--color-surface-container-highest)] mx-1 self-center" />
 
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={`p-1.5 rounded text-sm font-medium transition-colors ${
-          editor.isActive('bulletList') 
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-            : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+        className={`min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium transition-colors ${
+          editor.isActive('bulletList')
+            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]'
         }`}
-        title="Bullet List"
+        title="Lista con viñetas" aria-label="Lista con viñetas" aria-pressed={editor.isActive('bulletList')}
       >
-        • List
+        • Lista
       </button>
       <button
         type="button"
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={`p-1.5 rounded text-sm font-medium transition-colors ${
-          editor.isActive('orderedList') 
-            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-            : 'text-zinc-600 hover:bg-zinc-200 dark:text-zinc-300 dark:hover:bg-zinc-700'
+        className={`min-h-11 min-w-11 rounded-lg px-2 text-sm font-medium transition-colors ${
+          editor.isActive('orderedList')
+            ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+            : 'text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]'
         }`}
-        title="Ordered List"
+        title="Lista numerada" aria-label="Lista numerada" aria-pressed={editor.isActive('orderedList')}
       >
-        1. List
+        1. Lista
       </button>
     </div>
   );
@@ -118,11 +133,11 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 export default function RichTextEditor({ content, onChange, editable = true }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ link: false }),
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-blue-500 hover:underline',
+          class: 'text-[var(--color-primary)] hover:underline',
         },
       }),
     ],
@@ -133,10 +148,13 @@ export default function RichTextEditor({ content, onChange, editable = true }: R
     },
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-none focus:outline-none min-h-[150px] p-4',
+        class: 'prose prose-invert max-w-none focus:outline-none min-h-[180px] p-4',
+        role: 'textbox',
+        'aria-label': 'Descripción',
+        'aria-multiline': 'true',
       },
     },
-    immediatelyRender: false, 
+    immediatelyRender: false,
   });
 
   // Update content if it changes externally (e.g. initial load)
@@ -149,7 +167,7 @@ export default function RichTextEditor({ content, onChange, editable = true }: R
   }, [content, editor]);
 
   return (
-    <div className="border border-zinc-300 dark:border-zinc-600 rounded-md overflow-hidden bg-white dark:bg-zinc-900 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+    <div className="border border-[var(--color-outline-variant)] rounded-md overflow-hidden bg-[var(--color-surface-container-lowest)] focus-within:ring-2 focus-within:ring-[var(--color-focus)] focus-within:border-transparent">
       {editable && <MenuBar editor={editor} />}
       <EditorContent editor={editor} />
     </div>

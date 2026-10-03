@@ -6,7 +6,7 @@ export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-container)] text-[var(--color-on-primary)] shadow-[var(--epixum-shadow-glow)] hover:from-[var(--color-primary-hover)] hover:to-[var(--color-primary-container)]",
+    "bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-[var(--epixum-shadow-glow)] hover:bg-[var(--color-primary-hover)] active:bg-[var(--color-primary-pressed)]",
   secondary:
     "bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-high)]",
   ghost:
@@ -46,7 +46,7 @@ export function Button({
     <button
       type={type}
       className={cx(
-        "inline-flex shrink-0 items-center justify-center gap-2 rounded-[var(--epixum-radius-pill)] font-bold tracking-wide transition-[background-color,color,filter,opacity,transform] duration-[var(--epixum-motion-base)] ease-[var(--epixum-ease-standard)] disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-w-0 max-w-full items-center justify-center gap-2 rounded-[var(--epixum-radius-md)] font-semibold transition-[background-color,color,filter,opacity,transform] duration-[var(--epixum-motion-base)] ease-[var(--epixum-ease-standard)] disabled:cursor-not-allowed disabled:opacity-60",
         variantClasses[variant],
         sizeClasses[size],
         className,
@@ -62,7 +62,7 @@ export function Button({
       ) : (
         leadingIcon
       )}
-      <span>{isPending ? pendingLabel : children}</span>
+      <span className="min-w-0">{isPending ? pendingLabel : children}</span>
     </button>
   );
 }

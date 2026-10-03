@@ -1,59 +1,62 @@
 @import "tailwindcss";
+@source not "../.playwright-cli";
+@source not "../output";
+@source not "../tmp";
 @plugin "@tailwindcss/typography";
 
 :root {
   color-scheme: dark;
 
   /* Epixum foundations */
-  --epixum-background: #0e0e0e;
-  --epixum-foreground: #ffffff;
-  --epixum-surface: #0e0e0e;
-  --epixum-surface-lowest: #000000;
-  --epixum-surface-low: #131313;
-  --epixum-surface-container: #1a1a1a;
-  --epixum-surface-high: #202020;
-  --epixum-surface-highest: #262626;
-  --epixum-surface-glass: rgb(26 26 26 / 82%);
+  --epixum-background: #0c1014;
+  --epixum-foreground: #f2f4f7;
+  --epixum-surface: #0c1014;
+  --epixum-surface-lowest: #0a0d11;
+  --epixum-surface-low: #141a21;
+  --epixum-surface-container: #1b232c;
+  --epixum-surface-high: #222d38;
+  --epixum-surface-highest: #2b3845;
+  --epixum-surface-glass: rgb(17 23 30 / 94%);
 
-  --epixum-text: #ffffff;
-  --epixum-text-secondary: #c4c0c1;
-  --epixum-text-muted: #9f9b9c;
+  --epixum-text: #f2f4f7;
+  --epixum-text-secondary: #b9c4d0;
+  --epixum-text-muted: #a4b1c0;
 
-  --epixum-primary: #3fff8b;
-  --epixum-primary-hover: #72ffa8;
-  --epixum-primary-pressed: #20df70;
-  --epixum-primary-container: #1b8a45;
-  --epixum-on-primary: #000000;
-  --epixum-tertiary: #7ae6ff;
+  --epixum-primary: #78e8ae;
+  --epixum-primary-hover: #a0f0c5;
+  --epixum-primary-pressed: #56ce91;
+  --epixum-primary-container: #56ce91;
+  --epixum-on-primary: #092117;
+  --epixum-tertiary: #9dbdff;
 
-  --epixum-success: #3fff8b;
+  --epixum-success: #78e8ae;
   --epixum-warning: #ffd166;
   --epixum-error: #ffb4ab;
-  --epixum-info: #7ae6ff;
+  --epixum-info: #9dbdff;
   --epixum-on-success: #000000;
   --epixum-on-warning: #211700;
   --epixum-on-error: #300005;
   --epixum-on-info: #001f27;
 
-  --epixum-outline: #777274;
-  --epixum-outline-variant: rgb(119 114 116 / 62%);
-  --epixum-focus: #7ae6ff;
-  --epixum-focus-offset: #0e0e0e;
+  --epixum-outline: #7a899b;
+  --epixum-outline-variant: rgb(164 177 192 / 20%);
+  --epixum-focus: #a8c7ff;
+  --epixum-focus-offset: #0c1014;
 
-  --epixum-radius-sm: 0.75rem;
-  --epixum-radius-md: 1rem;
-  --epixum-radius-lg: 1.5rem;
-  --epixum-radius-xl: 2rem;
+  --epixum-radius-sm: 0.5rem;
+  --epixum-radius-md: 0.625rem;
+  --epixum-radius-lg: 0.875rem;
+  --epixum-radius-xl: 1.25rem;
   --epixum-radius-pill: 9999px;
   --epixum-shadow-floating: 0 24px 64px rgb(0 0 0 / 48%);
-  --epixum-shadow-glow: 0 0 36px rgb(63 255 139 / 12%);
+  --epixum-shadow-glow: 0 4px 14px rgb(0 0 0 / 16%);
 
   --epixum-motion-fast: 120ms;
   --epixum-motion-base: 200ms;
   --epixum-motion-slow: 320ms;
   --epixum-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --epixum-touch-target: 2.75rem;
-  --epixum-content-max: 100rem;
+  --epixum-content-max: 112rem;
 
   --background: var(--epixum-background);
   --foreground: var(--epixum-foreground);
@@ -100,12 +103,75 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  min-width: 20rem;
+  min-width: 0;
   min-height: 100vh;
   overflow-x: clip;
   font-family: var(--font-body), Arial, Helvetica, sans-serif;
   line-height: 1.5;
   text-rendering: optimizeLegibility;
+}
+
+/* Shared rhythm keeps forms, dashboards and reading views aligned. */
+.page-container {
+  width: 100%;
+  min-width: 0;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding: clamp(1rem, 3vw, 2.75rem);
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+.page-container > * {
+  min-width: 0;
+}
+
+.course-tabs {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-outline) transparent;
+}
+
+:where(h1, h2, h3, p, dd) {
+  overflow-wrap: anywhere;
+}
+
+:where(input, select, textarea) {
+  max-width: 100%;
+  accent-color: var(--color-primary);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+section[id], details[id] {
+  scroll-margin-top: 6rem;
+}
+
+.unit-disclosure > summary {
+  list-style: none;
+}
+
+.unit-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.unit-disclosure[open] > summary .unit-chevron {
+  transform: rotate(180deg);
+}
+
+.reading-content {
+  max-width: 75ch;
+  line-height: 1.8;
+}
+
+.reading-content :where(img, video, iframe) {
+  max-width: 100%;
+}
+
+.reading-content :where(pre, table) {
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 ::selection {

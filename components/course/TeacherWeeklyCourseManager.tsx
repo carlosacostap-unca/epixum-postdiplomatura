@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CourseUnit } from "./CourseUnit";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -31,7 +32,7 @@ interface Props {
   weeks: CourseWeek[];
 }
 
-const fieldClass = "min-h-11 w-full rounded-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] px-4 py-3 text-[var(--color-on-surface)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20";
+const fieldClass = "min-h-11 w-full rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface-container)] px-4 py-3 text-[var(--color-on-surface)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20";
 
 function localDateTime(value?: string) {
   if (!value) return "";
@@ -121,7 +122,7 @@ function ContentMover({ courseId, item, weeks, currentWeek }: { courseId: string
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-outline-variant)] p-4 sm:flex-row sm:items-center">
-      <Link className="min-w-0 flex-1 font-bold hover:text-[var(--color-primary)]" href={item.href}>{item.title}</Link>
+      <Link className="flex min-w-0 flex-1 items-start gap-3 font-semibold hover:text-[var(--color-primary)]" href={item.href}><span className="material-symbols-outlined shrink-0 text-xl text-[var(--color-info)]" aria-hidden="true">{item.type === "class" ? "menu_book" : item.type === "assignment" ? "assignment" : "forum"}</span><span><span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">{item.type === "class" ? "Clase" : item.type === "assignment" ? "Trabajo práctico" : "Consulta"}</span>{item.title}</span></Link>
       <label className="sr-only" htmlFor={`week-${item.type}-${item.id}`}>Unidad para {item.title}</label>
       <select id={`week-${item.type}-${item.id}`} className={`${fieldClass} sm:w-52`} value={target} onChange={(event) => setTarget(event.target.value)}>
         <option value="">Sin unidad</option>
@@ -188,31 +189,24 @@ export default function TeacherWeeklyCourseManager({ courseId, groups, unassigne
         <EmptyState icon="calendar_view_week" title="Todavía no hay unidades" description="Creá la primera unidad para comenzar a organizar el contenido." action={<Button onClick={() => setFormWeek("new")}>Crear primera unidad</Button>} />
       ) : (
         <div className="space-y-5">
-          {groups.map((group) => {
+          {groups.map((group, index) => {
             const items = weekItems(courseId, group);
             return (
-              <Card key={group.week.id}>
-                <CardContent className="space-y-5">
-                  <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-3"><Badge tone="info">Unidad {group.week.number}</Badge><Badge tone={statusTone(group.week.status)}>{statusLabel(group.week.status)}</Badge></div>
-                      <h3 className="mt-3 font-headline text-2xl font-bold">{group.week.title}</h3>
-                      <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
-                        {group.week.startDate || group.week.endDate ? `${group.week.startDate ? new Date(group.week.startDate).toLocaleDateString("es-AR") : "Sin inicio"} — ${group.week.endDate ? new Date(group.week.endDate).toLocaleDateString("es-AR") : "Sin finalización"}` : "Sin fechas definidas"}
-                      </p>
-                      {group.week.status === "programada" && group.week.publishAt ? <p className="mt-2 text-sm font-medium text-[var(--color-info)]">Publicación programada: {new Date(group.week.publishAt).toLocaleString("es-AR")}</p> : null}
-                      <p className="mt-2 text-sm">{group.classes.length} clases · {group.assignments.length} trabajos · {group.inquiries.length} consultas</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Link className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-surface-container-highest)] px-4 text-sm font-bold" href={`/docentes/cursos/${courseId}/clases/nueva?semana=${group.week.id}`}>Nueva clase</Link>
-                      <Link className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-surface-container-highest)] px-4 text-sm font-bold" href={`/docentes/cursos/${courseId}/tps/nuevo?semana=${group.week.id}`}>Nuevo trabajo</Link>
-                      <Button variant="ghost" size="sm" onClick={() => { setFormError(null); setFieldErrors({}); setFormWeek(group.week); }}>Editar</Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteWeek(group.week)}>Eliminar</Button>
-                    </div>
+              <CourseUnit key={group.week.id} id={group.week.id} number={group.week.number} title={group.week.title} open={index === 0} counts={`${group.classes.length} clases · ${group.assignments.length} trabajos · ${group.inquiries.length} consultas`} metadata={<Badge tone={statusTone(group.week.status)}>{statusLabel(group.week.status)}</Badge>}>
+                <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+                  <div className="text-sm text-[var(--color-on-surface-variant)]">
+                    <p>{group.week.startDate || group.week.endDate ? `${group.week.startDate ? new Date(group.week.startDate).toLocaleDateString("es-AR") : "Sin inicio"} — ${group.week.endDate ? new Date(group.week.endDate).toLocaleDateString("es-AR") : "Sin finalización"}` : "Sin fechas definidas"}</p>
+                    {group.week.status === "programada" && group.week.publishAt && <p className="mt-1 text-[var(--color-info)]">Publicación: {new Date(group.week.publishAt).toLocaleString("es-AR")}</p>}
                   </div>
-                  {items.length ? <div className="space-y-3">{items.map((item) => <ContentMover key={`${item.type}-${item.id}`} courseId={courseId} item={item} weeks={weeks} currentWeek={group.week.id} />)}</div> : <p className="rounded-xl bg-[var(--color-surface-container)] p-4 text-sm text-[var(--color-on-surface-variant)]">Esta unidad todavía no contiene clases, trabajos ni consultas.</p>}
-                </CardContent>
-              </Card>
+                  <div className="flex flex-wrap gap-2">
+                    <Link className="inline-flex min-h-11 items-center gap-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] px-3 text-sm font-semibold" href={`/docentes/cursos/${courseId}/clases/nueva?semana=${group.week.id}`}><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Clase</Link>
+                    <Link className="inline-flex min-h-11 items-center gap-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] px-3 text-sm font-semibold" href={`/docentes/cursos/${courseId}/tps/nuevo?semana=${group.week.id}`}><span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>Trabajo</Link>
+                    <Button variant="ghost" size="sm" onClick={() => { setFormError(null); setFieldErrors({}); setFormWeek(group.week); }}>Editar</Button>
+                    <Button variant="ghost" size="sm" className="text-[var(--color-error)]" onClick={() => setDeleteWeek(group.week)}>Eliminar</Button>
+                  </div>
+                </div>
+                {items.length ? <div className="space-y-2">{items.map((item) => <ContentMover key={`${item.type}-${item.id}`} courseId={courseId} item={item} weeks={weeks} currentWeek={group.week.id} />)}</div> : <p className="rounded-xl bg-[var(--color-surface-container)] p-4 text-sm text-[var(--color-on-surface-variant)]">Esta unidad todavía no contiene clases, trabajos ni consultas.</p>}
+              </CourseUnit>
             );
           })}
         </div>

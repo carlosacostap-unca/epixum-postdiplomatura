@@ -19,7 +19,7 @@ export default async function TeacherClassManagementPage({ params }: { params: P
   const links = await getLinks(classData.id, "class");
 
   return (
-    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <div className="page-container space-y-8">
       <TeacherCourseContext
         course={course}
         current="clases"
@@ -31,7 +31,7 @@ export default async function TeacherClassManagementPage({ params }: { params: P
       <section aria-labelledby="class-description-title">
         <Card><CardContent>
           <h2 id="class-description-title" className="font-headline text-2xl font-bold">Descripción de la clase</h2>
-          {classData.description ? <div className="prose prose-invert mt-5 max-w-none text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: classData.description }} /> : <EmptyState className="mt-5" icon="description" title="Sin descripción" description="Editá la clase para añadir objetivos o un resumen de la sesión." action={<Link href={`/docentes/cursos/${course.id}/clases/${classData.id}/editar`} className="font-bold text-[var(--color-primary)]">Editar clase</Link>} />}
+          {classData.description ? <div className="reading-content prose prose-invert mt-5 text-[var(--color-on-surface-variant)]" dangerouslySetInnerHTML={{ __html: classData.description }} /> : <EmptyState className="mt-5" icon="description" title="Sin descripción" description="Editá la clase para añadir objetivos o un resumen de la sesión." action={<Link href={`/docentes/cursos/${course.id}/clases/${classData.id}/editar`} className="font-bold text-[var(--color-primary)]">Editar clase</Link>} />}
         </CardContent></Card>
       </section>
 

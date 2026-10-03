@@ -13,12 +13,12 @@ export function EmptyState({ action, className, description, icon = "inbox", tit
   return (
     <section
       className={cx(
-        "flex flex-col items-center rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] px-6 py-12 text-center md:px-10 md:py-16",
+        "flex min-w-0 flex-col items-center rounded-[var(--epixum-radius-xl)] border border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-5 py-8 text-center md:px-8 md:py-10",
         className,
       )}
     >
       <span
-        className="material-symbols-outlined mb-5 text-5xl text-[var(--color-on-surface-variant)]"
+        className="material-symbols-outlined mb-4 flex size-12 items-center justify-center rounded-2xl bg-[var(--color-surface-container)] text-2xl text-[var(--color-text-muted)]"
         aria-hidden="true"
       >
         {icon}

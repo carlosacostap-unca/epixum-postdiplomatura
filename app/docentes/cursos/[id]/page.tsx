@@ -49,7 +49,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
   const pendingInquiries = inquiries.filter((inquiry) => inquiry.status === "Pendiente");
 
   return (
-    <div className="w-full space-y-12 p-6 md:p-10 xl:p-12">
+    <div className="page-container space-y-8">
       <TeacherCourseContext
         course={course}
         current="resumen"
@@ -57,7 +57,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
       />
 
       <section aria-label="Resumen del curso" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Entregas por revisar" value={pendingDeliveries.length} icon="rate_review" tone={pendingDeliveries.length ? "warning" : "neutral"} href="#trabajos" />
+        <StatCard label="Entregas por revisar" value={pendingDeliveries.length} icon="rate_review" tone={pendingDeliveries.length ? "warning" : "neutral"} href={pendingDeliveries.length ? "#course-pending-title" : weekly ? "#semanas" : "#trabajos"} />
         <StatCard label="Consultas pendientes" value={pendingInquiries.length} icon="forum" tone={pendingInquiries.length ? "warning" : "neutral"} href={`/docentes/cursos/${course.id}/consultas?estado=Pendiente`} />
         <StatCard label="Clases" value={classes.length} icon="menu_book" href={weekly ? "#semanas" : "#clases"} />
         <StatCard label="Estudiantes" value={students.length} icon="group" href="#estudiantes" />
@@ -164,7 +164,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
         </section>
 
         <section id="acceso" aria-labelledby="access-title" className="scroll-mt-6 space-y-5">
-          <div><h2 id="access-title" className="font-headline text-2xl font-bold">Acceso al curso</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Gestioná la credencial sin exponer la versión almacenada.</p></div>
+          <div><h2 id="access-title" className="font-headline text-2xl font-bold">Acceso al curso</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Administrá la clave que compartís con tus estudiantes.</p></div>
           <CourseKeyManager courseId={course.id} enrollmentMode={course.enrollmentMode || "clave"} />
         </section>
       </div>

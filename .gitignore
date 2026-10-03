@@ -13,6 +13,8 @@
 # testing
 /coverage
 /backups/pocketbase/
+/.playwright-cli/
+/output/playwright/
 
 # next.js
 /.next/

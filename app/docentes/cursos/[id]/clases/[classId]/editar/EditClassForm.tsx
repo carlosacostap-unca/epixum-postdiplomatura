@@ -59,7 +59,7 @@ export default function EditClassForm({ courseId, classData, weeks }: { courseId
         </div>
       )}
 
-      <div className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-6 md:p-10 border border-[var(--color-outline-variant)] shadow-[0_0_40px_rgba(0,0,0,0.2)] flex flex-col gap-8 relative overflow-hidden">
+      <div className="bg-[var(--color-surface-container-low)] rounded-[var(--epixum-radius-xl)] p-6 md:p-10 border border-[var(--color-outline-variant)] shadow-[0_0_40px_rgba(0,0,0,0.2)] flex flex-col gap-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-primary)]/5 blur-[60px] -z-10 rounded-full pointer-events-none"></div>
 
         <div>

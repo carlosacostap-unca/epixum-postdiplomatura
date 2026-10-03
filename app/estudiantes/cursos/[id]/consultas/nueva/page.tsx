@@ -25,7 +25,7 @@ export default async function EstudianteNewInquiryPage({ params, searchParams }:
   const initialWeekId = weeks.some((item) => item.id === query.semana) ? query.semana : undefined;
 
   return (
-    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <div className="page-container space-y-8">
       <StudentCourseContext
         course={course}
         current="consultas"

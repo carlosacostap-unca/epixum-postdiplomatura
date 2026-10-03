@@ -5,7 +5,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cx(
-        "rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] text-[var(--color-on-surface)] shadow-[0_16px_44px_rgb(0_0_0/18%)]",
+        "min-w-0 rounded-[var(--epixum-radius-xl)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] text-[var(--color-on-surface)]",
         className,
       )}
       {...props}
@@ -14,7 +14,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
 }
 
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("flex flex-col gap-2 px-6 pt-6 md:px-8 md:pt-8", className)} {...props} />;
+  return <div className={cx("flex flex-col gap-2 px-5 pt-5 md:px-6 md:pt-6", className)} {...props} />;
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
@@ -26,9 +26,9 @@ export function CardDescription({ className, ...props }: HTMLAttributes<HTMLPara
 }
 
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("px-6 py-6 md:px-8", className)} {...props} />;
+  return <div className={cx("min-w-0 px-5 py-5 md:px-6", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx("flex flex-wrap items-center gap-3 px-6 pb-6 md:px-8 md:pb-8", className)} {...props} />;
+  return <div className={cx("flex flex-wrap items-center gap-3 px-5 pb-5 md:px-6 md:pb-6", className)} {...props} />;
 }

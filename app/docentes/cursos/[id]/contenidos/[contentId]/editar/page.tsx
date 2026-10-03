@@ -15,7 +15,7 @@ export default async function EditCourseContentPage({ params }: { params: Promis
   const result = await getCourseContentWithResources(course.id, contentId);
   if (!result) notFound();
 
-  return <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+  return <div className="page-container space-y-8">
     <TeacherCourseContext course={course} current="contenidos" title={`Editar ${result.content.title}`} description="Actualizá el título o la descripción sin cambiar su posición." />
     <Card><CardContent><CourseContentForm courseId={course.id} content={result.content} /></CardContent></Card>
   </div>;

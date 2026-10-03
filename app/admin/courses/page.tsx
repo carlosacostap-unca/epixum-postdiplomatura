@@ -27,9 +27,9 @@ export default async function CoursesPage({ searchParams }: { searchParams: Sear
   ];
 
   return (
-    <div className="p-6 md:p-10 xl:p-12">
+    <div className="page-container">
       <PageHeader eyebrow="Administración" title="Cursos" description="Gestioná el catálogo, sus estados y docentes." actions={<Link href="/admin/courses/new" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]"><span className="material-symbols-outlined" aria-hidden="true">add</span>Nuevo curso</Link>} />
-      <form className="mt-8 grid gap-3 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-4 md:grid-cols-[1fr_13rem_13rem_auto]" role="search">
+      <form className="mt-8 grid gap-3 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-4 xl:grid-cols-[minmax(0,1fr)_11rem_11rem_auto] sm:grid-cols-2" role="search">
         <label className="sr-only" htmlFor="course-search">Buscar cursos</label>
         <input id="course-search" name="q" defaultValue={valueOf(params.q)} placeholder="Buscar por curso o docente" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4" />
         <label className="sr-only" htmlFor="course-status">Estado</label>

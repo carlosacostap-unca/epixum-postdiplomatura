@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/pocketbase-server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
+import { Badge, Breadcrumbs, Card, CardContent, PageHeader } from "@/components/ui";
+import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
 import DownloadButtonClient from './DownloadButtonClient';
 import AIPreevaluationClient from './AIPreevaluationClient';
 import Image from "next/image";
@@ -56,85 +58,29 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
   const aiEligible = Boolean(course.aiPreevaluationEnabled && configValidation?.success && configValidation.data.active && githubCandidate);
   const initialAttempt = aiEligible ? await getLatestAIPreevaluation(delivery.id).catch(() => null) : null;
 
-  return (
-    <div className="container mx-auto p-8 min-h-screen max-w-4xl">
-      <Link href={!isAdmin(user) && assignment.course ? `/docentes/cursos/${assignment.course}/tps/${id}#entregas` : "/admin"} className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 text-sm font-bold hover:text-[var(--color-primary)]">
-        &larr; Volver a las entregas
-      </Link>
+  const workflow = normalizeDeliveryWorkflow(delivery);
+  const presentation = teacherDeliveryPresentation(delivery);
+  const backHref = !isAdmin(user) ? `/docentes/cursos/${course.id}/tps/${id}#entregas` : `/admin/courses/${course.id}`;
+  const studentName = student?.name || [student?.firstName, student?.lastName].filter(Boolean).join(" ") || "Estudiante";
 
-      <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 overflow-hidden mb-8">
-        <div className="px-6 py-5 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-              Detalles de Entrega
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Trabajo Práctico: <span className="font-medium text-zinc-700 dark:text-zinc-300">{assignment.title}</span>
-            </p>
-          </div>
-          <div className="text-sm text-zinc-500 dark:text-zinc-400">
-            Fecha de entrega: <FormattedDate date={delivery.created} showTime={true} />
-          </div>
+  return <div className="page-container max-w-6xl space-y-6">
+    <Breadcrumbs items={[{ href: backHref, label: assignment.title }, { label: "Revisar entrega" }]} />
+    <PageHeader eyebrow="Revisión docente" title="Revisar entrega" description={assignment.title} metadata={<><Badge tone={presentation.tone}>{presentation.label}</Badge><Badge>Versión {workflow.submissionVersion}</Badge></>} actions={<Link href={backHref} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] px-4 text-sm font-semibold"><span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>Volver</Link>} />
+    <div className="grid gap-4 xl:grid-cols-2">
+      <Card><CardContent className="space-y-4">
+        <h2 className="text-sm font-semibold text-[var(--color-text-muted)]">Estudiante y entrega</h2>
+        <div className="flex items-center gap-3">
+          <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]">{student?.avatar ? <Image unoptimized src={`${pbUrl}/api/files/${student.collectionId}/${student.id}/${student.avatar}`} alt="" width={48} height={48} className="size-12 object-cover" /> : studentName.charAt(0)}</span>
+          <div className="min-w-0"><p className="font-semibold">{studentName}</p><p className="break-all text-sm text-[var(--color-on-surface-variant)]">{student?.email}</p></div>
         </div>
-
-        <div className="p-6">
-          <div className="flex flex-col md:flex-row gap-8">
-            {/* Student Info */}
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-700 pb-2">
-                Información del Estudiante
-              </h2>
-              {student ? (
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center overflow-hidden">
-                    {student.avatar ? (
-                      <Image
-                        unoptimized
-                        src={`${pbUrl}/api/files/${student.collectionId}/${student.id}/${student.avatar}`} 
-                        alt={student.name}
-                        width={64}
-                        height={64}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-2xl font-bold text-zinc-500 dark:text-zinc-400">
-                        {student.name.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-lg font-medium text-zinc-900 dark:text-zinc-100">{student.name}</div>
-                    <div className="text-zinc-500 dark:text-zinc-400">{student.email}</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-zinc-500 italic">Estudiante no encontrado</div>
-              )}
-            </div>
-
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold mb-4 text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-700 pb-2">
-                {submission.type === "url" ? "Enlace entregado" : "Archivo entregado"}
-              </h2>
-              <div className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="material-symbols-outlined text-3xl text-blue-500" aria-hidden="true">{submission.type === "url" ? "link" : "description"}</span>
-                  <div className="min-w-0">
-                    <div className="max-w-[240px] truncate font-medium text-zinc-900 dark:text-zinc-100" title={submission.type === "url" ? submission.url : submission.files[0]?.name}>
-                      {submission.type === "url" ? submission.url : submission.files[0]?.name || "Sin archivo"}
-                    </div>
-                    <div className="text-xs text-zinc-500">{submission.type === "url" ? "URL externa" : `${submission.files.length} ${submission.files.length === 1 ? "archivo" : "archivos"}`}</div>
-                  </div>
-                </div>
-                {submission.type === "url" ? (
-                  <a href={submission.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)] hover:brightness-110"><span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span>Abrir enlace</a>
-                ) : (
-                  <DownloadButtonClient deliveryId={delivery.id} />
-                )}
-              </div>
-            </div>
-          </div>
-
+        <p className="text-sm text-[var(--color-on-surface-variant)]">Enviada el <FormattedDate date={workflow.submittedAt} showTime /></p>
+      </CardContent></Card>
+      <Card><CardContent className="space-y-4">
+        <h2 className="text-sm font-semibold text-[var(--color-text-muted)]">{submission.type === "url" ? "Enlace entregado" : "Archivos entregados"}</h2>
+        <div className="flex min-w-0 items-start gap-3"><span className="material-symbols-outlined shrink-0 text-[var(--color-primary)]" aria-hidden="true">{submission.type === "url" ? "link" : "description"}</span><p className="min-w-0 break-all text-sm">{submission.type === "url" ? submission.url : `${submission.files.length} ${submission.files.length === 1 ? "archivo" : "archivos"}`}</p></div>
+        {submission.type === "url" ? <a href={submission.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] px-4 text-sm font-semibold"><span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span>Abrir enlace</a> : <DownloadButtonClient deliveryId={delivery.id} />}
+      </CardContent></Card>
+    </div>
           <AIPreevaluationClient
             deliveryId={delivery.id}
             submissionVersion={normalizeDeliveryWorkflow(delivery).submissionVersion}
@@ -150,8 +96,5 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
             initialVerdict={delivery.verdict}
             initialStatus={delivery.status}
           />
-        </div>
-      </div>
-    </div>
-  );
+  </div>;
 }

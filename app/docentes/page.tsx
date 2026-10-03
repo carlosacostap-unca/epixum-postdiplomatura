@@ -27,7 +27,7 @@ export default async function DocentesPage() {
   const hasPending = dashboard.pendingDeliveryCount + dashboard.pendingInquiryCount > 0;
 
   return (
-    <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+    <div className="page-container space-y-8">
       <PageHeader
         eyebrow="Panel docente"
         title={<>Hola, <span className="text-[var(--color-primary)]">{firstName}</span></>}

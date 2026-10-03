@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { User, UserRole } from "@/types";
 
@@ -44,6 +45,22 @@ function buildUser(role: UserRole): User {
 }
 
 describe("AppShell", () => {
+  it("abre el menú por teclado, conserva los destinos del rol y devuelve el foco al cerrar", async () => {
+    const user = userEvent.setup();
+    currentPathname = "/admin/users";
+    render(<AppShell user={buildUser("admin")} workspaceAccess={workspaceAccess.admin} pocketbaseUrl="https://pb.example.com"><p>Contenido</p></AppShell>);
+    const trigger = screen.getByRole("button", { name: "Abrir menú de navegación" });
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    const menu = screen.getByRole("dialog", { name: "Navegación" });
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(within(menu).getByRole("link", { name: "Usuarios" })).toHaveAttribute("aria-current", "page");
+    expect(within(menu).getByRole("link", { name: "Inicio" })).not.toHaveAttribute("aria-current");
+    fireEvent(menu, new Event("cancel", { cancelable: true }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
   beforeEach(() => {
     currentPathname = "/";
   });

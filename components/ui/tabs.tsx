@@ -10,17 +10,17 @@ export interface TabItem {
 
 export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
   return (
-    <nav aria-label={label} className="max-w-full overflow-x-auto pb-1">
-      <ul className="flex min-w-max items-center gap-1 rounded-[var(--epixum-radius-pill)] bg-[var(--color-surface-container-low)] p-1.5">
+    <nav aria-label={label} className="course-tabs max-w-full overflow-x-auto pb-1">
+      <ul className="flex min-w-max items-center gap-1 border-b border-[var(--color-outline-variant)] pb-2">
         {items.map((item) => (
           <li key={item.href}>
             <Link
               href={item.href}
               aria-current={item.isActive ? "page" : undefined}
               className={cx(
-                "flex min-h-11 items-center gap-2 rounded-[var(--epixum-radius-pill)] px-4 py-2 text-sm font-bold transition-colors",
+                "flex min-h-11 items-center gap-2 rounded-[var(--epixum-radius-md)] px-3 py-2 text-sm font-semibold transition-colors",
                 item.isActive
-                  ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                  ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
                   : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)]",
               )}
             >

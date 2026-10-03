@@ -12,7 +12,7 @@ export default async function NewCourseContentPage({ params }: { params: Promise
   const course = await getCourse(id);
   if (!course?.contentsEnabled || !course.teachers?.includes(user.id)) redirect(`/docentes/cursos/${id}`);
 
-  return <div className="w-full space-y-10 p-6 md:p-10 xl:p-12">
+  return <div className="page-container space-y-8">
     <TeacherCourseContext course={course} current="contenidos" title="Nuevo contenido" description="Creá un material visible inmediatamente para los estudiantes matriculados." />
     <Card><CardContent><CourseContentForm courseId={course.id} /></CardContent></Card>
   </div>;

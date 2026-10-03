@@ -15,6 +15,14 @@ interface CourseFormProps {
   availableInquiries: Inquiry[];
 }
 
+function ContentSelection({ label, name, items, selected = [] }: { label: string; name: string; items: { id: string; title: string }[]; selected?: string[] }) {
+  return <fieldset className="min-w-0 space-y-3">
+    <legend className="text-sm font-semibold">{label}</legend>
+    {items.length ? <div className="max-h-56 space-y-1 overflow-y-auto rounded-[var(--epixum-radius-md)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-2">{items.map((item) => <label key={item.id} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg p-3 text-sm hover:bg-[var(--color-surface-container)]"><input type="checkbox" name={name} value={item.id} defaultChecked={selected.includes(item.id)} className="mt-0.5 size-5 shrink-0" /><span>{item.title || "Sin título"}</span></label>)}</div> : <p className="rounded-xl bg-[var(--color-surface-container-lowest)] p-4 text-sm text-[var(--color-text-muted)]">Todavía no hay {label.toLocaleLowerCase("es")} para vincular.</p>}
+    {items.length > 0 && <p className="text-xs text-[var(--color-text-muted)]">Marcá los elementos que pertenecen a este curso.</p>}
+  </fieldset>;
+}
+
 export default function CourseForm({ 
   course, 
   availableClasses, 
@@ -180,61 +188,14 @@ export default function CourseForm({
         </label>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-        <div>
-          <label htmlFor="classes" className={labelClass}>Clases</label>
-          <select
-            id="classes"
-            name="classes"
-            multiple
-            defaultValue={course?.classes || []}
-            className={`${inputClass} h-32`}
-          >
-            {availableClasses.map(cls => (
-              <option key={cls.id} value={cls.id}>
-                {cls.title}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Mantén presionado Ctrl o Cmd para seleccionar múltiples</p>
+      <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-labelledby="course-links-title">
+        <div><h2 id="course-links-title" className="font-headline text-lg font-bold">Contenido vinculado</h2><p className="mt-1 text-sm text-[var(--color-text-muted)]">Seleccioná las clases, trabajos y consultas que pertenecen al curso.</p></div>
+        <div className="grid gap-5 xl:grid-cols-2">
+          <ContentSelection label="Clases" name="classes" items={availableClasses} selected={course?.classes} />
+          <ContentSelection label="Trabajos prácticos" name="assignments" items={availableAssignments} selected={course?.assignments} />
+          <ContentSelection label="Consultas" name="inquiries" items={availableInquiries} selected={course?.inquiries} />
         </div>
-
-        <div>
-          <label htmlFor="assignments" className={labelClass}>Trabajos Prácticos</label>
-          <select
-            id="assignments"
-            name="assignments"
-            multiple
-            defaultValue={course?.assignments || []}
-            className={`${inputClass} h-32`}
-          >
-            {availableAssignments.map(assignment => (
-              <option key={assignment.id} value={assignment.id}>
-                {assignment.title}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Mantén presionado Ctrl o Cmd para seleccionar múltiples</p>
-        </div>
-      </div>
-
-      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-700">
-        <label htmlFor="inquiries" className={labelClass}>Consultas</label>
-        <select
-          id="inquiries"
-          name="inquiries"
-          multiple
-          defaultValue={course?.inquiries || []}
-          className={`${inputClass} h-32 md:w-1/2`}
-        >
-          {availableInquiries.map(inquiry => (
-            <option key={inquiry.id} value={inquiry.id}>
-              {inquiry.title || 'Sin título'}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Mantén presionado Ctrl o Cmd para seleccionar múltiples</p>
-      </div>
+      </section>
 
       <div className="flex flex-col-reverse justify-end gap-3 pt-6 sm:flex-row">
         {error && (

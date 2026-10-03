@@ -35,7 +35,7 @@ export default function CourseKeyManager({ courseId, enrollmentMode = "clave" }:
   };
 
   return (
-    <section className="bg-[var(--color-surface-container-low)] rounded-[2.5rem] p-6 border border-[var(--color-outline-variant)]">
+    <section className="bg-[var(--color-surface-container-low)] rounded-[var(--epixum-radius-xl)] p-6 border border-[var(--color-outline-variant)]">
       <div className="flex items-start gap-4 mb-5">
         <div className="w-11 h-11 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center shrink-0">
           <span className="material-symbols-outlined">key</span>

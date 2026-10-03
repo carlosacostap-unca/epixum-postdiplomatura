@@ -30,6 +30,30 @@ const course: Course = {
 };
 
 describe("CourseForm", () => {
+  it("permite vincular varios contenidos con casillas y conserva el contrato de guardado", async () => {
+    const user = userEvent.setup();
+    vi.mocked(updateCourse).mockResolvedValue({ success: true, courseId: course.id });
+    const base = { collectionId: "classes", collectionName: "classes", created: "", updated: "", description: "", date: "" };
+    render(<ToastProvider><CourseForm course={{ ...course, classes: ["class-1"] }} availableClasses={[{ ...base, id: "class-1", title: "Clase inicial" }, { ...base, id: "class-2", title: "Clase siguiente" }]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    expect(screen.getByRole("checkbox", { name: "Clase inicial" })).toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: "Clase siguiente" }));
+    await user.click(screen.getByRole("button", { name: "Actualizar curso" }));
+    const sent = vi.mocked(updateCourse).mock.calls.at(-1)?.[1];
+    expect(sent?.getAll("classes")).toEqual(["class-1", "class-2"]);
+  });
+
+  it("permite vincular varios contenidos con casillas y conserva el contrato de guardado", async () => {
+    const user = userEvent.setup();
+    vi.mocked(updateCourse).mockResolvedValue({ success: true, courseId: course.id });
+    const base = { collectionId: "classes", collectionName: "classes", created: "", updated: "", description: "", date: "" };
+    render(<ToastProvider><CourseForm course={{ ...course, classes: ["class-1"] }} availableClasses={[{ ...base, id: "class-1", title: "Clase inicial" }, { ...base, id: "class-2", title: "Clase siguiente" }]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    expect(screen.getByRole("checkbox", { name: "Clase inicial" })).toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: "Clase siguiente" }));
+    await user.click(screen.getByRole("button", { name: "Actualizar curso" }));
+    const sent = vi.mocked(updateCourse).mock.calls.at(-1)?.[1];
+    expect(sent?.getAll("classes")).toEqual(["class-1", "class-2"]);
+  });
+
   it("muestra contenidos deshabilitados por defecto y explica que conserva los datos", () => {
     render(<ToastProvider><CourseForm availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     expect(screen.getByRole("checkbox", { name: /habilitar contenidos/i })).not.toBeChecked();
