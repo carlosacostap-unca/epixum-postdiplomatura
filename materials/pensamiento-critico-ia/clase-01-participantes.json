@@ -1,0 +1,596 @@
+{
+  "version": 1,
+  "screens": [
+    {
+      "id": "c01-bienvenida",
+      "title": "Plausible no es verdadero",
+      "body": "**Clase 1 · Martes 6 de octubre de 2026 · 20:00 a 21:30**\n\nPensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial\n\nIng. Daniel Maldonado · Mg. Ing. Carlos Acosta Parra\n\nHoy vamos a distinguir una respuesta convincente de una respuesta justificada y a practicar una forma de revisarla.",
+      "type": "content"
+    },
+    {
+      "id": "c01-recorrido",
+      "title": "El recorrido de hoy",
+      "body": "- **10 minutos:** bienvenida y diagnóstico inicial.\n- **20 minutos:** cómo evaluar respuestas y qué preguntas hacerles.\n- **45 minutos:** taller sobre un tema que conocés bien.\n- **15 minutos:** puesta en común, reglas de uso y elección de tu reto.\n\nUsá una computadora para alternar entre la clase, tus notas y un asistente. Estas actividades no llevan nota. Las respuestas quedan asociadas a tu cuenta y sólo las consulta el equipo docente.",
+      "type": "content"
+    },
+    {
+      "id": "c01-diagnostico",
+      "title": "Seis textos y ocho minutos",
+      "body": "Vas a leer seis textos breves. Algunos dicen cosas correctas y otros no. No es un examen ni cuenta para la nota: queremos saber cómo evaluás lo que leés hoy, para compararlo con el final del curso. No busques nada en internet ni consultes a ningún asistente: respondé con lo que sabés y con tu impresión. Tenés unos ocho minutos.\n\nPor cada texto vas a responder dos preguntas: **cuánto le creés** y **en qué te basaste**. El docente abrirá cada pregunta y avanzará al siguiente paso.\n\nNo tenés que escribir tu nombre ni tu correo: ya ingresaste con tu cuenta. Enviá una sola respuesta por pregunta.",
+      "type": "content"
+    },
+    {
+      "id": "c01-diag-t1-credibilidad",
+      "title": "Texto 1 · ¿Qué tan creíble te parece este texto?",
+      "body": "**Texto para analizar (1 de 6)**\n\nLa Gran Muralla China es la única obra construida por el ser humano que puede verse a simple vista desde la Luna. Esta afirmación, confirmada por astronautas de distintas misiones, se explica por su extraordinaria longitud, que supera los 20 000 kilómetros, y por el marcado contraste de sus materiales con el terreno que la rodea.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "1",
+          "label": "1 — Nada creíble"
+        },
+        {
+          "id": "2",
+          "label": "2"
+        },
+        {
+          "id": "3",
+          "label": "3"
+        },
+        {
+          "id": "4",
+          "label": "4"
+        },
+        {
+          "id": "5",
+          "label": "5 — Totalmente creíble"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t1-fundamento",
+      "title": "Texto 1 · ¿En qué te basaste principalmente?",
+      "body": "**El mismo texto (1 de 6)**\n\nLa Gran Muralla China es la única obra construida por el ser humano que puede verse a simple vista desde la Luna. Esta afirmación, confirmada por astronautas de distintas misiones, se explica por su extraordinaria longitud, que supera los 20 000 kilómetros, y por el marcado contraste de sus materiales con el terreno que la rodea.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "motivo-1",
+          "label": "En lo que yo ya sabía sobre el tema"
+        },
+        {
+          "id": "motivo-2",
+          "label": "En que está bien escrito y ordenado"
+        },
+        {
+          "id": "motivo-3",
+          "label": "En que da datos concretos (cifras, fechas, lugares)"
+        },
+        {
+          "id": "motivo-4",
+          "label": "En que menciona una fuente o un estudio"
+        },
+        {
+          "id": "motivo-5",
+          "label": "En que el razonamiento tiene sentido"
+        },
+        {
+          "id": "motivo-6",
+          "label": "En nada en particular: fue una impresión"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t2-credibilidad",
+      "title": "Texto 2 · ¿Qué tan creíble te parece este texto?",
+      "body": "**Texto para analizar (2 de 6)**\n\nChe, no es que los fideos “no se cocinan” en la montaña. Lo que pasa es que arriba el agua hierve a menos temperatura, porque hay menos presión. En La Quiaca hierve a unos 88 u 89 grados, no a 100. Entonces hervir, hierve igual, pero el agua está menos caliente y todo tarda más en cocinarse.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "1",
+          "label": "1 — Nada creíble"
+        },
+        {
+          "id": "2",
+          "label": "2"
+        },
+        {
+          "id": "3",
+          "label": "3"
+        },
+        {
+          "id": "4",
+          "label": "4"
+        },
+        {
+          "id": "5",
+          "label": "5 — Totalmente creíble"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t2-fundamento",
+      "title": "Texto 2 · ¿En qué te basaste principalmente?",
+      "body": "**El mismo texto (2 de 6)**\n\nChe, no es que los fideos “no se cocinan” en la montaña. Lo que pasa es que arriba el agua hierve a menos temperatura, porque hay menos presión. En La Quiaca hierve a unos 88 u 89 grados, no a 100. Entonces hervir, hierve igual, pero el agua está menos caliente y todo tarda más en cocinarse.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "motivo-1",
+          "label": "En lo que yo ya sabía sobre el tema"
+        },
+        {
+          "id": "motivo-2",
+          "label": "En que está bien escrito y ordenado"
+        },
+        {
+          "id": "motivo-3",
+          "label": "En que da datos concretos (cifras, fechas, lugares)"
+        },
+        {
+          "id": "motivo-4",
+          "label": "En que menciona una fuente o un estudio"
+        },
+        {
+          "id": "motivo-5",
+          "label": "En que el razonamiento tiene sentido"
+        },
+        {
+          "id": "motivo-6",
+          "label": "En nada en particular: fue una impresión"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t3-credibilidad",
+      "title": "Texto 3 · ¿Qué tan creíble te parece este texto?",
+      "body": "**Texto para analizar (3 de 6)**\n\nUn estudio publicado en 2019 por investigadores de una prestigiosa universidad estadounidense demostró que utilizar el teléfono celular durante la hora previa a dormir reduce la calidad del sueño en un 47 %. Los autores concluyeron que la luz de la pantalla es la causa principal del problema, por encima de cualquier otro factor, y recomendaron suspender su uso por completo durante ese período.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "1",
+          "label": "1 — Nada creíble"
+        },
+        {
+          "id": "2",
+          "label": "2"
+        },
+        {
+          "id": "3",
+          "label": "3"
+        },
+        {
+          "id": "4",
+          "label": "4"
+        },
+        {
+          "id": "5",
+          "label": "5 — Totalmente creíble"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t3-fundamento",
+      "title": "Texto 3 · ¿En qué te basaste principalmente?",
+      "body": "**El mismo texto (3 de 6)**\n\nUn estudio publicado en 2019 por investigadores de una prestigiosa universidad estadounidense demostró que utilizar el teléfono celular durante la hora previa a dormir reduce la calidad del sueño en un 47 %. Los autores concluyeron que la luz de la pantalla es la causa principal del problema, por encima de cualquier otro factor, y recomendaron suspender su uso por completo durante ese período.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "motivo-1",
+          "label": "En lo que yo ya sabía sobre el tema"
+        },
+        {
+          "id": "motivo-2",
+          "label": "En que está bien escrito y ordenado"
+        },
+        {
+          "id": "motivo-3",
+          "label": "En que da datos concretos (cifras, fechas, lugares)"
+        },
+        {
+          "id": "motivo-4",
+          "label": "En que menciona una fuente o un estudio"
+        },
+        {
+          "id": "motivo-5",
+          "label": "En que el razonamiento tiene sentido"
+        },
+        {
+          "id": "motivo-6",
+          "label": "En nada en particular: fue una impresión"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t4-credibilidad",
+      "title": "Texto 4 · ¿Qué tan creíble te parece este texto?",
+      "body": "**Texto para analizar (4 de 6)**\n\nContrariamente a una creencia muy difundida, los murciélagos no son ciegos. Tienen ojos funcionales, y muchas especies combinan la visión con la ecolocalización: emiten sonidos de alta frecuencia y se orientan a partir del eco. Algunas especies grandes que se alimentan de frutas dependen principalmente de la vista y del olfato, y casi no utilizan la ecolocalización.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "1",
+          "label": "1 — Nada creíble"
+        },
+        {
+          "id": "2",
+          "label": "2"
+        },
+        {
+          "id": "3",
+          "label": "3"
+        },
+        {
+          "id": "4",
+          "label": "4"
+        },
+        {
+          "id": "5",
+          "label": "5 — Totalmente creíble"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t4-fundamento",
+      "title": "Texto 4 · ¿En qué te basaste principalmente?",
+      "body": "**El mismo texto (4 de 6)**\n\nContrariamente a una creencia muy difundida, los murciélagos no son ciegos. Tienen ojos funcionales, y muchas especies combinan la visión con la ecolocalización: emiten sonidos de alta frecuencia y se orientan a partir del eco. Algunas especies grandes que se alimentan de frutas dependen principalmente de la vista y del olfato, y casi no utilizan la ecolocalización.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "motivo-1",
+          "label": "En lo que yo ya sabía sobre el tema"
+        },
+        {
+          "id": "motivo-2",
+          "label": "En que está bien escrito y ordenado"
+        },
+        {
+          "id": "motivo-3",
+          "label": "En que da datos concretos (cifras, fechas, lugares)"
+        },
+        {
+          "id": "motivo-4",
+          "label": "En que menciona una fuente o un estudio"
+        },
+        {
+          "id": "motivo-5",
+          "label": "En que el razonamiento tiene sentido"
+        },
+        {
+          "id": "motivo-6",
+          "label": "En nada en particular: fue una impresión"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t5-credibilidad",
+      "title": "Texto 5 · ¿Qué tan creíble te parece este texto?",
+      "body": "**Texto para analizar (5 de 6)**\n\nUn vecino que trabaja en la municipalidad me mostró los números: en los meses en que más helado se vende es cuando más gente se ahoga en el río. Así que no es tan loco lo que dicen de prohibir los kioscos cerca de la costa, porque está clarísimo que una cosa lleva a la otra.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "1",
+          "label": "1 — Nada creíble"
+        },
+        {
+          "id": "2",
+          "label": "2"
+        },
+        {
+          "id": "3",
+          "label": "3"
+        },
+        {
+          "id": "4",
+          "label": "4"
+        },
+        {
+          "id": "5",
+          "label": "5 — Totalmente creíble"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t5-fundamento",
+      "title": "Texto 5 · ¿En qué te basaste principalmente?",
+      "body": "**El mismo texto (5 de 6)**\n\nUn vecino que trabaja en la municipalidad me mostró los números: en los meses en que más helado se vende es cuando más gente se ahoga en el río. Así que no es tan loco lo que dicen de prohibir los kioscos cerca de la costa, porque está clarísimo que una cosa lleva a la otra.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "motivo-1",
+          "label": "En lo que yo ya sabía sobre el tema"
+        },
+        {
+          "id": "motivo-2",
+          "label": "En que está bien escrito y ordenado"
+        },
+        {
+          "id": "motivo-3",
+          "label": "En que da datos concretos (cifras, fechas, lugares)"
+        },
+        {
+          "id": "motivo-4",
+          "label": "En que menciona una fuente o un estudio"
+        },
+        {
+          "id": "motivo-5",
+          "label": "En que el razonamiento tiene sentido"
+        },
+        {
+          "id": "motivo-6",
+          "label": "En nada en particular: fue una impresión"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t6-credibilidad",
+      "title": "Texto 6 · ¿Qué tan creíble te parece este texto?",
+      "body": "**Texto para analizar (6 de 6)**\n\nEso de que un rayo nunca cae dos veces en el mismo lugar es mentira. Los edificios muy altos reciben rayos varias veces por año, justamente porque son lo más alto de la zona. Para eso están los pararrayos, que le dan a la descarga un camino seguro para llegar a tierra sin hacer daño.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "1",
+          "label": "1 — Nada creíble"
+        },
+        {
+          "id": "2",
+          "label": "2"
+        },
+        {
+          "id": "3",
+          "label": "3"
+        },
+        {
+          "id": "4",
+          "label": "4"
+        },
+        {
+          "id": "5",
+          "label": "5 — Totalmente creíble"
+        }
+      ]
+    },
+    {
+      "id": "c01-diag-t6-fundamento",
+      "title": "Texto 6 · ¿En qué te basaste principalmente?",
+      "body": "**El mismo texto (6 de 6)**\n\nEso de que un rayo nunca cae dos veces en el mismo lugar es mentira. Los edificios muy altos reciben rayos varias veces por año, justamente porque son lo más alto de la zona. Para eso están los pararrayos, que le dan a la descarga un camino seguro para llegar a tierra sin hacer daño.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "motivo-1",
+          "label": "En lo que yo ya sabía sobre el tema"
+        },
+        {
+          "id": "motivo-2",
+          "label": "En que está bien escrito y ordenado"
+        },
+        {
+          "id": "motivo-3",
+          "label": "En que da datos concretos (cifras, fechas, lugares)"
+        },
+        {
+          "id": "motivo-4",
+          "label": "En que menciona una fuente o un estudio"
+        },
+        {
+          "id": "motivo-5",
+          "label": "En que el razonamiento tiene sentido"
+        },
+        {
+          "id": "motivo-6",
+          "label": "En nada en particular: fue una impresión"
+        }
+      ]
+    },
+    {
+      "id": "c01-asistente",
+      "title": "Cómo produce una respuesta un asistente",
+      "body": "Un modelo de lenguaje genera texto a partir de patrones aprendidos y del contexto que recibe. La comparación con el autocompletado ayuda a entender una parte del proceso, pero no describe todas las capacidades de un asistente.\n\nAlgunos asistentes también pueden buscar en la web, consultar documentos o usar otras herramientas. **Tener una respuesta o una cita no garantiza que el contenido sea correcto.**\n\nPuede acertar, reconocer incertidumbre o producir una afirmación falsa con tono seguro. La tarea de hoy es revisar qué respalda lo que afirma.\n\nReferencia para ampliar: [exactitud y limitaciones de un asistente](https://help.openai.com/en/articles/8313428-chatgpt-accuracy-and-limitations).",
+      "type": "content"
+    },
+    {
+      "id": "c01-plausibilidad",
+      "title": "Las señales de una respuesta convincente",
+      "body": "Un texto puede estar bien escrito, tener una estructura clara, incluir cifras, citar fuentes y sonar seguro.\n\nEsas características facilitan la lectura. **Por sí solas no demuestran que sus afirmaciones sean verdaderas.**\n\nTampoco un tono informal demuestra que el contenido sea incorrecto. Revisar exige mirar la información, las inferencias y lo que quedó sin justificar.",
+      "type": "content"
+    },
+    {
+      "id": "c01-demostracion",
+      "title": "¿Usarías esta respuesta en un informe?",
+      "body": "Observá la respuesta que el docente comparte en pantalla.\n\nLa demostración consiste en pedir referencias sobre la historia de una localidad y comprobar una de ellas: autor, título, editorial y año.\n\n**Antes de la comprobación**, elegí qué harías si necesitaras usar esa información. Es una consulta sobre tu decisión, no una pregunta con nota.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "usar",
+          "label": "La usaría tal como está."
+        },
+        {
+          "id": "comprobar",
+          "label": "Primero comprobaría las afirmaciones y las referencias."
+        },
+        {
+          "id": "no-usar",
+          "label": "No la usaría."
+        },
+        {
+          "id": "necesito-contexto",
+          "label": "Necesito más contexto para decidir."
+        }
+      ]
+    },
+    {
+      "id": "c01-frontera",
+      "title": "El desempeño cambia según la tarea",
+      "body": "Que un asistente resuelva bien una tarea no garantiza que resuelva bien la siguiente. El resultado depende de la tarea, del contexto, del modelo y de las herramientas disponibles.\n\nPuede producir una redacción útil y, en otra respuesta, atribuir una cita a una fuente equivocada. **El buen desempeño anterior no reemplaza la comprobación de esta respuesta.**\n\nAl terminar la demostración, distingamos qué se comprobó, qué no se encontró y qué sigue siendo incierto. No encontrar una referencia en una búsqueda no basta para demostrar que no existe.",
+      "type": "content"
+    },
+    {
+      "id": "c01-delegar-retener-amplificar",
+      "title": "Delegar, retener y amplificar",
+      "body": "**Delegar:** tareas cuyo resultado podemos revisar y cuyo error tiene un costo bajo. Por ejemplo, dar formato a una tabla.\n\n**Retener:** decisiones por las que debemos responder. Por ejemplo, plantear el problema, evaluar la evidencia y decidir qué dato es confiable.\n\n**Amplificar:** ampliar el trabajo propio. Por ejemplo, pedir objeciones a una idea y evaluar cuáles tienen fundamento.\n\nA lo largo del curso vamos a registrar qué aportó el asistente y qué resolvimos nosotros.",
+      "type": "content"
+    },
+    {
+      "id": "c01-elementos-explicitos",
+      "title": "La ficha de análisis · primeras cuatro preguntas",
+      "body": "| Elemento | Pregunta para el texto |\n| --- | --- |\n| Propósito | ¿Para qué está escrito? ¿Qué busca lograr? |\n| Pregunta central | ¿Qué pregunta intenta responder? |\n| Información | ¿Qué datos, hechos o experiencias usa? ¿De dónde salen? |\n| Conceptos | ¿Qué ideas clave usa? ¿Las usa con precisión? |\n\nAnotá una frase del texto o una observación concreta para cada elemento que identifiques.",
+      "type": "content"
+    },
+    {
+      "id": "c01-elementos-implicitos",
+      "title": "La ficha de análisis · otras cuatro preguntas",
+      "body": "| Elemento | Pregunta para el texto |\n| --- | --- |\n| Supuestos | ¿Qué da por sentado sin decirlo? |\n| Inferencias | ¿Qué concluye? ¿Se sigue de la información? |\n| Implicancias | Si fuera cierto, ¿qué consecuencias tendría? |\n| Punto de vista | ¿Desde qué perspectiva está escrito? ¿Qué deja afuera? |\n\nPara encontrar un supuesto, preguntate: **¿qué tendría que ser cierto para que esta conclusión fuera válida?**\n\nUn supuesto es una condición que el razonamiento da por sentada; no alcanza con decir que una frase es una opinión.",
+      "type": "content"
+    },
+    {
+      "id": "c01-estandares",
+      "title": "Cuatro estándares para evaluar",
+      "body": "| Estándar | Pregunta |\n| --- | --- |\n| Claridad | ¿Se entiende exactamente qué afirma? |\n| Exactitud | ¿Es verdad lo que dice? ¿Cómo lo sé? |\n| Relevancia | ¿Responde la pregunta planteada? |\n| Suficiencia | ¿La información alcanza para sostener la conclusión? |\n\nBuscá evidencias concretas: una expresión vaga, un dato sin comprobar, un desvío de la pregunta o una conclusión que excede la información disponible.\n\nFicha adaptada del material del encuentro, basado en Paul y Elder (2003), *La mini-guía para el pensamiento crítico*.",
+      "type": "content"
+    },
+    {
+      "id": "c01-control-comprension",
+      "title": "Una respuesta clara y ordenada",
+      "body": "Un asistente propone una decisión y la explica con claridad. Antes de usar esa recomendación, ¿qué acción permite evaluar mejor su fundamento?\n\nEsta actividad sirve para conversar sobre el criterio de revisión. No genera una calificación.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "tono",
+          "label": "Comprobar que mantiene un tono seguro en toda la respuesta."
+        },
+        {
+          "id": "extension",
+          "label": "Pedirle una versión más larga para que parezca más completa."
+        },
+        {
+          "id": "evidencia",
+          "label": "Identificar sus supuestos y verificar si la evidencia sostiene la conclusión."
+        },
+        {
+          "id": "acuerdo",
+          "label": "Aceptar la recomendación si coincide con mi primera impresión."
+        }
+      ]
+    },
+    {
+      "id": "c01-taller-paso1",
+      "title": "Taller · generar y analizar sin ayuda",
+      "body": "**Paso 1 · 20 minutos**\n\n1. Elegí un tema que conozcas muy bien: tu trabajo, tu carrera, un oficio o tu localidad.\n2. Pedile a un asistente un texto de unas 200 palabras. Por ejemplo: «Explicá en unas 200 palabras cómo funciona [algo que conocés bien]».\n3. Guardá la consulta y la respuesta en tus notas. **No ingreses datos personales ajenos ni información reservada.**\n4. Sin volver a consultar al asistente, identificá al menos cinco elementos, incluidos **supuestos** y **punto de vista**, y evaluá los cuatro estándares.\n5. Marcá una debilidad concreta. Si no encontrás un error, indicá qué afirmación todavía necesitarías verificar: no inventes una falla.\n\nPreguntas de control: ¿qué supone esto?, ¿cómo lo verifico?, ¿qué quedó sin justificar?",
+      "type": "content"
+    },
+    {
+      "id": "c01-taller-analisis",
+      "title": "Tu análisis antes de la autocrítica",
+      "body": "Completá primero el análisis en tus notas. Después enviá una síntesis con este formato:\n\n- **Tema y consulta:** qué le pediste.\n- **Supuesto:** qué da por sentado la respuesta.\n- **Punto de vista:** qué perspectiva adopta y cuál deja afuera.\n- **Otros tres elementos:** identificá propósito, pregunta, información, conceptos, inferencias o implicancias.\n- **Estándares:** una observación sobre claridad, exactitud, relevancia y suficiencia.\n- **Hallazgo:** citá una frase débil o pendiente de verificación y explicá por qué.\n\nGuardá el texto completo en tus notas. Esta respuesta la consulta sólo el equipo docente.",
+      "type": "short-answer",
+      "maxLength": 2000
+    },
+    {
+      "id": "c01-taller-paso2",
+      "title": "Taller · contrastar con la autocrítica",
+      "body": "**Paso 2 · 15 minutos**\n\nAhora sí, volvé al mismo asistente. Podés pedirle:\n\n> Revisá críticamente tu respuesta anterior. Señalá supuestos, límites y afirmaciones que necesiten verificación. Si proponés una corrección, explicá qué evidencia permitiría comprobarla.\n\nCompará con tu análisis previo:\n\n- ¿Qué encontraste vos que el asistente no encontró?\n- ¿Qué encontró el asistente que a vos se te pasó?\n- ¿Introdujo errores o afirmaciones nuevas al corregirse?\n\n**La autocrítica también necesita revisión.** Conservá ambas versiones y distinguí una corrección comprobada de una sugerencia todavía incierta.",
+      "type": "content"
+    },
+    {
+      "id": "c01-taller-contraste",
+      "title": "Qué aportó cada revisión",
+      "body": "Contrastá las dos revisiones sin borrar la primera. Respondé brevemente:\n\n1. Un hallazgo de tu análisis que el asistente no detectó.\n2. Algo que detectó el asistente y vos no.\n3. Una corrección que pudiste comprobar o una afirmación que sigue pendiente.\n\nSi en algún punto no hubo diferencias, decilo y justificá. No hace falta inventar un hallazgo.",
+      "type": "short-answer",
+      "maxLength": 1200
+    },
+    {
+      "id": "c01-taller-registro",
+      "title": "Taller · registro en tres líneas",
+      "body": "**Paso 3 · 10 minutos**\n\nSintetizá el trabajo en tres líneas:\n\n1. El tema que elegiste.\n2. El error o la debilidad más importante que encontraste, o qué falta verificar.\n3. Una diferencia entre tu revisión y la del asistente.\n\nEste registro se guarda de forma privada para los docentes. En la puesta en común podés compartir voluntariamente tu caso, sin datos confidenciales.",
+      "type": "short-answer",
+      "maxLength": 800
+    },
+    {
+      "id": "c01-reflexion-diagnostico",
+      "title": "Volvemos a nuestras primeras impresiones",
+      "body": "Pensá en el diagnóstico del comienzo:\n\n- ¿Qué señales te llevaron a confiar o a desconfiar?\n- ¿Cómo podrías distinguir una señal de buena redacción de una evidencia sobre el contenido?\n- ¿Qué comprobación necesitarías antes de usar una afirmación para decidir?\n\nNo vamos a resolver aquí la clave de los seis textos: volveremos a trabajar con los mismos al final del curso.\n\nEl diagnóstico no mide cuánto sabés de un tema particular. Nos ayuda a revisar **en qué nos fijamos para creerle a un texto**.",
+      "type": "content"
+    },
+    {
+      "id": "c01-elemento-dificil",
+      "title": "¿Qué elemento te costó más identificar?",
+      "body": "Volvé a tu experiencia del taller y elegí el elemento que más trabajo te dio. El equipo docente usará estas respuestas para orientar las próximas explicaciones.\n\nEn la conversación, dos o tres participantes pueden compartir voluntariamente dónde encontraron una dificultad.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "proposito",
+          "label": "Propósito"
+        },
+        {
+          "id": "pregunta",
+          "label": "Pregunta central"
+        },
+        {
+          "id": "informacion",
+          "label": "Información"
+        },
+        {
+          "id": "conceptos",
+          "label": "Conceptos"
+        },
+        {
+          "id": "supuestos",
+          "label": "Supuestos"
+        },
+        {
+          "id": "inferencias",
+          "label": "Inferencias"
+        },
+        {
+          "id": "implicancias",
+          "label": "Implicancias"
+        },
+        {
+          "id": "perspectiva",
+          "label": "Punto de vista"
+        }
+      ]
+    },
+    {
+      "id": "c01-reglas",
+      "title": "Acuerdos para usar asistentes en el curso",
+      "body": "1. **Confidencialidad.** No cargues datos personales ajenos, información sensible ni documentos reservados. Anonimizá el caso.\n2. **Declaración.** Indicá qué hiciste con ayuda y qué resolviste por tu cuenta. Declarar el uso no resta puntos.\n3. **Responsabilidad.** Respondés por lo que entregás, incluido lo que produjo el asistente.\n4. **Acceso gratuito.** No hace falta una suscripción paga ni que todos usen la misma herramienta.\n5. **Registro.** Guardá las conversaciones y los fragmentos relevantes para las entregas.\n\nAplicá estas reglas también a los ejemplos que compartas durante la clase.",
+      "type": "content"
+    },
+    {
+      "id": "c01-reto",
+      "title": "Un problema propio para todo el curso",
+      "body": "Elegí un problema **real, abarcable en cuatro semanas, abierto, sobre el que puedas decidir o recomendar y compartible sin datos confidenciales**.\n\nEjemplos del material del encuentro:\n\n- «Los estudiantes de mi curso no leen los materiales antes de clase».\n- «En mi oficina los expedientes se demoran y nadie sabe en qué etapa están».\n- «No sé si ampliar mi local o vender por internet».\n\nHoy alcanza con un primer enunciado. En el encuentro 2 lo vamos a reformular.",
+      "type": "content"
+    },
+    {
+      "id": "c01-reto-inicial",
+      "title": "Tu reto en cinco líneas",
+      "body": "Escribí, en un máximo de cinco líneas:\n\n- Cuál es el problema.\n- A quién afecta.\n- Por qué te importa.\n\nRevisá si podés influir en la decisión y si el alcance es razonable para cuatro semanas. Cambiá nombres y datos cuando sea necesario.\n\nGuardá una copia en tus notas: este borrador te servirá para preparar la entrega 1 y no reemplaza esa entrega.",
+      "type": "short-answer",
+      "maxLength": 800
+    },
+    {
+      "id": "c01-entrega1",
+      "title": "Qué preparar hasta el próximo encuentro",
+      "body": "**Para el jueves 8 de octubre:** conservá el enunciado inicial de tu reto y registrá tres usos propios de un asistente. Para cada uso, anotá:\n\n- Qué le pediste.\n- Qué respondió, en una línea.\n- Si lo verificaste y cómo.\n- Qué hubieras hecho sin el asistente.\n\nAl final del registro, distinguí qué delegaste, qué retuviste y dónde te dejaste llevar por una respuesta floja.\n\nLa entrega 1 completa se presenta en el encuentro del jueves 8 y vence el **jueves 15 de octubre a las 23:59**.",
+      "type": "content"
+    },
+    {
+      "id": "c01-entregas",
+      "title": "Las entregas del curso",
+      "body": "| Entrega | Trabajo sobre el mismo reto | Vencimiento | Peso |\n| --- | --- | --- | --- |\n| 1 | Enunciado inicial y reformulado; comparación de consultas | Jueves 15/10 | 30 % |\n| 2 | Causas, criterios de éxito y evidencia | Jueves 22/10 | 30 % |\n| 3 | Argumento y contraargumento; alternativas y protocolo de delegación | Jueves 29/10 | 40 % |\n\n**Aprobación:** presentar las tres entregas y obtener una calificación final de 6 o más. La nota depende de las entregas; las respuestas de esta clase interactiva no se califican.\n\nLa cuarta semana se completa el protocolo en clase y vence la entrega 3. No se agrega un trabajo final separado.",
+      "type": "content"
+    },
+    {
+      "id": "c01-salida",
+      "title": "Una comprobación que vas a incorporar",
+      "body": "Antes de cerrar, escribí una comprobación concreta que vas a hacer la próxima vez que uses una respuesta de un asistente.\n\nPodés completar: «Antes de usar esa respuesta, voy a…». Evitá fórmulas generales como «voy a tener cuidado»: indicá qué revisarías y cómo.",
+      "type": "short-answer",
+      "maxLength": 350
+    },
+    {
+      "id": "c01-cierre",
+      "title": "Que suene bien no es que esté bien",
+      "body": "Para revisar una respuesta:\n\n**¿Qué supone esto?**\n\n**¿Cómo lo verifico?**\n\n**¿Qué quedó sin justificar?**\n\nPróximo encuentro: **jueves 8 de octubre, 20:00**. Tema: *La consulta es el planteo*.\n\nConservá tu reto, el análisis del taller y los registros de uso para seguir trabajando.",
+      "type": "content"
+    }
+  ]
+}
