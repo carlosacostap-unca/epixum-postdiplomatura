@@ -48,7 +48,7 @@ export default function LoginPage() {
     // ya que Next.js implementa `redirect()` lanzando un error especial
     // que no debe ser atrapado por el catch.
     if (token) {
-      const result = await setAuthCookieAndRedirect(token, profile);
+      const result = await setAuthCookieAndRedirect(token, profile, new URLSearchParams(window.location.search).get("next"));
       if (!result.success) {
         pb.authStore.clear();
         setError(result.error);

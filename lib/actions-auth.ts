@@ -1,6 +1,7 @@
 "use server";
 
 import PocketBase from "pocketbase";
+import { safeInteractiveReturn } from "@/lib/live-interactive-contract";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
@@ -16,6 +17,7 @@ import type { User } from "@/types";
 export async function setAuthCookieAndRedirect(
   token: string,
   profile?: OAuthProfile,
+  returnTo?: string | null,
 ) {
   const cookieStore = await cookies();
   const url = process.env.NEXT_PUBLIC_POCKETBASE_URL;
@@ -111,7 +113,7 @@ export async function setAuthCookieAndRedirect(
   });
 
   const workspaceAccess = resolveWorkspaceAccess(user, await hasTeachingCourses(serverPb, user.id));
-  redirect(getHomeForWorkspace(workspaceAccess.preferred));
+  redirect(safeInteractiveReturn(returnTo) || getHomeForWorkspace(workspaceAccess.preferred));
 }
 
 export async function clearAuthCookieAndRedirect() {

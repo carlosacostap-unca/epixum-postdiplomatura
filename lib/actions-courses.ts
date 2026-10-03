@@ -49,6 +49,7 @@ export async function createCourse(formData: FormData) {
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const enrollmentMode = parseEnrollmentMode(formData.get('enrollmentMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
+  const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
   const aiPreevaluationEnabled = parseAIPreevaluationEnabled(formData.get('aiPreevaluationEnabled'));
   
   if (startDate && !startDate.includes('T')) {
@@ -72,6 +73,7 @@ export async function createCourse(formData: FormData) {
     organizationMode,
     enrollmentMode,
     contentsEnabled,
+    interactiveClassesEnabled,
     aiPreevaluationEnabled,
     teachers: [],
     classes,
@@ -100,6 +102,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
   const status = formData.get('status') as 'borrador' | 'en curso' | 'finalizado';
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
+  const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
   const aiPreevaluationEnabled = parseAIPreevaluationEnabled(formData.get('aiPreevaluationEnabled'));
   
   if (startDate && !startDate.includes('T')) {
@@ -122,6 +125,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
     status: status || 'borrador',
     organizationMode,
     contentsEnabled,
+    interactiveClassesEnabled,
     aiPreevaluationEnabled,
     classes,
     assignments,

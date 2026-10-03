@@ -189,6 +189,16 @@ export default function CourseForm({
       </div>
 
       <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-labelledby="course-links-title">
+        <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
+          <label className="flex cursor-pointer items-start gap-3" htmlFor="interactiveClassesEnabled">
+            <input type="checkbox" id="interactiveClassesEnabled" name="interactiveClassesEnabled" value="true" defaultChecked={course?.interactiveClassesEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)] text-[var(--color-primary)]" />
+            <span>
+              <span className="block text-sm font-bold">Habilitar clases interactivas</span>
+              <span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Los docentes podrán preparar pantallas y actividades y asociarlas a las clases del curso. Al deshabilitar, los materiales se conservan y quedan ocultos.</span>
+            </span>
+          </label>
+        </div>
+
         <div><h2 id="course-links-title" className="font-headline text-lg font-bold">Contenido vinculado</h2><p className="mt-1 text-sm text-[var(--color-text-muted)]">Seleccioná las clases, trabajos y consultas que pertenecen al curso.</p></div>
         <div className="grid gap-5 xl:grid-cols-2">
           <ContentSelection label="Clases" name="classes" items={availableClasses} selected={course?.classes} />

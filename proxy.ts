@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safeInteractiveReturn } from '@/lib/live-interactive-contract';
 import type { NextRequest } from 'next/server';
 
 function hasUnexpiredToken(token: string) {
@@ -49,8 +50,8 @@ export function proxy(request: NextRequest) {
   // Allow access to home page and login page for unauthenticated users
   if (!isLoggedIn && path !== '/') {
     const loginUrl = new URL('/login', request.url);
-    // Optional: Add ?next=path to redirect back after login
-    // loginUrl.searchParams.set('next', path);
+    const returnTo = safeInteractiveReturn(path + request.nextUrl.search);
+    if (returnTo) loginUrl.searchParams.set('next', returnTo);
     const response = NextResponse.redirect(loginUrl);
     if (hasAuthCookie) {
       response.cookies.delete('pb_auth');

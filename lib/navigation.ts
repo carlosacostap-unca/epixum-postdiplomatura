@@ -34,6 +34,7 @@ export const roleNavigation: Record<AppWorkspace, RoleNavigationConfig> = {
         matchPrefixes: ["/docentes/cursos"],
       },
       { href: "/docentes/clases", label: "Clases", icon: "menu_book" },
+      { href: "/docentes/interactivas", label: "Clases interactivas", icon: "interactive_space" },
     ],
   },
   estudiante: {
@@ -46,6 +47,7 @@ export const roleNavigation: Record<AppWorkspace, RoleNavigationConfig> = {
         icon: "local_library",
         matchPrefixes: ["/estudiantes/cursos"],
       },
+      { href: "/interactivas", label: "Ingresar a clase en vivo", icon: "interactive_space" },
     ],
   },
 };

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "screens": [
+    { "id": "bienvenida", "type": "content", "title": "Aprender participando", "body": "## Una clase para pensar juntos\n\nHoy vamos a explorar una idea, elegir una respuesta y compartir una reflexión.\n\n- Leé cada consigna.\n- Participá desde tu dispositivo.\n- Esperá la indicación del docente para avanzar." },
+    { "id": "pregunta", "type": "multiple-choice", "title": "¿Qué nos ayuda a comprobar una idea?", "body": "Elegí una opción.", "options": [{ "id": "a", "label": "Buscar evidencias y contrastarlas" }, { "id": "b", "label": "Repetirla muchas veces" }, { "id": "c", "label": "Evitar las preguntas" }], "correctOptionId": "a", "explanation": "Las evidencias nos permiten revisar nuestras ideas y aprender de los resultados." },
+    { "id": "encuesta", "type": "poll", "title": "¿Cómo preferís explorar un tema nuevo?", "body": "No hay una respuesta correcta: nos interesa conocer al grupo.", "options": [{ "id": "ejemplos", "label": "Ver ejemplos" }, { "id": "practica", "label": "Probar por mi cuenta" }, { "id": "grupo", "label": "Conversar en grupo" }] },
+    { "id": "reflexion", "type": "short-answer", "title": "Una idea para llevarte", "body": "¿Qué pregunta te gustaría seguir investigando?", "maxLength": 500 }
+  ]
+}

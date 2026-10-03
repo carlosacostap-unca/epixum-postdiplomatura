@@ -47,6 +47,14 @@ function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' |
 }
 
 describe('modalidad administrativa del curso', () => {
+  it('habilita y deshabilita clases interactivas por configuración administrativa', async () => {
+    const enabled = courseForm();
+    enabled.set('interactiveClassesEnabled', 'true');
+    await createCourse(enabled);
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ interactiveClassesEnabled: true }));
+    await updateCourse('course-1', courseForm());
+    expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ interactiveClassesEnabled: false }));
+  });
   beforeEach(() => {
     process.env.COURSE_ENROLLMENT_SECRET = 'test-secret-with-at-least-thirty-two-characters';
     mocks.model = { id: 'admin-1', role: 'admin' };

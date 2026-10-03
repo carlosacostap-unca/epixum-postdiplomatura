@@ -211,6 +211,7 @@ export interface Course extends BaseModel {
   organizationMode?: CourseOrganizationMode;
   enrollmentMode?: CourseEnrollmentMode;
   contentsEnabled?: boolean;
+  interactiveClassesEnabled?: boolean;
   aiPreevaluationEnabled?: boolean;
   enrollmentKeyHash?: string;
   invitationPasswordHash?: string;
@@ -228,6 +229,16 @@ export interface Course extends BaseModel {
     weeks?: CourseWeek[];
     invitations?: CourseEnrollmentInvitation[];
   };
+}
+
+export interface InteractiveLesson extends BaseModel {
+  course: string;
+  class?: string;
+  title: string;
+  description: string;
+  status: 'draft' | 'ready';
+  material: import('@/lib/interactive-material').InteractiveMaterial | null;
+  expand?: { course?: Course; class?: Class };
 }
 
 export interface AIEvaluationCriterion {

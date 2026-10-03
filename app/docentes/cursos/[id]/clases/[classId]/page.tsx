@@ -36,6 +36,16 @@ export default async function TeacherClassManagementPage({ params }: { params: P
       </section>
 
       <ResourceList links={links} classId={classData.id} courseId={course.id} />
+      {course.interactiveClassesEnabled && <section aria-labelledby="class-interactive-title">
+        <Card><CardContent className="space-y-4">
+          <h2 id="class-interactive-title" className="font-headline text-2xl font-bold">Clases interactivas</h2>
+          <p className="text-[var(--color-on-surface-variant)]">Prepará pantallas y actividades para este encuentro.</p>
+          <div className="flex flex-wrap gap-4">
+            <Link href={`/docentes/cursos/${course.id}/interactivas?clase=${classData.id}`} className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]">Ver materiales asociados</Link>
+            <Link href={`/docentes/cursos/${course.id}/interactivas/nueva?clase=${classData.id}`} className="inline-flex min-h-11 items-center rounded-full bg-[var(--color-surface-container-highest)] px-5 font-bold">Nueva clase interactiva</Link>
+          </div>
+        </CardContent></Card>
+      </section>}
     </div>
   );
 }
