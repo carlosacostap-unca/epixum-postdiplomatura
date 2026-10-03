@@ -74,12 +74,12 @@ export default function NewClassForm({ courseId, weeks, initialWeekId }: { cours
         </div>
 
         {weeks.length > 0 ? <div>
-          <label htmlFor="week" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-on-surface-variant)] mb-3">Semana</label>
+          <label htmlFor="week" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-on-surface-variant)] mb-3">Unidad</label>
           <select id="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full bg-[var(--color-surface-container-lowest)] border border-[var(--color-outline-variant)]/30 rounded-[1.5rem] px-6 py-4 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-all outline-none">
-            <option value="">Sin semana</option>
-            {weeks.map((item) => <option key={item.id} value={item.id}>Semana {item.number}: {item.title}</option>)}
+            <option value="">Sin unidad</option>
+            {weeks.map((item) => <option key={item.id} value={item.id}>Unidad {item.number}: {item.title}</option>)}
           </select>
-          <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">El contenido sin semana no se muestra a los estudiantes.</p>
+          <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">El contenido sin unidad no se muestra a los estudiantes.</p>
         </div> : null}
 
         <div>

@@ -37,16 +37,16 @@ function renderManager() {
 describe("TeacherWeeklyCourseManager", () => {
   beforeEach(() => refresh.mockClear());
 
-  it("permite abrir y recorrer el formulario de semana sólo con teclado", async () => {
+  it("permite abrir y recorrer el formulario de unidad sólo con teclado", async () => {
     const user = userEvent.setup();
     renderManager();
 
     await user.tab();
-    const trigger = screen.getByRole("button", { name: "Nueva semana" });
+    const trigger = screen.getByRole("button", { name: "Nueva unidad" });
     expect(trigger).toHaveFocus();
     await user.keyboard("{Enter}");
 
-    expect(screen.getByRole("dialog", { name: "Crear semana" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Crear unidad" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cerrar diálogo" })).toHaveFocus();
     await user.tab();
     const numberInput = screen.getByRole("spinbutton", { name: /Número/ });
@@ -61,8 +61,8 @@ describe("TeacherWeeklyCourseManager", () => {
 
   it("expone la bandeja sin asignar con selector y acción táctil", () => {
     renderManager();
-    expect(screen.getByRole("heading", { name: "Contenido sin semana" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Semana para Introducción" })).toHaveValue("");
+    expect(screen.getByRole("heading", { name: "Contenido sin unidad" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Unidad para Introducción" })).toHaveValue("");
     expect(screen.getAllByRole("button", { name: "Mover" })[0]).toHaveClass("min-h-11");
   });
 });

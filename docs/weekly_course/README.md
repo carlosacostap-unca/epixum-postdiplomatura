@@ -1,5 +1,7 @@
 # Organización semanal de cursos
 
+La interfaz presenta esta organización como **unidades**. Los nombres técnicos (`organizationMode: semanal`, `course_weeks`, `week` y los parámetros y enlaces existentes) se conservan por compatibilidad. El cambio de vocabulario no modifica registros, títulos de contenidos, numeración, fechas, estados de publicación ni actividades.
+
 ## Modelo
 
 Cada curso define `organizationMode`:

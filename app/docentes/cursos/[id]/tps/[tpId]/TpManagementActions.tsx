@@ -157,10 +157,10 @@ export default function TpManagementActions({ assignment, courseId, weeks }: TpM
               </div>
 
               {weeks.length > 0 ? <div className="flex flex-col gap-2">
-                <label htmlFor="tp-week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Semana</label>
+                <label htmlFor="tp-week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Unidad</label>
                 <select id="tp-week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full rounded-2xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] px-5 py-4 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none">
-                  <option value="">Sin semana</option>
-                  {weeks.map((item) => <option key={item.id} value={item.id}>Semana {item.number}: {item.title}</option>)}
+                  <option value="">Sin unidad</option>
+                  {weeks.map((item) => <option key={item.id} value={item.id}>Unidad {item.number}: {item.title}</option>)}
                 </select>
               </div> : null}
 

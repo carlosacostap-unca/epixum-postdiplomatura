@@ -58,12 +58,12 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
       </div>
 
       {weeks.length > 0 ? <div className="flex flex-col gap-2">
-        <label htmlFor="week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Semana</label>
+        <label htmlFor="week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Unidad</label>
         <select id="week" name="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full px-5 py-4 rounded-2xl bg-[var(--color-surface-container-low)] border border-[var(--color-outline-variant)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors">
-          <option value="">Sin semana</option>
-          {weeks.map((item) => <option key={item.id} value={item.id}>Semana {item.number}: {item.title}</option>)}
+          <option value="">Sin unidad</option>
+          {weeks.map((item) => <option key={item.id} value={item.id}>Unidad {item.number}: {item.title}</option>)}
         </select>
-        <p className="text-sm text-[var(--color-on-surface-variant)]">El contenido sin semana no se muestra a los estudiantes.</p>
+        <p className="text-sm text-[var(--color-on-surface-variant)]">El contenido sin unidad no se muestra a los estudiantes.</p>
       </div> : null}
 
       <div className="flex flex-col gap-2">

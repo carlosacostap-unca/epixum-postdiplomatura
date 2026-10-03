@@ -135,10 +135,10 @@ export default function CourseForm({
           className={inputClass}
         >
           <option value="tradicional">Tradicional · listas de clases, trabajos y consultas</option>
-          <option value="semanal">Por semanas · estructura administrada por los docentes</option>
+          <option value="semanal">Por unidades · estructura administrada por los docentes</option>
         </select>
         <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
-          Cambiar la modalidad no crea ni elimina contenido. La organización semanal existente se conserva si después volvés a activarla.
+          Cambiar la modalidad no crea ni elimina contenido. La organización por unidades existente se conserva si después volvés a activarla.
         </p>
       </div>
 

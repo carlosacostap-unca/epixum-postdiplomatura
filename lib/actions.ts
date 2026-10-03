@@ -158,7 +158,7 @@ async function validatedWeekId(pb: ServerPocketBase, courseId: string, value: Fo
   const weekId = typeof value === "string" ? value.trim() : "";
   if (!weekId) return null;
   const week = await pb.collection("course_weeks").getOne(weekId, { fields: "id,course" });
-  if (week.course !== courseId) throw new Error("La semana no pertenece a este curso");
+  if (week.course !== courseId) throw new Error("La unidad no pertenece a este curso");
   return weekId;
 }
 

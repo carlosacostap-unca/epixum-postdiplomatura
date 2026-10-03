@@ -23,12 +23,12 @@ function revalidateWeeklyCourse(courseId: string) {
 
 async function requireAssignedTeacher(pb: ServerPocketBase, courseId: string) {
   const user = pb.authStore.model;
-  if (!user) throw new Error('No tienes permisos para administrar semanas');
+  if (!user) throw new Error('No tienes permisos para administrar unidades');
   const course = await pb.collection('courses').getOne<Course>(courseId, {
     fields: 'id,teachers,organizationMode',
   });
   if (!teacherCanManageWeeks(course, { id: user.id, role: user.role })) {
-    throw new Error('No tienes permisos para administrar semanas de este curso');
+    throw new Error('No tienes permisos para administrar unidades de este curso');
   }
   return course;
 }
@@ -72,8 +72,8 @@ export async function createCourseWeek(courseId: string, formData: FormData) {
     return { success: true as const, weekId: week.id };
   } catch (error) {
     const status = typeof error === 'object' && error && 'status' in error ? error.status : undefined;
-    if (status === 400) return { success: false as const, errors: { number: 'Ya existe una semana con ese número o los datos no son válidos.' } };
-    return { success: false as const, error: error instanceof Error ? error.message : 'No se pudo crear la semana' };
+    if (status === 400) return { success: false as const, errors: { number: 'Ya existe una unidad con ese número o los datos no son válidos.' } };
+    return { success: false as const, error: error instanceof Error ? error.message : 'No se pudo crear la unidad' };
   }
 }
 
@@ -89,8 +89,8 @@ export async function updateCourseWeek(weekId: string, formData: FormData) {
     return { success: true as const, weekId };
   } catch (error) {
     const status = typeof error === 'object' && error && 'status' in error ? error.status : undefined;
-    if (status === 400) return { success: false as const, errors: { number: 'Ya existe una semana con ese número o los datos no son válidos.' } };
-    return { success: false as const, error: error instanceof Error ? error.message : 'No se pudo actualizar la semana' };
+    if (status === 400) return { success: false as const, errors: { number: 'Ya existe una unidad con ese número o los datos no son válidos.' } };
+    return { success: false as const, error: error instanceof Error ? error.message : 'No se pudo actualizar la unidad' };
   }
 }
 
@@ -110,7 +110,7 @@ export async function deleteCourseWeek(weekId: string) {
     revalidateWeeklyCourse(week.course);
     return { success: true as const };
   } catch (error) {
-    return { success: false as const, error: error instanceof Error ? error.message : 'No se pudo eliminar la semana' };
+    return { success: false as const, error: error instanceof Error ? error.message : 'No se pudo eliminar la unidad' };
   }
 }
 
@@ -128,7 +128,7 @@ export async function assignContentToWeek(
     if (content.course !== courseId) throw new Error('El contenido no pertenece a este curso');
     if (weekId) {
       const week = await pb.collection('course_weeks').getOne<CourseWeek>(weekId, { fields: 'id,course' });
-      if (!weekBelongsToCourse(week, courseId)) throw new Error('La semana no pertenece a este curso');
+      if (!weekBelongsToCourse(week, courseId)) throw new Error('La unidad no pertenece a este curso');
     }
     await pb.collection(collectionName).update(contentId, { week: weekId || null });
     revalidateWeeklyCourse(courseId);

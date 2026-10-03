@@ -39,9 +39,9 @@ export function validateCourseWeekInput(
   const number = Number(input.number);
   const title = input.title.trim();
   if (!hasNumber || !Number.isInteger(number) || number < 0) errors.number = 'Ingresá un número entero igual o mayor que cero.';
-  if (!title) errors.title = 'Ingresá un título para la semana.';
+  if (!title) errors.title = 'Ingresá un título para la unidad.';
   if (existingWeeks.some((week) => week.id !== currentWeekId && week.number === number)) {
-    errors.number = 'Ya existe una semana con ese número en el curso.';
+    errors.number = 'Ya existe una unidad con ese número en el curso.';
   }
   if (!validDate(input.startDate)) errors.startDate = 'La fecha de inicio no es válida.';
   if (!validDate(input.endDate)) errors.endDate = 'La fecha de finalización no es válida.';

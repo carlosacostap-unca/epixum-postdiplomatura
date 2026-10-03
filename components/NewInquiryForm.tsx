@@ -38,7 +38,7 @@ export default function NewInquiryForm({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!title.trim() || !description.trim() || (weekly && !weekId)) {
-      setError(weekly && !weekId ? "Seleccioná una semana para la consulta." : "Completá el título y la descripción.");
+      setError(weekly && !weekId ? "Seleccioná una unidad para la consulta." : "Completá el título y la descripción.");
       return;
     }
     setIsLoading(true);
@@ -72,14 +72,14 @@ export default function NewInquiryForm({
         <input value={title} onChange={(event) => setTitle(event.target.value)} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-3" />
       </Field>
       {weekly ? (
-        <Field id="inquiry-week" label="Semana" required>
+        <Field id="inquiry-week" label="Unidad" required>
           <Select value={weekId} onChange={(event) => {
             setWeekId(event.target.value);
             const selectedClass = classes.find((item) => item.id === classId);
             if (selectedClass?.week && selectedClass.week !== event.target.value) setClassId("");
           }}>
-            <option value="">Seleccioná una semana</option>
-            {weeks.map((week) => <option key={week.id} value={week.id}>Semana {week.number}: {week.title}</option>)}
+            <option value="">Seleccioná una unidad</option>
+            {weeks.map((week) => <option key={week.id} value={week.id}>Unidad {week.number}: {week.title}</option>)}
           </Select>
         </Field>
       ) : null}

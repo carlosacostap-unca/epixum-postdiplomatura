@@ -162,7 +162,7 @@ export async function createInquiry(data: { title: string; description: string; 
       const classRecord = await pb.collection("classes").getOne(data.classId, { fields: "course,week" });
       if (classRecord.course !== data.courseId) return { success: false, error: "La clase no pertenece al curso" };
       if (classRecord.week) {
-        if (resolvedWeekId && resolvedWeekId !== classRecord.week) return { success: false, error: "La semana no coincide con la clase" };
+        if (resolvedWeekId && resolvedWeekId !== classRecord.week) return { success: false, error: "La unidad no coincide con la clase" };
         resolvedWeekId = classRecord.week;
       }
     }
@@ -170,15 +170,15 @@ export async function createInquiry(data: { title: string; description: string; 
       const assignment = await pb.collection("assignments").getOne(data.assignmentId, { fields: "course,week" });
       if (assignment.course !== data.courseId) return { success: false, error: "El trabajo no pertenece al curso" };
       if (assignment.week) {
-        if (resolvedWeekId && resolvedWeekId !== assignment.week) return { success: false, error: "La semana no coincide con el trabajo" };
+        if (resolvedWeekId && resolvedWeekId !== assignment.week) return { success: false, error: "La unidad no coincide con el trabajo" };
         resolvedWeekId = assignment.week;
       }
     }
     if (enrolled && course.organizationMode === "semanal") {
-        if (!resolvedWeekId) return { success: false, error: "Seleccioná una semana publicada para crear la consulta" };
+        if (!resolvedWeekId) return { success: false, error: "Seleccioná una unidad publicada para crear la consulta" };
         const week = await pb.collection("course_weeks").getOne<CourseWeek>(resolvedWeekId, { fields: "id,course,status,publishAt" });
         if (week.course !== data.courseId || !isWeekEffectivelyVisible(week)) {
-          return { success: false, error: "La semana seleccionada no está disponible" };
+          return { success: false, error: "La unidad seleccionada no está disponible" };
         }
     }
     const newInquiry: Record<string, string> = {

@@ -97,7 +97,7 @@ describe('acciones docentes de semanas', () => {
   it('impide asignar contenido o semanas de otro curso', async () => {
     mocks.week.course = 'course-2';
     const result = await assignContentToWeek('course-1', 'class', 'class-1', 'week-2');
-    expect(result).toEqual({ success: false, error: 'La semana no pertenece a este curso' });
+    expect(result).toEqual({ success: false, error: 'La unidad no pertenece a este curso' });
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
