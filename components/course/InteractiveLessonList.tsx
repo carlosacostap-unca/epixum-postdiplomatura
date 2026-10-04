@@ -17,6 +17,7 @@ export function InteractiveLessonList({ result, basePath, showCourse = false }: 
         <div><Link href={`/docentes/cursos/${lesson.course}/interactivas/${lesson.id}`} className="font-headline text-xl font-bold hover:text-[var(--color-primary)]">{lesson.title}</Link>{lesson.description && <p className="mt-2 line-clamp-2 break-words text-sm text-[var(--color-on-surface-variant)]">{lesson.description}</p>}</div>
         <div className="space-y-1 text-sm text-[var(--color-text-muted)]">{showCourse && <p>{lesson.expand?.course?.title || 'Curso'}</p>}<p>{lesson.expand?.class?.title ? `Clase: ${lesson.expand.class.title}` : 'Sin clase habitual asociada'}</p></div>
         <Link href={`/docentes/cursos/${lesson.course}/interactivas/${lesson.id}/editar`} className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]">Editar preparación<span className="material-symbols-outlined ml-2" aria-hidden="true">arrow_forward</span></Link>
+        {material && <Link href={`/docentes/cursos/${lesson.course}/interactivas/${lesson.id}/simulacion`} className="ml-4 inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]">Simular clase</Link>}
       </CardContent></Card>;
     })}</div>
     {result.totalPages > 1 && <nav aria-label="Páginas de clases interactivas" className="flex flex-wrap items-center justify-between gap-4">

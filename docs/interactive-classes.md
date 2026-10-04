@@ -50,6 +50,20 @@ La migración es aditiva e idempotente: conserva datos, índices y campos existe
 
 Reversión: deshabilitar la opción en los cursos y volver a la versión anterior del código; conservar los registros para una reactivación posterior.
 
+## Ensayar como docente y alumnos
+
+En la lista de clases interactivas, elegir **Simular clase**, o abrir un material y elegir **Simular clase con alumnos**. Está disponible también en borradores sin clase habitual asociada, siempre que tengan material válido. Solo pueden acceder docentes asignados al curso habilitado.
+
+1. El ensayo muestra **Como docente** y **Como alumno** juntos. Los botones **Sólo docente**, **Sólo alumno** y **Ambas vistas** permiten cambiar el espacio visible, también en móvil.
+2. En la vista de alumno, ingresar el código **PRUEBA01** que aparece en el panel docente. Hay tres identidades ficticias iniciales; **Agregar alumno ficticio** permite preparar hasta 100. Cada una ingresa y responde de forma independiente. Cambiar el alumno seleccionado mantiene conectados a los demás.
+3. Desde el panel docente, pasar pantallas y abrir/cerrar respuestas. En la vista de alumno se usan los mismos formularios que en una sesión real: opción múltiple, encuesta y respuesta breve. Cada identidad envía una sola respuesta por actividad; solo el panel docente muestra resultados y soluciones.
+4. **Desconectar alumno** permite ensayar una interrupción. **Reconectar alumno** recupera la pantalla actual y las respuestas enviadas; el listado docente refleja el estado simulado.
+5. **Finalizar ensayo** cierra los envíos y deja consultar los resultados temporales. **Reiniciar simulación** borra respuestas e ingresos y vuelve a la primera pantalla, después de confirmar.
+
+Todo el ensayo vive en memoria de esa página: salir o recargar lo descarta. No se abren sesiones reales, no se crean cuentas de alumnos y no se guardan respuestas, calificaciones ni asistencia. El código no es una invitación pública y no conecta otros dispositivos. Esta función ensaya contenido e interacción; no mide latencia ni capacidad del VPS. La carga inicial conserva los permisos habituales y no necesita migración de base de datos.
+
+Verificación automatizada: `npm run test:ui -- lib/interactive-simulation.test.ts components/interactive/SimulationRoom.test.tsx components/interactive/LiveRoom.test.tsx`. Incluye respuestas independientes, privacidad de la vista de alumno, cierre/reconexión/reinicio, hasta 100 identidades en memoria y ausencia de HTTP/SSE durante las acciones simuladas.
+
 ## Dar una clase en vivo
 
 1. En el detalle de un material preparado, elegir **Iniciar o retomar sesión en vivo**. Se guarda una copia inmutable y se abre el panel docente. Abrir otra vez el mismo material retoma su sesión activa.

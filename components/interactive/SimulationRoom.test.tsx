@@ -1,0 +1,76 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import example from '@/public/interactive-class-example.json';
+import { parseInteractiveMaterial } from '@/lib/interactive-material';
+import { SimulationRoom } from './SimulationRoom';
+
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+describe('ensayo docente y alumnos', () => {
+  it('ensaya ingreso, dos respuestas, reconexión, cierre y reinicio sin HTTP ni SSE', async () => {
+    const fetch = vi.fn(() => { throw new Error('La simulación no debe usar HTTP'); });
+    const events = vi.fn(() => { throw new Error('La simulación no debe abrir SSE'); });
+    vi.stubGlobal('fetch', fetch); vi.stubGlobal('EventSource', events);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<SimulationRoom material={parseInteractiveMaterial(example)!} title="Clase de ensayo" />);
+    const teacher = within(screen.getByRole('region', { name: 'Vista docente' }));
+    const pupil = within(screen.getByRole('region', { name: 'Vista del alumno' }));
+    await user.type(pupil.getByRole('textbox', { name: 'Código de prueba' }), 'INCORREC');
+    await user.click(pupil.getByRole('button', { name: 'Entrar como alumno' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('no coincide');
+    await user.clear(pupil.getByRole('textbox', { name: 'Código de prueba' }));
+    await user.type(pupil.getByRole('textbox', { name: 'Código de prueba' }), 'PRUEBA01');
+    await user.click(pupil.getByRole('button', { name: 'Entrar como alumno' }));
+    expect(teacher.getByText('Participantes (1)')).toBeInTheDocument();
+    await user.click(teacher.getByRole('button', { name: 'Siguiente pantalla' }));
+    expect(pupil.getByRole('radio', { name: 'Buscar evidencias y contrastarlas' })).toBeDisabled();
+    await user.click(teacher.getByRole('button', { name: 'Abrir respuestas' }));
+    await user.click(pupil.getByRole('radio', { name: 'Buscar evidencias y contrastarlas' }));
+    await user.click(pupil.getByRole('button', { name: 'Enviar respuesta' }));
+    expect(teacher.getByText(/1 de 1 participantes respondieron/)).toBeInTheDocument();
+    expect(pupil.queryByText(/Opción prevista/)).not.toBeInTheDocument();
+    await user.selectOptions(pupil.getByRole('combobox', { name: 'Alumno de prueba' }), 'sim-2');
+    await user.type(pupil.getByRole('textbox', { name: 'Código de prueba' }), 'PRUEBA01');
+    await user.click(pupil.getByRole('button', { name: 'Entrar como alumno' }));
+    expect(pupil.queryByText(/Tu respuesta quedó guardada/)).not.toBeInTheDocument();
+    await user.click(pupil.getByRole('radio', { name: 'Repetirla muchas veces' }));
+    await user.click(pupil.getByRole('button', { name: 'Enviar respuesta' }));
+    expect(teacher.getByText(/2 de 2 participantes respondieron/)).toBeInTheDocument();
+    await user.click(pupil.getByRole('button', { name: 'Desconectar alumno' }));
+    expect(teacher.getByText('Sin conexión reciente')).toBeInTheDocument();
+    await user.click(teacher.getByRole('button', { name: 'Siguiente pantalla' }));
+    await user.click(pupil.getByRole('button', { name: 'Reconectar alumno' }));
+    expect(pupil.getByRole('radio', { name: 'Ver ejemplos' })).toBeDisabled();
+    await user.click(teacher.getByRole('button', { name: 'Abrir respuestas' }));
+    await user.click(pupil.getByRole('radio', { name: 'Ver ejemplos' }));
+    await user.click(pupil.getByRole('button', { name: 'Enviar respuesta' }));
+    await user.click(teacher.getByRole('button', { name: 'Siguiente pantalla' }));
+    await user.click(teacher.getByRole('button', { name: 'Abrir respuestas' }));
+    await user.type(pupil.getByRole('textbox', { name: 'Tu respuesta' }), 'Quiero investigar las fuentes.');
+    await user.click(pupil.getByRole('button', { name: 'Enviar respuesta' }));
+    expect(teacher.getByText('Quiero investigar las fuentes.')).toBeInTheDocument();
+    await user.selectOptions(teacher.getByRole('combobox', { name: 'Consultar actividad' }), 'pregunta');
+    expect(teacher.getByText(/2 de 2 participantes respondieron/)).toBeInTheDocument();
+    expect(pupil.getByRole('textbox', { name: 'Tu respuesta' })).toHaveValue('Quiero investigar las fuentes.');
+    await user.click(teacher.getByRole('button', { name: 'Finalizar ensayo' }));
+    expect(teacher.getByText('Simulación finalizada')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Reiniciar simulación' }));
+    expect(screen.getByText('Participantes (0)')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Código de prueba' })).toHaveValue('');
+    expect(screen.queryByText('Quiero investigar las fuentes.')).not.toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled(); expect(events).not.toHaveBeenCalled();
+  });
+
+  it('alterna vistas y agrega alumnos sin revelar el panel docente en vista de alumno', async () => {
+    const user = userEvent.setup();
+    render(<SimulationRoom material={parseInteractiveMaterial(example)!} title="Ensayo" />);
+    await user.click(screen.getByRole('button', { name: 'Agregar alumno ficticio' }));
+    expect(screen.getByRole('combobox', { name: 'Alumno de prueba' })).toHaveValue('sim-4');
+    await user.click(screen.getByRole('button', { name: 'Sólo alumno' }));
+    expect(screen.queryByRole('region', { name: 'Vista docente' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sólo docente' }));
+    expect(screen.queryByRole('region', { name: 'Vista del alumno' })).not.toBeInTheDocument();
+  });
+});

@@ -24,6 +24,7 @@ export default async function InteractiveLessonPage({ params }: { params: Promis
       <div className="flex flex-wrap gap-3"><Badge tone={ready ? 'success' : 'warning'}>{ready ? 'Preparada' : 'Borrador'}</Badge><Badge>Solo docentes</Badge></div>
       {linkedClass ? <p>Clase asociada: <Link href={`/docentes/cursos/${id}/clases/${linkedClass.id}`} className="font-bold text-[var(--color-primary)]">{linkedClass.title}</Link></p> : <p>Todavía no tiene una clase habitual asociada.</p>}
       <p className="text-sm text-[var(--color-text-muted)]">Ensayá el material o iniciá una sesión para compartir las pantallas y actividades con tus alumnos.</p>
+      {material && <Link href={`/docentes/cursos/${id}/interactivas/${lessonId}/simulacion`} className={interactiveLinkClass}>Simular clase con alumnos</Link>}
       {ready && <StartLiveSession courseId={id} lessonId={lessonId} />}
     </CardContent></Card>
     <LiveHistory lessonId={lessonId} />
