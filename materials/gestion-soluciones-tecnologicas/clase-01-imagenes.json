@@ -1,20 +1,6 @@
 {
   "images": [
     {
-      "file": "del-to-be-al-tfi.svg",
-      "screenId": "encaje",
-      "title": "De los módulos previos al componente tecnológico",
-      "alt": "El To-Be del Módulo 1, las instrucciones y revisión de IA del Módulo 2 y la adopción y responsabilidades del Módulo 3 se integran en el Módulo 4: construir, probar y justificar un componente tecnológico que aporta al TFI.",
-      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/del-to-be-al-tfi.svg"
-    },
-    {
-      "file": "espectro-automatizacion.svg",
-      "screenId": "espectro",
-      "title": "Cuatro escalones y una vía lateral",
-      "alt": "Cuatro opciones: asistente para una tarea revisada; flujo con pasos definidos; agente con elección de herramientas dentro de límites; prototipo con pantallas y datos propios. RPA es una vía lateral para sistemas sin otra conexión adecuada. La elección depende de la necesidad, no de subir siempre de nivel.",
-      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/espectro-automatizacion.svg"
-    },
-    {
       "file": "quebrada-azul-circuito.svg",
       "screenId": "caso",
       "title": "El circuito de recepción de Quebrada Azul",
@@ -27,13 +13,6 @@
       "title": "Un flujo con validación y aprobación humana",
       "alt": "Un formulario inicia el registro y la clasificación. Si la validación falla, el flujo detiene el envío y deriva a revisión. Si valida, una persona revisa y aprueba antes del envío. Una excepción no se envía automáticamente. Es un esquema didáctico, no una integración activa.",
       "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/flujo-aprobacion-humana.svg"
-    },
-    {
-      "file": "del-proceso-a-tres-tareas.svg",
-      "screenId": "taller",
-      "title": "Del To-Be a tres tareas candidatas",
-      "alt": "Recorré tu To-Be, identificá tareas concretas como recibir, registrar y revisar, y documentá tres candidatas. Para cada una, registrá frecuencia, entrada, señales a favor y en contra, nivel tentativo y tiempo actual. Elegí una favorita y anotá una duda por verificar.",
-      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/del-proceso-a-tres-tareas.svg"
     }
   ]
 }

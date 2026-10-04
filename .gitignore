@@ -53,6 +53,7 @@ next-env.d.ts
 
 # Preparación privada y fuentes del módulo de automatización
 /materials/gestion-soluciones-tecnologicas/privado/
+/materials/pensamiento-critico-ia/privado/
 /tmp/modulo4-clase1/
 /output/modulo4-clase1/
 

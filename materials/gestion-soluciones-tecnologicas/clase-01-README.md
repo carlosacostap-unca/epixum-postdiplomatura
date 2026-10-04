@@ -1,45 +1,62 @@
-# Clase 1 · Del To-Be a la oportunidad de automatización
+# Clase 1 · Menos carga manual, mejores decisiones
 
-Preparación del curso **Gestión de Soluciones Tecnológicas y Automatización**, para el miércoles 7 de octubre de 2026, de **17:00 a 19:00 (hora de Argentina)**. Duración: 120 minutos. La fecha y hora de inicio están registradas en el calendario y en la descripción de la clase.
+Curso **Gestión de Soluciones Tecnológicas y Automatización**. Miércoles **7 de octubre de 2026, de 17:00 a 19:00**, hora de Argentina.
 
-La clase habitual y la preparación interactiva están guardadas en PocketBase. La preparación está en estado **Preparada**, asociada a la Clase 1, con **35 pantallas**: 24 de contenido, 2 encuestas, 3 preguntas de opción múltiple y 6 respuestas breves. Cada pantalla tiene un guion privado con texto para decir, tiempos e indicaciones docentes. No se inició una sesión real.
+Revisión del 4 de octubre: primera clase orientada a despertar interés a partir de un problema profesional reconocible, mostrar una mejora concreta y delimitar una oportunidad propia. El panorama del curso se organiza por preguntas y capacidades, sin asignar contenidos a semanas ni fijar herramientas, equipos o próximas entregas.
 
-El recorrido conserva los ocho bloques del plan: apertura, presentación del módulo, panorama, espectro, demostración, lectura del To-Be, taller de 25 minutos y cierre. El taller registra tres tareas candidatas, una favorita y una justificación. La ronda inicial usa respuestas escritas y ejemplos voluntarios para admitir grupos numerosos.
+## Recorrido de 120 minutos
 
-Cinco diapositivas incorporan diagramas SVG originales: integración de los módulos hacia el TFI, espectro de automatización, circuito de Quebrada Azul, flujo con aprobación humana y selección de tareas del To-Be. Cada imagen incluye texto alternativo y un enlace para ampliarla. Los archivos están en `public/interactive/gestion-soluciones-tecnologicas/clase-01/`; [`clase-01-imagenes.json`](./clase-01-imagenes.json) registra sus pantallas y enlaces a una versión fija del repositorio. Los diagramas del flujo y del proceso son esquemas didácticos. No son capturas de integraciones activas.
+| Minutos | Experiencia |
+|---|---|
+| 0–10 | Una tarea que consume tiempo y qué nos gustaría mejorar |
+| 10–25 | Caso Quebrada Azul; anticipación, ejecución y revisión de seis registros |
+| 25–40 | Dos decisiones con alternativas defendibles y condiciones para cambiar de opinión |
+| 40–50 | Propósito del curso y preguntas que guían el recorrido |
+| 50–60 | Preguntas del grupo y pausa de cinco minutos |
+| 60–80 | Comparación de soluciones cuando cambian la repetición y el seguimiento |
+| 80–100 | Una sola oportunidad propia en una ficha breve |
+| 100–115 | Puesta en común y ajuste de las oportunidades |
+| 115–120 | Devolución y cierre |
 
-## Acceso y recursos
+La preparación contiene **22 pantallas**: 15 de contenido, 3 encuestas de criterio sin clave y 4 respuestas breves. Cada pantalla tiene un guion docente privado con tiempos, texto sugerido y pautas de conducción. La ficha usa cuatro campos: tarea/problema, resultado/usuario, datos/incertidumbre y revisión/responsable. No exige una herramienta elegida ni un To-Be terminado. Se puede usar el caso común.
 
-En la aplicación: **Docencia → Gestión de Soluciones Tecnológicas y Automatización → Clases interactivas → Clase 1 · Del To-Be a la oportunidad de automatización**. La opción **Simulación** permite probar con alumnos ficticios. Desde allí se pueden abrir la proyección y el guion en ventanas separadas.
+## Acceso
 
-La clase habitual tiene cinco recursos descargables mediante el acceso autenticado del campus:
+En el campus: **Docencia → Gestión de Soluciones Tecnológicas y Automatización → Clases interactivas → Clase 1 · Menos carga manual, mejores decisiones → Simulación**.
 
-- Apunte original para cursantes, en PDF.
-- Plantilla de las tres tareas candidatas, en XLSX.
-- Ficha del caso ficticio Quebrada Azul, en PDF.
-- Kit del caso común, con planilla, CSV y comprobantes ficticios.
-- CSV con los seis registros seleccionados para la demostración.
+La clase habitual y la preparación conservan sus identificadores y la asociación existente. El horario y las condiciones académicas no cambian. La participación interactiva es formativa y no reemplaza entregas formales. No se inició una sesión real.
 
-Los cuatro primeros conservan los archivos aportados. El último selecciona los registros descritos en la guía: no son las primeras seis filas del CSV original. No se modificó el estado del curso.
+## Demostración preparada
 
-## Separación entre participantes y docentes
+El recurso **Demostración sin conexión · Seis comprobantes y una revisión** contiene un ZIP con:
 
-[`clase-01-participantes.json`](./clase-01-participantes.json) contiene una copia pública compatible con el importador. Las preguntas de opción múltiple aparecen como encuestas para conservar las opciones sin publicar las claves. Esta copia no reemplaza la preparación completa si se desea conservar sus soluciones y guiones.
+- `demo-comprobantes.html`: aplicación didáctica autónoma, sin dependencias ni conexión.
+- `demo_seis_comprobantes.csv`: los seis registros ficticios seleccionados del caso original.
+- `pedido-asistente.txt`: pedido opcional para contrastar una respuesta real de un asistente.
+- `LEEME.txt`: instrucciones de uso y límites del ejercicio.
 
-La carpeta local `privado/` está excluida de Git. Guarda la preparación completa, los guiones, las fuentes, sus huellas y las decisiones de adaptación. En PocketBase, `teacherNotes` está separado del material y protegido por el acceso docente. La proyección y la vista del alumno excluyen guiones, claves y explicaciones reservadas.
+Descargar y descomprimir antes de clase. Abrir el HTML en un navegador. Anticipar qué revisar, pulsar **Procesar**, contrastar los tres registros señalados y cambiar el umbral de 1.000.000 a 2.000.000: quedan dos. Restablecer permite comenzar de nuevo. El umbral es didáctico y no representa una norma contable.
 
-## Alcance de la preparación
+La demo **ejecuta reglas locales; no usa IA**. Los datos ya están transcriptos, no se extraen de documentos. No se envían mensajes ni se registran operaciones contables. Tampoco se comprueba autenticidad, se detectan duplicados o se acredita seguridad de una integración. El borrador de acuse es una plantilla fija y distingue recepción de registro contable. La ejecución opcional con un asistente requiere revisión contra el CSV y se identifica como una experiencia diferente.
 
-Fuentes: ZIP `Modulo4_Clase1.zip` y propuesta general del Módulo 4. Se revisaron el plan, el apunte, la guía de demostración, las notas de las 20 diapositivas, la presentación PDF, la ficha del caso, los comprobantes y el cuestionario GIFT.
+La pantalla siguiente incluye un resultado esperado, identificado como **ejemplo resuelto**, para contrastar la ejecución o como respaldo si no se puede abrir el navegador. No se presenta como captura de una ejecución de IA.
 
-Las pantallas explican las alternativas de asistente, flujo y prototipo. Los archivos aportados no contienen un formulario publicado, un escenario de Make ni un prototipo ejecutable. El guion permite usar una demostración externa preparada por el docente o recorrer los ejemplos de la presentación. Se explicitó la aprobación humana antes de enviar y una salida de revisión ante datos inválidos. No se configuraron integraciones, envíos ni servicios externos.
+## Recursos y material anterior
 
-Las pantallas evitan repetir fechas de lanzamientos, cifras de mercado, condiciones de planes y cuotas no verificadas. El apunte descargable conserva el original recibido. Se distingue la estimación de 12 horas del proceso amplio del caso de las 3 horas del ejemplo de tarea acotada.
+Se conservan los cinco recursos originales, incluido el apunte, la plantilla, la ficha, el kit y el CSV. Se añade el ZIP de demostración. El apunte y la plantilla se identifican como **consulta opcional**: el encuentro revisado pide una única ficha, no tres candidatas ni doble carga de información. La descripción de la clase explicita esta diferencia. El contenido original de esos archivos no fue alterado.
 
-Las actividades interactivas son formativas y sus respuestas quedan para consulta docente. No generan una nota ni sustituyen una entrega formal. El GIFT original de ocho preguntas se conserva privado; no se publicó como recurso de alumnos porque contiene claves. La grabación de la demostración, el cuestionario asincrónico y el espacio formal para adjuntar la plantilla quedan para su configuración posterior.
+Se conservan dos diagramas publicados, con texto alternativo y enlace para ampliar: circuito del caso y flujo con aprobación humana. El diagrama de tres tareas dejó de formar parte del recorrido. Los SVG anteriores siguen disponibles como activos históricos.
+
+## Archivos y privacidad
+
+`clase-01-participantes.json` es una copia pública compatible con el importador, sin guiones docentes. `clase-01-imagenes.json` describe las imágenes utilizadas.
+
+La carpeta `privado/`, excluida de Git, conserva la preparación completa, guiones, metadatos, fuentes originales, ZIP de demostración y scripts de actualización. En PocketBase los guiones permanecen separados en `teacherNotes`.
+
+El respaldo previo está en `backups/pocketbase/modulo4-clase1-revision-20261004.json`, también excluido de Git. Incluye clase, preparación y recursos anteriores. Los archivos locales previos están en `privado/revision-anterior/`.
 
 ## Verificación
 
-Se validó el esquema del material completo y público, la separación de guiones y claves, la asociación con la clase y la ausencia de sesiones reales. Los cinco recursos se descargaron por URL firmada y se comprobó su integridad. La simulación recorrió las 35 pantallas y respondió las 11 actividades, verificando sincronización de proyección, alumno y guion, ausencia de contenido privado en las vistas públicas y ausencia de desborde horizontal en la proyección. Se revisaron capturas de las tablas y del guion.
+Se validaron el esquema del material, los 120 minutos continuos, la separación de notas y la ausencia de guiones en la copia pública. El ensayo recorrió las 22 pantallas y respondió las siete actividades, comprobando sincronización de proyección/alumno/guion, carga de ambas imágenes y ausencia de desborde horizontal. Se inspeccionaron capturas y se corrigió la presentación de la ficha.
 
-Tras añadir los diagramas, se verificó la carga de las cinco imágenes desde sus enlaces definitivos en las vistas de docente, alumno y proyección, la apertura de la imagen ampliada, la sincronización del guion y el ajuste sin desborde horizontal en móvil. Se conservaron las actividades, los guiones y el horario confirmado. Sólo los cinco SVG se publicaron en el commit `4e065b7`; el material completo permanece en PocketBase y en la carpeta privada local.
+La demo se probó con el umbral inicial y modificado, entrada vacía, restablecimiento, navegador sin conexión y ancho móvil de 390 píxeles. Los recibos de actualización y descarga verificada se guardan en `output/modulo4-clase1/`. Estas comprobaciones verifican contenido y funcionamiento; no sustituyen observar la participación de un grupo real.

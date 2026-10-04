@@ -3,292 +3,180 @@
   "screens": [
     {
       "id": "bienvenida",
-      "title": "Del To-Be a la oportunidad de automatización",
-      "body": "**Módulo 4 · Clase 1 · Gestión de Soluciones Tecnológicas y Automatización**\n\nDe un proceso rediseñado a una solución que funcione y tenga sentido.\n\nHoy te llevás **tres tareas candidatas** de tu To-Be: el primer avance del componente tecnológico de tu TFI.\n\nMg. Ing. Carlos Acosta Parra · Ing. Matías Reynoso",
-      "type": "content"
-    },
-    {
-      "id": "agenda",
-      "title": "La ruta de estas dos horas",
-      "body": "| Minutos | Qué vamos a hacer |\n|---|---|\n| 0–10 | Presentarnos y recuperar tareas |\n| 10–25 | Conocer el recorrido del módulo |\n| 25–40 | Pensar capacidades, valor y controles |\n| 40–55 | Recorrer el espectro y el caso común |\n| 55–70 | Comparar una tarea en tres soluciones |\n| 70–80 | Buscar oportunidades en el To-Be |\n| 80–105 | Documentar tres tareas candidatas |\n| 105–120 | Compartir, revisar y cerrar |\n\nTené a mano tu diagrama **To-Be del Módulo 1**.",
+      "title": "Menos carga manual, mejores decisiones",
+      "body": "**Gestión de Soluciones Tecnológicas y Automatización · Clase 1**\n\n¿Qué parte de tu trabajo podrías mejorar con tecnología?\n\nHoy vamos a ver un ejemplo, discutir decisiones y elegir **una oportunidad propia**.\n\nMg. Ing. Carlos Acosta Parra · Ing. Matías Reynoso",
       "type": "content"
     },
     {
       "id": "ronda",
-      "title": "¿Qué tarea te gustaría dejar de hacer a mano?",
-      "body": "Escribí una tarea repetitiva de tu trabajo usando **verbo + objeto**.\n\nPor ejemplo: «registrar comprobantes recibidos».\n\nPodés agregar el tipo de organización y quién recibe el resultado. **No incluyas nombres de clientes ni datos confidenciales.**\n\nTu cuenta identifica tu participación. La respuesta sólo la consulta el equipo docente.",
+      "title": "¿Qué tarea te quita tiempo para lo importante?",
+      "body": "Completá en una o dos frases:\n\n**Se me va tiempo en…**\n\n**Si pudiera reducir ese trabajo, lo usaría para…**\n\nPodés pensar en un estudio, empresa, organismo o trabajo independiente. Sin nombres de clientes ni información confidencial.\n\nLa respuesta la consulta el equipo docente; no tiene nota.",
       "type": "short-answer",
-      "maxLength": 600
+      "maxLength": 1000
     },
     {
-      "id": "punto-partida",
-      "title": "¿Cómo llegás con tu To-Be?",
-      "body": "Elegí la situación que mejor describe tu punto de partida. Esto nos ayuda a acompañar la práctica.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "op1",
-          "label": "Tengo el diagrama y puedo trabajar sobre él."
-        },
-        {
-          "id": "op2",
-          "label": "Tengo un borrador y necesito ajustarlo."
-        },
-        {
-          "id": "op3",
-          "label": "Hoy voy a usar el caso común como apoyo."
-        }
-      ]
-    },
-    {
-      "id": "encaje",
-      "title": "Lo que ya construiste se conecta acá",
-      "body": "![El To-Be del Módulo 1, las instrucciones y revisión de IA del Módulo 2 y la adopción y responsabilidades del Módulo 3 se integran en el Módulo 4: construir, probar y justificar un componente tecnológico que aporta al TFI.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/del-to-be-al-tfi.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/del-to-be-al-tfi.svg)\n\n**To-Be → oportunidad → componente tecnológico → TFI**\n\nRecuperamos el proceso rediseñado, la revisión de la IA y el trabajo con las personas para construir, probar y justificar una solución.",
+      "id": "reconocer",
+      "title": "Tres molestias que vale la pena mirar",
+      "body": "- **Volver a cargar** algo que ya estaba escrito.\n- **Buscar o reclamar** información que debería estar disponible.\n- **Revisar de nuevo** porque no sabemos qué pasó.\n\n¿Cuál aparece más en tu trabajo?\n\n**La mejora puede ser tiempo, menos errores o mejor seguimiento.**",
       "type": "content"
-    },
-    {
-      "id": "recorrido",
-      "title": "Cuatro unidades, cuatro decisiones",
-      "body": "| Semanas | Pregunta de gestión | Avance |\n|---|---|---|\n| 1–2 · Espectro | ¿Qué conviene automatizar? | Tareas, viabilidad y asistente |\n| 3–4 · Flujos y agentes | ¿Cómo conectar y supervisar? | Flujo y agente supervisado |\n| 5–6 · Prototipos | ¿Qué construir y cómo validarlo? | Especificación y prototipo |\n| 7–8 · Gestión | ¿Cómo medir y sostenerlo? | Backlog, valor y pre-entrega |\n\n**8 semanas · 16 clases · 40 horas totales**\n\n32 horas sincrónicas + 8 horas asincrónicas.",
-      "type": "content"
-    },
-    {
-      "id": "trabajo-evaluacion",
-      "title": "Cómo vamos a trabajar y qué se evalúa",
-      "body": "- Dos encuentros semanales: uno teórico-práctico y otro de laboratorio, taller o clínica presencial.\n- Equipos de **2 o 3**, a partir de la clase 2.\n- Bitácora: qué decidimos, por qué y qué descartamos.\n- Una hora asincrónica semanal; clínicas al final del recorrido.\n\n**Rúbrica del componente:** pertinencia 20 % · funcionamiento 25 % · supervisión y datos 20 % · justificación 25 % · comunicación 10 %.\n\nSegún la propuesta: **60 % global**, sin «No logrado» en seguridad; **80 % de asistencia presencial** y **100 % de actividades asincrónicas**.",
-      "type": "content"
-    },
-    {
-      "id": "datos",
-      "title": "Reglas de práctica desde hoy",
-      "body": "1. Usamos **datos ficticios o debidamente anonimizados**.\n2. No cargamos claves fiscales, credenciales, datos bancarios ni información de clientes reales.\n3. Para las prácticas guiadas usamos **Quebrada Azul**.\n4. Antes de **enviar, borrar o pagar**, una persona revisa y aprueba.\n\nPreparar un borrador y ejecutar una acción son pasos distintos.",
-      "type": "content"
-    },
-    {
-      "id": "capacidades",
-      "title": "Cuatro capacidades que podemos combinar",
-      "body": "| Capacidad | Pregunta concreta |\n|---|---|\n| Asistencia sobre información | ¿Puede preparar una tabla o un borrador que revisaré? |\n| Conexión de aplicaciones | ¿Qué evento dispara qué pasos? |\n| Interpretación con herramientas | ¿Qué puede decidir la IA y qué debe aprobar una persona? |\n| Prototipado en lenguaje natural | ¿Qué pantalla falta y cómo probaré que funciona? |\n\n**Una capacidad disponible no garantiza una solución conveniente.**",
-      "type": "content"
-    },
-    {
-      "id": "gestor",
-      "title": "La decisión que aporta el gestor",
-      "body": "**Problema → tarea → resultado verificable → nivel de autonomía → controles**\n\nAntes de construir:\n\n- ¿Quién necesita el resultado?\n- ¿Qué mejora esperamos observar?\n- ¿Qué datos entran y quién responde por ellos?\n- ¿Qué puede salir mal y quién lo detecta?\n- ¿Quién va a mantener la solución?",
-      "type": "content"
-    },
-    {
-      "id": "riesgos",
-      "title": "Que funcione una vez no alcanza",
-      "body": "| Riesgo | Evidencia que necesitamos |\n|---|---|\n| El costo supera el valor | Uso real y costo por ejecución |\n| Se procesa una entrada inesperada | Pruebas con excepciones y salida de revisión |\n| Un usuario ve datos ajenos | Pruebas con usuarios y permisos distintos |\n| Nadie detecta un error | Responsable, registro y mecanismo de pausa |\n\nUna demostración sirve para aprender; la puesta en uso requiere más pruebas.",
-      "type": "content"
-    },
-    {
-      "id": "autonomia",
-      "title": "¿Qué delegarías primero?",
-      "body": "En una primera prueba de recepción de comprobantes, ¿qué alcance elegirías? Pensá en datos, supervisión y posibilidad de corregir.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "op1",
-          "label": "Preparar registros y borradores para revisión."
-        },
-        {
-          "id": "op2",
-          "label": "Registrar y separar excepciones con aprobación antes del envío."
-        },
-        {
-          "id": "op3",
-          "label": "Decidir y enviar todo sin revisión."
-        },
-        {
-          "id": "op4",
-          "label": "Primero aclararía el proceso y la responsabilidad."
-        }
-      ]
-    },
-    {
-      "id": "espectro",
-      "title": "Cuatro escalones y una vía lateral",
-      "body": "![Cuatro opciones: asistente para una tarea revisada; flujo con pasos definidos; agente con elección de herramientas dentro de límites; prototipo con pantallas y datos propios. RPA es una vía lateral para sistemas sin otra conexión adecuada. La elección depende de la necesidad, no de subir siempre de nivel.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/espectro-automatizacion.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/espectro-automatizacion.svg)\n\n**Elegí el nivel más simple que resuelva el problema con un riesgo aceptable.**\n\nUn agente puede elegir herramientas dentro de límites. Un prototipo aporta pantallas y datos propios. **RPA es una vía lateral**, no un quinto escalón.",
-      "type": "content"
-    },
-    {
-      "id": "ejemplos",
-      "title": "El mismo estudio, necesidades diferentes",
-      "body": "| Necesidad en Quebrada Azul | Primera hipótesis |\n|---|---|\n| Resumir vencimientos para revisar el lunes | Asistente |\n| Registrar cada formulario según reglas | Flujo orquestado |\n| Interpretar consultas, buscar datos y preparar respuesta | Agente supervisado, si se justifica |\n| Dar a cada cliente una pantalla con sus comprobantes | Prototipo de aplicación |\n| Operar un sistema antiguo sólo por pantalla | RPA, si no hay una conexión adecuada |\n\n**Cambiar de necesidad puede cambiar la solución.**",
-      "type": "content"
-    },
-    {
-      "id": "rpa",
-      "title": "Un sistema que sólo se opera por pantalla",
-      "body": "El sistema contable antiguo no ofrece API ni otra conexión utilizable para la tarea. Hay que descargar siempre el mismo reporte. ¿Qué alternativa del mapa conviene explorar?",
-      "type": "poll",
-      "options": [
-        {
-          "id": "op1",
-          "label": "Un agente con acceso irrestricto a todo el estudio."
-        },
-        {
-          "id": "op2",
-          "label": "RPA sobre la interfaz, con pruebas y supervisión."
-        },
-        {
-          "id": "op3",
-          "label": "Una aplicación nueva antes de entender el reporte."
-        }
-      ]
     },
     {
       "id": "caso",
-      "title": "Nuestro laboratorio: Quebrada Azul",
-      "body": "![Caso ficticio: correo, formulario, WhatsApp y papel llegan a Sofía y Paula, que reciben y cargan comprobantes manualmente en una planilla para su seguimiento. Entradas por distintos canales pueden duplicarse; el problema está en el circuito de trabajo.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/quebrada-azul-circuito.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/quebrada-azul-circuito.svg)\n\n**Estudio contable ficticio · 5 personas · 120 clientes**\n\nAdemás de la carga manual, el estudio enfrenta consultas recurrentes, documentación faltante, vencimientos sin aviso y un sistema contable aislado.\n\nLos nombres, importes, contactos y documentos del kit son **ficticios**.",
+      "title": "Llega un comprobante. ¿Quién sabe qué pasó?",
+      "body": "![Caso ficticio: correo, formulario, WhatsApp y papel llegan a Sofía y Paula, que reciben y cargan comprobantes manualmente en una planilla para su seguimiento. Entradas por distintos canales pueden duplicarse; el problema está en el circuito de trabajo.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/quebrada-azul-circuito.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/quebrada-azul-circuito.svg)\n\n**Quebrada Azul · Estudio ficticio**\n\nSofía recibe documentación por distintos canales. Paula la registra. Un cliente vuelve a preguntar: «¿Lo recibieron?».\n\n**¿Dónde se pierde tiempo o se puede duplicar el trabajo?**",
       "type": "content"
     },
     {
       "id": "demo-datos",
-      "title": "Una tarea, seis comprobantes de práctica",
-      "body": "**Recibir → registrar → preparar confirmación → revisar y aprobar el envío**\n\n| Cliente ficticio | Comprobante | Importe |\n|---|---|---:|\n| Panadería Los Molles | Factura C · 148 | 85.400 |\n| Ana Quiroga | Recibo · s/n | 210.000 |\n| Ferretería El Portezuelo | Factura A · 1932 | 1.254.300 |\n| Consultorio Dr. Vega | Nota de crédito C · 21 | −12.000 |\n| Almacén La Tablada | Factura B · 710 | 43.750 |\n| Municipio de Villa Serrana | Orden de pago · 0412 | 980.000 |\n\nSelección del CSV para la demostración. Los números están abreviados sólo en esta vista.",
+      "title": "Antes de automatizar: mirá estos seis registros",
+      "body": "| Cliente ficticio | Número abreviado | Importe |\n|---|---|---:|\n| Panadería Los Molles | 148 | 85.400 |\n| Ana Quiroga | s/n | 210.000 |\n| Ferretería El Portezuelo | 1932 | 1.254.300 |\n| Consultorio Dr. Vega | 21 | −12.000 |\n| Almacén La Tablada | 710 | 43.750 |\n| Municipio de Villa Serrana | 0412 | 980.000 |\n\n**¿Qué registros mirarías con más atención y por qué?**\n\nLos números están abreviados sólo para esta vista.",
       "type": "content"
     },
     {
-      "id": "demo-asistente",
-      "title": "1 · El asistente prepara; una persona revisa",
-      "body": "**Pedido → tabla de revisión + borradores de acuse**\n\n> Organizá los seis comprobantes. Marcá para revisar los importes negativos, los números «s/n» y los importes superiores a 1.000.000. Si falta un dato, escribí «FALTA». Prepará un acuse breve por cliente sin repetir montos. No envíes nada.\n\nComprobá cada fila contra el original.\n\n**Para pensar:** ¿qué pasa si esta semana nadie aporta los archivos?",
+      "id": "demo-vivo",
+      "title": "Probemos: de seis registros a una revisión ordenada",
+      "body": "**Entrada → reglas explícitas → tabla de revisión + borradores**\n\n1. Miramos los seis registros.\n2. Procesamos y contrastamos el resultado.\n3. Cambiamos una regla y observamos qué cambia.\n\n**Preparar una confirmación no es enviarla.**\n\n[Abrir recursos: «Demostración sin conexión» y CSV](/classes/b5995cc58694b99)",
+      "type": "content"
+    },
+    {
+      "id": "demo-resultado",
+      "title": "El resultado ayuda; la revisión sigue siendo nuestra",
+      "body": "**Ejemplo resuelto con las reglas acordadas**\n\n| Registro | Resultado esperado |\n|---|---|\n| Ana Quiroga | Revisar: número s/n |\n| Ferretería El Portezuelo | Revisar: supera 1.000.000 |\n| Consultorio Dr. Vega | Revisar: importe negativo |\n| Los otros tres | Sin alertas bajo estas reglas |\n\n**Borrador:** «Recibimos la documentación. Queda pendiente de revisión. Gracias».\n\nSin alertas **no significa validación contable**. ¿Qué mejoró y qué trabajo sigue existiendo?",
+      "type": "content"
+    },
+    {
+      "id": "decision",
+      "title": "Con poco tiempo para probar, ¿por dónde empezarías?",
+      "body": "El estudio quiere mejorar la recepción, pero dispone de poco tiempo para una primera prueba.\n\nElegí un comienzo y prepará una razón. **¿Qué dato podría hacerte cambiar de opción?**",
+      "type": "poll",
+      "options": [
+        {
+          "id": "op1",
+          "label": "Probar la preparación de la tabla sobre un lote y revisar todo antes de usarlo."
+        },
+        {
+          "id": "op2",
+          "label": "Ordenar primero el canal de entrada y acordar quién registra cada comprobante."
+        },
+        {
+          "id": "op3",
+          "label": "Medir primero volumen, demoras y errores para elegir dónde intervenir."
+        }
+      ]
+    },
+    {
+      "id": "cambio",
+      "title": "El mismo caso, diez veces más movimiento",
+      "body": "Ahora llegan diez veces más comprobantes por los mismos canales y crecen las consultas «¿lo recibieron?».\n\n**¿Qué investigarías primero para decidir la siguiente mejora?**",
+      "type": "poll",
+      "options": [
+        {
+          "id": "op1",
+          "label": "Dónde se demora la carga y cuánto tiempo exige revisar cada lote."
+        },
+        {
+          "id": "op2",
+          "label": "Cuántas entradas se repiten o quedan fuera del circuito y quién las sigue."
+        },
+        {
+          "id": "op3",
+          "label": "Cuánto trabajo generan las consultas de estado y qué información necesitan los clientes."
+        }
+      ]
+    },
+    {
+      "id": "proposito",
+      "title": "Para esto sirve gestionar soluciones tecnológicas",
+      "body": "**Reconocer una oportunidad → elegir → probar → medir y sostener**\n\n- Traducir un problema de trabajo en una mejora concreta.\n- Elegir una solución adecuada a las personas y los datos.\n- Comprobar cómo funciona y cómo se detectan errores.\n- Evaluar si el beneficio justifica el esfuerzo.\n\n**Tu criterio profesional orienta qué hacer, qué revisar y cuándo detenerse.**",
+      "type": "content"
+    },
+    {
+      "id": "recorrido",
+      "title": "Las preguntas que van a guiar el curso",
+      "body": "| Pregunta | Qué vamos a aprender a hacer |\n|---|---|\n| ¿Dónde vale la pena intervenir? | Delimitar una oportunidad y su valor |\n| ¿Con qué solución empezamos? | Comparar asistencia, flujos y otras alternativas |\n| ¿Cómo sabemos si funciona? | Probar resultados, excepciones y controles |\n| ¿Cómo la sostenemos? | Medir, asignar responsabilidades y mejorar |\n\nTrabajaremos con ejemplos y problemas propios. **Las herramientas y la profundidad se ajustarán a las necesidades del grupo.**",
+      "type": "content"
+    },
+    {
+      "id": "preguntas",
+      "title": "¿Qué necesitarías ver para llevar esto a tu trabajo?",
+      "body": "Dejá **una pregunta o un obstáculo concreto**.\n\nPuede ser sobre datos, acceso a sistemas, conocimientos, tiempo o personas.\n\nEl equipo docente usará estas respuestas para orientar ejemplos y profundidad.",
+      "type": "short-answer",
+      "maxLength": 1000
+    },
+    {
+      "id": "pausa",
+      "title": "Cinco minutos para volver con una idea",
+      "body": "**Pausa breve**\n\nAl volver: ¿cómo cambia la solución cuando necesitamos repetir el trabajo o dar seguimiento?\n\nDespués elegiremos una oportunidad propia.",
+      "type": "content"
+    },
+    {
+      "id": "alternativas",
+      "title": "La necesidad cambia la solución",
+      "body": "| Si necesitamos… | Podemos explorar… |\n|---|---|\n| Preparar una tabla o un borrador para revisar | Un asistente |\n| Repetir pasos entre aplicaciones | Un flujo |\n| Elegir herramientas ante situaciones variables | Un agente con límites |\n| Que cada usuario consulte o cargue información | Una aplicación o prototipo |\n\nEstas opciones pueden combinarse. **No hace falta usarlas todas.**\n\nLa demo de reglas también muestra que algunas tareas pueden resolverse sin IA.",
       "type": "content"
     },
     {
       "id": "demo-flujo",
-      "title": "2 · Un flujo hace visible la secuencia",
-      "body": "![Un formulario inicia el registro y la clasificación. Si la validación falla, el flujo detiene el envío y deriva a revisión. Si valida, una persona revisa y aprueba antes del envío. Una excepción no se envía automáticamente. Es un esquema didáctico, no una integración activa.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/flujo-aprobacion-humana.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/flujo-aprobacion-humana.svg)\n\n**Formulario → registro → clasificación → validación → revisión humana → envío aprobado**\n\n- Sin alertas: preparar un acuse para aprobar.\n- s/n, importe negativo o superior a 1.000.000: preparar un aviso para revisión.\n- Dato faltante o resultado inválido: detener y derivar; **no enviar**.\n\n**¿Qué pasa si llega por WhatsApp o se repite el mismo comprobante?**",
+      "title": "¿Qué agregamos si queremos repetir el circuito?",
+      "body": "![Un formulario inicia el registro y la clasificación. Si la validación falla, el flujo detiene el envío y deriva a revisión. Si valida, una persona revisa y aprueba antes del envío. Una excepción no se envía automáticamente. Es un esquema didáctico, no una integración activa.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/flujo-aprobacion-humana.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/flujo-aprobacion-humana.svg)\n\n**Recibir → registrar → validar → revisar → aprobar**\n\n¿Qué sucede si llega por otro canal, se repite o falta un dato?\n\nEsquema didáctico: **no representa una integración activa**.",
       "type": "content"
     },
     {
-      "id": "demo-prototipo",
-      "title": "4 · Una pantalla propia cambia la experiencia",
-      "body": "| Vista del cliente | Vista del estudio |\n|---|---|\n| Sólo sus comprobantes | Recepción y seguimiento autorizados |\n| Fecha y hora de cada carga | Filtros por cliente y estado |\n| Estado: Recibido / En revisión / Registrado | Cambio de estado con responsabilidad definida |\n\n**Dos pruebas de aceptación:**\n\n1. Cliente A no puede consultar comprobantes de B.\n2. Cada carga conserva fecha y hora.\n\nCambio a explorar: «Agregar un filtro por mes».",
-      "type": "content"
-    },
-    {
-      "id": "demo-comparacion",
-      "title": "Qué resuelve cada alternativa y qué exige",
-      "body": "| Solución | Aporte | Trabajo que sigue existiendo |\n|---|---|---|\n| Asistente | Tabla y borradores | Aportar datos y revisar resultados |\n| Flujo | Secuencia repetible entre aplicaciones | Excepciones, monitoreo y aprobación |\n| Prototipo | Interfaz propia para usuarios | Permisos, mantenimiento y pruebas |\n\n**La mejor opción es la más simple que cubra la necesidad con un riesgo aceptable.**\n\nEl agente se estudia más adelante; una entrada variable no lo vuelve obligatorio.",
-      "type": "content"
-    },
-    {
-      "id": "bpmn",
-      "title": "Leer el To-Be como mapa de oportunidades",
-      "body": "| Elemento BPMN | Qué observar |\n|---|---|\n| Tarea de usuario repetitiva | Copiar, registrar, clasificar, preparar |\n| Compuerta con regla explícita | Una condición verificable |\n| Decisión que interpreta texto | Asistencia con IA y revisión |\n| Evento de mensaje o tiempo | Un posible disparador |\n| Traspaso entre carriles | Dato que viaja entre responsables |\n\nBuscá **tareas concretas del proceso rediseñado**.",
-      "type": "content"
-    },
-    {
-      "id": "filtro",
-      "title": "Señales a favor y señales para frenar",
-      "body": "| A favor | Para frenar o revisar |\n|---|---|\n| Frecuencia o volumen | Ocurre muy pocas veces |\n| Entrada digital disponible | Datos dispersos y sin responsable |\n| Regla o ejemplos explicables | Proceso todavía inestable |\n| Resultado verificable | Error grave que no se detecta a tiempo |\n| Corrección antes del daño | Firma o dictamen profesional indelegable |\n| Tiempo mecánico significativo | Problema organizativo sin resolver |\n\n**Automatizar el desorden también puede acelerar sus errores.**",
-      "type": "content"
-    },
-    {
-      "id": "limite",
-      "title": "¿Qué candidata necesita frenar primero?",
-      "body": "Elegí la propuesta cuyo alcance conviene descartar o reformular antes de automatizar.",
+      "id": "necesidad",
+      "title": "El cliente sigue preguntando «¿lo recibieron?»",
+      "body": "La carga está más ordenada, pero siguen llegando consultas de estado.\n\n**¿Qué probarías primero y qué condición necesitás verificar?**",
       "type": "poll",
       "options": [
         {
           "id": "op1",
-          "label": "Registrar formularios repetitivos con datos completos y revisión de errores."
+          "label": "Una confirmación de recepción revisada, con un plazo claro de respuesta."
         },
         {
           "id": "op2",
-          "label": "Preparar un resumen semanal que una persona va a contrastar."
+          "label": "Un reporte de estado periódico preparado por el equipo."
         },
         {
           "id": "op3",
-          "label": "Emitir un dictamen y firmarlo sin intervención profesional."
+          "label": "Una pantalla donde cada cliente consulte sus propios documentos."
         }
       ]
-    },
-    {
-      "id": "linea-base",
-      "title": "Medir el punto de partida",
-      "body": "**Frecuencia × tiempo por caso = primera estimación de carga**\n\nEjemplo didáctico de la plantilla:\n\n**40 casos por semana × 4,5 minutos ≈ 3 horas semanales**\n\nRegistrá el alcance, quién realiza la tarea y cómo estimaste el tiempo.\n\nDespués mediremos también revisión, excepciones y mantenimiento. **Tiempo automatizado no equivale a ahorro neto.**",
-      "type": "content"
     },
     {
       "id": "taller",
-      "title": "Taller · Mis tres tareas candidatas",
-      "body": "![Recorré tu To-Be, identificá tareas concretas como recibir, registrar y revisar, y documentá tres candidatas. Para cada una, registrá frecuencia, entrada, señales a favor y en contra, nivel tentativo y tiempo actual. Elegí una favorita y anotá una duda por verificar.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/del-proceso-a-tres-tareas.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/del-proceso-a-tres-tareas.svg)\n\n**25 minutos · Trabajo individual sobre tu To-Be**\n\n1. **5 min:** recorré el diagrama y marcá oportunidades.\n2. **12 min:** documentá tres tareas; cuatro minutos por ficha.\n3. **5 min:** elegí una favorita y justificá el escalón tentativo.\n4. **3 min:** revisá y conservá tu plantilla.\n\n[Abrir recursos de la Clase 1: apunte, plantilla y kit ficticio](/classes/b5995cc58694b99)\n\nSi no tenés tu To-Be, usá la recepción de Quebrada Azul y luego trasladá el análisis a tu proceso.",
+      "title": "Una oportunidad que valga la pena explorar",
+      "body": "**Elegí una sola tarea de tu trabajo.**\n\nPodés tomar la que escribiste al comienzo. Si tenés tu proceso rediseñado —To-Be—, ubicala allí. Si no, describí cómo se realiza o usá Quebrada Azul.\n\nPensá en cuatro cosas:\n\n1. Qué tarea y qué problema.\n2. Qué resultado sería útil.\n3. Qué información hace falta.\n4. Qué revisaríamos antes de usar el resultado.\n\n**Hoy alcanza con una primera hipótesis.**",
       "type": "content"
     },
     {
-      "id": "tarea-1",
-      "title": "Tarea candidata 1",
-      "body": "Completá una síntesis con estos campos:\n\n**Tarea (verbo + objeto):**\n**Elemento del To-Be / responsable:**\n**Frecuencia y volumen:**\n**Entrada y resultado esperado:**\n**Señales a favor:**\n**Señal en contra o riesgo:**\n**Escalón tentativo y por qué:**\n**Tiempo actual estimado y cómo lo estimaste:**\n\nUsá referencias generales, sin información confidencial. Guardá también tu plantilla.",
+      "id": "mi-oportunidad",
+      "title": "Mi primera oportunidad",
+      "body": "Completá una única ficha breve:\n\n- **Tarea y problema:** …\n- **Resultado útil y para quién:** …\n- **Datos que necesitaría / lo que aún no sé:** …\n- **Qué revisaría y quién podría hacerlo (rol):** …\n\nPodés indicar una prueba pequeña que te gustaría hacer. No hace falta elegir herramienta.\n\nSi falta información, escribí «por averiguar». Sin datos confidenciales. Conservá una copia en tus notas; **no se pide otra planilla hoy**.",
       "type": "short-answer",
-      "maxLength": 2000
-    },
-    {
-      "id": "tarea-2",
-      "title": "Tarea candidata 2",
-      "body": "Completá una síntesis con estos campos:\n\n**Tarea (verbo + objeto):**\n**Elemento del To-Be / responsable:**\n**Frecuencia y volumen:**\n**Entrada y resultado esperado:**\n**Señales a favor:**\n**Señal en contra o riesgo:**\n**Escalón tentativo y por qué:**\n**Tiempo actual estimado y cómo lo estimaste:**\n\nUsá referencias generales, sin información confidencial. Guardá también tu plantilla.",
-      "type": "short-answer",
-      "maxLength": 2000
-    },
-    {
-      "id": "tarea-3",
-      "title": "Tarea candidata 3",
-      "body": "Completá una síntesis con estos campos:\n\n**Tarea (verbo + objeto):**\n**Elemento del To-Be / responsable:**\n**Frecuencia y volumen:**\n**Entrada y resultado esperado:**\n**Señales a favor:**\n**Señal en contra o riesgo:**\n**Escalón tentativo y por qué:**\n**Tiempo actual estimado y cómo lo estimaste:**\n\nUsá referencias generales, sin información confidencial. Guardá también tu plantilla.",
-      "type": "short-answer",
-      "maxLength": 2000
-    },
-    {
-      "id": "favorita",
-      "title": "Tu favorita y la primera decisión",
-      "body": "Elegí una de tus tres candidatas y completá:\n\n«Priorizaría **…**, porque **…**. Probaría primero con **…**. La persona que revisaría sería **…**. Antes de avanzar necesito confirmar **…**».\n\nIndicá el **rol**, sin nombres personales. ¿Podrías bajar un escalón y seguir resolviendo la necesidad?",
-      "type": "short-answer",
-      "maxLength": 1200
-    },
-    {
-      "id": "revision",
-      "title": "Antes de cerrar tu plantilla",
-      "body": "- [ ] Hay **tres tareas**, no tres procesos completos.\n- [ ] Están ubicadas en el **To-Be**.\n- [ ] Cada una tiene una señal a favor y otra en contra.\n- [ ] Cada una tiene tiempo actual estimado y un escalón tentativo.\n- [ ] La favorita tiene una justificación y una duda por resolver.\n- [ ] Conservaste tu archivo y enviaste las síntesis interactivas.\n\nEl envío interactivo **no reemplaza una entrega formal** del aula. Si se habilita esa entrega, cargá allí tu plantilla.",
-      "type": "content"
+      "maxLength": 1600
     },
     {
       "id": "puesta-comun",
-      "title": "Puesta en común · ¿Bajarías un escalón?",
-      "body": "Tres o cuatro voluntarios comparten:\n\n1. Una tarea y su resultado esperado.\n2. El escalón elegido y por qué.\n3. Una condición que falta verificar.\n\nQuienes escuchan proponen **una pregunta útil**: sobre datos, valor, control o una alternativa más simple.\n\nCompartimos decisiones, sin datos sensibles de las organizaciones.",
+      "title": "Ayudemos a mejorar tres oportunidades",
+      "body": "**Quien comparte:** tarea, resultado esperado y una duda.\n\n**Quienes escuchan:** una pregunta que ayude a precisar.\n\n- ¿Qué dato falta?\n- ¿Cómo sabríamos que mejoró?\n- ¿Qué revisaríamos antes de usar el resultado?\n\nBuscamos una prueba pequeña y útil. Compartir es voluntario.",
       "type": "content"
     },
     {
-      "id": "regla-eleccion",
-      "title": "La regla para decidir",
-      "body": "Dos soluciones cubren la tarea y permiten verificar el resultado. Una agrega autonomía que hoy no necesitás. ¿Con qué criterio comenzarías?",
-      "type": "poll",
-      "options": [
-        {
-          "id": "op1",
-          "label": "Con la que agrega más autonomía, aunque no aporte valor."
-        },
-        {
-          "id": "op2",
-          "label": "Con la más simple que resuelva la necesidad con riesgo aceptable."
-        },
-        {
-          "id": "op3",
-          "label": "Con la que tenga la interfaz más llamativa."
-        }
-      ]
+      "id": "revision",
+      "title": "¿La oportunidad quedó más clara?",
+      "body": "- Puedo nombrar **una tarea concreta**.\n- Sé **qué resultado sería útil**.\n- Identifiqué **un dato por averiguar**.\n- Puedo explicar **qué debería revisarse**.\n\nPodés ajustar tu idea en tus notas después de escuchar otros casos.\n\n**Una buena primera prueba también puede mostrar que conviene ordenar el proceso antes de automatizar.**",
+      "type": "content"
     },
     {
       "id": "salida",
-      "title": "Una decisión y una pregunta para seguir",
-      "body": "Completá dos frases:\n\n**Hoy cambié o confirmé esta decisión:** …\n\n**Antes de automatizar necesito averiguar:** …\n\nPodés referirte a tu candidata favorita o al caso común.",
+      "title": "¿Qué te llevás y qué quedó pendiente?",
+      "body": "En dos frases:\n\n**Ahora veo una oportunidad en…**\n\n**Para avanzar, todavía necesito entender o comprobar…**\n\nSi todavía no encontrás una aplicación útil, contá qué faltó. Esa respuesta también nos ayuda.",
       "type": "short-answer",
-      "maxLength": 700
+      "maxLength": 1000
     },
     {
-      "id": "proxima",
-      "title": "Antes de la clase 2",
-      "body": "- Completá y conservá la plantilla de tus tres candidatas.\n- Releé las secciones **2, 3 y 4 del apunte**.\n- Tené una cuenta de Google activa para el laboratorio.\n- Pensá afinidades para formar equipo de **2 o 3**.\n\nLa actividad asincrónica prevista incluye lectura, video de la demostración y cuestionario de ocho preguntas. El equipo docente indicará sus enlaces cuando estén publicados.\n\n**Próximo paso:** matriz de viabilidad, elección de una oportunidad y preparación del entorno.\n\n[Volver a los recursos de la Clase 1](/classes/b5995cc58694b99)",
+      "id": "cierre",
+      "title": "Una mejora concreta empieza con una buena pregunta",
+      "body": "**¿Qué tarea quiero mejorar, para quién y cómo comprobaré el resultado?**\n\nConservá tu ficha. Si podés, antes del próximo encuentro observá un caso de esa tarea y anotá dónde se demora o qué obliga a repetir trabajo. Sin datos de clientes.\n\nLos ejemplos y la profundidad se ajustarán a las oportunidades y dudas del grupo.\n\n[Recursos de la Clase 1](/classes/b5995cc58694b99)",
       "type": "content"
     }
   ]

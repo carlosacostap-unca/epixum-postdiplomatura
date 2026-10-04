@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quebrada Azul · Una primera automatización</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#172b39;background:#edf2f3;font-size:18px}*{box-sizing:border-box}body{margin:0}main{max-width:1180px;margin:auto;padding:32px 24px}header{border-top:6px solid #167369;padding-top:20px}.eyebrow{color:#21675f;font-weight:700;letter-spacing:.06em;font-size:.78rem;text-transform:uppercase}h1{font-size:clamp(1.7rem,4vw,2.6rem);line-height:1.1;margin:12px 0}h2{font-size:1.2rem;margin-top:0}.lead{max-width:800px;line-height:1.55}.panel{background:white;padding:24px;border:1px solid #cbd7dc;border-radius:14px;margin-top:24px}.controls{display:flex;flex-wrap:wrap;align-items:end;gap:14px}label{display:block;font-weight:650;font-size:.9rem}input{display:block;margin-top:8px;padding:11px;border:1px solid #82969e;border-radius:6px;font:inherit;width:220px;max-width:100%}button{padding:13px 18px;border:0;border-radius:7px;background:#14695f;color:white;font:inherit;font-weight:650;cursor:pointer}button.secondary{background:#e2eeec;color:#174f49}button:focus-visible,input:focus-visible{outline:3px solid #cf8e24;outline-offset:3px}.hint{color:#465d66;font-size:.9rem;line-height:1.5}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{text-align:left;vertical-align:top;padding:13px 10px;border-bottom:1px solid #dbe3e6}th{color:#435b65;font-size:.8rem}td.amount{text-align:right;white-space:nowrap}.tag{display:inline-block;border-radius:5px;padding:4px 7px;background:#e3f2ec;color:#245b48;font-size:.8rem;font-weight:700}.tag.review{background:#fff0cd;color:#74500d}.tag.pending{background:#edf0f2;color:#53636b}.summary{font-weight:700;font-size:1.1rem;color:#175f56}.error{color:#a02020}.draft{background:#f3f7f6;padding:15px;border-left:4px solid #167369;line-height:1.5}details{margin-top:18px}summary{cursor:pointer;font-weight:650}footer{font-size:.83rem;color:#4e626b;line-height:1.5;margin-top:24px} [hidden]{display:none!important}@media(max-width:600px){main{padding:20px 12px}.panel{padding:16px}th,td{padding:10px 6px}input{width:100%}.controls>*{width:100%}}@media print{button{display:none}body{background:white}.panel{break-inside:avoid}}
+</style>
+</head>
+<body><main>
+<header><div class="eyebrow">Gestión de Soluciones Tecnológicas y Automatización</div><h1>Seis comprobantes.<br>Una revisión más clara.</h1><p class="lead">Quebrada Azul recibe documentación por distintos canales. Probemos qué parte del trabajo podemos preparar y qué sigue necesitando una decisión profesional.</p></header>
+<section class="panel" aria-labelledby="rules-title"><h2 id="rules-title">1. Acordamos las reglas</h2><p class="hint">Marcar para revisar: número «s/n», importe negativo o importe mayor al umbral. Son reglas didácticas; una alerta no determina que el comprobante esté mal.</p><div class="controls"><label>Umbral de revisión (pesos)<input id="threshold" type="number" min="0" step="1" value="1000000"></label><button id="process" type="button">Procesar los seis registros</button><button class="secondary" id="reset" type="button">Restablecer</button></div><p id="error" class="error" role="alert" hidden>Ingresá un umbral válido, igual o mayor que cero.</p></section>
+<section class="panel" aria-labelledby="data-title"><h2 id="data-title">2. Observamos la entrada y el resultado</h2><p id="status" class="summary" role="status" aria-live="polite">Antes de procesar: ¿qué registros revisarías?</p><div class="table-wrap"><table><thead><tr><th scope="col">Cliente ficticio / tipo</th><th scope="col">Número / canal</th><th scope="col">Importe</th><th scope="col">Revisión</th></tr></thead><tbody id="rows"></tbody></table></div><p class="hint">Los datos ya están transcriptos. Este ejemplo no lee fotos ni PDF, no verifica autenticidad ni detecta duplicados.</p></section>
+<section class="panel" id="result" aria-labelledby="draft-title" hidden><h2 id="draft-title">3. Preparamos un borrador</h2><p class="draft">Recibimos la documentación. Queda pendiente de revisión. Gracias.</p><p><strong>¿Este mensaje confirma recepción o registro contable?</strong></p><p class="hint">El texto es una plantilla fija. Antes de usarlo, alguien debe comprobar que el documento fue recibido y que el destinatario corresponde. No se envía ningún mensaje.</p><details><summary>Una pregunta para seguir</summary><p>Si mañana llegan diez veces más documentos, ¿qué cambiarías primero: la preparación de la tabla, los canales de recepción o el seguimiento?</p></details></section>
+<footer>Demostración didáctica con datos ficticios. Ejecuta reglas locales y funciona sin conexión. No usa inteligencia artificial ni se conecta con un sistema contable. «Sin alertas» significa únicamente que no se activaron estas reglas.</footer>
+</main><script>
+const data=[
+{cliente:'Panadería Los Molles',tipo:'Factura C',numero:'00002-00000148',importe:85400,canal:'Formulario'},
+{cliente:'Ana Quiroga',tipo:'Recibo de alquiler',numero:'s/n',importe:210000,canal:'Correo'},
+{cliente:'Ferretería El Portezuelo S.R.L.',tipo:'Factura A',numero:'00005-00001932',importe:1254300,canal:'Formulario'},
+{cliente:'Consultorio Dr. Vega',tipo:'Nota de crédito C',numero:'00001-00000021',importe:-12000,canal:'Correo'},
+{cliente:'Almacén La Tablada',tipo:'Factura B',numero:'00003-00000710',importe:43750,canal:'Formulario'},
+{cliente:'Municipio de Villa Serrana',tipo:'Orden de pago',numero:'OP-2026-0412',importe:980000,canal:'Correo'}];
+const byId=id=>document.getElementById(id);
+const money=new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function render(threshold=null){
+ const rows=byId('rows');rows.replaceChildren();let reviews=0;
+ for(const item of data){
+  const reasons=[];
+  if(threshold!==null){if(item.numero==='s/n')reasons.push('Número s/n');if(item.importe<0)reasons.push('Importe negativo');if(item.importe>threshold)reasons.push('Supera '+money.format(threshold));}
+  if(reasons.length)reviews++;
+  const tr=document.createElement('tr');
+  for(const [index,text] of [item.cliente+' · '+item.tipo,item.numero+' · '+item.canal,money.format(item.importe)].entries()){const td=document.createElement('td');td.textContent=text;if(index===2)td.className='amount';tr.append(td);}
+  const td=document.createElement('td'),tag=document.createElement('span');tag.className='tag '+(threshold===null?'pending':reasons.length?'review':'');tag.textContent=threshold===null?'Pendiente':reasons.length?'Revisar':'Sin alertas';td.append(tag);if(reasons.length){const reason=document.createElement('div');reason.textContent=reasons.join(' · ');td.append(reason);}tr.append(td);rows.append(tr);
+ }
+ byId('result').hidden=threshold===null;
+ byId('status').textContent=threshold===null?'Antes de procesar: ¿qué registros revisarías?':reviews+' para revisar · '+(data.length-reviews)+' sin alertas bajo estas reglas';
+}
+byId('process').addEventListener('click',()=>{const field=byId('threshold');const value=Number(field.value);const invalid=field.value.trim()===''||!Number.isFinite(value)||value<0||!field.checkValidity();byId('error').hidden=!invalid;if(invalid){render();field.focus();return;}render(value);});
+byId('threshold').addEventListener('input',()=>{byId('error').hidden=true;render();});
+byId('reset').addEventListener('click',()=>{byId('threshold').value='1000000';byId('error').hidden=true;render();});
+render();
+</script></body></html>

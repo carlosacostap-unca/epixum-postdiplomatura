@@ -1,23 +1,42 @@
 # Clase 2 · La consulta es el planteo
 
-Preparación para el jueves 8 de octubre de 2026, de 20:00 a 21:30, del curso Pensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial.
+Curso Pensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial. Jueves 8 de octubre de 2026, 20:00–21:30 (Argentina).
 
-La clase está guardada en PocketBase, asociada a **Clase 2** y en estado **Preparada**, con 30 pantallas: 20 de contenido, 3 encuestas, 2 preguntas de opción múltiple y 5 respuestas breves. Cada pantalla incluye un guion privado con texto para decir, tiempos orientativos e indicaciones de conducción. No se inició una sesión real.
+Revisión del 4 de octubre para público general. La pregunta de apertura es «¿Estamos preguntando por el problema adecuado?». Se pasa de 30 a **16 pantallas**: 13 de contenido, una encuesta de criterio y dos respuestas breves. El trabajo personal y la conversación no requieren nuevos formularios por cada paso.
 
-El taller conserva las tres vueltas de la guía: consulta espontánea (10 minutos), tres reescrituras sin asistente (20 minutos) y consulta trabajada con comparación (15 minutos). Las síntesis se envían dentro de esos bloques. Las tablas de comparación y la plantilla de cinco componentes sirven como apoyos visuales sin requerir archivos de imagen externos.
+## Recorrido
 
-Se incluyen las partes A a D, el recuadro final, formato, vencimiento y rúbrica de la Entrega 1. Esta preparación no crea ni modifica la actividad formal de entrega. Los registros interactivos son privados para docentes, no llevan nota y no reemplazan el envío de la entrega. Los casos sólo se comparten voluntariamente y sin información confidencial.
+| Minutos | Trabajo |
+|---|---|
+| 0–4 | Bienvenida y una comprobación del registro de usos |
+| 4–11 | Primera consulta, antes de mostrar ejemplos y componentes |
+| 11–22 | Construcción colectiva de una consulta con un taller barrial ficticio |
+| 22–30 | Reformulación y cinco apoyos para comunicar el problema |
+| 30–35 | Pausa breve y explicación de las tres miradas |
+| 35–55 | Veinte minutos de reescritura sin asistente |
+| 55–65 | Consulta trabajada y comparación |
+| 65–69 | Un solo registro de síntesis |
+| 69–81 | Dos recorridos compartidos y preguntas del grupo |
+| 81–90 | Entrega 1, salida y cierre |
 
-## Material público y preparación docente
+La primera consulta registra cómo la persona consultaría hoy; no se le pide simular desconocimiento ni producir una pregunta mala. Las tres reescrituras conservan el requisito formal, pero tienen propósitos claros: personas afectadas, supuestos/solución anticipada y alcance/cambio observable. Se conserva el desarrollo completo en notas, con una única síntesis interactiva.
 
-[`clase-02-participantes.json`](./clase-02-participantes.json) contiene la copia pública de las 30 pantallas, compatible con el importador. Las preguntas con solución se representan como encuestas para conservar sus opciones sin publicar las claves. No incluye guiones, explicaciones reservadas ni respuestas de alumnos. No reemplazar con esta copia la preparación docente existente si se desea conservar su guion y sus claves.
+Los ejemplos abarcan organización personal, comunicación en grupos y actividad comunitaria. La tipología de problemas queda como ampliación opcional. La puesta en común tiene doce minutos. La posible influencia de la primera respuesta se observa sin diagnosticar un sesgo ni exigir que ocurra.
 
-Los archivos locales `clase-02-la-consulta-es-el-planteo.json`, `clase-02-guion-docente.json` y `clase-02-fuentes.json` están excluidos de Git. La preparación completa y el campo privado `teacherNotes` se guardan en PocketBase. La aplicación integra los guiones para la vista previa, la simulación y las sesiones nuevas; la ventana de proyección muestra sólo el contenido público.
+Se reemplaza la afirmación absoluta del cierre por «Precisar el problema ayuda a orientar la respuesta; comprobarla sigue siendo necesario».
 
-## Fuentes y adaptación
+## Guía, alternativas y evaluación
 
-Fuentes aportadas: `Encuentro_2_Material_participantes.docx`, `Encuentro_2_Guia_docente.docx`, `Encuentro_2_La_consulta_es_el_planteo.pptx` y la propuesta general del curso. Los cuatro archivos se leyeron; sus huellas y las decisiones de adaptación se conservan en el registro privado de fuentes.
+La [guía de apoyo](./clases-01-02-guia-apoyo.md), disponible como HTML descargable en los recursos de ambas clases, contiene un par de consultas/respuestas **didácticas e inventadas**, rotuladas explícitamente. Sirven si no hay acceso a un asistente y no representan ejecuciones reales. El docente puede comparar respuestas reales si lo ensayó previamente, sin prometer que la segunda será mejor.
 
-Las dos consultas de demostración reproducen la guía docente. Los números del caso de la oficina se identifican como hipotéticos. El guion propone comparar respuestas reales sin dar por garantizada una mejora y conserva la puesta en común después del taller. El ejemplo de expedientes distingue la dispersión de información de una relación causal todavía por investigar. Las preguntas de comprensión y los registros breves se adaptaron al reproductor interactivo.
+Se conservan literalmente la consigna completa de Entrega 1, su formato y rúbrica en la guía: partes A–D, recuadro, dos carillas más anexo, declaración inicial, vencimiento 15/10 a las 23:59 y peso 30 %. La entrega requiere usos propios; quien practique con el ejemplo debe identificarlo y completar su registro. No se cambiaron condiciones académicas ni se creó una actividad formal de entrega. Al revisar el curso no había actividades de entrega registradas; el enlace se comunica cuando se habilite.
 
-Para probar: abrir **Docencia → Clases interactivas → Clase 2 · La consulta es el planteo → Simulación**. La prueba usa participantes ficticios y no abre una sesión real. El guion privado se puede consultar en el panel o abrir en su propia ventana.
+## Material y verificación
+
+Campus: **Docencia → curso → Clases interactivas → Clase 2 · La consulta es el planteo → Simulación**.
+
+`clase-02-participantes.json` es la copia pública. La preparación completa, `clase-02-guion-docente.json` y las fuentes siguen excluidas de Git; los guiones remotos están en `teacherNotes`. Se preservan identificadores, asociación, fecha y estado Preparada. No se inició una sesión real.
+
+Se validaron esquema, 90 minutos continuos, primera consulta anterior a la explicación y preservación de las condiciones de entrega. La simulación recorrió las 16 pantallas y respondió las tres actividades, verificando sincronización y privacidad del guion, proyección y vista móvil sin desborde horizontal. Se inspeccionaron capturas de los ejemplos y consignas.
+
+Respaldo previo: `backups/pocketbase/pensamiento-clases12-20261004.json`. Fuentes originales, versiones anteriores, metadatos de revisión y recibos permanecen en la carpeta privada.

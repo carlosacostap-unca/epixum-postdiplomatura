@@ -3,14 +3,8 @@
   "screens": [
     {
       "id": "c01-bienvenida",
-      "title": "Plausible no es verdadero",
-      "body": "**Clase 1 · Martes 6 de octubre de 2026 · 20:00 a 21:30**\n\nPensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial\n\nIng. Daniel Maldonado · Mg. Ing. Carlos Acosta Parra\n\nHoy vamos a distinguir una respuesta convincente de una respuesta justificada y a practicar una forma de revisarla.",
-      "type": "content"
-    },
-    {
-      "id": "c01-recorrido",
-      "title": "El recorrido de hoy",
-      "body": "- **10 minutos:** bienvenida y diagnóstico inicial.\n- **20 minutos:** cómo evaluar respuestas y qué preguntas hacerles.\n- **45 minutos:** taller sobre un tema que conocés bien.\n- **15 minutos:** puesta en común, reglas de uso y elección de tu reto.\n\nUsá una computadora para alternar entre la clase, tus notas y un asistente. Estas actividades no llevan nota. Las respuestas quedan asociadas a tu cuenta y sólo las consulta el equipo docente.",
+      "title": "Suena convincente. ¿Cómo sabemos si es cierto?",
+      "body": "**Clase 1 · Plausible no es verdadero**\n\nMartes 6 de octubre · 20:00 a 21:30\n\nHoy vamos a revisar una respuesta, hacer una comprobación y elegir un problema propio.\n\nIng. Daniel Maldonado · Mg. Ing. Carlos Acosta Parra",
       "type": "content"
     },
     {
@@ -380,216 +374,111 @@
       ]
     },
     {
-      "id": "c01-asistente",
-      "title": "Cómo produce una respuesta un asistente",
-      "body": "Un modelo de lenguaje genera texto a partir de patrones aprendidos y del contexto que recibe. La comparación con el autocompletado ayuda a entender una parte del proceso, pero no describe todas las capacidades de un asistente.\n\nAlgunos asistentes también pueden buscar en la web, consultar documentos o usar otras herramientas. **Tener una respuesta o una cita no garantiza que el contenido sea correcto.**\n\nPuede acertar, reconocer incertidumbre o producir una afirmación falsa con tono seguro. La tarea de hoy es revisar qué respalda lo que afirma.\n\nReferencia para ampliar: [exactitud y limitaciones de un asistente](https://help.openai.com/en/articles/8313428-chatgpt-accuracy-and-limitations).",
-      "type": "content"
-    },
-    {
-      "id": "c01-plausibilidad",
-      "title": "Las señales de una respuesta convincente",
-      "body": "![Una respuesta puede sonar convincente por su claridad, sus cifras y su tono seguro. Para evaluar su fundamento hay que comprobar datos, revisar fuentes y justificar conclusiones. La forma por sí sola no demuestra la verdad.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/convincente-y-fundamentada.svg)\n\nUn texto puede estar bien escrito, tener una estructura clara, incluir cifras, citar fuentes y sonar seguro.\n\nEsas características facilitan la lectura. **Por sí solas no demuestran que sus afirmaciones sean verdaderas.**\n\nTampoco un tono informal demuestra que el contenido sea incorrecto. Revisar exige mirar la información, las inferencias y lo que quedó sin justificar.",
-      "type": "content"
-    },
-    {
-      "id": "c01-demostracion",
-      "title": "¿Usarías esta respuesta en un informe?",
-      "body": "Observá la respuesta que el docente comparte en pantalla.\n\nLa demostración consiste en pedir referencias sobre la historia de una localidad y comprobar una de ellas: autor, título, editorial y año.\n\n**Antes de la comprobación**, elegí qué harías si necesitaras usar esa información. Es una consulta sobre tu decisión, no una pregunta con nota.",
+      "id": "c01-caso-decision",
+      "title": "¿Le recomendarías seguir este plan?",
+      "body": "**Caso inventado para practicar: Sofía prepara un examen.**\n\nTiene seis días para estudiar seis temas. Lee este consejo:\n\n> Estudiá un tema por día, hacé un resumen y repasalo antes de dormir. Así llegás preparada al examen.\n\n**Consejo didáctico inventado; no es una respuesta obtenida de una IA.**\n\n¿Qué harías antes de recomendarlo?",
       "type": "poll",
       "options": [
         {
-          "id": "usar",
-          "label": "La usaría tal como está."
+          "id": "op1",
+          "label": "Lo usaría como borrador y comprobaría cuánto tiempo demanda cada tema."
         },
         {
-          "id": "comprobar",
-          "label": "Primero comprobaría las afirmaciones y las referencias."
+          "id": "op2",
+          "label": "Primero averiguaría cuánto tiempo tiene Sofía y qué necesita lograr."
         },
         {
-          "id": "no-usar",
-          "label": "No la usaría."
-        },
-        {
-          "id": "necesito-contexto",
-          "label": "Necesito más contexto para decidir."
+          "id": "op3",
+          "label": "Propondría empezar por un tema y ajustar el plan según esa prueba."
         }
       ]
     },
     {
-      "id": "c01-frontera",
-      "title": "El desempeño cambia según la tarea",
-      "body": "Que un asistente resuelva bien una tarea no garantiza que resuelva bien la siguiente. El resultado depende de la tarea, del contexto, del modelo y de las herramientas disponibles.\n\nPuede producir una redacción útil y, en otra respuesta, atribuir una cita a una fuente equivocada. **El buen desempeño anterior no reemplaza la comprobación de esta respuesta.**\n\nAl terminar la demostración, distingamos qué se comprobó, qué no se encontró y qué sigue siendo incierto. No encontrar una referencia en una búsqueda no basta para demostrar que no existe.",
+      "id": "c01-caso-datos",
+      "title": "Aparecen los datos que faltaban",
+      "body": "**Información ficticia del caso**\n\n| Dato | Lo que sabemos |\n|---|---|\n| Cuatro noches | 1 hora disponible cada noche |\n| Sábado | 2 horas disponibles |\n| Domingo | Sin tiempo de estudio |\n| Trabajo pendiente | Sofía estima 12 horas; aún debe comprobar esa estimación |\n\n**¿Cuántas horas tiene? ¿Qué parte del consejo revisarías?**\n\nPodés calcularlo en tus notas y conversar con otra persona.",
       "type": "content"
     },
     {
-      "id": "c01-delegar-retener-amplificar",
-      "title": "Delegar, retener y amplificar",
-      "body": "![Tres formas de trabajar con un asistente: delegar una tarea revisable, como dar formato; retener el juicio sobre el problema, la evidencia y la decisión; amplificar el análisis pidiendo alternativas y objeciones para evaluarlas.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/delegar-retener-amplificar.svg)\n\n**Delegar:** tareas cuyo resultado podemos revisar y cuyo error tiene un costo bajo. Por ejemplo, dar formato a una tabla.\n\n**Retener:** decisiones por las que debemos responder. Por ejemplo, plantear el problema, evaluar la evidencia y decidir qué dato es confiable.\n\n**Amplificar:** ampliar el trabajo propio. Por ejemplo, pedir objeciones a una idea y evaluar cuáles tienen fundamento.\n\nA lo largo del curso vamos a registrar qué aportó el asistente y qué resolvimos nosotros.",
+      "id": "c01-caso-comprobacion",
+      "title": "Lo que comprobamos y lo que sigue abierto",
+      "body": "**4 × 1 hora + 2 horas = 6 horas disponibles.**\n\n- El plan no contrastaba el tiempo disponible con el trabajo estimado.\n- Repartir seis temas no dice cuánto demanda cada uno.\n- Todavía falta saber qué domina Sofía y si la estimación de 12 horas es razonable.\n\n**Una revisión útil:** estimar un tema, contrastar con las horas disponibles y acordar prioridades.\n\n¿Qué cambió en tu primera decisión?",
       "type": "content"
     },
     {
-      "id": "c01-elementos-explicitos",
-      "title": "La ficha de análisis · primeras cuatro preguntas",
-      "body": "| Elemento | Pregunta para el texto |\n| --- | --- |\n| Propósito | ¿Para qué está escrito? ¿Qué busca lograr? |\n| Pregunta central | ¿Qué pregunta intenta responder? |\n| Información | ¿Qué datos, hechos o experiencias usa? ¿De dónde salen? |\n| Conceptos | ¿Qué ideas clave usa? ¿Las usa con precisión? |\n\nAnotá una frase del texto o una observación concreta para cada elemento que identifiques.",
-      "type": "content"
-    },
-    {
-      "id": "c01-elementos-implicitos",
-      "title": "La ficha de análisis · otras cuatro preguntas",
-      "body": "![El razonamiento conecta información con una conclusión y se apoya en supuestos. Preguntá qué datos usa, qué concluye y qué tendría que ser cierto para que esa conclusión sea válida.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/informacion-supuestos-conclusion.svg)\n\n| Elemento | Pregunta para el texto |\n| --- | --- |\n| Supuestos | ¿Qué da por sentado sin decirlo? |\n| Inferencias | ¿Qué concluye? ¿Se sigue de la información? |\n| Implicancias | Si fuera cierto, ¿qué consecuencias tendría? |\n| Punto de vista | ¿Desde qué perspectiva está escrito? ¿Qué deja afuera? |\n\nPara encontrar un supuesto, preguntate: **¿qué tendría que ser cierto para que esta conclusión fuera válida?**\n\nUn supuesto es una condición que el razonamiento da por sentada; no alcanza con decir que una frase es una opinión.",
-      "type": "content"
-    },
-    {
-      "id": "c01-estandares",
-      "title": "Cuatro estándares para evaluar",
-      "body": "| Estándar | Pregunta |\n| --- | --- |\n| Claridad | ¿Se entiende exactamente qué afirma? |\n| Exactitud | ¿Es verdad lo que dice? ¿Cómo lo sé? |\n| Relevancia | ¿Responde la pregunta planteada? |\n| Suficiencia | ¿La información alcanza para sostener la conclusión? |\n\nBuscá evidencias concretas: una expresión vaga, un dato sin comprobar, un desvío de la pregunta o una conclusión que excede la información disponible.\n\nFicha adaptada del material del encuentro, basado en Paul y Elder (2003), *La mini-guía para el pensamiento crítico*.",
-      "type": "content"
-    },
-    {
-      "id": "c01-control-comprension",
-      "title": "Una respuesta clara y ordenada",
-      "body": "Un asistente propone una decisión y la explica con claridad. Antes de usar esa recomendación, ¿qué acción permite evaluar mejor su fundamento?\n\nEsta actividad sirve para conversar sobre el criterio de revisión. No genera una calificación.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "tono",
-          "label": "Comprobar que mantiene un tono seguro en toda la respuesta."
-        },
-        {
-          "id": "extension",
-          "label": "Pedirle una versión más larga para que parezca más completa."
-        },
-        {
-          "id": "evidencia",
-          "label": "Identificar sus supuestos y verificar si la evidencia sostiene la conclusión."
-        },
-        {
-          "id": "acuerdo",
-          "label": "Aceptar la recomendación si coincide con mi primera impresión."
-        }
-      ]
-    },
-    {
-      "id": "c01-taller-paso1",
-      "title": "Taller · generar y analizar sin ayuda",
-      "body": "**Paso 1 · 20 minutos**\n\n1. Elegí un tema que conozcas muy bien: tu trabajo, tu carrera, un oficio o tu localidad.\n2. Pedile a un asistente un texto de unas 200 palabras. Por ejemplo: «Explicá en unas 200 palabras cómo funciona [algo que conocés bien]».\n3. Guardá la consulta y la respuesta en tus notas. **No ingreses datos personales ajenos ni información reservada.**\n4. Sin volver a consultar al asistente, identificá al menos cinco elementos, incluidos **supuestos** y **punto de vista**, y evaluá los cuatro estándares.\n5. Marcá una debilidad concreta. Si no encontrás un error, indicá qué afirmación todavía necesitarías verificar: no inventes una falla.\n\nPreguntas de control: ¿qué supone esto?, ¿cómo lo verifico?, ¿qué quedó sin justificar?",
-      "type": "content"
-    },
-    {
-      "id": "c01-taller-analisis",
-      "title": "Tu análisis antes de la autocrítica",
-      "body": "Completá primero el análisis en tus notas. Después enviá una síntesis con este formato:\n\n- **Tema y consulta:** qué le pediste.\n- **Supuesto:** qué da por sentado la respuesta.\n- **Punto de vista:** qué perspectiva adopta y cuál deja afuera.\n- **Otros tres elementos:** identificá propósito, pregunta, información, conceptos, inferencias o implicancias.\n- **Estándares:** una observación sobre claridad, exactitud, relevancia y suficiencia.\n- **Hallazgo:** citá una frase débil o pendiente de verificación y explicá por qué.\n\nGuardá el texto completo en tus notas. Esta respuesta la consulta sólo el equipo docente.",
-      "type": "short-answer",
-      "maxLength": 2000
-    },
-    {
-      "id": "c01-taller-paso2",
-      "title": "Taller · contrastar con la autocrítica",
-      "body": "![Compará tu análisis previo con la autocrítica del asistente. Contrastá las coincidencias y diferencias con evidencia: una corrección puede quedar comprobada o seguir pendiente. La autocrítica no valida por sí sola la respuesta.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/dos-revisiones-y-evidencia.svg)\n\n**Paso 2 · 15 minutos**\n\nAhora sí, volvé al mismo asistente. Podés pedirle:\n\n> Revisá críticamente tu respuesta anterior. Señalá supuestos, límites y afirmaciones que necesiten verificación. Si proponés una corrección, explicá qué evidencia permitiría comprobarla.\n\nCompará con tu análisis previo:\n\n- ¿Qué encontraste vos que el asistente no encontró?\n- ¿Qué encontró el asistente que a vos se te pasó?\n- ¿Introdujo errores o afirmaciones nuevas al corregirse?\n\n**La autocrítica también necesita revisión.** Conservá ambas versiones y distinguí una corrección comprobada de una sugerencia todavía incierta.",
-      "type": "content"
-    },
-    {
-      "id": "c01-taller-contraste",
-      "title": "Qué aportó cada revisión",
-      "body": "Contrastá las dos revisiones sin borrar la primera. Respondé brevemente:\n\n1. Un hallazgo de tu análisis que el asistente no detectó.\n2. Algo que detectó el asistente y vos no.\n3. Una corrección que pudiste comprobar o una afirmación que sigue pendiente.\n\nSi en algún punto no hubo diferencias, decilo y justificá. No hace falta inventar un hallazgo.",
-      "type": "short-answer",
-      "maxLength": 1200
-    },
-    {
-      "id": "c01-taller-registro",
-      "title": "Taller · registro en tres líneas",
-      "body": "**Paso 3 · 10 minutos**\n\nSintetizá el trabajo en tres líneas:\n\n1. El tema que elegiste.\n2. El error o la debilidad más importante que encontraste, o qué falta verificar.\n3. Una diferencia entre tu revisión y la del asistente.\n\nEste registro se guarda de forma privada para los docentes. En la puesta en común podés compartir voluntariamente tu caso, sin datos confidenciales.",
-      "type": "short-answer",
-      "maxLength": 800
-    },
-    {
-      "id": "c01-reflexion-diagnostico",
-      "title": "Volvemos a nuestras primeras impresiones",
-      "body": "Pensá en el diagnóstico del comienzo:\n\n- ¿Qué señales te llevaron a confiar o a desconfiar?\n- ¿Cómo podrías distinguir una señal de buena redacción de una evidencia sobre el contenido?\n- ¿Qué comprobación necesitarías antes de usar una afirmación para decidir?\n\nNo vamos a resolver aquí la clave de los seis textos: volveremos a trabajar con los mismos al final del curso.\n\nEl diagnóstico no mide cuánto sabés de un tema particular. Nos ayuda a revisar **en qué nos fijamos para creerle a un texto**.",
-      "type": "content"
-    },
-    {
-      "id": "c01-elemento-dificil",
-      "title": "¿Qué elemento te costó más identificar?",
-      "body": "Volvé a tu experiencia del taller y elegí el elemento que más trabajo te dio. El equipo docente usará estas respuestas para orientar las próximas explicaciones.\n\nEn la conversación, dos o tres participantes pueden compartir voluntariamente dónde encontraron una dificultad.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "proposito",
-          "label": "Propósito"
-        },
-        {
-          "id": "pregunta",
-          "label": "Pregunta central"
-        },
-        {
-          "id": "informacion",
-          "label": "Información"
-        },
-        {
-          "id": "conceptos",
-          "label": "Conceptos"
-        },
-        {
-          "id": "supuestos",
-          "label": "Supuestos"
-        },
-        {
-          "id": "inferencias",
-          "label": "Inferencias"
-        },
-        {
-          "id": "implicancias",
-          "label": "Implicancias"
-        },
-        {
-          "id": "perspectiva",
-          "label": "Punto de vista"
-        }
-      ]
-    },
-    {
-      "id": "c01-reglas",
-      "title": "Acuerdos para usar asistentes en el curso",
-      "body": "1. **Confidencialidad.** No cargues datos personales ajenos, información sensible ni documentos reservados. Anonimizá el caso.\n2. **Declaración.** Indicá qué hiciste con ayuda y qué resolviste por tu cuenta. Declarar el uso no resta puntos.\n3. **Responsabilidad.** Respondés por lo que entregás, incluido lo que produjo el asistente.\n4. **Acceso gratuito.** No hace falta una suscripción paga ni que todos usen la misma herramienta.\n5. **Registro.** Guardá las conversaciones y los fragmentos relevantes para las entregas.\n\nAplicá estas reglas también a los ejemplos que compartas durante la clase.",
+      "id": "c01-tres-preguntas",
+      "title": "Tres preguntas para empezar a revisar",
+      "body": "![Una respuesta puede sonar convincente por su claridad, sus cifras y su tono seguro. Para evaluar su fundamento hay que comprobar datos, revisar fuentes y justificar conclusiones. La forma por sí sola no demuestra la verdad.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/convincente-y-fundamentada.svg)\n\n1. **¿Qué afirma o recomienda?**\n2. **¿En qué se apoya?**\n3. **¿Qué falta comprobar antes de usarlo?**\n\nElegí una frase concreta. Una respuesta bien escrita puede necesitar comprobación.",
       "type": "content"
     },
     {
       "id": "c01-reto",
-      "title": "Un problema propio para todo el curso",
-      "body": "Elegí un problema **real, abarcable en cuatro semanas, abierto, sobre el que puedas decidir o recomendar y compartible sin datos confidenciales**.\n\nEjemplos del material del encuentro:\n\n- «Los estudiantes de mi curso no leen los materiales antes de clase».\n- «En mi oficina los expedientes se demoran y nadie sabe en qué etapa están».\n- «No sé si ampliar mi local o vender por internet».\n\nHoy alcanza con un primer enunciado. En el encuentro 2 lo vamos a reformular.",
+      "title": "Un problema cercano para trabajar durante el curso",
+      "body": "Elegí algo **real, acotado y sobre lo que puedas actuar o recomendar**.\n\nPor ejemplo:\n\n- Me cuesta organizar el tiempo de estudio.\n- En mi grupo las decisiones se pierden entre mensajes.\n- Necesito comparar capacitaciones y no sé con qué criterios.\n- Las consultas de mi emprendimiento quedan sin seguimiento.\n\nPodés usar un caso de práctica si hoy no encontrás uno. Tu reto propio puede ajustarse después.",
       "type": "content"
     },
     {
       "id": "c01-reto-inicial",
       "title": "Tu reto en cinco líneas",
-      "body": "Escribí, en un máximo de cinco líneas:\n\n- Cuál es el problema.\n- A quién afecta.\n- Por qué te importa.\n\nRevisá si podés influir en la decisión y si el alcance es razonable para cuatro semanas. Cambiá nombres y datos cuando sea necesario.\n\nGuardá una copia en tus notas: este borrador te servirá para preparar la entrega 1 y no reemplaza esa entrega.",
+      "body": "- **Qué está pasando:** …\n- **A quién afecta:** …\n- **Por qué te importa:** …\n\nNo hace falta una formulación perfecta. Describí la dificultad antes de decidir una solución.\n\nConservá una copia en tus notas. Sin nombres ni información confidencial.",
       "type": "short-answer",
       "maxLength": 800
     },
     {
-      "id": "c01-entrega1",
-      "title": "Qué preparar hasta el próximo encuentro",
-      "body": "**Para el jueves 8 de octubre:** conservá el enunciado inicial de tu reto y registrá tres usos propios de un asistente. Para cada uso, anotá:\n\n- Qué le pediste.\n- Qué respondió, en una línea.\n- Si lo verificaste y cómo.\n- Qué hubieras hecho sin el asistente.\n\nAl final del registro, distinguí qué delegaste, qué retuviste y dónde te dejaste llevar por una respuesta floja.\n\nLa entrega 1 completa se presenta en el encuentro del jueves 8 y vence el **jueves 15 de octubre a las 23:59**.",
+      "id": "c01-acuerdos",
+      "title": "Antes de abrir un asistente",
+      "body": "- Usamos situaciones sin datos personales ajenos ni información reservada.\n- Guardamos qué pedimos y qué respondió.\n- Distinguimos lo que pensamos nosotros de lo que aportó la herramienta.\n- Revisamos antes de usar una respuesta.\n\n**No hace falta una suscripción paga.** Si hoy no tenés acceso, podés trabajar acompañado o con el caso preparado.",
       "type": "content"
     },
     {
-      "id": "c01-entregas",
-      "title": "Las entregas del curso",
-      "body": "| Entrega | Trabajo sobre el mismo reto | Vencimiento | Peso |\n| --- | --- | --- | --- |\n| 1 | Enunciado inicial y reformulado; comparación de consultas | Jueves 15/10 | 30 % |\n| 2 | Causas, criterios de éxito y evidencia | Jueves 22/10 | 30 % |\n| 3 | Argumento y contraargumento; alternativas y protocolo de delegación | Jueves 29/10 | 40 % |\n\n**Aprobación:** presentar las tres entregas y obtener una calificación final de 6 o más. La nota depende de las entregas; las respuestas de esta clase interactiva no se califican.\n\nLa cuarta semana se completa el protocolo en clase y vence la entrega 3. No se agrega un trabajo final separado.",
+      "id": "c01-taller",
+      "title": "Tu primera revisión, con tres preguntas",
+      "body": "Sobre tu reto, podés pedir:\n\n> Proponé una alternativa inicial para [mi situación, sin datos privados]. Explicá en unas 120 palabras por qué podría servir y qué información te falta.\n\nGuardá consulta y respuesta. Elegí **una afirmación o recomendación** y revisala primero por tu cuenta:\n\n**¿Qué afirma? ¿En qué se apoya? ¿Qué falta comprobar?**\n\nSi no hay acceso, usá el caso de Sofía y su registro de horas.",
+      "type": "content"
+    },
+    {
+      "id": "c01-taller-analisis",
+      "title": "Una afirmación bajo la lupa",
+      "body": "- **Frase que elegí:** …\n- **En qué se apoya / qué da por supuesto:** …\n- **Qué comprobaría y cómo:** …\n\nSi pudiste comprobar algo, indicá con qué dato o fuente. Si todavía no, dejalo como pendiente.\n\nGuardá tu primera revisión antes de volver al asistente.",
+      "type": "short-answer",
+      "maxLength": 1200
+    },
+    {
+      "id": "c01-taller-paso2",
+      "title": "Ahora contrastá tu revisión",
+      "body": "![Compará tu análisis previo con la autocrítica del asistente. Contrastá las coincidencias y diferencias con evidencia: una corrección puede quedar comprobada o seguir pendiente. La autocrítica no valida por sí sola la respuesta.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/dos-revisiones-y-evidencia.svg)\n\nPodés pedir:\n\n> Revisá tu respuesta: ¿qué supusiste, qué no está justificado y cómo podríamos comprobarlo?\n\n**Compará con tu primera lectura.** Elegí un aporte útil o una duda que permanezca.\n\nSi trabajás sin asistente, contrastá con otra persona o con la revisión preparada del caso.",
+      "type": "content"
+    },
+    {
+      "id": "c01-taller-contraste",
+      "title": "¿Qué cambió después de revisar?",
+      "body": "- **Mantengo o cambio mi primera revisión porque…**\n- **Quedó comprobado… / Sigue pendiente…**\n\nIndicá si contrastaste con un asistente, otra persona o el ejemplo preparado. Si no hubo un aporte nuevo, también podés decirlo.",
+      "type": "short-answer",
+      "maxLength": 800
+    },
+    {
+      "id": "c01-puesta-comun",
+      "title": "Dos hallazgos que podamos entender entre todos",
+      "body": "Quien comparte cuenta:\n\n1. La frase que revisó.\n2. Qué comprobó o qué falta comprobar.\n3. Qué cambió después de contrastar.\n\nQuienes escuchan aportan **una pregunta útil**.\n\nCompartir es voluntario. Buscamos aprender del procedimiento.",
+      "type": "content"
+    },
+    {
+      "id": "c01-continuidad",
+      "title": "Qué conservar para el próximo encuentro",
+      "body": "**Conservá el primer enunciado de tu reto.**\n\nAntes del jueves, registrá tres usos propios de un asistente:\n\n- Qué pediste y qué respondió, en una línea.\n- Si verificaste y cómo.\n- Qué habrías hecho sin el asistente.\n\nDespués distinguí qué delegaste, qué retuviste y dónde aceptaste una respuesta floja, si ocurrió.\n\nLa Entrega 1 se presenta el jueves y vence el **15/10 a las 23:59**. [Guía y condiciones del curso](/classes/mxehf2lr0f35d3d)",
       "type": "content"
     },
     {
       "id": "c01-salida",
       "title": "Una comprobación que vas a incorporar",
-      "body": "Antes de cerrar, escribí una comprobación concreta que vas a hacer la próxima vez que uses una respuesta de un asistente.\n\nPodés completar: «Antes de usar esa respuesta, voy a…». Evitá fórmulas generales como «voy a tener cuidado»: indicá qué revisarías y cómo.",
+      "body": "**Antes de usar una respuesta, voy a comprobar… de esta manera…**\n\nPodés agregar qué necesitás practicar más. Evitá quedarte sólo con «voy a tener cuidado».",
       "type": "short-answer",
-      "maxLength": 350
+      "maxLength": 600
     },
     {
       "id": "c01-cierre",
-      "title": "Que suene bien no es que esté bien",
-      "body": "Para revisar una respuesta:\n\n**¿Qué supone esto?**\n\n**¿Cómo lo verifico?**\n\n**¿Qué quedó sin justificar?**\n\nPróximo encuentro: **jueves 8 de octubre, 20:00**. Tema: *La consulta es el planteo*.\n\nConservá tu reto, el análisis del taller y los registros de uso para seguir trabajando.",
+      "title": "Una pausa antes de creer y usar",
+      "body": "**¿Qué afirma? ¿En qué se apoya? ¿Qué falta comprobar?**\n\nHoy revisamos una respuesta y elegimos un reto propio.\n\nEl jueves 8, a las 20:00, damos un paso atrás: **¿estamos pidiendo ayuda para el problema que realmente tenemos?**\n\n[Guía de apoyo: preguntas, ejemplos y entregas](/classes/mxehf2lr0f35d3d)",
       "type": "content"
     }
   ]

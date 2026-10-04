@@ -1,0 +1,21 @@
+Ejercicio opcional con un asistente · Quebrada Azul
+
+Adjuntá demo_seis_comprobantes.csv y copiá este pedido:
+
+Trabajá sólo con los seis registros ficticios del CSV adjunto. No uses otras fuentes.
+Prepará una tabla con cliente, tipo, número completo, importe, canal y motivo de revisión.
+Conservá los datos del archivo. Si falta algún dato, escribí FALTA; no lo inventes.
+Marcá para revisión los números s/n, los importes negativos y los importes superiores a 1.000.000.
+En los demás casos, escribí "Sin alertas bajo estas reglas". No lo presentes como validación contable.
+Prepará un borrador breve de acuse de recepción por cliente, sin repetir montos y dejando claro que la documentación queda pendiente de revisión. No envíes nada.
+No emitas conclusiones sobre autenticidad ni tratamiento contable.
+
+Después de ejecutar:
+- Contrastá cada fila con el archivo original.
+- Verificá que no se hayan agregado datos.
+- Compará las alertas con las reglas pedidas.
+- Comprobá si los borradores distinguen recepción de registro contable.
+
+Los datos ya están transcriptos: este ejercicio no demuestra extracción de documentos.
+El umbral es didáctico. No representa una norma contable.
+La demo HTML del kit ejecuta reglas locales y no usa IA; la respuesta del asistente será una ejecución diferente que también debe revisarse.

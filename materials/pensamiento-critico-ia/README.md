@@ -1,19 +1,43 @@
 # Clase 1 · Plausible no es verdadero
 
-Material de referencia para el curso Pensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial, encuentro del 6 de octubre de 2026.
+Curso Pensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial. Martes 6 de octubre de 2026, 20:00–21:30 (Argentina).
 
-[`clase-01-participantes.json`](./clase-01-participantes.json) contiene 38 pantallas en el formato de materiales interactivos de Epixum. Incluye los seis textos del diagnóstico con sus dos preguntas, contenido de apoyo, taller, reto y cierre. Los textos diagnósticos son ejercicios para analizar y pueden contener afirmaciones incorrectas o no verificables.
+Revisión didáctica del 4 de octubre para público general: la entrada es «Suena convincente. ¿Cómo sabemos si es cierto?». Se pasa de 38 a **29 pantallas**: 12 de contenido, 13 encuestas (12 del diagnóstico y una de criterio) y 4 respuestas breves.
 
-Esta copia pública no contiene claves, soluciones, notas privadas ni respuestas de alumnos. La pregunta de comprensión se representa como encuesta para conservar sus opciones sin publicar la solución. Es compatible con el importador, pero no sustituye la preparación docente completa.
+## Recorrido
 
-La versión docente completa ya está guardada en PocketBase, asociada a Clase 1 y en estado preparado. Sus copias locales `clase-01-plausible-no-es-verdadero.json` y `clase-01-fuentes.json` están excluidas de Git. No reemplazar la preparación existente con esta copia pública si se necesita conservar la clave y las notas docentes.
+| Minutos | Trabajo |
+|---|---|
+| 0–2 | Bienvenida e instrucciones |
+| 2–10 | Diagnóstico original: seis textos, doce respuestas |
+| 10–23 | Decisión, nueva información y comprobación del caso de Sofía |
+| 23–27 | Tres preguntas para revisar |
+| 27–40 | Elegir y escribir el reto propio; acuerdos de uso |
+| 40–55 | Consulta breve y primera revisión propia |
+| 55–69 | Contraste con otra revisión y síntesis |
+| 69–80 | Dos casos compartidos con conversación |
+| 80–90 | Continuidad, devolución y cierre |
 
-Las pantallas de plausibilidad, delegar/retener/amplificar, supuestos implícitos y segundo paso del taller incluyen cuatro diagramas originales con descripción alternativa. Sus SVG están en `public/interactive/pensamiento-critico-ia/clase-01/`; [`clase-01-imagenes.json`](./clase-01-imagenes.json) relaciona cada imagen con su pantalla y su enlace público fijado a un commit. Se muestran mediante Markdown también en las ventanas de contenido y proyección. Los enlaces requieren conexión a Internet.
+El caso de Sofía es inventado y se identifica como tal. Permite contrastar seis horas disponibles con doce estimadas, distinguir datos de estimaciones y revisar una recomendación. No se atribuye a una IA ni se presenta una captura ficticia como ejecución real.
 
-Los cuatro diagramas también se incorporaron a la preparación docente guardada en PocketBase, conservando las demás pantallas y sus claves. No se abrió ninguna sesión en vivo. Una sesión nueva toma el material actualizado; las sesiones existentes conservan su propia copia.
+El diagnóstico conserva exactamente los textos, opciones, orden e identificadores anteriores y ocho minutos de respuesta. No se revela su clave; el caso posterior sí tiene devolución. Los ocho elementos y cuatro estándares quedan en la guía como ampliación opcional, sin exigirse todos en el primer taller.
 
-La preparación también cuenta con un guion privado para las 38 pantallas: explicaciones para decir, tiempos orientativos, transiciones y conducción de las actividades. Está guardado en el campo privado `teacherNotes` de PocketBase y en la copia local `clase-01-guion-docente.json`, excluida de Git. Requiere la versión de la aplicación con el panel **Guion docente** y su ventana independiente. La copia pública de participantes no incluye este guion.
+El reto personal se formula antes de la práctica y admite estudio, vida cotidiana, comunidad y trabajo. El taller se limita a una afirmación y tres preguntas: qué afirma, en qué se apoya y qué falta comprobar. Se conserva la primera revisión antes del contraste. Hay alternativa preparada o trabajo acompañado si no hay acceso al asistente. Se eliminó el tercer registro repetido del taller y se reservaron once minutos de puesta en común.
 
-Fuentes aportadas: diagnóstico inicial, material para participantes, guía docente, presentación del encuentro y propuesta general del curso. Los diagramas son apoyos explicativos creados para esta clase; no modifican los textos del diagnóstico.
+## Acceso y recursos
 
-La [Clase 2 · La consulta es el planteo](./clase-02-README.md) cuenta con su propia preparación interactiva, actividades y guiones docentes privados.
+Campus: **Docencia → curso → Clases interactivas → Clase 1 · Plausible no es verdadero → Simulación**. La preparación conserva su identificador, asociación y estado Preparada; no se inició una sesión real.
+
+La [guía de apoyo](./clases-01-02-guia-apoyo.md) se ofrece como HTML descargable en los recursos de ambas clases. Contiene los casos, alternativas sin asistente, ampliación conceptual y consigna/rúbrica originales. No incluye los textos del diagnóstico ni claves docentes. El envío formal de la entrega no se crea con esta revisión; al consultar el curso no había actividades formales registradas.
+
+`clase-01-participantes.json` es la copia pública compatible con el importador. No contiene notas privadas. La preparación completa y `clase-01-guion-docente.json` se mantienen fuera de Git; en PocketBase los guiones están separados en `teacherNotes`.
+
+Se conservan dos diagramas publicados con texto alternativo: forma/fundamento y contraste de revisiones. `clase-01-imagenes.json` registra su relación con las pantallas actuales. Los otros SVG siguen disponibles como activos históricos.
+
+## Verificación y respaldo
+
+Se validaron esquema, intervalos continuos de 90 minutos, separación de guiones y preservación exacta del diagnóstico. La simulación recorrió las 29 pantallas, respondió las 17 actividades y verificó sincronización de alumno/proyección/guion, carga de imágenes y ausencia de desborde horizontal. Se inspeccionaron capturas de proyección y la guía en escritorio y móvil.
+
+Respaldo remoto previo: `backups/pocketbase/pensamiento-clases12-20261004.json`. Versiones locales previas y metadatos actuales: `privado/`, excluida de Git. Allí están también los recibos de actualización. Las verificaciones de funcionamiento no sustituyen observar a un grupo real.
+
+La [Clase 2](./clase-02-README.md) retoma el mismo reto para revisar su formulación.
