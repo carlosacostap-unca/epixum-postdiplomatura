@@ -27,6 +27,8 @@ test('migración aditiva repetible: conserva campos e índices, no escribe regis
   const fields = state.get('interactive_lessons').fields;
   assert.equal(fields.find((field) => field.name === 'class').cascadeDelete, false);
   assert.equal(fields.find((field) => field.name === 'material').maxSize, 200000);
+  assert.equal(fields.find((field) => field.name === 'teacherNotes').maxSize, 200000);
+  assert.equal(fields.find((field) => field.name === 'teacherNotes').required, false);
   assert.equal(state.get('interactive_lessons').indexes.length, 2);
 });
 

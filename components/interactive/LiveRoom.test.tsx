@@ -31,7 +31,7 @@ it('conserva HTTP y SSE en la sala real al reutilizar su presentación', async (
   expect(events).toHaveBeenCalledWith('/api/interactivas/sesiones/real-session/events');
   expect(screen.getByText('Sesión en vivo')).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Siguiente pantalla' }));
-  await waitFor(() => expect(screen.getByRole('heading', { name: '¿Qué nos ayuda a comprobar una idea?' })).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole('heading', { name: '¿Qué nos ayuda a comprobar una idea?', level: 2 })).toBeInTheDocument());
   expect(fetch).toHaveBeenCalledWith('/api/interactivas/sesiones/real-session', expect.objectContaining({ method: 'POST', body: JSON.stringify({ kind: 'screen', revision: initial.session.revision, index: 1 }) }));
   expect(screen.getByRole('button', { name: 'Copiar enlace' })).toBeInTheDocument();
   unmount();

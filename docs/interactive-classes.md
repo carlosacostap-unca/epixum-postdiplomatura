@@ -90,6 +90,16 @@ En la sala docente, **Abrir ventana de proyección** muestra únicamente la pant
 
 La proyección sigue automáticamente los cambios de pantalla y la apertura/cierre de actividades. Consultar resultados de otra actividad no modifica lo proyectado. Los alumnos responden desde sus propios dispositivos; la proyección no contiene formularios. También está disponible en el simulador. Mantener el panel original abierto: salir de él o reiniciar la simulación cierra la ventana. **Volver a la ventana de proyección** enfoca la ventana ya abierta.
 
+## Guion docente por pantalla
+
+La vista previa, la sala docente y el simulador muestran **Guion docente** junto a la pantalla actual. **Abrir guion en otra ventana** abre una ventana privada sincronizada con los cambios de pantalla, independiente de la ventana de proyección. Consultar los resultados de otra actividad no cambia el guion. La ventana vuelve al comienzo del guion al avanzar; mantener el panel original abierto. Se puede plegar el texto del panel sin cerrar la ventana.
+
+El archivo de material admite `teacherNotes` opcional en cada pantalla, como texto Markdown de hasta 12000 caracteres. El límite total del material, incluido el guion, sigue siendo 200 KB. Las pantallas sin guion muestran un aviso y los materiales anteriores siguen siendo válidos. Importar otro material reemplaza también sus guiones; para conservarlos, incluirlos en el nuevo archivo.
+
+Al guardar una preparación, el servidor separa los guiones en el campo JSON privado `interactive_lessons.teacherNotes`, indexado por ID de pantalla. Esto permite conservar el material legible por versiones anteriores durante el despliegue. La lectura docente los integra nuevamente; al iniciar una sesión nueva, quedan incluidos en su copia privada e inmutable. No se envían al alumno ni se renderizan en la proyección. El campo se agrega con `npm run schema:interactive-classes` antes de desplegar el código; no cambian las reglas de acceso. Las sesiones ya iniciadas conservan su copia anterior.
+
+Para Clase 1 se prepararon 38 guiones basados en la guía aportada y adaptados al flujo interactivo: texto para decir, tiempos orientativos, preguntas y conducción. El archivo local `materials/pensamiento-critico-ia/clase-01-guion-docente.json` y el material docente completo se excluyen de Git porque el repositorio es público. El guion se guarda en PocketBase, no en el material público de participantes.
+
 ## Persistencia y transporte
 
 - `interactive_sessions`: clase y material de origen, títulos conservados, código, docente conductor, pantalla pública activa, revisión y estado. No contiene soluciones ni pantallas futuras. Ocho campos de opciones permiten validar igualdad exacta en reglas sin depender del recorrido de arreglos JSON de PocketBase.

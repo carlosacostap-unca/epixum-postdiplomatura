@@ -6,7 +6,7 @@ import { parseInteractiveMaterial } from '@/lib/interactive-material';
 import { SimulationRoom } from './SimulationRoom';
 import { ContentWindow } from './ContentWindow';
 import { LiveRoomView } from './LiveRoomView';
-import { createSimulation, joinSimulation, SIMULATION_CODE, simulationCommand, simulationTeacherState } from '@/lib/interactive-simulation';
+import { createSimulation, joinSimulation, SIMULATION_CODE, simulationCommand, simulationTeacherState, simulationStudentState } from '@/lib/interactive-simulation';
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -21,6 +21,40 @@ function mockPopup() {
 }
 
 describe('contenido en ventana secundaria', () => {
+  it('sincroniza el guion privado en su ventana, independiente de resultados y proyección', async () => {
+    const notes = mockPopup();
+    const projection = mockPopup();
+    vi.mocked(window.open).mockReturnValueOnce(notes.popup).mockReturnValueOnce(projection.popup);
+    const user = userEvent.setup();
+    const material = parseInteractiveMaterial(example)!;
+    material.screens[0].teacherNotes = 'GUION INICIAL PRIVADO';
+    material.screens[1].teacherNotes = 'GUION DE LA PREGUNTA';
+    let model = joinSimulation(createSimulation(material, 'Clase con guion'), 'sim-1', SIMULATION_CODE);
+    const view = () => <LiveRoomView state={simulationTeacherState(model, material.screens[0].id)} results={material.screens[0].id} setResults={vi.fn()} send={vi.fn()} />;
+    const { rerender, unmount } = render(view());
+    expect(screen.getByText('GUION INICIAL PRIVADO')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Abrir guion en otra ventana' }));
+    await user.click(screen.getByRole('button', { name: 'Abrir ventana de proyección' }));
+    const script = within(notes.popup.document.body);
+    const projected = within(projection.popup.document.body);
+    expect(notes.popup.document.title).toBe('Clase con guion · Guion docente');
+    expect(script.getByText('GUION INICIAL PRIVADO')).toBeInTheDocument();
+    expect(projected.queryByText(/GUION/)).not.toBeInTheDocument();
+    model = simulationCommand(model, 'teacher', { kind: 'screen', index: 1, revision: model.session.revision });
+    rerender(view());
+    expect(script.queryByText('GUION INICIAL PRIVADO')).not.toBeInTheDocument();
+    expect(script.getByText('GUION DE LA PREGUNTA')).toBeInTheDocument();
+    expect(script.getByText('Pantalla 2 de 4')).toBeInTheDocument();
+    expect(projected.queryByText(/GUION/)).not.toBeInTheDocument();
+    model = simulationCommand(model, 'teacher', { kind: 'screen', index: 2, revision: model.session.revision });
+    rerender(view());
+    expect(script.getByText('Esta pantalla todavía no tiene guion docente.')).toBeInTheDocument();
+    rerender(<LiveRoomView state={simulationStudentState(model, 'sim-1')} results="" setResults={vi.fn()} send={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /guion/ })).not.toBeInTheDocument();
+    expect(notes.close).toHaveBeenCalled();
+    expect(projection.close).toHaveBeenCalled();
+    unmount(); notes.iframe.remove(); projection.iframe.remove();
+  });
   it('proyecta sólo el contenido público y mantiene controles, identidades, resultados y soluciones en el panel docente', async () => {
     const { iframe, popup, close } = mockPopup();
     const user = userEvent.setup();

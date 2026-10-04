@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { liveCommandSchema, publicScreen, safeInteractiveReturn, validateLiveAnswer } from './live-interactive-contract';
+import { parseInteractiveMaterial } from './interactive-material';
+import example from '@/public/interactive-class-example.json';
+import { createSimulation, joinSimulation, simulationCommand, simulationStudentState, simulationTeacherState, SIMULATION_CODE } from './interactive-simulation';
 
 describe('contrato de clases en vivo', () => {
+  it('reserva el guion al docente en todos los tipos de pantalla y estados simulados', () => {
+    const material = parseInteractiveMaterial({ ...example, screens: example.screens.map(s => ({ ...s, teacherNotes: 'GUION RESERVADO' })) })!;
+    let model = joinSimulation(createSimulation(material, 'Ensayo'), 'sim-1', SIMULATION_CODE);
+    for (let index = 0; index < material.screens.length; index++) {
+      expect(publicScreen(material.screens[index])).not.toHaveProperty('teacherNotes');
+      model = simulationCommand(model, 'teacher', { kind: 'screen', index, revision: model.session.revision });
+      expect(JSON.stringify(simulationStudentState(model, 'sim-1'))).not.toContain('GUION RESERVADO');
+      expect(JSON.stringify(simulationTeacherState(model))).toContain('GUION RESERVADO');
+    }
+  });
   const screen = { id: 'a', title: 'Pregunta', body: '', type: 'multiple-choice' as const, options: [{ id: 'yes', label: 'Sí' }, { id: 'no', label: 'No' }], correctOptionId: 'yes', explanation: 'Privada' };
   it('retira soluciones y campos desconocidos', () => {
     const published = publicScreen({ ...screen, secret: 'no publicar' } as typeof screen);

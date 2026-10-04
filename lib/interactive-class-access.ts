@@ -1,5 +1,6 @@
 import type PocketBase from 'pocketbase';
 import type { Class, Course, InteractiveLesson } from '@/types';
+import { mergeTeacherNotes } from './interactive-material';
 
 export async function requireInteractiveCourse(pb: PocketBase, courseId: string) {
   const user = pb.authStore.record;
@@ -14,6 +15,7 @@ export async function requireInteractiveCourse(pb: PocketBase, courseId: string)
 export async function requireInteractiveLesson(pb: PocketBase, courseId: string, lessonId: string) {
   const lesson = await pb.collection('interactive_lessons').getOne<InteractiveLesson>(lessonId);
   if (lesson.course !== courseId) throw new Error('La clase interactiva no pertenece a este curso.');
+  if (lesson.teacherNotes) lesson.material = mergeTeacherNotes(lesson.material, lesson.teacherNotes);
   return lesson;
 }
 

@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import type { InteractiveMaterial, InteractiveScreen } from './interactive-material';
 
-export type PublicScreen = Exclude<InteractiveScreen, { type: 'multiple-choice' }> | Omit<Extract<InteractiveScreen, { type: 'multiple-choice' }>, 'correctOptionId' | 'explanation'>;
+type PublicFields<T> = T extends InteractiveScreen ? Omit<T, 'teacherNotes' | 'correctOptionId' | 'explanation'> : never;
+export type PublicScreen = PublicFields<InteractiveScreen>;
 export interface LiveSession {
   id: string; course: string; class: string; lesson: string; controller: string;
   title: string; classTitle: string; code: string; status: 'live' | 'closed';

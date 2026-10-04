@@ -12,4 +12,6 @@ Las pantallas de plausibilidad, delegar/retener/amplificar, supuestos implícito
 
 Los cuatro diagramas también se incorporaron a la preparación docente guardada en PocketBase, conservando las demás pantallas y sus claves. No se abrió ninguna sesión en vivo. Una sesión nueva toma el material actualizado; las sesiones existentes conservan su propia copia.
 
+La preparación también cuenta con un guion privado para las 38 pantallas: explicaciones para decir, tiempos orientativos, transiciones y conducción de las actividades. Está guardado en el campo privado `teacherNotes` de PocketBase y en la copia local `clase-01-guion-docente.json`, excluida de Git. Requiere la versión de la aplicación con el panel **Guion docente** y su ventana independiente. La copia pública de participantes no incluye este guion.
+
 Fuentes aportadas: diagnóstico inicial, material para participantes, guía docente, presentación del encuentro y propuesta general del curso. Los diagramas son apoyos explicativos creados para esta clase; no modifican los textos del diagnóstico.

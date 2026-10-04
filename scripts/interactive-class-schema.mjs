@@ -33,6 +33,7 @@ export async function applyInteractiveClassSchema(pb) {
     { name: 'description', type: 'text', required: false, max: 2000 },
     { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['draft', 'ready'] },
     { name: 'material', type: 'json', required: false, maxSize: 200000 },
+    { name: 'teacherNotes', type: 'json', required: false, maxSize: 200000 },
     { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
     { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
   ];

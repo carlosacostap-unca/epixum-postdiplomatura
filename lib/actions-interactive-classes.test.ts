@@ -35,6 +35,18 @@ function form(status = 'draft', classId = '') {
 
 describe('gestión docente de clases interactivas', () => {
   beforeEach(() => { mocks.pb = fakeClient(); mocks.revalidatePath.mockReset(); });
+  it('guarda los guiones separados del material y los recupera para el docente', async () => {
+    const data = form('ready', 'class-1');
+    const annotated = { ...example, screens: example.screens.map(s => ({ ...s, teacherNotes: `Guion ${s.id}` })) };
+    data.set('material', JSON.stringify(annotated));
+    expect(await saveInteractiveLesson('course-1', 'lesson-1', data)).toMatchObject({ success: true });
+    const stored = mocks.pb!.update.mock.calls[0][1];
+    expect(JSON.stringify(stored.material)).not.toContain('teacherNotes');
+    expect(stored.teacherNotes[example.screens[0].id]).toBe(`Guion ${example.screens[0].id}`);
+    Object.assign(mocks.pb!.lesson, stored);
+    const loaded = await getInteractiveLesson('course-1', 'lesson-1');
+    expect(loaded.material?.screens[0].teacherNotes).toBe(`Guion ${example.screens[0].id}`);
+  });
   it('permite al docente contextual crear borradores y preparar una clase propia', async () => {
     expect(await saveInteractiveLesson('course-1', null, form())).toEqual({ success: true, lessonId: 'created' });
     expect(mocks.pb!.create).toHaveBeenCalledWith(expect.objectContaining({ course: 'course-1', material: null, status: 'draft' }));

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServerClient } from './pocketbase-server';
 import { requireInteractiveClass, requireInteractiveCourse, requireInteractiveLesson } from './interactive-class-access';
-import { parseInteractiveLessonForm } from './interactive-material';
+import { parseInteractiveLessonForm, separateTeacherNotes } from './interactive-material';
 import { getErrorMessage } from './errors';
 
 export type InteractiveLessonResult = { success: true; lessonId?: string } | { success: false; error: string };
@@ -18,7 +18,8 @@ export async function saveInteractiveLesson(courseId: string, lessonId: string |
     const pb = await createServerClient();
     await requireInteractiveCourse(pb, courseId);
     if (lessonId) await requireInteractiveLesson(pb, courseId, lessonId);
-    const data = parseInteractiveLessonForm(form);
+    const parsed = parseInteractiveLessonForm(form);
+    const data = { ...parsed, ...separateTeacherNotes(parsed.material) };
     await requireInteractiveClass(pb, courseId, data.class);
     const record = lessonId
       ? await pb.collection('interactive_lessons').update(lessonId, data)

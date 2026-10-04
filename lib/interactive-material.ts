@@ -4,7 +4,8 @@ export const MAX_MATERIAL_BYTES = 200_000;
 const identifier = z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/, 'Usá identificadores de hasta 64 letras, números, guiones o guiones bajos.');
 const title = z.string().trim().min(1, 'Completá el título.').max(160, 'El título admite hasta 160 caracteres.');
 const body = z.string().max(12_000, 'El contenido de una pantalla admite hasta 12000 caracteres.');
-const base = { id: identifier, title, body: body.optional().default('') };
+const teacherNotes = z.string().max(12_000, 'El guion de una pantalla admite hasta 12000 caracteres.');
+const base = { id: identifier, title, body: body.optional().default(''), teacherNotes: teacherNotes.optional() };
 const options = z.array(z.object({ id: identifier, label: z.string().trim().min(1).max(300) }).strict())
   .min(2, 'Agregá al menos dos opciones.').max(8, 'Se admiten hasta ocho opciones.')
   .refine((items) => new Set(items.map((item) => item.id)).size === items.length, 'Hay identificadores de opciones repetidos.');
@@ -57,6 +58,25 @@ export function parseInteractiveMaterial(value: unknown): InteractiveMaterial | 
 export function inspectInteractiveMaterial(value: unknown) {
   try { return { material: parseInteractiveMaterial(value), error: null }; }
   catch (error) { return { material: null, error: error instanceof Error ? error.message : 'No pudimos leer el material.' }; }
+}
+
+// Keep notes in a separate private field so older deployed readers can still
+// parse the lesson material. Live snapshots include notes with their screens.
+export function mergeTeacherNotes(value: unknown, notes: unknown): InteractiveMaterial | null {
+  const material = parseInteractiveMaterial(value);
+  if (!material || !notes) return material;
+  const parsed = z.record(identifier, teacherNotes).parse(notes);
+  return parseInteractiveMaterial({ ...material, screens: material.screens.map(screen =>
+    Object.hasOwn(parsed, screen.id) ? { ...screen, teacherNotes: parsed[screen.id] } : screen) });
+}
+
+export function separateTeacherNotes(material: InteractiveMaterial | null) {
+  const notes: Record<string, string> = {};
+  const screens = material?.screens.map(({ teacherNotes, ...screen }) => {
+    if (teacherNotes !== undefined) notes[screen.id] = teacherNotes;
+    return screen;
+  });
+  return { material: material ? { ...material, screens: screens! } : null, teacherNotes: notes };
 }
 
 export function isInteractiveLessonReady(lesson: { status: string; class?: string; material: unknown }) {

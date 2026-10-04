@@ -238,6 +238,7 @@ export interface InteractiveLesson extends BaseModel {
   description: string;
   status: 'draft' | 'ready';
   material: import('@/lib/interactive-material').InteractiveMaterial | null;
+  teacherNotes?: Record<string, string> | null;
   expand?: { course?: Course; class?: Class };
 }
 

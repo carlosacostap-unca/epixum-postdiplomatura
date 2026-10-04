@@ -7,6 +7,7 @@ import { Badge, Button, Card, CardContent } from '@/components/ui';
 import { screenTypeLabels } from '@/lib/interactive-material';
 import type { LiveCommand, LiveState, PublicScreen } from '@/lib/live-interactive-contract';
 import { ContentWindow } from './ContentWindow';
+import { TeacherScript } from './TeacherScript';
 
 function ScreenBody({ screen }: { screen: PublicScreen }) {
   return <div className="space-y-5">
@@ -61,6 +62,7 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
   const session = state.session;
   const screen = session.screen;
   const teacher = state.role === 'teacher' ? state : null;
+  const teacherScreen = teacher?.material.screens.find((item) => item.id === screen.id);
   const recent = teacher?.participants.filter((p) => state.serverTime - Date.parse(p.updated) < 45_000) || [];
   const selected = teacher?.material.screens.find((s) => s.id === teacher.resultsScreenId);
   const controlDisabled = pending || !active || !teacher?.canControl || Boolean(connectionError);
@@ -103,6 +105,7 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
             <div className="flex flex-wrap justify-between gap-3"><Button variant="secondary" disabled={controlDisabled || session.screenIndex === 0} onClick={() => void send({ kind: 'screen', revision: session.revision, index: session.screenIndex - 1 })}>Anterior</Button><Button disabled={controlDisabled || session.screenIndex === teacher.material.screens.length - 1} onClick={() => void send({ kind: 'screen', revision: session.revision, index: session.screenIndex + 1 })}>Siguiente pantalla</Button></div>
             <div className="flex flex-wrap gap-3">{screen.type !== 'content' && <Button variant="secondary" disabled={controlDisabled} onClick={() => void send({ kind: 'activity', revision: session.revision, open: !session.activityOpen })}>{session.activityOpen ? 'Cerrar respuestas' : 'Abrir respuestas'}</Button>}{active && <Button variant="danger" disabled={controlDisabled} onClick={() => { if (window.confirm(simulation ? '¿Finalizar el ensayo? Podrás consultar las respuestas hasta reiniciarlo o salir.' : '¿Finalizar la sesión? Ya no se podrán enviar respuestas. El historial quedará guardado.')) void send({ kind: 'finish', revision: session.revision }); }}>{simulation ? 'Finalizar ensayo' : 'Finalizar sesión'}</Button>}</div>
           </nav> : <p className="text-sm text-[var(--color-text-muted)]">Esta sesión la conduce el docente que la inició. Podés consultar participantes y resultados.</p>}
+          {teacherScreen && <TeacherScript screen={teacherScreen} index={session.screenIndex} total={teacher.material.screens.length} title={session.title} />}
           <Card><CardContent className="space-y-5">
             <h2 className="font-headline text-xl font-bold">Respuestas · sólo docentes</h2>
             <label className="block space-y-2"><span className="text-sm font-semibold">Consultar actividad</span><select value={results} onChange={(e) => setResults(e.target.value)} className="w-full rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] p-3"><option value="">Seguir pantalla actual</option>{teacher.material.screens.filter((s) => s.type !== 'content').map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</select></label>

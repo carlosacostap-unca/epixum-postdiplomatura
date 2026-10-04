@@ -36,7 +36,9 @@ describe.skipIf(process.env.LIVE_INTEGRATION !== '1')('sesiones reales en Pocket
       const enrollment = await create('course_enrollments', { course: course.id, student: student.id });
       await create('course_enrollments', { course: course.id, student: other.id });
       const material = JSON.parse(await readFile('public/interactive-class-example.json', 'utf8'));
-      const lesson = await create('interactive_lessons', { course: course.id, class: classRecord.id, title: 'Material vivo', material, status: 'ready' });
+      const teacherNotes = Object.fromEntries(material.screens.map((s: { id: string }) => [s.id, `GUION PRIVADO ${s.id}`]));
+      const lesson = await create('interactive_lessons', { course: course.id, class: classRecord.id, title: 'Material vivo', material, teacherNotes, status: 'ready' });
+      await deny(student.pb.collection('interactive_lessons').getOne(lesson.id));
       const starts = await Promise.all([startLiveSession(teacher.pb, course.id, lesson.id), startLiveSession(teacher.pb, course.id, lesson.id)]);
       expect(starts[0].id).toBe(starts[1].id);
       const id = starts[0].id;
@@ -50,6 +52,8 @@ describe.skipIf(process.env.LIVE_INTEGRATION !== '1')('sesiones reales en Pocket
       const teacherState = await readLiveState(teacher.pb, id);
       if (teacherState.role !== 'teacher') throw Error('teacher');
       expect(teacherState.participants).toHaveLength(2);
+      expect(teacherState.material.screens[0].teacherNotes).toBe(`GUION PRIVADO ${material.screens[0].id}`);
+      await admin.collection('interactive_lessons').update(lesson.id, { teacherNotes: {} });
       expect(teacherState.participants.some((p) => p.name === 'Alumna prueba vivo')).toBe(true);
       expect((await student.pb.collection('interactive_session_materials').getList(1, 10)).totalItems).toBe(0);
       const snapshot = await admin.collection('interactive_session_materials').getFirstListItem(admin.filter('session = {:id}', { id }));
@@ -69,6 +73,9 @@ describe.skipIf(process.env.LIVE_INTEGRATION !== '1')('sesiones reales en Pocket
       const studentState = await readLiveState(student.pb, id);
       expect(JSON.stringify(studentState)).not.toContain('correctOptionId');
       expect(JSON.stringify(studentState)).not.toContain('explanation');
+      expect(JSON.stringify(studentState)).not.toContain('teacherNotes');
+      expect(JSON.stringify(studentState)).not.toContain('GUION PRIVADO');
+      expect(JSON.stringify(await student.pb.collection('interactive_sessions').getOne(id))).not.toContain('GUION PRIVADO');
       expect(studentState).not.toHaveProperty('material');
       const session = studentState.session;
       const response = { kind: 'answer' as const, revision: session.revision, screenId: session.screenId, answer: 'a' };
@@ -94,6 +101,7 @@ describe.skipIf(process.env.LIVE_INTEGRATION !== '1')('sesiones reales en Pocket
       if (report.role !== 'teacher') throw Error('teacher');
       expect(report.answers).toHaveLength(1);
       expect(report.material.screens).toHaveLength(material.screens.length);
+      expect(report.material.screens[0].teacherNotes).toBe(`GUION PRIVADO ${material.screens[0].id}`);
       await admin.collection('courses').update(course.id, { interactiveClassesEnabled: false });
       await deny(readLiveState(teacher.pb, id));
     } finally {

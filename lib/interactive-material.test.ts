@@ -1,8 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import example from '@/public/interactive-class-example.json';
-import { inspectInteractiveMaterial, isInteractiveLessonReady, parseInteractiveLessonForm, parseInteractiveMaterial } from './interactive-material';
+import { inspectInteractiveMaterial, isInteractiveLessonReady, parseInteractiveLessonForm, parseInteractiveMaterial, mergeTeacherNotes, separateTeacherNotes } from './interactive-material';
 
 describe('material interactivo', () => {
+  it('conserva el guion al separar almacenamiento, importar y preparar una copia de sesión', () => {
+    const original = parseInteractiveMaterial(example)!;
+    const annotated = parseInteractiveMaterial({ ...original, screens: original.screens.map(s => ({ ...s, teacherNotes: `Guion de ${s.id}` })) })!;
+    const stored = separateTeacherNotes(annotated);
+    expect(stored.material).toEqual(original);
+    expect(mergeTeacherNotes(stored.material, stored.teacherNotes)).toEqual(annotated);
+    expect(mergeTeacherNotes(example, null)).toEqual(original);
+    expect(separateTeacherNotes(null)).toEqual({ material: null, teacherNotes: {} });
+    expect(() => mergeTeacherNotes(example, { [original.screens[0].id]: 'a'.repeat(12001) })).toThrow();
+    expect(() => mergeTeacherNotes(example, { [original.screens[0].id]: 123 })).toThrow();
+    expect(() => parseInteractiveMaterial({ version: 1, screens: Array.from({ length: 10 }, (_, i) => ({ ...original.screens[0], id: `notes-${i}`, teacherNotes: 'é'.repeat(12000) })) })).toThrow(/200 KB/);
+  });
   it('acepta el ejemplo distribuido y los cuatro tipos de pantalla', () => {
     const result = parseInteractiveMaterial(example)!;
     expect(result.screens.map((screen) => screen.type)).toEqual(['content', 'multiple-choice', 'poll', 'short-answer']);

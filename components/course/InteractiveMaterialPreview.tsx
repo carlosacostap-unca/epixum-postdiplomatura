@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import type { InteractiveMaterial, InteractiveScreen } from '@/lib/interactive-material';
 import { screenTypeLabels } from '@/lib/interactive-material';
 import { Badge, Button, Card, CardContent } from '@/components/ui';
+import { TeacherScript } from '@/components/interactive/TeacherScript';
 
 function PreviewScreen({ screen }: { screen: InteractiveScreen }) {
   const [answer, setAnswer] = useState('');
@@ -57,5 +58,6 @@ export function InteractiveMaterialPreview({ material }: { material: Interactive
       <Button variant="secondary" disabled={currentIndex === 0} onClick={() => setIndex(currentIndex - 1)}>Anterior</Button>
       <Button disabled={currentIndex === material.screens.length - 1} onClick={() => setIndex(currentIndex + 1)}>Siguiente</Button>
     </nav>
+    <TeacherScript screen={screen} index={currentIndex} total={material.screens.length} title="Vista previa" />
   </section>;
 }
