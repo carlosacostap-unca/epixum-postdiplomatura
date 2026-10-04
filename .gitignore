@@ -58,3 +58,6 @@ next-env.d.ts
 
 # Credenciales y resultados de pruebas temporales de preparación
 /tmp/preparation/
+
+# Credenciales temporales para pruebas de revisiones
+/tmp/reviews/

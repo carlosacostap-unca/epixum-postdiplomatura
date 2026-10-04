@@ -3,9 +3,9 @@ import type { Course } from "@/types";
 import { Badge, Breadcrumbs, PageHeader, Tabs, type TabItem } from "@/components/ui";
 import { courseLearningNavigation } from "@/lib/course-navigation";
 
-export type StudentCourseSection = "resumen" | "clases" | "trabajos" | "contenidos" | "consultas" | "preparacion";
+export type StudentCourseSection = "resumen" | "clases" | "trabajos" | "contenidos" | "consultas" | "preparacion" | "revisiones";
 
-const labels: Record<StudentCourseSection, string> = { resumen: "Resumen", clases: "Clases", trabajos: "Trabajos", contenidos: "Contenidos", consultas: "Consultas", preparacion: "Preparación" };
+const labels: Record<StudentCourseSection, string> = { resumen: "Resumen", clases: "Clases", trabajos: "Trabajos", contenidos: "Contenidos", consultas: "Consultas", preparacion: "Preparación", revisiones: "Revisiones" };
 
 function items(course: Course, current: StudentCourseSection): TabItem[] {
   const base = `/estudiantes/cursos/${course.id}`;
@@ -15,6 +15,7 @@ function items(course: Course, current: StudentCourseSection): TabItem[] {
   ];
   if (course.contentsEnabled) result.push({ href: `${base}/contenidos`, label: "Contenidos", icon: "library_books", isActive: current === "contenidos" });
   if (course.preparationEnabled) result.push({ href: `${base}/preparacion`, label: "Preparación", icon: "quiz", isActive: current === "preparacion" });
+  if (course.reviewsEnabled) result.push({ href: `${base}/revisiones`, label: "Revisiones", icon: "event_available", isActive: current === "revisiones" });
   result.push({ href: `${base}/consultas`, label: "Consultas", icon: "forum", isActive: current === "consultas" });
   return result;
 }

@@ -10,6 +10,7 @@ export type TeacherCourseSection =
   | "contenidos"
   | "interactivas"
   | "preparacion"
+  | "revisiones"
   | "consultas"
   | "estudiantes"
   | "acceso";
@@ -21,6 +22,7 @@ const sectionLabels: Record<TeacherCourseSection, string> = {
   contenidos: "Contenidos",
   interactivas: "Clases interactivas",
   preparacion: "Preparación",
+  revisiones: "Revisiones",
   consultas: "Consultas",
   estudiantes: "Estudiantes",
   acceso: "Acceso",
@@ -35,6 +37,7 @@ function tabs(course: Course, current: TeacherCourseSection): TabItem[] {
   if (course.contentsEnabled) items.push({ href: `${base}/contenidos`, label: "Contenidos", icon: "library_books", isActive: current === "contenidos" });
   if (course.interactiveClassesEnabled) items.push({ href: `${base}/interactivas`, label: "Interactivas", icon: "interactive_space", isActive: current === "interactivas" });
   if (course.preparationEnabled) items.push({ href: `${base}/preparacion`, label: "Preparación", icon: "quiz", isActive: current === "preparacion" });
+  if (course.reviewsEnabled) items.push({ href: `${base}/revisiones`, label: "Revisiones", icon: "event_available", isActive: current === "revisiones" });
   items.push(
     { href: `${base}/consultas`, label: "Consultas", icon: "forum", isActive: current === "consultas" },
     { href: `${base}#estudiantes`, label: "Estudiantes", icon: "group", isActive: current === "estudiantes" },

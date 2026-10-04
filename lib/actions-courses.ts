@@ -51,6 +51,7 @@ export async function createCourse(formData: FormData) {
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
   const preparationEnabled = parseContentsEnabled(formData.get('preparationEnabled'));
+  const reviewsEnabled = parseContentsEnabled(formData.get('reviewsEnabled'));
   const aiPreevaluationEnabled = parseAIPreevaluationEnabled(formData.get('aiPreevaluationEnabled'));
   
   if (startDate && !startDate.includes('T')) {
@@ -76,6 +77,7 @@ export async function createCourse(formData: FormData) {
     contentsEnabled,
     interactiveClassesEnabled,
     preparationEnabled,
+    reviewsEnabled,
     aiPreevaluationEnabled,
     teachers: [],
     classes,
@@ -106,6 +108,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
   const preparationEnabled = parseContentsEnabled(formData.get('preparationEnabled'));
+  const reviewsEnabled = parseContentsEnabled(formData.get('reviewsEnabled'));
   const aiPreevaluationEnabled = parseAIPreevaluationEnabled(formData.get('aiPreevaluationEnabled'));
   
   if (startDate && !startDate.includes('T')) {
@@ -130,6 +133,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
     contentsEnabled,
     interactiveClassesEnabled,
     preparationEnabled,
+    reviewsEnabled,
     aiPreevaluationEnabled,
     classes,
     assignments,

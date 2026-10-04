@@ -213,6 +213,7 @@ export interface Course extends BaseModel {
   contentsEnabled?: boolean;
   interactiveClassesEnabled?: boolean;
   preparationEnabled?: boolean;
+  reviewsEnabled?: boolean;
   aiPreevaluationEnabled?: boolean;
   enrollmentKeyHash?: string;
   invitationPasswordHash?: string;
