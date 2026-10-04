@@ -388,7 +388,7 @@
     {
       "id": "c01-plausibilidad",
       "title": "Las señales de una respuesta convincente",
-      "body": "Un texto puede estar bien escrito, tener una estructura clara, incluir cifras, citar fuentes y sonar seguro.\n\nEsas características facilitan la lectura. **Por sí solas no demuestran que sus afirmaciones sean verdaderas.**\n\nTampoco un tono informal demuestra que el contenido sea incorrecto. Revisar exige mirar la información, las inferencias y lo que quedó sin justificar.",
+      "body": "![Una respuesta puede sonar convincente por su claridad, sus cifras y su tono seguro. Para evaluar su fundamento hay que comprobar datos, revisar fuentes y justificar conclusiones. La forma por sí sola no demuestra la verdad.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/convincente-y-fundamentada.svg)\n\nUn texto puede estar bien escrito, tener una estructura clara, incluir cifras, citar fuentes y sonar seguro.\n\nEsas características facilitan la lectura. **Por sí solas no demuestran que sus afirmaciones sean verdaderas.**\n\nTampoco un tono informal demuestra que el contenido sea incorrecto. Revisar exige mirar la información, las inferencias y lo que quedó sin justificar.",
       "type": "content"
     },
     {
@@ -424,7 +424,7 @@
     {
       "id": "c01-delegar-retener-amplificar",
       "title": "Delegar, retener y amplificar",
-      "body": "**Delegar:** tareas cuyo resultado podemos revisar y cuyo error tiene un costo bajo. Por ejemplo, dar formato a una tabla.\n\n**Retener:** decisiones por las que debemos responder. Por ejemplo, plantear el problema, evaluar la evidencia y decidir qué dato es confiable.\n\n**Amplificar:** ampliar el trabajo propio. Por ejemplo, pedir objeciones a una idea y evaluar cuáles tienen fundamento.\n\nA lo largo del curso vamos a registrar qué aportó el asistente y qué resolvimos nosotros.",
+      "body": "![Tres formas de trabajar con un asistente: delegar una tarea revisable, como dar formato; retener el juicio sobre el problema, la evidencia y la decisión; amplificar el análisis pidiendo alternativas y objeciones para evaluarlas.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/delegar-retener-amplificar.svg)\n\n**Delegar:** tareas cuyo resultado podemos revisar y cuyo error tiene un costo bajo. Por ejemplo, dar formato a una tabla.\n\n**Retener:** decisiones por las que debemos responder. Por ejemplo, plantear el problema, evaluar la evidencia y decidir qué dato es confiable.\n\n**Amplificar:** ampliar el trabajo propio. Por ejemplo, pedir objeciones a una idea y evaluar cuáles tienen fundamento.\n\nA lo largo del curso vamos a registrar qué aportó el asistente y qué resolvimos nosotros.",
       "type": "content"
     },
     {
@@ -436,7 +436,7 @@
     {
       "id": "c01-elementos-implicitos",
       "title": "La ficha de análisis · otras cuatro preguntas",
-      "body": "| Elemento | Pregunta para el texto |\n| --- | --- |\n| Supuestos | ¿Qué da por sentado sin decirlo? |\n| Inferencias | ¿Qué concluye? ¿Se sigue de la información? |\n| Implicancias | Si fuera cierto, ¿qué consecuencias tendría? |\n| Punto de vista | ¿Desde qué perspectiva está escrito? ¿Qué deja afuera? |\n\nPara encontrar un supuesto, preguntate: **¿qué tendría que ser cierto para que esta conclusión fuera válida?**\n\nUn supuesto es una condición que el razonamiento da por sentada; no alcanza con decir que una frase es una opinión.",
+      "body": "![El razonamiento conecta información con una conclusión y se apoya en supuestos. Preguntá qué datos usa, qué concluye y qué tendría que ser cierto para que esa conclusión sea válida.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/informacion-supuestos-conclusion.svg)\n\n| Elemento | Pregunta para el texto |\n| --- | --- |\n| Supuestos | ¿Qué da por sentado sin decirlo? |\n| Inferencias | ¿Qué concluye? ¿Se sigue de la información? |\n| Implicancias | Si fuera cierto, ¿qué consecuencias tendría? |\n| Punto de vista | ¿Desde qué perspectiva está escrito? ¿Qué deja afuera? |\n\nPara encontrar un supuesto, preguntate: **¿qué tendría que ser cierto para que esta conclusión fuera válida?**\n\nUn supuesto es una condición que el razonamiento da por sentada; no alcanza con decir que una frase es una opinión.",
       "type": "content"
     },
     {
@@ -485,7 +485,7 @@
     {
       "id": "c01-taller-paso2",
       "title": "Taller · contrastar con la autocrítica",
-      "body": "**Paso 2 · 15 minutos**\n\nAhora sí, volvé al mismo asistente. Podés pedirle:\n\n> Revisá críticamente tu respuesta anterior. Señalá supuestos, límites y afirmaciones que necesiten verificación. Si proponés una corrección, explicá qué evidencia permitiría comprobarla.\n\nCompará con tu análisis previo:\n\n- ¿Qué encontraste vos que el asistente no encontró?\n- ¿Qué encontró el asistente que a vos se te pasó?\n- ¿Introdujo errores o afirmaciones nuevas al corregirse?\n\n**La autocrítica también necesita revisión.** Conservá ambas versiones y distinguí una corrección comprobada de una sugerencia todavía incierta.",
+      "body": "![Compará tu análisis previo con la autocrítica del asistente. Contrastá las coincidencias y diferencias con evidencia: una corrección puede quedar comprobada o seguir pendiente. La autocrítica no valida por sí sola la respuesta.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/dos-revisiones-y-evidencia.svg)\n\n**Paso 2 · 15 minutos**\n\nAhora sí, volvé al mismo asistente. Podés pedirle:\n\n> Revisá críticamente tu respuesta anterior. Señalá supuestos, límites y afirmaciones que necesiten verificación. Si proponés una corrección, explicá qué evidencia permitiría comprobarla.\n\nCompará con tu análisis previo:\n\n- ¿Qué encontraste vos que el asistente no encontró?\n- ¿Qué encontró el asistente que a vos se te pasó?\n- ¿Introdujo errores o afirmaciones nuevas al corregirse?\n\n**La autocrítica también necesita revisión.** Conservá ambas versiones y distinguí una corrección comprobada de una sugerencia todavía incierta.",
       "type": "content"
     },
     {

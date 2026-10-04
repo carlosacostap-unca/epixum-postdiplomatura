@@ -8,4 +8,8 @@ Esta copia pública no contiene claves, soluciones, notas privadas ni respuestas
 
 La versión docente completa ya está guardada en PocketBase, asociada a Clase 1 y en estado preparado. Sus copias locales `clase-01-plausible-no-es-verdadero.json` y `clase-01-fuentes.json` están excluidas de Git. No reemplazar la preparación existente con esta copia pública si se necesita conservar la clave y las notas docentes.
 
-Fuentes aportadas: diagnóstico inicial, material para participantes, guía docente, presentación del encuentro y propuesta general del curso. Esta publicación no abre una sesión en vivo ni modifica el material guardado en el campus.
+Las pantallas de plausibilidad, delegar/retener/amplificar, supuestos implícitos y segundo paso del taller incluyen cuatro diagramas originales con descripción alternativa. Sus SVG están en `public/interactive/pensamiento-critico-ia/clase-01/`; [`clase-01-imagenes.json`](./clase-01-imagenes.json) relaciona cada imagen con su pantalla y su enlace público fijado a un commit. Se muestran mediante Markdown también en las ventanas de contenido y proyección. Los enlaces requieren conexión a Internet.
+
+Los cuatro diagramas también se incorporaron a la preparación docente guardada en PocketBase, conservando las demás pantallas y sus claves. No se abrió ninguna sesión en vivo. Una sesión nueva toma el material actualizado; las sesiones existentes conservan su propia copia.
+
+Fuentes aportadas: diagnóstico inicial, material para participantes, guía docente, presentación del encuentro y propuesta general del curso. Los diagramas son apoyos explicativos creados para esta clase; no modifican los textos del diagnóstico.

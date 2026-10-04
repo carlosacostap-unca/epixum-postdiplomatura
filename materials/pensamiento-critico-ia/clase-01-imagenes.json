@@ -1,0 +1,32 @@
+{
+  "images": [
+    {
+      "file": "convincente-y-fundamentada.svg",
+      "screenId": "c01-plausibilidad",
+      "alt": "Una respuesta puede sonar convincente por su claridad, sus cifras y su tono seguro. Para evaluar su fundamento hay que comprobar datos, revisar fuentes y justificar conclusiones. La forma por sí sola no demuestra la verdad.",
+      "title": "Sonar convincente y tener fundamento son cosas distintas",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/convincente-y-fundamentada.svg"
+    },
+    {
+      "file": "delegar-retener-amplificar.svg",
+      "screenId": "c01-delegar-retener-amplificar",
+      "alt": "Tres formas de trabajar con un asistente: delegar una tarea revisable, como dar formato; retener el juicio sobre el problema, la evidencia y la decisión; amplificar el análisis pidiendo alternativas y objeciones para evaluarlas.",
+      "title": "Tres formas de trabajar con un asistente",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/delegar-retener-amplificar.svg"
+    },
+    {
+      "file": "informacion-supuestos-conclusion.svg",
+      "screenId": "c01-elementos-implicitos",
+      "alt": "El razonamiento conecta información con una conclusión y se apoya en supuestos. Preguntá qué datos usa, qué concluye y qué tendría que ser cierto para que esa conclusión sea válida.",
+      "title": "Hacer visibles los supuestos del razonamiento",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/informacion-supuestos-conclusion.svg"
+    },
+    {
+      "file": "dos-revisiones-y-evidencia.svg",
+      "screenId": "c01-taller-paso2",
+      "alt": "Compará tu análisis previo con la autocrítica del asistente. Contrastá las coincidencias y diferencias con evidencia: una corrección puede quedar comprobada o seguir pendiente. La autocrítica no valida por sí sola la respuesta.",
+      "title": "Dos revisiones que también necesitan evidencia",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/dos-revisiones-y-evidencia.svg"
+    }
+  ]
+}
