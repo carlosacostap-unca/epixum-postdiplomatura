@@ -55,3 +55,6 @@ next-env.d.ts
 /materials/gestion-soluciones-tecnologicas/privado/
 /tmp/modulo4-clase1/
 /output/modulo4-clase1/
+
+# Credenciales y resultados de pruebas temporales de preparación
+/tmp/preparation/

@@ -21,6 +21,7 @@
     "schema:live-interactive": "node scripts/setup-live-interactive-schema.mjs",
     "verify:live-concurrency": "node scripts/verify-live-concurrency.mjs",
     "schema:interactive-classes": "node scripts/setup-interactive-class-schema.mjs",
+    "schema:preparation": "node scripts/setup-preparation-schema.mjs",
     "schema:interactive-classes:test": "node --test scripts/interactive-class-schema.test.mjs",
     "schema:interactive-classes:verify": "node scripts/verify-interactive-class-access.mjs",
     "schema:ai-preevaluation": "node scripts/setup-ai-preevaluation-schema.mjs",

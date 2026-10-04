@@ -1,0 +1,10 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { testAdmin } from './live-test-fixtures.mjs';
+import { applyPreparationSchema } from './preparation-schema.mjs';
+const pb = await testAdmin();
+await mkdir('backups/pocketbase', { recursive: true });
+await writeFile(`backups/pocketbase/preparation-schema-${Date.now()}.json`, JSON.stringify(await pb.collections.getFullList(), null, 2), { flag: 'wx' });
+await applyPreparationSchema(pb);
+const course = await pb.collections.getOne('courses');
+if (!course.fields.some(f => f.name === 'preparationEnabled')) throw new Error('No se guardó el campo de activación.');
+console.log('Preparación: esquema aplicado con respaldo. No se habilitaron cursos existentes.');

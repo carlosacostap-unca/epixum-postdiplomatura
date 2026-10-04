@@ -47,6 +47,13 @@ function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' |
 }
 
 describe('modalidad administrativa del curso', () => {
+  it('habilita preparación y la deshabilita sin activar otros cursos', async () => {
+    const enabled = courseForm(); enabled.set('preparationEnabled', 'true');
+    await createCourse(enabled);
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ preparationEnabled: true }));
+    await updateCourse('course-1', courseForm());
+    expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ preparationEnabled: false }));
+  });
   it('habilita y deshabilita clases interactivas por configuración administrativa', async () => {
     const enabled = courseForm();
     enabled.set('interactiveClassesEnabled', 'true');
