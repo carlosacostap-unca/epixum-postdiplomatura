@@ -33,7 +33,7 @@ export function QuizEditor({ courseId, quiz }: { courseId: string; quiz: Practic
       <Card><CardContent className="space-y-5">
         <label className="block font-semibold">Título<input className={field} value={title} maxLength={160} onChange={e => setTitle(e.target.value)} required /></label>
         <label className="block font-semibold">Instrucciones para el alumno<textarea className={field} rows={3} value={description} maxLength={2000} onChange={e => setDescription(e.target.value)} /></label>
-        <p className="text-sm text-[var(--color-text-muted)]">Una respuesta correcta por pregunta. Intentos ilimitados y devolución al finalizar. Los resultados son de práctica y no modifican notas oficiales.</p>
+        <p className="text-sm text-[var(--color-text-muted)]">Una respuesta correcta por pregunta. Intentos ilimitados, devolución después de cada respuesta y resumen al finalizar. El avance se guarda en la cuenta del alumno. Los resultados no modifican notas oficiales.</p>
       </CardContent></Card>
       {questions.map((q, index) => <Card key={q.id}><CardContent className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Pregunta {index + 1}</h2><div className="flex flex-wrap gap-2">
@@ -50,7 +50,7 @@ export function QuizEditor({ courseId, quiz }: { courseId: string; quiz: Practic
           </div>)}
           <Button variant="secondary" disabled={q.options.length >= 8} onClick={() => update(q.id, { options: [...q.options, { id: crypto.randomUUID(), label: '' }] })}>Agregar opción</Button>
         </fieldset>
-        <label className="block font-semibold">Explicación de la pregunta {index + 1}<textarea className={field} rows={3} maxLength={4000} value={q.explanation} onChange={e => update(q.id, { explanation: e.target.value })} /><span className="mt-1 block text-sm font-normal text-[var(--color-text-muted)]">Se mostrará cuando el alumno termine. Podés explicar el razonamiento y qué revisar.</span></label>
+        <label className="block font-semibold">Explicación de la pregunta {index + 1}<textarea className={field} rows={3} maxLength={4000} value={q.explanation} onChange={e => update(q.id, { explanation: e.target.value })} /><span className="mt-1 block text-sm font-normal text-[var(--color-text-muted)]">Se mostrará al confirmar esta respuesta. Podés explicar el razonamiento e indicar qué sección de los apuntes repasar.</span></label>
       </CardContent></Card>)}
       <Button variant="secondary" disabled={questions.length >= 80} onClick={() => setQuestions(items => [...items, newQuestion()])}>Agregar pregunta</Button>
       <p className="text-sm text-[var(--color-text-muted)]">{questions.length} de 80 preguntas. Los cambios no afectan los intentos que ya se iniciaron.</p>

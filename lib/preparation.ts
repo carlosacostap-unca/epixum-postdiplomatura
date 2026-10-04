@@ -28,6 +28,7 @@ export type PracticeQuiz = PracticeQuizInput & { id: string; course: string; upd
 export type PublicPracticeQuestion = Pick<PracticeQuestion, 'id' | 'prompt' | 'options'>;
 export interface PracticeAttempt { id: string; course: string; quiz: string; student: string; title: string; snapshot: PracticeQuizInput; created: string }
 export interface PracticeReview { question: PracticeQuestion; selectedOptionId: string | null; correct: boolean }
+export interface PracticeAnswer { id: string; attempt: string; questionId: string; selectedOptionId: string }
 export interface PracticeResult { id: string; attempt: string; course: string; student: string; title: string; correct: number; total: number; percentage: number; review: PracticeReview[]; created: string }
 export const practiceStatusLabels = { draft: 'Borrador', published: 'Publicado', archived: 'Archivado' };
 

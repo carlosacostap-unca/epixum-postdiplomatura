@@ -24,6 +24,11 @@ export async function applyPreparationSchema(pb) {
   const attempt = await ensure(pb, 'practice_attempts', [scope, relation('quiz', quiz.id, false), relation('student', users.id), title, json('snapshot'), ...dates], {
     listRule: preparationTeacherRule, viewRule: preparationTeacherRule, createRule: null, updateRule: null, deleteRule: null,
   }, ['CREATE INDEX idx_practice_attempts_student ON practice_attempts (course, student, created)']);
+  await ensure(pb, 'practice_answers', [scope, relation('attempt', attempt.id), relation('student', users.id),
+    { name: 'questionId', type: 'text', required: true, max: 64 },
+    { name: 'selectedOptionId', type: 'text', required: true, max: 64 }, ...dates], {
+    listRule: null, viewRule: null, createRule: null, updateRule: null, deleteRule: null,
+  }, ['CREATE UNIQUE INDEX idx_practice_answer_question ON practice_answers (attempt, questionId)']);
   await ensure(pb, 'practice_results', [scope, relation('attempt', attempt.id), relation('student', users.id), title,
     ...['correct', 'total', 'percentage'].map(name => ({ name, type: 'number', min: 0, onlyInt: true })), json('review', 400000), ...dates], {
     listRule: preparationResultRule, viewRule: preparationResultRule, createRule: null, updateRule: null, deleteRule: null,

@@ -21,10 +21,10 @@ export function PreparationOverview({ data, mode }: { data: Data; mode: 'teacher
       <nav aria-label="Páginas de prácticas" className="flex gap-4">{quizzes.page > 1 && <Link href={`${base}?p=${quizzes.page - 1}&h=${history.page}`}>Prácticas anteriores</Link>}{quizzes.page < quizzes.totalPages && <Link href={`${base}?p=${quizzes.page + 1}&h=${history.page}`}>Más prácticas</Link>}</nav>
     </section>
     <section aria-labelledby="practice-history-title" className="space-y-4"><h2 id="practice-history-title" className="text-2xl font-bold">{mode === 'teacher' ? 'Seguimiento de alumnos' : 'Mis intentos'}</h2>
-      <p className="text-[var(--color-text-muted)]">{history.totalItems} intentos. {mode === 'teacher' ? 'Consultá los resultados y las respuestas de cada práctica finalizada.' : 'Retomá una práctica o revisá una corrección anterior.'}</p>
+      <p className="text-[var(--color-text-muted)]">{history.totalItems} {history.totalItems === 1 ? 'intento' : 'intentos'}. {mode === 'teacher' ? 'Consultá el avance, las respuestas confirmadas y los resultados.' : 'Retomá una práctica o revisá una corrección anterior.'}</p>
       {!history.items.length ? <p>No hay intentos registrados.</p> : <ul className="space-y-3">{history.items.map(a => <li key={a.id}><Link href={`${base}/intentos/${a.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-outline-variant)] p-5 hover:bg-[var(--color-surface-container)]">
         <div><h3 className="font-bold">{a.title}</h3>{mode === 'teacher' && <p>{a.studentName}</p>}<p className="mt-1 text-sm text-[var(--color-text-muted)]"><FormattedDate date={a.created} showTime /></p></div>
-        <span className="font-bold text-[var(--color-primary)]">{a.result ? `${a.result.correct}/${a.result.total} · ${a.result.percentage}% · Ver corrección` : mode === 'teacher' ? 'En curso' : 'Retomar práctica'}</span>
+        <span className="font-bold text-[var(--color-primary)]">{a.result ? `${a.result.correct}/${a.result.total} · ${a.result.percentage}% · Ver corrección` : `${a.answeredCount} respuestas guardadas · ${mode === 'teacher' ? 'En curso' : 'Retomar práctica'}`}</span>
       </Link></li>)}</ul>}
       <nav aria-label="Páginas de intentos" className="flex gap-4">{history.page > 1 && <Link href={`${base}?p=${quizzes.page}&h=${history.page - 1}`}>Intentos anteriores</Link>}{history.page < history.totalPages && <Link href={`${base}?p=${quizzes.page}&h=${history.page + 1}`}>Más intentos</Link>}</nav>
     </section>

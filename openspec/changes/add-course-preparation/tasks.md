@@ -14,3 +14,9 @@
 
 - [x] 3.1 Probar corrección, privacidad, aislamiento y concurrencia; validar esquema real con cuentas temporales.
 - [x] 3.2 Verificar interfaces en navegador, compilación y documentar operación y límites.
+
+## 4. Devolución por pregunta y reanudación
+
+- [x] 4.1 Guardar respuestas individuales inmutables con permisos y protección contra envíos concurrentes.
+- [x] 4.2 Implementar recorrido por pregunta, feedback inmediato, resumen y elección de continuar o empezar de cero.
+- [x] 4.3 Verificar persistencia entre sesiones, privacidad, compatibilidad histórica e interfaz; actualizar documentación.

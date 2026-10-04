@@ -5,7 +5,7 @@ import { ZodError } from 'zod';
 import { createServerClient } from './pocketbase-server';
 import { createServiceClient } from './pocketbase-service';
 import { practiceQuizSchema } from './preparation';
-import { PreparationError, requirePreparationCourse, startPractice, finishPractice } from './preparation-service';
+import { PreparationError, requirePreparationCourse, startPractice, finishPractice, answerPractice } from './preparation-service';
 
 function message(error: unknown) {
   if (error instanceof PreparationError) return error.message;
@@ -29,19 +29,28 @@ export async function savePracticeQuiz(courseId: string, quizId: string | null, 
     refresh(courseId); return { success: true as const, id: quiz.id };
   } catch (error) { return { success: false as const, error: message(error) }; }
 }
-export async function beginPractice(courseId: string, quizId: string) {
+export async function beginPractice(courseId: string, quizId: string, fresh = false) {
   try {
     const pb = await createServerClient();
     await requirePreparationCourse(pb, courseId, 'student');
-    const id = await startPractice(pb, await createServiceClient(), courseId, quizId);
+    const id = await startPractice(pb, await createServiceClient(), courseId, quizId, fresh === true);
     refresh(courseId); return { success: true as const, id };
   } catch (error) { return { success: false as const, error: message(error) }; }
 }
-export async function submitPractice(courseId: string, attemptId: string, answers: unknown) {
+export async function submitPractice(courseId: string, attemptId: string) {
   try {
     const pb = await createServerClient();
     await requirePreparationCourse(pb, courseId, 'student');
-    const result = await finishPractice(pb, await createServiceClient(), courseId, attemptId, answers);
+    const result = await finishPractice(pb, await createServiceClient(), courseId, attemptId);
     refresh(courseId); return { success: true as const, result };
+  } catch (error) { return { success: false as const, error: message(error) }; }
+}
+
+export async function submitPracticeAnswer(courseId: string, attemptId: string, questionId: string, optionId: string) {
+  try {
+    const pb = await createServerClient();
+    await requirePreparationCourse(pb, courseId, 'student');
+    const attempt = await answerPractice(pb, await createServiceClient(), courseId, attemptId, questionId, optionId);
+    refresh(courseId); return { success: true as const, attempt };
   } catch (error) { return { success: false as const, error: message(error) }; }
 }
