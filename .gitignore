@@ -50,3 +50,8 @@ next-env.d.ts
 /materials/pensamiento-critico-ia/clase-02-la-consulta-es-el-planteo.json
 /materials/pensamiento-critico-ia/clase-02-guion-docente.json
 /materials/pensamiento-critico-ia/clase-02-fuentes.json
+
+# Preparación privada y fuentes del módulo de automatización
+/materials/gestion-soluciones-tecnologicas/privado/
+/tmp/modulo4-clase1/
+/output/modulo4-clase1/
