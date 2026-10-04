@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { Badge, Button, Card, CardContent } from '@/components/ui';
 import { screenTypeLabels } from '@/lib/interactive-material';
 import type { LiveCommand, LiveState, PublicScreen } from '@/lib/live-interactive-contract';
+import { ContentWindow } from './ContentWindow';
 
 function ScreenBody({ screen }: { screen: PublicScreen }) {
   return <div className="space-y-5">
@@ -68,6 +69,23 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
       <div className="flex flex-wrap gap-2"><Badge tone={active ? 'success' : 'neutral'}>{simulation ? (active ? 'Simulación activa' : 'Simulación finalizada') : (active ? 'Sesión en vivo' : 'Sesión finalizada')}</Badge>{active && <Badge tone={connected && !connectionError ? 'success' : 'warning'}>{simulation ? 'Conexión simulada' : connected && !connectionError ? 'Conectado' : 'Reconectando · actualización periódica'}</Badge>}{teacher && <Badge>Panel docente · resultados privados</Badge>}</div>
       <h1 className="font-headline text-3xl font-bold">{session.title}</h1><p className="text-[var(--color-text-muted)]">{session.classTitle}</p>
     </header>
+    {teacher && <ContentWindow title={session.title} mode="projection">
+      {simulation && <Badge tone="warning">Simulación · proyección</Badge>}
+      {active && !simulation && (!connected || connectionError) && <p role="status" className="text-sm text-[var(--color-text-muted)]">Reconectando con la clase…</p>}
+      {!active && <p role="status" className="rounded-xl bg-[var(--color-surface-container-high)] p-4">{simulation ? 'El ensayo terminó.' : 'La sesión finalizó.'}</p>}
+      <Card><CardContent className="min-h-72">
+        <ScreenBody screen={screen} />
+        {'options' in screen && <ul className="mt-6 space-y-3">{screen.options.map((option) => <li key={option.id} className="rounded-xl border border-[var(--color-outline-variant)] p-4">{option.label}</li>)}</ul>}
+        {active && screen.type !== 'content' && <p role="status" className="mt-6 text-[var(--color-text-muted)]">{session.activityOpen ? 'Actividad abierta. Respondé desde tu dispositivo.' : 'Esperá a que el docente abra la actividad.'}</p>}
+      </CardContent></Card>
+    </ContentWindow>}
+    {!teacher && <ContentWindow title={session.title}>
+      {simulation && <Badge tone="warning">Simulación · alumno ficticio</Badge>}
+      {active && !simulation && (!connected || connectionError) && <p role="status" className="text-sm text-[var(--color-text-muted)]">Reconectando · actualización periódica</p>}
+      {(error || connectionError) && <div role="alert" className="rounded-xl border border-[var(--color-error)] p-4"><p>{error || connectionError}</p>{!simulation && <Button variant="ghost" onClick={() => void refresh()}>Actualizar ahora</Button>}</div>}
+      {!active && <p role="status" className="rounded-xl bg-[var(--color-surface-container-high)] p-4">{simulation ? 'El ensayo terminó.' : 'La sesión finalizó.'}</p>}
+      <Card><CardContent className="min-h-72"><ScreenBody screen={screen} /><StudentActivity key={screen.id} state={state} send={send} pending={pending || Boolean(connectionError)} /></CardContent></Card>
+    </ContentWindow>}
     {(error || connectionError || copyError) && <div role="alert" className="rounded-xl border border-[var(--color-error)] p-4"><p>{error || connectionError || copyError}</p>{!simulation && <Button variant="ghost" onClick={() => void refresh()}>Actualizar ahora</Button>}</div>}
     {teacher && active && <Card><CardContent className="flex flex-wrap items-center justify-between gap-5">
       <div><p className="text-sm text-[var(--color-text-muted)]">{simulation ? 'Código de prueba · sólo en este ensayo' : 'Código para ingresar'}</p><p className="font-mono text-3xl font-bold tracking-widest" data-testid="live-code">{session.code}</p>{link && <a className="mt-2 block break-all text-sm text-[var(--color-primary)]" href={link}>{link}</a>}</div>

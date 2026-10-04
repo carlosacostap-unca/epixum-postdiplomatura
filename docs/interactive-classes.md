@@ -78,6 +78,18 @@ Conduce el docente que inició el encuentro. Los demás docentes asignados al cu
 
 Las pantallas se componen de Markdown y actividades estructuradas. No se ejecutan sitios HTML/JavaScript arbitrarios. Las simulaciones especiales futuras necesitan componentes registrados en el reproductor.
 
+## Ventana de contenido para alumnos
+
+En la sala del alumno, **Abrir sólo el contenido en una ventana nueva** abre la pantalla actual con sus actividades, sin la cabecera de la clase ni navegación del campus. La ventana sigue los cambios del docente y permite responder con la misma identidad; una respuesta enviada desde cualquiera de las dos vistas se refleja en ambas, sin una segunda participación ni conexión de sesión.
+
+La clase original debe permanecer abierta. Al salir de ella, perder acceso o reiniciar el simulador, la ventana secundaria se cierra. Si se cierra solo la ventana secundaria, puede abrirse nuevamente desde la clase. Si el navegador bloquea la apertura, se muestra cómo habilitarla; algunos navegadores móviles la presentan como una pestaña. También funciona desde la vista de alumno del modo simulación, con un rótulo que identifica el ensayo.
+
+## Proyectar el contenido desde el panel docente
+
+En la sala docente, **Abrir ventana de proyección** muestra únicamente la pantalla actual, sus opciones y el estado de la actividad. Mover esa ventana a la segunda pantalla o seleccionarla al compartir una ventana en una videollamada. Los controles, participantes, respuestas, resultados y soluciones permanecen en el panel original.
+
+La proyección sigue automáticamente los cambios de pantalla y la apertura/cierre de actividades. Consultar resultados de otra actividad no modifica lo proyectado. Los alumnos responden desde sus propios dispositivos; la proyección no contiene formularios. También está disponible en el simulador. Mantener el panel original abierto: salir de él o reiniciar la simulación cierra la ventana. **Volver a la ventana de proyección** enfoca la ventana ya abierta.
+
 ## Persistencia y transporte
 
 - `interactive_sessions`: clase y material de origen, títulos conservados, código, docente conductor, pantalla pública activa, revisión y estado. No contiene soluciones ni pantallas futuras. Ocho campos de opciones permiten validar igualdad exacta en reglas sin depender del recorrido de arreglos JSON de PocketBase.
