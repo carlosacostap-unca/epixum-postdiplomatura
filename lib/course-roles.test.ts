@@ -29,6 +29,11 @@ describe("roles contextuales por curso", () => {
   });
 });
 describe("espacios disponibles", () => {
+  it('habilita Bedelía únicamente cuando hay cursos asignados y la prioriza al ingresar', () => {
+    expect(resolveWorkspaceAccess({ role: 'estudiante' }, false, true)).toEqual({ available: ['bedel', 'estudiante'], preferred: 'bedel' });
+    expect(resolveWorkspaceAccess({ role: 'docente' }, true, true)).toEqual({ available: ['docente', 'bedel', 'estudiante'], preferred: 'docente' });
+    expect(workspaceFromPath('/bedeles/cursos/a')).toBe('bedel');
+  });
   it("ofrece estudio a toda cuenta autenticada", () => {
     expect(resolveWorkspaceAccess({ role: "estudiante" }, false)).toEqual({ available: ["estudiante"], preferred: "estudiante" });
   });

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   role: 'admin',
   teachers: [] as string[],
   users: new Set(['user-1', 'user-2', 'teacher-1', 'student-1']),
+  bedels: new Set<string>(),
   enrollments: new Map<string, { id: string; course: string; student: string }>(),
   serviceDelete: vi.fn(),
   serviceUpdate: vi.fn(),
@@ -15,10 +16,16 @@ const mocks = vi.hoisted(() => ({
 }));
 
 function collection(name: string, service = false) {
+  if (name === 'course_bedels') return {
+    getFirstListItem: vi.fn(async (filter: { email: string }) => {
+      if (!mocks.bedels.has(filter.email)) throw notFound();
+      return { id: 'bedel-assignment' };
+    }),
+  };
   if (name === 'users') return {
     getOne: vi.fn(async (id: string) => {
       if (!mocks.users.has(id)) throw notFound();
-      return { id };
+      return { id, email: `${id}@example.com` };
     }),
   };
   if (name === 'courses') return {
@@ -87,6 +94,7 @@ describe('acciones administrativas de participantes', () => {
     vi.clearAllMocks();
     mocks.role = 'admin';
     mocks.teachers = [];
+    mocks.bedels.clear();
     mocks.enrollments.clear();
     mocks.batchFails = false;
     mocks.skipTeacherWrite = false;
@@ -104,6 +112,14 @@ describe('acciones administrativas de participantes', () => {
     expect(mocks.batchSend).toHaveBeenCalledTimes(1);
     expect(mocks.enrollments.size).toBe(2);
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/estudiantes', 'layout');
+  });
+
+  it('no agrega al bedel como docente ni como alumno del mismo curso', async () => {
+    mocks.bedels.add('user-1@example.com');
+    await expect(addCourseTeachers('course-1', ['user-1'])).resolves.toMatchObject({ status: 'conflict', message: expect.stringContaining('bedel') });
+    await expect(addCourseStudents('course-1', ['user-1'])).resolves.toMatchObject({ status: 'conflict', message: expect.stringContaining('bedel') });
+    expect(mocks.batchSend).not.toHaveBeenCalled();
+    expect(mocks.serviceUpdate).not.toHaveBeenCalled();
   });
 
   it('rechaza el lote completo si una persona ya es docente del curso', async () => {

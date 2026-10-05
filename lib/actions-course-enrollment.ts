@@ -7,6 +7,7 @@ import { createServiceClient } from "./pocketbase-service";
 import { hashEnrollmentKey, validateEnrollmentKey } from "./course-enrollment-key";
 import { validateInvitationPassword } from "./course-invitations";
 import { hashInvitationPassword } from "./course-invitation-password";
+import { assertNotCourseBedel } from './course-bedel-access';
 
 export type EnrollmentActionResult = {
   success: boolean;
@@ -71,6 +72,8 @@ export async function joinCourseByKey(key: string): Promise<EnrollmentActionResu
     if (course.teachers?.includes(user.id)) {
       return { success: false, error: "No podés matricularte como estudiante en un curso donde sos docente." };
     }
+
+    await assertNotCourseBedel(servicePb, course.id, user.email);
 
     try {
       await pb.collection("course_enrollments").getFirstListItem(

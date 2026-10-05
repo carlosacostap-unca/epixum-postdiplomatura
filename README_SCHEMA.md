@@ -2,6 +2,8 @@
 
 Para que la aplicación funcione correctamente, necesitas crear las siguientes colecciones en tu instancia de PocketBase (`https://epixum-node.pockethost.io/`).
 
+Para habilitar el espacio de Bedelía y las asignaciones opcionales por curso, ejecutar `npm run schema:bedels`. Ver [bedeles por curso](docs/course-bedels.md) para instalación, permisos y verificación.
+
 ## 1. Colección: `courses`
 - **Name**: `courses`
 - **Type**: `Base`

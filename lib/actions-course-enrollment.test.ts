@@ -6,7 +6,8 @@ const mocks = vi.hoisted(() => ({
   createServerClient: vi.fn(),
   createServiceClient: vi.fn(),
   revalidatePath: vi.fn(),
-  user: { id: "student-a", role: "estudiante" },
+  user: { id: "student-a", role: "estudiante", email: 'student@example.com' },
+  bedel: false,
   course: { id: "course-a", title: "Curso A", teachers: [] as string[] },
 }));
 
@@ -20,7 +21,8 @@ import { joinCourseByKey, updateCourseInvitationPassword } from "./actions-cours
 describe("matrícula inmediata por clave", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.user = { id: "student-a", role: "estudiante" };
+    mocks.user = { id: "student-a", role: "estudiante", email: 'student@example.com' };
+    mocks.bedel = false;
     mocks.course = { id: "course-a", title: "Curso A", teachers: [] };
     process.env.COURSE_ENROLLMENT_SECRET = "test-secret-with-at-least-thirty-two-characters";
     const notFound = Object.assign(new Error("not found"), { status: 404 });
@@ -36,6 +38,10 @@ describe("matrícula inmediata por clave", () => {
     mocks.createServiceClient.mockResolvedValue({
       filter: (expression: string) => expression,
       collection: (name: string) => {
+        if (name === 'course_bedels') return { getFirstListItem: async () => {
+          if (!mocks.bedel) throw notFound;
+          return { id: 'bedel-assignment' };
+        } };
         if (name === "courses") return { getFirstListItem: vi.fn().mockResolvedValue(mocks.course) };
         if (name === "course_enrollments") return {
           create: mocks.serviceCreate.mockResolvedValue({ id: "enrollment-a" }),
@@ -51,6 +57,12 @@ describe("matrícula inmediata por clave", () => {
     expect(mocks.serviceCreate).toHaveBeenCalledWith(expect.objectContaining({ course: "course-a", student: "student-a" }));
     expect(result).toMatchObject({ success: true, courseId: "course-a" });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/estudiantes");
+  });
+
+  it('rechaza la automatrícula del bedel en su curso', async () => {
+    mocks.bedel = true;
+    expect(await joinCourseByKey('CLAVE-VALIDA')).toMatchObject({ success: false });
+    expect(mocks.serviceCreate).not.toHaveBeenCalled();
   });
 
   it("permite estudiar con una cuenta heredada docente si enseña en otro curso", async () => {

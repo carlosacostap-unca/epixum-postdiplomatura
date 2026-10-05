@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   attempts: [] as Array<{ id: string; created: string }>,
   course: { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena", teachers: [] as string[] },
   email: "Alumno@Epixum.com",
+  bedel: false,
   enrollmentExists: false,
   concurrentEnrollment: false,
   enrollmentCreate: vi.fn(),
@@ -18,6 +19,10 @@ vi.mock("./pocketbase-service", () => ({
   createServiceClient: vi.fn(async () => ({
     filter: (expression: string, params: Record<string, string>) => ({ expression, params }),
     collection: (name: string) => {
+      if (name === 'course_bedels') return { getFirstListItem: async () => {
+        if (!mocks.bedel) throw { status: 404 };
+        return { id: 'bedel-assignment' };
+      } };
       if (name === "courses") return {
         getFirstListItem: mocks.coursePasswordCheck.mockImplementation(async (filter: { params: { passwordHash: string } }) => {
           if (filter.params.passwordHash !== "hash:Correcta-1") throw Object.assign(new Error("not found"), { status: 404 });
@@ -101,6 +106,7 @@ describe("activación de invitaciones", () => {
     mocks.attempts = [];
     mocks.course = { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena", teachers: [] };
     mocks.email = "Alumno@Epixum.com";
+    mocks.bedel = false;
     mocks.enrollmentExists = false;
     mocks.concurrentEnrollment = false;
   });
@@ -114,6 +120,13 @@ describe("activación de invitaciones", () => {
     expect(result).toMatchObject({ success: true, courseId: "course-1" });
     expect(mocks.enrollmentCreate).toHaveBeenCalledWith(expect.objectContaining({ invitation: "inv-1", keyHash: "hash:Correcta-1" }));
     expect(mocks.invitationUpdate).toHaveBeenCalledWith("inv-1", expect.objectContaining({ status: "activada", activatedStudent: "student-1" }));
+  });
+
+  it('no activa una invitación de estudiante para el bedel del mismo curso', async () => {
+    mocks.bedel = true;
+    expect(await activateCourseInvitation('inv-1', 'course-1', 'Correcta-1')).toMatchObject({ success: false });
+    expect(mocks.enrollmentCreate).not.toHaveBeenCalled();
+    expect(mocks.invitationUpdate).not.toHaveBeenCalled();
   });
 
   it("registra solamente el intento incorrecto y bloquea el quinto", async () => {

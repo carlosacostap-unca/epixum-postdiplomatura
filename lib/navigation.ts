@@ -14,6 +14,11 @@ export interface RoleNavigationConfig {
 }
 
 export const roleNavigation: Record<AppWorkspace, RoleNavigationConfig> = {
+  bedel: {
+    homeHref: "/bedeles",
+    workspaceLabel: "Bedelía",
+    items: [{ href: "/bedeles", label: "Mis cursos", icon: "visibility", matchPrefixes: ["/bedeles/cursos"] }],
+  },
   admin: {
     homeHref: "/admin",
     workspaceLabel: "Administración",

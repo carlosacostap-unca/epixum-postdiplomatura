@@ -21,7 +21,7 @@ export interface AppShellProps {
 }
 
 const workspaceIcons: Record<AppWorkspace, string> = {
-  admin: "admin_panel_settings", docente: "co_present", estudiante: "school",
+  admin: "admin_panel_settings", docente: "co_present", estudiante: "school", bedel: "visibility",
 };
 
 function WorkspaceSwitcher({ access, active, onNavigate }: { access: WorkspaceAccess; active: AppWorkspace; onNavigate?: () => void }) {
@@ -85,7 +85,7 @@ export default function AppShell({ activeWorkspace, children, pocketbaseUrl, use
             <div className="min-w-0"><p className="truncate text-xs text-[var(--color-text-muted)]">{navigation.workspaceLabel}</p><p className="truncate text-sm font-semibold">{activeItem?.label || "Inicio"}</p></div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:block">{workspace === "admin" ? "Gestión del campus" : workspace === "docente" ? "Tu espacio de docencia" : "Tu espacio de aprendizaje"}</span>
+            <span className="hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:block">{workspace === "admin" ? "Gestión del campus" : workspace === "docente" ? "Tu espacio de docencia" : workspace === "bedel" ? "Cursos de solo lectura" : "Tu espacio de aprendizaje"}</span>
             <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl} compact><UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} /><span className="sr-only">Abrir mi perfil</span></ProfileModalButton>
           </div>
         </header>

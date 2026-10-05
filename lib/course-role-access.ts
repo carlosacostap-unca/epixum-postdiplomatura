@@ -4,6 +4,7 @@ import type PocketBase from "pocketbase";
 import { cache } from "react";
 import type { Course, User } from "@/types";
 import { createServerClient } from "@/lib/pocketbase-server";
+import { hasBedelCourses } from "@/lib/course-bedel-access";
 import { resolveCourseParticipation, resolveWorkspaceAccess, type WorkspaceAccess } from "@/lib/course-roles";
 
 function isNotFound(error: unknown) {
@@ -33,7 +34,8 @@ export async function isEnrolledInCourse(pb: PocketBase, userId: string, courseI
 
 export const getWorkspaceAccess = cache(async (user: Pick<User, "id" | "role">): Promise<WorkspaceAccess> => {
   const pb = await createServerClient();
-  return resolveWorkspaceAccess(user, await hasTeachingCourses(pb, user.id));
+  const [teaches, bedel] = await Promise.all([hasTeachingCourses(pb, user.id), hasBedelCourses(pb)]);
+  return resolveWorkspaceAccess(user, teaches, bedel);
 });
 
 export async function getCourseParticipation(user: Pick<User, "id" | "role">, course: Pick<Course, "id" | "teachers">) {

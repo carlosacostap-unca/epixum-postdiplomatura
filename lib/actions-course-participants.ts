@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerClient } from '@/lib/pocketbase-server';
 import { createServiceClient } from '@/lib/pocketbase-service';
 import { getErrorStatus } from '@/lib/errors';
+import { assertNotCourseBedel } from '@/lib/course-bedel-access';
 import { searchCourseParticipantCandidatesWithClient } from '@/lib/course-participant-data';
 import type {
   Course,
@@ -82,6 +83,19 @@ async function enrollmentFor(pb: PocketBase, courseId: string, studentId: string
   }
 }
 
+async function assertNoBedels(pb: PocketBase, courseId: string, userIds: string[]) {
+  for (const id of userIds) {
+    const user = await pb.collection('users').getOne(id, { fields: 'id,email' });
+    try { await assertNotCourseBedel(pb, courseId, user.email); }
+    catch (error) {
+      if (error instanceof Error && error.message.startsWith('Esta persona es bedel')) {
+        throw new ParticipantActionError('conflict', error.message);
+      }
+      throw error;
+    }
+  }
+}
+
 async function verifyEnrollments(servicePb: PocketBase, courseId: string, userIds: string[], expected: boolean) {
   for (const userId of userIds) {
     const enrollment = await enrollmentFor(servicePb, courseId, userId);
@@ -127,6 +141,7 @@ export async function addCourseStudents(courseId: string, requestedUserIds: stri
     if (existing.some(Boolean)) throw new ParticipantActionError('conflict', 'Una de las personas seleccionadas ya es alumna de este curso.');
 
     const servicePb = await createServiceClient();
+    await assertNoBedels(servicePb, courseId, userIds);
     const batch = servicePb.createBatch();
     userIds.forEach((student) => batch.collection('course_enrollments').create({ course: courseId, student }));
     await batch.send();
@@ -171,6 +186,7 @@ export async function addCourseTeachers(courseId: string, requestedUserIds: stri
     }
 
     const servicePb = await createServiceClient();
+    await assertNoBedels(servicePb, courseId, userIds);
     await servicePb.collection('courses').update(courseId, { 'teachers+': userIds });
     await verifyTeachers(servicePb, courseId, userIds, true);
     revalidateParticipantSurfaces(courseId);

@@ -11,6 +11,7 @@ import {
   validateInvitationPassword,
 } from "./course-invitations";
 import { hashInvitationPassword } from "./course-invitation-password";
+import { assertNotCourseBedel } from './course-bedel-access';
 
 export interface InvitationImportResult {
   success: boolean;
@@ -172,6 +173,8 @@ export async function activateCourseInvitation(
     if (course.teachers?.includes(user.id)) {
       return { success: false, error: "No podés activar una matrícula en un curso donde sos docente." };
     }
+
+    await assertNotCourseBedel(servicePb, courseId, user.email);
 
     const existingEnrollment = await findExistingEnrollment(pb, courseId, user.id);
     if (existingEnrollment && invitation.status !== "revocada") {

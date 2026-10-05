@@ -10,11 +10,13 @@ export function ResourceReader({
   heading = 'Material de estudio',
   emptyDescription = 'El docente todavía no añadió recursos.',
   showHeading = true,
+  downloadResource = getResourceDownloadUrl,
 }: {
   links: LinkType[];
   heading?: string;
   emptyDescription?: string;
   showHeading?: boolean;
+  downloadResource?: (linkId: string) => Promise<{ success: boolean; url?: string; error?: string }>;
 }) {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { notify } = useToast();
@@ -24,7 +26,7 @@ export function ResourceReader({
     event.preventDefault();
     setDownloadingId(link.id);
     try {
-      const result = await getResourceDownloadUrl(link.id);
+      const result = await downloadResource(link.id);
       if (!result.success || !result.url) {
         notify({ title: 'No se pudo descargar', description: result.error, tone: 'error', duration: null });
         return;

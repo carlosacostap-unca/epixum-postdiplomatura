@@ -1,6 +1,6 @@
 import type { Course, User, UserRole } from "@/types";
 
-export type AppWorkspace = UserRole;
+export type AppWorkspace = UserRole | "bedel";
 
 export interface WorkspaceAccess {
   available: AppWorkspace[];
@@ -39,22 +39,25 @@ export function resolveCourseParticipation(
 export function resolveWorkspaceAccess(
   user: Pick<User, "role">,
   hasTeachingCourses: boolean,
+  hasBedelCourses = false,
 ): WorkspaceAccess {
   const available: AppWorkspace[] = [];
   if (isAdmin(user)) available.push("admin");
   if (hasTeachingCourses) available.push("docente");
+  if (hasBedelCourses) available.push("bedel");
   available.push("estudiante");
 
   const preferred = isAdmin(user)
     ? "admin"
     : user.role === "docente" && hasTeachingCourses
       ? "docente"
-      : "estudiante";
+      : hasBedelCourses ? "bedel" : "estudiante";
   return { available, preferred };
 }
 
 export function workspaceFromPath(pathname: string): AppWorkspace {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return "admin";
   if (pathname === "/docentes" || pathname.startsWith("/docentes/")) return "docente";
+  if (pathname === "/bedeles" || pathname.startsWith("/bedeles/")) return "bedel";
   return "estudiante";
 }

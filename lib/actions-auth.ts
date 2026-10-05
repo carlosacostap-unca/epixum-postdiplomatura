@@ -10,6 +10,7 @@ import {
   type OAuthProfile,
 } from "@/lib/auth-login";
 import { hasTeachingCourses } from "@/lib/course-role-access";
+import { hasBedelCourses } from "@/lib/course-bedel-access";
 import { resolveWorkspaceAccess } from "@/lib/course-roles";
 import { getHomeForWorkspace } from "@/lib/navigation";
 import type { User } from "@/types";
@@ -112,7 +113,8 @@ export async function setAuthCookieAndRedirect(
     httpOnly: true,
   });
 
-  const workspaceAccess = resolveWorkspaceAccess(user, await hasTeachingCourses(serverPb, user.id));
+  const [teaches, bedel] = await Promise.all([hasTeachingCourses(serverPb, user.id), hasBedelCourses(serverPb)]);
+  const workspaceAccess = resolveWorkspaceAccess(user, teaches, bedel);
   redirect(safeInteractiveReturn(returnTo) || getHomeForWorkspace(workspaceAccess.preferred));
 }
 
