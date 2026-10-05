@@ -1,0 +1,55 @@
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, expect, it, vi } from "vitest";
+import { OnboardingWizard } from "./OnboardingWizard";
+import { LiveClassRequirements } from "./LiveClassRequirements";
+import type { CourseOnboarding, SubmittedOnboardingSurvey } from "@/lib/course-onboarding";
+const actions = vi.hoisted(() => ({ profile: vi.fn(), survey: vi.fn(), accept: vi.fn(), refresh: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: actions.refresh }) }));
+vi.mock("@/lib/actions-course-onboarding", () => ({ confirmOnboardingProfile: actions.profile, saveOnboardingSurvey: actions.survey, acceptOnboardingRequirements: actions.accept }));
+const profile = { firstName: "Maria Jose", lastName: "Prueba", dni: "12345678", birthDate: "1990-01-15", phone: "3834000000", email: "alumna@example.com" };
+const progress = { id: "p", course: "c", student: "s", profileConfirmedAt: "2026-10-05", completedAt: "", requirementsAcceptedAt: "", requirementsVersion: 0, emailChangeRequested: "" } satisfies CourseOnboarding;
+beforeEach(() => { for (const mock of Object.values(actions)) mock.mockReset().mockResolvedValue({ success: true }); });
+it("precarga el perfil, protege el email y registra una solicitud separada", async () => {
+  const user = userEvent.setup();
+  render(<OnboardingWizard courseId="c" profile={profile} progress={null} survey={null} enrolled={false} />);
+  expect(screen.getByLabelText("Email de tu cuenta")).toHaveAttribute("readonly");
+  expect(screen.getByLabelText(/Apellido/)).toHaveValue("Prueba");
+  await user.click(screen.getByLabelText("Necesito corregir mi email"));
+  await user.type(screen.getByLabelText(/Email que querés/), "nuevo@example.com");
+  await user.click(screen.getByLabelText(/Confirmo que mis datos/));
+  await user.click(screen.getByRole("button", { name: /Confirmar datos/ }));
+  await waitFor(() => expect(actions.profile).toHaveBeenCalledWith("c", expect.objectContaining({ emailChangeRequested: "nuevo@example.com", confirmed: true })));
+});
+it("reanuda el borrador y aplica saltos y exclusiones sin exigir completar para guardarlo", async () => {
+  const user = userEvent.setup();
+  render(<OnboardingWizard courseId="c" profile={profile} progress={{ ...progress, surveyDraft: { experience: "never", frequency: "none", paidAccess: ["personal"], paidTools: "ChatGPT", goals: [], tools: [], uses: [], strategies: [], otherTools: "", otherUses: "", problem: "" } }} survey={null} enrolled={false} />);
+  expect(screen.queryByRole("group", { name: /3. ¿Qué herramientas/ })).not.toBeInTheDocument();
+  expect(screen.getByText(/necesitás familiarizarte/)).toBeInTheDocument();
+  await user.click(screen.getByLabelText("Prefiero no responder."));
+  expect(screen.getByLabelText(/pago una suscripción/)).not.toBeChecked();
+  expect(screen.queryByLabelText("¿Qué herramientas pagas?")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Guardar borrador" }));
+  await waitFor(() => expect(actions.survey).toHaveBeenCalledWith("c", expect.objectContaining({ paidAccess: ["private"] }), false));
+});
+it("no finaliza sin aceptación y muestra requisitos después de completar", async () => {
+  const survey = { id: "survey", course: "c", student: "s", answers: { experience: "never" }, version: 1, created: "" } as SubmittedOnboardingSurvey;
+  const user = userEvent.setup();
+  const { rerender } = render(<OnboardingWizard courseId="c" profile={profile} progress={progress} survey={survey} enrolled />);
+  expect(screen.getByRole("button", { name: "Completar onboarding" })).toBeInTheDocument();
+  fireEvent.submit(screen.getByRole("button", { name: "Completar onboarding" }).closest("form")!);
+  await waitFor(() => expect(actions.accept).toHaveBeenCalledWith("c", false));
+  await user.click(screen.getByLabelText(/Leí los requisitos/));
+  await user.click(screen.getByRole("button", { name: "Completar onboarding" }));
+  await waitFor(() => expect(actions.accept).toHaveBeenCalledWith("c", true));
+  rerender(<OnboardingWizard courseId="c" profile={profile} progress={{ ...progress, completedAt: "2026-10-05" }} survey={survey} enrolled />);
+  expect(screen.getByText("Ya completaste tu presentación al curso")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Ir al resumen del curso" })).toHaveAttribute("href", "/estudiantes/cursos/c");
+  expect(screen.getByText("no enseñaremos a utilizarlas desde cero")).toBeInTheDocument();
+});
+it("explica requisitos gratuitos y conocimientos previos en el componente compartido", () => {
+  render(<LiveClassRequirements />);
+  expect(screen.getByText("Una computadora con conexión a Internet")).toBeInTheDocument();
+  expect(screen.getByText("no es necesario pagar una suscripción")).toBeInTheDocument();
+  expect(screen.getByText("no enseñaremos a utilizarlas desde cero")).toBeInTheDocument();
+});

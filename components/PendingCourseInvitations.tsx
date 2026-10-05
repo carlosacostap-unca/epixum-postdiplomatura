@@ -75,6 +75,7 @@ export default function PendingCourseInvitations({ invitations }: PendingCourseI
                 <h3 className="mt-4 font-headline text-xl font-bold">{course?.title || "Curso invitado"}</h3>
                 <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">La invitación todavía no forma parte de Mis cursos.</p>
                 <Button className="mt-6 self-start" onClick={() => openInvitation(invitation)}>Activar curso</Button>
+                {course?.onboardingEnabled && <Link href={`/estudiantes/cursos/${invitation.course}/onboarding`} className="mt-3 inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]">Completar onboarding</Link>}
               </CardContent>
             </Card>
           );

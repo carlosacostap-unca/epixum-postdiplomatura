@@ -190,6 +190,12 @@ export default function CourseForm({
 
       <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-labelledby="course-links-title">
         <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
+          <label className="flex cursor-pointer items-start gap-3" htmlFor="onboardingEnabled">
+            <input type="checkbox" id="onboardingEnabled" name="onboardingEnabled" value="true" defaultChecked={course?.onboardingEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)]" />
+            <span><span className="block text-sm font-bold">Habilitar onboarding de IA</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Verificación de datos, encuesta inicial y requisitos para prácticas en vivo con IA. Requiere conocimientos previos. Deshabilitar conserva las respuestas.</span></span>
+          </label>
+        </div>
+        <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
           <label className="flex cursor-pointer items-start gap-3" htmlFor="reviewsEnabled">
             <input type="checkbox" id="reviewsEnabled" name="reviewsEnabled" value="true" defaultChecked={course?.reviewsEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)] text-[var(--color-primary)]" />
             <span><span className="block text-sm font-bold">Habilitar revisiones por turnos</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Los docentes crean revisiones y horarios; los alumnos reservan turnos hasta aprobar. Deshabilitar conserva las reservas y devoluciones, pero oculta la agenda.</span></span>

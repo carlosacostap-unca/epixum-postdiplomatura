@@ -14,7 +14,7 @@ export default async function CourseAdminLayout({ children, params }: { children
     <div className="page-container max-w-6xl">
       <Breadcrumbs items={[{ href: "/admin/courses", label: "Cursos" }, { label: course.title }]} />
       <PageHeader className="mt-6" eyebrow="Administración del curso" title={course.title} description="Configurá el curso, sus participantes y la forma de acceso desde un mismo lugar." actions={<DeleteCourseButton id={course.id} title={course.title} />} />
-      <div className="mt-8"><CourseAdminNavigation courseId={course.id} /></div>
+      <div className="mt-8"><CourseAdminNavigation courseId={course.id} onboardingEnabled={course.onboardingEnabled} /></div>
       <div className="mt-8">{children}</div>
     </div>
   );

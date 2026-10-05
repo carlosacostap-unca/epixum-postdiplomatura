@@ -22,6 +22,8 @@
     "verify:live-concurrency": "node scripts/verify-live-concurrency.mjs",
     "schema:interactive-classes": "node scripts/setup-interactive-class-schema.mjs",
     "schema:preparation": "node scripts/setup-preparation-schema.mjs",
+    "schema:onboarding": "node scripts/setup-onboarding-schema.mjs",
+    "schema:onboarding:test": "node --test scripts/onboarding-schema.test.mjs",
     "schema:reviews": "node scripts/setup-review-appointments-schema.mjs",
     "schema:reviews:test": "node --test scripts/review-appointments-schema.test.mjs",
     "schema:interactive-classes:test": "node --test scripts/interactive-class-schema.test.mjs",
