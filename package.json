@@ -14,7 +14,7 @@
     "mcp:pocketbase": "node tools/pocketbase-mcp/server.mjs",
     "mcp:pocketbase:test": "node --test tools/pocketbase-mcp/*.test.mjs",
     "mcp:pocketbase:smoke": "node tools/pocketbase-mcp/smoke.mjs",
-    "schema:test": "node --test scripts/weekly-schema.test.mjs scripts/invitation-schema.test.mjs scripts/course-content-schema.test.mjs scripts/ai-preevaluation-schema.test.mjs scripts/delivery-resubmission-schema.test.mjs scripts/delivery-resubmission-candidates.test.mjs scripts/course-role-rules.test.mjs scripts/course-role-audit.test.mjs scripts/course-role-schema.test.mjs scripts/interactive-class-schema.test.mjs scripts/review-appointments-schema.test.mjs scripts/bedel-schema.test.mjs",
+    "schema:test": "node --test scripts/weekly-schema.test.mjs scripts/invitation-schema.test.mjs scripts/course-content-schema.test.mjs scripts/ai-preevaluation-schema.test.mjs scripts/delivery-resubmission-schema.test.mjs scripts/delivery-resubmission-candidates.test.mjs scripts/course-role-rules.test.mjs scripts/course-role-audit.test.mjs scripts/course-role-schema.test.mjs scripts/interactive-class-schema.test.mjs scripts/review-appointments-schema.test.mjs scripts/bedel-schema.test.mjs scripts/resource-publication-schema.test.mjs",
     "schema:allow-week-zero": "node scripts/allow-week-zero.mjs",
     "schema:invitation": "node scripts/setup-invitation-schema.mjs",
     "schema:course-content": "node scripts/setup-course-content-schema.mjs",
@@ -47,7 +47,9 @@
     "spec:list": "openspec list --specs",
     "spec:validate": "openspec validate --specs --strict --no-interactive",
     "test:ui": "vitest run",
-    "test:ui:watch": "vitest"
+    "test:ui:watch": "vitest",
+    "schema:publication": "node scripts/setup-resource-publication-schema.mjs",
+    "schema:publication:verify": "node scripts/verify-resource-publication-access.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1004.0",

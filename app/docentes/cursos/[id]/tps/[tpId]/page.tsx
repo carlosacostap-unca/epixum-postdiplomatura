@@ -1,3 +1,4 @@
+import { PublicationBadge } from '@/components/course/PublicationBadge';
 import { redirect } from "next/navigation";
 import FormattedDate from "@/components/FormattedDate";
 import TpTeacherDeliveries from "@/components/TpTeacherDeliveries";
@@ -42,6 +43,7 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
       />
 
       <div className="flex flex-wrap gap-3">
+        <PublicationBadge status={assignment.publicationStatus} />
         <Badge tone={isPastDue ? "error" : "success"}>{isPastDue ? "Plazo cerrado" : "Plazo abierto"}</Badge>
         <Badge tone={pending ? "warning" : "neutral"}>{pending} por revisar</Badge>
         <Badge tone="info">{deliveries.length} {deliveries.length === 1 ? "entrega" : "entregas"}</Badge>

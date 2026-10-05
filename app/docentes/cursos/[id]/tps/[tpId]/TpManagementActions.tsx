@@ -1,4 +1,5 @@
 "use client";
+import { PublicationField } from '@/components/course/PublicationField';
 
 import RichTextEditor from "@/components/RichTextEditor";
 import { deleteAssignment, updateAssignment } from "@/lib/actions";
@@ -184,6 +185,7 @@ export default function TpManagementActions({ assignment, courseId, weeks }: TpM
                 />
               </div>
 
+              <PublicationField assignment existing status={assignment.publicationStatus} />
               <input type="hidden" name="systemPrompt" value={assignment.systemPrompt || ""} />
 
               <div className="flex flex-wrap justify-end gap-3 pt-2">

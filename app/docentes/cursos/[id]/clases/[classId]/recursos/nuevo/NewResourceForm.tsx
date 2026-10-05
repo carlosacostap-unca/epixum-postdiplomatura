@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createLink, getResourceUploadUrl } from "@/lib/actions";
 import { getErrorMessage } from "@/lib/errors";
+import { PublicationField } from '@/components/course/PublicationField';
 
 interface NewResourceFormProps {
   courseId: string;
@@ -67,6 +68,7 @@ export default function NewResourceForm({ courseId, classId }: NewResourceFormPr
       finalFormData.append('url', url);
       finalFormData.append('type', resourceType);
       finalFormData.append("classId", classId);
+      finalFormData.set('publicationStatus', formData.get('publicationStatus')!);
 
       const result = await createLink(finalFormData);
 
@@ -91,6 +93,8 @@ export default function NewResourceForm({ courseId, classId }: NewResourceFormPr
           {error}
         </div>
       )}
+
+      <PublicationField />
 
       {/* Resource Type Selection */}
       <div className="flex flex-col gap-3">

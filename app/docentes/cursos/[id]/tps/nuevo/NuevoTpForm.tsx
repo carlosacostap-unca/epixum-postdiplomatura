@@ -6,6 +6,7 @@ import { useState } from "react";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Button } from "@/components/ui";
 import type { CourseWeek } from "@/types";
+import { PublicationField } from '@/components/course/PublicationField';
 
 export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { courseId: string; weeks: CourseWeek[]; initialWeekId?: string }) {
   const router = useRouter();
@@ -87,6 +88,8 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
           className="w-full px-4 py-3 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-low)] border border-[var(--color-outline)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
         />
       </div>
+
+      <PublicationField assignment />
 
       <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
         <Button variant="ghost" disabled={loading} onClick={() => router.back()}>Cancelar</Button>

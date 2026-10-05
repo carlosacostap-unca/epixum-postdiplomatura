@@ -1,3 +1,4 @@
+import { PublicationBadge } from '@/components/course/PublicationBadge';
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
 import CourseKeyManager from "@/components/CourseKeyManager";
@@ -135,7 +136,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
               return (
                 <Link key={assignment.id} href={`/docentes/cursos/${course.id}/tps/${assignment.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                   <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
-                    <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{assignment.title}</h3>{pendingCount > 0 && <Badge tone="warning">{pendingCount} por revisar</Badge>}</div>
+                    <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{assignment.title}</h3><PublicationBadge status={assignment.publicationStatus} />{pendingCount > 0 && <Badge tone="warning">{pendingCount} por revisar</Badge>}</div>
                     <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{assignment.dueDate ? <>Vence <FormattedDate date={assignment.dueDate} showTime /></> : "Sin fecha límite"}</p>
                     <p className="mt-2 text-sm font-medium">{assignmentDeliveries.length} {assignmentDeliveries.length === 1 ? "entrega" : "entregas"}</p>
                   </CardContent></Card>

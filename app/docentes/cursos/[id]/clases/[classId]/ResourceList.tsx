@@ -1,5 +1,6 @@
 "use client";
 
+import { PublicationBadge } from '@/components/course/PublicationBadge';
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -36,7 +37,7 @@ export default function ResourceList({ links, classId, courseId }: { links: Link
     if (!deletingLink) return;
     setIsDeleting(true);
     try {
-      const result = await deleteLink(deletingLink.id, classId, "class");
+      const result = await deleteLink(deletingLink.id);
       if (!result.success) {
         notify({ title: "No se pudo eliminar el recurso", description: result.error, tone: "error", duration: null });
         return;
@@ -73,7 +74,7 @@ export default function ResourceList({ links, classId, courseId }: { links: Link
           <div key={link.id} className="flex items-center gap-3 rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container-low)] p-4">
             <a href={isFile(link) ? "#" : link.url} target={isFile(link) ? undefined : "_blank"} rel="noopener noreferrer" onClick={(event) => openResource(event, link)} className="flex min-w-0 flex-1 items-center gap-4 rounded-lg">
               <span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">{isFile(link) ? "description" : "link"}</span>
-              <span className="min-w-0"><span className="block truncate font-bold">{link.title}</span><span className="block truncate text-sm text-[var(--color-on-surface-variant)]">{isFile(link) ? "Archivo descargable" : link.url}</span></span>
+              <span className="min-w-0"><span className="block truncate font-bold">{link.title}</span><PublicationBadge status={link.publicationStatus} /><span className="block truncate text-sm text-[var(--color-on-surface-variant)]">{isFile(link) ? "Archivo descargable" : link.url}</span></span>
             </a>
             <IconButton label={`Editar ${link.title}`} icon={<span className="material-symbols-outlined">edit</span>} variant="ghost" onClick={() => setEditingLink(link)} />
             <IconButton label={`Eliminar ${link.title}`} icon={<span className="material-symbols-outlined">delete</span>} variant="ghost" onClick={() => setDeletingLink(link)} />

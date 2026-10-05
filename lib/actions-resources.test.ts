@@ -57,7 +57,8 @@ vi.mock('./s3', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-import { createLink, getResourceDownloadUrl, getResourceUploadUrl } from './actions';
+import { createLink, updateLink, createAssignmentForCourse, updateAssignment, getUploadUrl, createDelivery, getResourceDownloadUrl, getResourceUploadUrl } from './actions';
+import { revalidatePath } from 'next/cache';
 
 function linkForm(parent: { classId?: string; assignmentId?: string; contentId?: string }) {
   const form = new FormData();
@@ -70,6 +71,10 @@ function linkForm(parent: { classId?: string; assignmentId?: string; contentId?:
 
 describe('recursos de contenidos independientes', () => {
   beforeEach(() => {
+    records.assignments['tp-1'] = { id: 'tp-1', course: 'course-1', publicationStatus: 'draft' };
+    records.links['class-link'] = { id: 'class-link', class: 'class-1', title: 'Guía', url: 'https://files.example/file.pdf', publicationStatus: 'draft' };
+    records.links['tp-link'] = { id: 'tp-link', assignment: 'tp-1', title: 'Guía', url: 'https://files.example/file.pdf', publicationStatus: 'published' };
+    vi.mocked(revalidatePath).mockClear();
     mocks.model = { id: 'teacher-1', role: 'docente' };
     mocks.enabled = true;
     mocks.enrolled = true;
@@ -119,5 +124,81 @@ describe('recursos de contenidos independientes', () => {
     mocks.enrolled = true;
     mocks.enabled = false;
     await expect(getResourceDownloadUrl('link-1')).resolves.toMatchObject({ success: false });
+  });
+
+  it.each([{ classId: 'class-1' }, { assignmentId: 'tp-1' }])('crea recursos en borrador y permite publicar explícitamente: %s', async parent => {
+    const form = linkForm(parent);
+    expect(await createLink(form)).toEqual({ success: true });
+    expect(mocks.create).toHaveBeenLastCalledWith(expect.objectContaining({ publicationStatus: 'draft' }));
+    form.set('publicationStatus', 'published');
+    expect(await createLink(form)).toEqual({ success: true });
+    expect(mocks.create).toHaveBeenLastCalledWith(expect.objectContaining({ publicationStatus: 'published' }));
+  });
+
+  it('conserva estado en ediciones antiguas e invalida rutas del padre real', async () => {
+    const form = linkForm({ classId: 'forged-class' });
+    expect(await updateLink('class-link', form)).toEqual({ success: true });
+    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('publicationStatus');
+    expect(revalidatePath).toHaveBeenCalledWith('/estudiantes/cursos/course-1/clases/class-1');
+    form.set('publicationStatus', 'published');
+    await updateLink('class-link', form);
+    expect(mocks.update).toHaveBeenLastCalledWith('class-link', expect.objectContaining({ publicationStatus: 'published' }));
+    form.set('publicationStatus', 'draft');
+    await updateLink('class-link', form);
+    expect(mocks.update).toHaveBeenLastCalledWith('class-link', expect.objectContaining({ publicationStatus: 'draft' }));
+  });
+
+  it('rechaza estados inválidos y docentes ajenos antes de escribir', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const form = linkForm({ classId: 'class-1' });
+    form.set('publicationStatus', 'invalid');
+    expect(await createLink(form)).toMatchObject({ success: false });
+    expect(await updateLink('class-link', form)).toMatchObject({ success: false });
+    mocks.model = { id: 'outsider', role: 'docente' };
+    form.set('publicationStatus', 'published');
+    expect(await updateLink('class-link', form)).toMatchObject({ success: false });
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
+    vi.mocked(console.error).mockRestore();
+  });
+
+  it('no firma borradores ni recursos publicados dentro de un TP borrador para estudiantes', async () => {
+    mocks.model = { id: 'student-1', role: 'estudiante' };
+    expect(await getResourceDownloadUrl('class-link')).toMatchObject({ success: false });
+    expect(await getResourceDownloadUrl('tp-link')).toMatchObject({ success: false });
+    expect(mocks.download).not.toHaveBeenCalled();
+    records.links['class-link'].publicationStatus = '';
+    expect(await getResourceDownloadUrl('class-link')).toMatchObject({ success: true });
+    records.assignments['tp-1'].publicationStatus = 'published';
+    expect(await getResourceDownloadUrl('tp-link')).toMatchObject({ success: true });
+  });
+
+  it.each(['docente', 'admin', 'estudiante'])('el gestor puede descargar borradores con rol global %s', async role => {
+    mocks.model = { id: role === 'admin' ? 'admin-1' : 'teacher-1', role };
+    expect(await getResourceDownloadUrl('class-link')).toMatchObject({ success: true });
+    expect(await getResourceDownloadUrl('tp-link')).toMatchObject({ success: true });
+  });
+
+  it('crea trabajos completos en borrador y conserva estado si una edición no lo incluye', async () => {
+    const form = linkForm({});
+    expect(await createAssignmentForCourse('course-1', form)).toMatchObject({ success: true });
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ publicationStatus: 'draft' }));
+    mocks.update.mockClear();
+    expect(await updateAssignment('tp-1', form)).toMatchObject({ success: true });
+    expect(mocks.update.mock.calls[0][1]).not.toHaveProperty('publicationStatus');
+    form.set('publicationStatus', 'published');
+    expect(await updateAssignment('tp-1', form)).toMatchObject({ success: true });
+    expect(mocks.update).toHaveBeenLastCalledWith('tp-1', expect.objectContaining({ publicationStatus: 'published' }));
+  });
+
+  it('impide subir y entregar a trabajos completos en borrador', async () => {
+    mocks.model = { id: 'student-1', role: 'estudiante' };
+    expect(await getUploadUrl('entrega.pdf', 'application/pdf', 'tp-1')).toMatchObject({ success: false });
+    const form = new FormData();
+    form.set('assignmentId', 'tp-1');
+    form.set('repositoryUrl', 'https://example.com/entrega');
+    expect(await createDelivery(form)).toMatchObject({ success: false });
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.upload).not.toHaveBeenCalled();
   });
 });

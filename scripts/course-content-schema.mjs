@@ -1,13 +1,16 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
+import { publishedRule, withPublicationField } from './publication-fields.mjs';
 
 const weekVisibilityRule = (parent) =>
   `(${parent}.week.status = "publicada" || (${parent}.week.status = "programada" && ${parent}.week.publishAt != "" && ${parent}.week.publishAt <= @now))`;
 
 const CLASS_STUDENT_READ =
+  `${publishedRule()} && ` +
   'class.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
   `(class.course.organizationMode != "semanal" || (class.week != "" && ${weekVisibilityRule('class')}))`;
 
 const ASSIGNMENT_STUDENT_READ =
+  `${publishedRule()} && ${publishedRule('assignment.')} && ` +
   'assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
   `(assignment.course.organizationMode != "semanal" || (assignment.week != "" && ${weekVisibilityRule('assignment')}))`;
 
@@ -138,14 +141,16 @@ async function ensureCourseContents(pb, courses) {
 async function ensureContentLink(pb, contents) {
   const links = await pb.collections.getOne('links');
   return pb.collections.update(links.id, {
-    fields: mergeFields(links.fields, [
+    fields: withPublicationField(mergeFields(links.fields, [
       { name: 'content', type: 'relation', required: false, collectionId: contents.id, cascadeDelete: true, maxSelect: 1 },
-    ]),
+    ])),
     ...LINK_RULES,
   });
 }
 
 export async function applyCourseContentSchema(pb) {
+  const assignments = await pb.collections.getOne('assignments');
+  await pb.collections.update(assignments.id, { fields: withPublicationField(assignments.fields) });
   const courses = await ensureCourseConfiguration(pb);
   const contents = await ensureCourseContents(pb, courses);
   const links = await ensureContentLink(pb, contents);

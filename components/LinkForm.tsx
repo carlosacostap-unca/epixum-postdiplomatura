@@ -6,6 +6,7 @@ import { Link as LinkType } from "@/types";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui";
+import { PublicationField } from '@/components/course/PublicationField';
 
 interface LinkFormProps {
   link?: LinkType;
@@ -76,6 +77,7 @@ export default function LinkForm({ link, classId, assignmentId, contentId, onClo
       finalFormData.append('title', title);
       finalFormData.append('url', url);
       finalFormData.append('type', resourceType);
+      if (formData.has('publicationStatus')) finalFormData.set('publicationStatus', formData.get('publicationStatus')!);
       
       if (classId) finalFormData.append("classId", classId);
       if (assignmentId) finalFormData.append("assignmentId", assignmentId);
@@ -105,7 +107,7 @@ export default function LinkForm({ link, classId, assignmentId, contentId, onClo
 
   const containerClasses = isEmbedded 
     ? "w-full"
-    : "bg-[var(--color-surface-container-low)] p-6 rounded-lg shadow-xl border border-[var(--color-outline-variant)] max-w-md w-full";
+    : "bg-[var(--color-surface-container-low)] p-6 rounded-lg shadow-xl border border-[var(--color-outline-variant)] max-w-md w-full max-h-[90dvh] overflow-y-auto";
 
   return (
     <div className={containerClasses}>
@@ -213,6 +215,8 @@ export default function LinkForm({ link, classId, assignmentId, contentId, onClo
             )}
           </div>
         )}
+
+        {(classId || assignmentId || link?.class || link?.assignment) && <PublicationField existing={Boolean(link)} status={link?.publicationStatus} />}
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           {onClose && <Button variant="ghost" onClick={onClose} disabled={loading}>Cancelar</Button>}

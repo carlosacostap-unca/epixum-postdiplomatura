@@ -1,5 +1,6 @@
 import { COURSE_RULES } from './course-schema-rules.mjs';
-import { WEEK_RULES, CONTENT_RULES, DELIVERY_RULES, INQUIRY_RULES, INQUIRY_RESPONSE_RULES } from './weekly-schema.mjs';
+import { WEEK_RULES, CONTENT_RULES, ASSIGNMENT_RULES, DELIVERY_RULES, INQUIRY_RULES, INQUIRY_RESPONSE_RULES } from './weekly-schema.mjs';
+import { withPublicationField } from './publication-fields.mjs';
 import { COURSE_CONTENT_RULES, LINK_RULES } from './course-content-schema.mjs';
 import { ASSIGNMENT_AI_CONFIG_RULES, AI_PREEVALUATION_RULES } from './ai-preevaluation-schema.mjs';
 import { INVITATION_RULES, ATTEMPT_RULES, ENROLLMENT_RULES } from './invitation-schema.mjs';
@@ -11,7 +12,7 @@ export const COURSE_ROLE_RULES = {
   course_enrollment_attempts: ATTEMPT_RULES,
   course_weeks: WEEK_RULES,
   classes: CONTENT_RULES,
-  assignments: CONTENT_RULES,
+  assignments: ASSIGNMENT_RULES,
   inquiries: INQUIRY_RULES,
   inquiry_responses: INQUIRY_RESPONSE_RULES,
   deliveries: DELIVERY_RULES,
@@ -31,7 +32,10 @@ export async function applyCourseRoleRules(pb) {
       if (error?.status === 404) continue;
       throw error;
     }
-    await pb.collections.update(collection.id, rules);
+    await pb.collections.update(collection.id, {
+      ...rules,
+      ...(['assignments', 'links'].includes(name) ? { fields: withPublicationField(collection.fields) } : {}),
+    });
     updatedCollections.push(name);
   }
   return { updatedCollections };

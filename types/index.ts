@@ -26,6 +26,7 @@ export interface User extends BaseModel {
 }
 
 export interface Link extends BaseModel {
+  publicationStatus?: 'draft' | 'published' | '';
   title: string;
   url: string;
   type?: 'link' | 'file';
@@ -49,6 +50,7 @@ export interface Class extends BaseModel {
 }
 
 export interface Assignment extends BaseModel {
+  publicationStatus?: 'draft' | 'published' | '';
   title: string;
   description: string;
   dueDate?: string; // Adding dueDate as it might be useful without sprints

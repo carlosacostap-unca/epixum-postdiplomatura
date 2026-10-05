@@ -1,5 +1,6 @@
 "use client";
 
+import { PublicationBadge } from '@/components/course/PublicationBadge';
 import { useState } from "react";
 import { Link as LinkType } from "@/types";
 import { deleteLink, getResourceDownloadUrl } from "@/lib/actions";
@@ -47,7 +48,7 @@ export default function TpResourceManager({ links, assignmentId }: TpResourceMan
     if (!deletingLink) return;
     setIsDeleting(true);
     try {
-      const result = await deleteLink(deletingLink.id, assignmentId, 'assignment');
+      const result = await deleteLink(deletingLink.id);
       if (!result.success) {
         notify({ title: "No se pudo eliminar el recurso", description: result.error, tone: "error", duration: null });
         return;
@@ -96,9 +97,9 @@ export default function TpResourceManager({ links, assignmentId }: TpResourceMan
               onClick={(e) => handleResourceClick(e, link)}
               className="flex-1 text-sm font-medium text-[var(--color-on-surface)] hover:text-[var(--color-primary)] transition-colors truncate"
             >
-              {downloadingId === link.id ? 'Descargando...' : link.title}
+              <span className="block truncate">{downloadingId === link.id ? 'Descargando...' : link.title}</span><PublicationBadge status={link.publicationStatus} />
             </a>
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex shrink-0 gap-1">
               <button
                 onClick={() => setEditingLink(link)}
                 className="p-1.5 rounded-lg hover:bg-[var(--color-surface-container-highest)] text-[var(--color-on-surface-variant)] transition-colors"

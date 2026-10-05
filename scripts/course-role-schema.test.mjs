@@ -19,7 +19,7 @@ function fakePocketBase() {
   return { pb, recordWrites, state };
 }
 
-test('la migración de roles actualiza sólo reglas y es idempotente', async () => {
+test('la migración de roles actualiza reglas y campos requeridos sin escribir registros, de forma idempotente', async () => {
   const { pb, recordWrites, state } = fakePocketBase();
   const first = await applyCourseRoleRules(pb);
   const snapshot = JSON.stringify([...state]);

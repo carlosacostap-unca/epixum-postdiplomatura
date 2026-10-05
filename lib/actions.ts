@@ -13,6 +13,7 @@ import {
 } from "@/types";
 import { teacherCanManageCourse } from "./teacher-scope";
 import { getErrorResponse } from "./errors";
+import { isPublished, publicationPatch } from "./publication";
 import { isWeekEffectivelyVisible } from "./course-weeks";
 import { getExclusiveResourceParent, resourceParentField, type ResourceParent } from "./resource-parent";
 import { serializeDeliveryUrlForAssignment } from "./delivery-github";
@@ -60,7 +61,8 @@ async function studentCanAccessContent(
   recordId: string,
 ) {
   try {
-    const record = await pb.collection(collection).getOne(recordId, { fields: "id,course,week" });
+    const record = await pb.collection(collection).getOne(recordId, { fields: collection === "assignments" ? "id,course,week,publicationStatus" : "id,course,week" });
+    if (collection === "assignments" && !isPublished(record.publicationStatus)) return false;
     if (!(await studentCanAccessCourse(pb, user, record.course))) return false;
     const course = await pb.collection("courses").getOne(record.course, { fields: "id,organizationMode" });
     if (course.organizationMode !== "semanal") return true;
@@ -167,6 +169,19 @@ async function linkParent(pb: ServerPocketBase, linkId: string) {
   return getExclusiveResourceParent({ classId: link.class, assignmentId: link.assignment, contentId: link.content });
 }
 
+function revalidateResourceViews(parent: ResourceParent, courseId?: string) {
+  const segment = parent.type === 'class' ? 'clases' : parent.type === 'assignment' ? 'tps' : 'contenidos';
+  if (courseId) {
+    for (const role of ['docentes', 'estudiantes']) {
+      revalidatePath(`/${role}/cursos/${courseId}/${segment}/${parent.id}`);
+      revalidatePath(`/${role}/cursos/${courseId}`);
+    }
+  }
+  revalidatePath('/bedeles', 'layout');
+  if (parent.type === 'class') revalidatePath(`/classes/${parent.id}`);
+  if (parent.type === 'assignment') revalidatePath(`/assignments/${parent.id}`);
+}
+
 function getStorageKeyFromUrl(fileUrl: string) {
   let key = fileUrl;
   if (fileUrl.startsWith('http')) {
@@ -242,7 +257,7 @@ export async function getResourceDownloadUrl(linkId: string) {
       : parent.type === 'assignment'
         ? await studentCanAccessContent(pb, user, 'assignments', parent.id)
         : await studentCanAccessIndependentContent(pb, user, parent.id);
-    if (!managerAllowed && !studentAllowed) {
+    if (!managerAllowed && (!studentAllowed || (parent.type !== 'content' && !isPublished(link.publicationStatus)))) {
       return { success: false, error: 'No autorizado para este curso' };
     }
 
@@ -523,6 +538,7 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
     }
 
     const data: Record<string, unknown> = {
+      ...publicationPatch(formData.get('publicationStatus'), true),
       title,
       description,
       dueDate: dateObj,
@@ -572,6 +588,7 @@ export async function createAssignment(formData: FormData) {
 
   try {
     const data: Record<string, unknown> = {
+      ...publicationPatch(formData.get('publicationStatus'), true),
       title,
       description,
       systemPrompt: systemPrompt || "",
@@ -607,11 +624,12 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
   const description = formData.get('description') as string;
   const dueDate = formData.get('dueDate') as string;
   const systemPrompt = formData.get('systemPrompt') as string;
-  const courseId = formData.get('courseId') as string;
+  const courseId = scopedCourseId;
 
   try {
     const week = await validatedWeekId(pb, scopedCourseId!, formData.get('week'));
     const data: Record<string, unknown> = {
+      ...publicationPatch(formData.get('publicationStatus')),
       title,
       description,
       systemPrompt: systemPrompt || "",
@@ -622,6 +640,8 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
     await pb.collection('assignments').update(assignmentId, data);
     
     revalidatePath('/');
+    revalidatePath('/estudiantes', 'layout');
+    revalidatePath('/bedeles', 'layout');
     revalidatePath(`/assignments/${assignmentId}`);
     if (courseId) {
       revalidatePath(`/docentes/cursos/${courseId}`);
@@ -732,6 +752,7 @@ export async function createLink(formData: FormData) {
 
   try {
     const data: Record<string, unknown> = {
+      ...(parent.type !== 'content' ? publicationPatch(formData.get('publicationStatus'), true) : {}),
       title,
       url,
       type,
@@ -740,16 +761,8 @@ export async function createLink(formData: FormData) {
     
     await pb.collection('links').create(data);
     
-    if (classId) {
-      revalidatePath(`/classes/${classId}`);
-      revalidatePath('/docentes', 'layout'); // Revalidate all teacher routes
-    }
-    if (assignmentId) revalidatePath(`/assignments/${assignmentId}`);
-    if (contentId && access.courseId) {
-      revalidatePath(`/docentes/cursos/${access.courseId}/contenidos/${contentId}`);
-      revalidatePath(`/estudiantes/cursos/${access.courseId}/contenidos/${contentId}`);
-    }
-    
+    revalidateResourceViews(parent, access.courseId);
+
     return { success: true };
   } catch (error) {
     console.error('Failed to create link:', error);
@@ -774,12 +787,10 @@ export async function updateLink(linkId: string, formData: FormData) {
   const title = formData.get('title') as string;
   const url = formData.get('url') as string;
   const type = formData.get('type') as 'link' | 'file';
-  const classId = formData.get('classId') as string;
-  const assignmentId = formData.get('assignmentId') as string;
-  const contentId = formData.get('contentId') as string;
 
   try {
     const data: Record<string, unknown> = {
+      ...(parent.type !== 'content' ? publicationPatch(formData.get('publicationStatus')) : {}),
       title,
       url,
     };
@@ -787,16 +798,8 @@ export async function updateLink(linkId: string, formData: FormData) {
 
     await pb.collection('links').update(linkId, data);
     
-    if (classId) {
-      revalidatePath(`/classes/${classId}`);
-      revalidatePath('/docentes', 'layout');
-    }
-    if (assignmentId) revalidatePath(`/assignments/${assignmentId}`);
-    if (contentId && access.courseId) {
-      revalidatePath(`/docentes/cursos/${access.courseId}/contenidos/${contentId}`);
-      revalidatePath(`/estudiantes/cursos/${access.courseId}/contenidos/${contentId}`);
-    }
-    
+    revalidateResourceViews(parent, access.courseId);
+
     return { success: true };
   } catch (error) {
     console.error('Failed to update link:', error);
@@ -804,7 +807,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   }
 }
 
-export async function deleteLink(linkId: string, parentId?: string, parentType?: 'class' | 'assignment' | 'content') {
+export async function deleteLink(linkId: string) {
   const pb = await createServerClient();
   const user = pb.authStore.model;
 
@@ -821,20 +824,8 @@ export async function deleteLink(linkId: string, parentId?: string, parentType?:
   try {
     await pb.collection('links').delete(linkId);
     
-    if (parentId && parentType) {
-        if (parentType === 'class') {
-          revalidatePath(`/classes/${parentId}`);
-          revalidatePath('/docentes', 'layout'); // Revalidate all teacher routes
-        }
-        if (parentType === 'assignment') revalidatePath(`/assignments/${parentId}`);
-        if (parentType === 'content' && access.courseId) {
-          revalidatePath(`/docentes/cursos/${access.courseId}/contenidos/${parentId}`);
-          revalidatePath(`/estudiantes/cursos/${access.courseId}/contenidos/${parentId}`);
-        }
-    }
-    // Si no se pasaron parentId/parentType pero igual queremos asegurar que se actualice la UI docente
-    revalidatePath('/docentes', 'layout');
-    
+    revalidateResourceViews(parent, access.courseId);
+
     return { success: true };
   } catch (error) {
     console.error('Failed to delete link:', error);

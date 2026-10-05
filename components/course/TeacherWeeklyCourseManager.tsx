@@ -1,5 +1,6 @@
 "use client";
 
+import { PublicationBadge } from './PublicationBadge';
 import Link from "next/link";
 import { CourseUnit } from "./CourseUnit";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,7 @@ import { Badge, Button, Card, CardContent, ConfirmDialog, Dialog, EmptyState, us
 
 type WeeklyItem =
   | { id: string; title: string; type: "class"; href: string }
-  | { id: string; title: string; type: "assignment"; href: string }
+  | { id: string; title: string; type: "assignment"; href: string; publicationStatus?: string }
   | { id: string; title: string; type: "inquiry"; href: string };
 
 interface WeekGroup {
@@ -48,7 +49,7 @@ function dateOnly(value?: string) {
 function weekItems(courseId: string, group: Omit<WeekGroup, "week">): WeeklyItem[] {
   return [
     ...group.classes.map((item) => ({ id: item.id, title: item.title, type: "class" as const, href: `/docentes/cursos/${courseId}/clases/${item.id}` })),
-    ...group.assignments.map((item) => ({ id: item.id, title: item.title, type: "assignment" as const, href: `/docentes/cursos/${courseId}/tps/${item.id}` })),
+    ...group.assignments.map((item) => ({ id: item.id, title: item.title, publicationStatus: item.publicationStatus, type: "assignment" as const, href: `/docentes/cursos/${courseId}/tps/${item.id}` })),
     ...group.inquiries.map((item) => ({ id: item.id, title: item.title, type: "inquiry" as const, href: `/docentes/cursos/${courseId}/consultas/${item.id}` })),
   ];
 }
@@ -122,7 +123,7 @@ function ContentMover({ courseId, item, weeks, currentWeek }: { courseId: string
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-outline-variant)] p-4 sm:flex-row sm:items-center">
-      <Link className="flex min-w-0 flex-1 items-start gap-3 font-semibold hover:text-[var(--color-primary)]" href={item.href}><span className="material-symbols-outlined shrink-0 text-xl text-[var(--color-info)]" aria-hidden="true">{item.type === "class" ? "menu_book" : item.type === "assignment" ? "assignment" : "forum"}</span><span><span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">{item.type === "class" ? "Clase" : item.type === "assignment" ? "Trabajo práctico" : "Consulta"}</span>{item.title}</span></Link>
+      <Link className="flex min-w-0 flex-1 items-start gap-3 font-semibold hover:text-[var(--color-primary)]" href={item.href}><span className="material-symbols-outlined shrink-0 text-xl text-[var(--color-info)]" aria-hidden="true">{item.type === "class" ? "menu_book" : item.type === "assignment" ? "assignment" : "forum"}</span><span><span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">{item.type === "class" ? "Clase" : item.type === "assignment" ? "Trabajo práctico" : "Consulta"}</span>{item.title}{item.type === "assignment" && <span className="ml-2"><PublicationBadge status={item.publicationStatus} /></span>}</span></Link>
       <label className="sr-only" htmlFor={`week-${item.type}-${item.id}`}>Unidad para {item.title}</label>
       <select id={`week-${item.type}-${item.id}`} className={`${fieldClass} sm:w-52`} value={target} onChange={(event) => setTarget(event.target.value)}>
         <option value="">Sin unidad</option>
