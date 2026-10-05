@@ -97,7 +97,7 @@ describe('lecturas de bedel', () => {
     expect(options.fields).not.toMatch(/feedback|evaluatedBy|email|grade/);
     mocks.read.mockClear(); mocks.course.reviewsEnabled = false;
     expect((await getBedelAttendance('course-a')).attendance).toEqual([]);
-    expect(mocks.read).toHaveBeenCalledTimes(1);
+    expect(mocks.read.mock.calls.some(call => call[0] === 'review_bookings')).toBe(false);
   });
 
   it('el bedel no puede consultar la lista administrativa de otros bedeles', async () => {

@@ -11,7 +11,7 @@ function dateTime(value: string) {
 const inputClass = 'min-h-11 rounded-lg border border-[var(--color-outline)] bg-[var(--color-surface)] px-3 py-2';
 const phaseLabels = { live: 'En vivo', closed: 'Finalizada', pending: 'Pendiente', untracked: 'Sin registro' };
 
-export function AttendanceSheet({ courseId, enabled, report }: { courseId: string; enabled: boolean; report: AttendanceReport }) {
+export function AttendanceSheet({ courseId, enabled, report, readOnly = false }: { courseId: string; enabled: boolean; report: AttendanceReport; readOnly?: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [search, setSearch] = useState('');
@@ -29,6 +29,7 @@ export function AttendanceSheet({ courseId, enabled, report }: { courseId: strin
   const rows = report.rows.filter(row => `${row.student.name} ${row.student.email}`.toLocaleLowerCase('es').includes(query));
 
   function toggle() {
+    if (readOnly) return;
     setError(''); setMessage('');
     startTransition(async () => {
       try {
@@ -41,7 +42,7 @@ export function AttendanceSheet({ courseId, enabled, report }: { courseId: strin
   }
   function correct(event: React.FormEvent) {
     event.preventDefault();
-    if (!selection) return;
+    if (readOnly || !selection) return;
     setError(''); setMessage('');
     startTransition(async () => {
       try {
@@ -54,13 +55,13 @@ export function AttendanceSheet({ courseId, enabled, report }: { courseId: strin
   return <div className="space-y-6">
     <Card><CardContent className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-xl font-bold">Asistencia automática</h2><p className="mt-1">{enabled ? 'Activada' : 'Desactivada'} para nuevas sesiones en vivo.</p></div>
-        <Button onClick={toggle} disabled={pending} variant={enabled ? 'secondary' : 'primary'}>{enabled ? 'Desactivar asistencia' : 'Activar asistencia'}</Button></div>
+        {!readOnly && <Button onClick={toggle} disabled={pending} variant={enabled ? 'secondary' : 'primary'}>{enabled ? 'Desactivar asistencia' : 'Activar asistencia'}</Button>}</div>
       <p className="text-sm text-[var(--color-on-surface-variant)]">El ingreso en vivo marca presente. El repaso posterior no cuenta. Los cambios de configuración se aplican al iniciar una nueva sesión; las sesiones ya iniciadas conservan su configuración.</p>
     </CardContent></Card>
     {error && <p role="alert" className="rounded-lg border border-[var(--color-error)] p-4 text-[var(--color-error)]">{error}</p>}
     {message && <p role="status" className="rounded-lg bg-[var(--color-surface-container)] p-4">{message}</p>}
     <div ref={editor} tabIndex={-1}>
-      {selectedCell && selectedClass && selectedRow && <Card><CardContent>
+      {!readOnly && selectedCell && selectedClass && selectedRow && <Card><CardContent>
         <form onSubmit={correct} className="space-y-4">
           <h2 className="text-xl font-bold">Corregir asistencia</h2>
           <p>{selectedRow.student.name} · {selectedClass.title}</p>
@@ -86,7 +87,7 @@ export function AttendanceSheet({ courseId, enabled, report }: { courseId: strin
               <span className={`font-bold ${cell.status === 'present' ? 'text-[var(--color-success)]' : cell.status === 'absent' ? 'text-[var(--color-error)]' : 'text-[var(--color-on-surface-variant)]'}`}>{attendanceLabels[cell.status]}</span>
               {cell.firstJoinedAt && <span className="mt-1 block text-xs">Ingreso: {dateTime(cell.firstJoinedAt)}</span>}
               {cell.corrections[0] && <span className="mt-1 block text-xs">Corregido por {cell.corrections[0].actorName}<br />{dateTime(cell.corrections[0].created)}</span>}
-              {cell.editable && <button className="mt-2 min-h-11 font-semibold text-[var(--color-primary)] disabled:opacity-50" disabled={pending} aria-label={`Corregir ${row.student.name}, ${cls.title}`} onClick={() => {
+              {!readOnly && cell.editable && <button className="mt-2 min-h-11 font-semibold text-[var(--color-primary)] disabled:opacity-50" disabled={pending} aria-label={`Corregir ${row.student.name}, ${cls.title}`} onClick={() => {
                 setSelection({ studentId: row.student.id, classId: cls.id }); setStatus(cell.status === 'absent' ? 'absent' : 'present'); setError(''); setMessage('');
                 requestAnimationFrame(() => { editor.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }); editor.current?.focus(); });
               }}>Corregir</button>}

@@ -8,6 +8,19 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock('@/lib/actions-course-attendance', () => ({ setCourseAttendance: m.toggle, correctCourseAttendance: m.correct }));
 const report: AttendanceReport = { classes: [{ id: 'c', title: 'Clase 1', date: '', phase: 'closed' }], rows: [{ student: { id: 's', name: 'Alumno Prueba', email: 'alumno@example.com', enrolledAt: '' }, cells: { c: { status: 'present', firstJoinedAt: '2026-10-05T12:00:00Z', editable: true, corrections: [] } } }] };
 beforeEach(() => { m.toggle.mockReset().mockResolvedValue({ success: true }); m.correct.mockReset().mockResolvedValue({ success: true }); m.refresh.mockReset(); });
+it('el bedel consulta, filtra y actualiza sin controles de edición', async () => {
+  const user = userEvent.setup();
+  render(<AttendanceSheet courseId="course" enabled report={report} readOnly />);
+  expect(screen.getByText('Presente')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Activar asistencia|Desactivar asistencia|Corregir/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText('Buscar alumno'), 'Prueba');
+  expect(screen.getByText('Alumno Prueba')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Actualizar planilla' }));
+  expect(m.refresh).toHaveBeenCalled();
+  expect(m.toggle).not.toHaveBeenCalled();
+  expect(m.correct).not.toHaveBeenCalled();
+});
 it('activa la opción y explica alcance en vivo y para sesiones nuevas', async () => {
   render(<AttendanceSheet courseId="course" enabled={false} report={report} />);
   expect(screen.getByText(/El repaso posterior no cuenta/)).toBeInTheDocument();

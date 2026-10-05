@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/pocketbase-server';
 import { createServiceClient } from '@/lib/pocketbase-service';
 import { requireBedelAssignment } from '@/lib/course-bedel-access';
 import type { CourseBedel } from '@/lib/course-bedels';
+import { readAttendanceReport } from '@/lib/course-attendance-service';
 import type { Assignment, Class, Course, CourseContent, CourseWeek, InteractiveLesson, Link } from '@/types';
 
 const COURSE_FIELDS = 'id,title,description,status,organizationMode,contentsEnabled,interactiveClassesEnabled,reviewsEnabled';
@@ -64,11 +65,18 @@ export async function getBedelAttendance(courseId: string) {
   const pb = await createServerClient();
   await requireBedelAssignment(pb, courseId);
   const service = await createServiceClient();
-  const course = await service.collection('courses').getOne<Course>(courseId, { fields: 'id,title,reviewsEnabled' });
+  const course = await service.collection('courses').getOne<Course>(courseId, { fields: 'id,title,reviewsEnabled,interactiveClassesEnabled,attendanceEnabled' });
+  const report = course.interactiveClassesEnabled || course.attendanceEnabled
+    ? await readAttendanceReport(service, courseId) : null;
+  if (report) {
+    for (const row of report.rows) {
+      for (const cell of Object.values(row.cells)) cell.editable = false;
+    }
+  }
   const attendance = course.reviewsEnabled ? await service.collection('review_bookings').getFullList<BedelAttendance>({
     filter: service.filter('review.course = {:courseId} && slot.review.course = {:courseId} && attendance != "" && status != "cancelled"', { courseId }),
     sort: '-slot.startsAt', expand: 'student,review,slot',
     fields: 'id,attendance,expand.student.name,expand.student.firstName,expand.student.lastName,expand.review.title,expand.slot.startsAt',
   }) : [];
-  return { course, attendance };
+  return { course, report, attendance };
 }

@@ -25,9 +25,10 @@ it.each(['teacher', 'admin'])('permite configurar al %s y solo cambia el flag de
   expect(await setCourseAttendance(m.course.id, true)).toEqual({ success: true });
   expect(m.update).toHaveBeenCalledWith(m.course.id, { attendanceEnabled: true });
 });
-it.each(['anonymous', 'outsider', 'disabled'])('rechaza %s antes de crear el cliente privilegiado', async kind => {
+it.each(['anonymous', 'outsider', 'bedel', 'disabled'])('rechaza %s antes de crear el cliente privilegiado', async kind => {
   if (kind === 'anonymous') m.valid = false;
   if (kind === 'outsider') m.user = { ...m.user, id: 'outsider0000001', role: 'docente' };
+  if (kind === 'bedel') m.user = { ...m.user, id: 'bedel000000001', role: 'estudiante' };
   if (kind === 'disabled') m.course.interactiveClassesEnabled = false;
   expect((await setCourseAttendance(m.course.id, true)).success).toBe(false);
   expect((await correctCourseAttendance(m.course.id, input)).success).toBe(false);
