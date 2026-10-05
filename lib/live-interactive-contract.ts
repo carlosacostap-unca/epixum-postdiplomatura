@@ -8,6 +8,7 @@ export interface LiveSession {
   title: string; classTitle: string; code: string; status: 'live' | 'closed';
   screenIndex: number; screenId: string; screenType: InteractiveScreen['type']; screen: PublicScreen;
   activityOpen: boolean; revision: string; created: string; updated: string; closedAt: string;
+  attendanceEnabled?: boolean;
 }
 export interface LiveParticipant { id: string; student: string; name: string; updated: string }
 export interface LiveAnswer { id: string; student: string; screenId: string; answer: string; created: string }

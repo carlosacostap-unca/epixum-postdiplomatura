@@ -1,3 +1,4 @@
+import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
 const auth = '@request.auth.id != ""';
 const enabled = 'course.interactiveClassesEnabled = true';
 const teacher = 'course.teachers.id ?= @request.auth.id';
@@ -15,8 +16,8 @@ export const liveRules = {
   sessions: {
     listRule: `${auth} && ${enabled} && (${teacher} || ((${enrolled}) && (${member})))`,
     viewRule: `${auth} && ${enabled} && (${teacher} || ((${enrolled}) && (${member})))`,
-    createRule: `${auth} && ${enabled} && ${teacher} && controller = @request.auth.id && status = "live" && lesson.course = course && lesson.status = "ready" && class = lesson.class && class != "" && ${dates}`,
-    updateRule: `${auth} && ${enabled} && ${teacher} && controller = @request.auth.id && status = "live" && @request.body.expectedRevision = revision && @request.body.revision != revision && ${immutable(['course', 'class', 'lesson', 'controller', 'title', 'classTitle', 'code'])} && ${dates}`,
+    createRule: `${auth} && ${enabled} && ${teacher} && controller = @request.auth.id && status = "live" && lesson.course = course && lesson.status = "ready" && class = lesson.class && class != "" && attendanceEnabled = course.attendanceEnabled && ${dates}`,
+    updateRule: `${auth} && ${enabled} && ${teacher} && controller = @request.auth.id && status = "live" && @request.body.expectedRevision = revision && @request.body.revision != revision && ${immutable(['course', 'class', 'lesson', 'controller', 'title', 'classTitle', 'code', 'attendanceEnabled'])} && ${dates}`,
     deleteRule: null,
   },
   materials: {
@@ -58,6 +59,7 @@ async function ensure(pb, name, fields, rules, indexes = []) {
 
 export async function applyLiveInteractiveSchema(pb) {
   const [courses, classes, lessons, users] = await Promise.all(['courses', 'classes', 'interactive_lessons', 'users'].map((name) => pb.collections.getOne(name)));
+  await ensure(pb, 'courses', [{ name: 'attendanceEnabled', type: 'bool' }], { updateRule: COURSE_UPDATE_RULE });
   // Create the collections locked first: their final rules reference one another.
   const session = await ensure(pb, 'interactive_sessions', [
     relation('course', courses.id), relation('class', classes.id, false, false), relation('lesson', lessons.id, false, false), relation('controller', users.id, false, false),
@@ -66,7 +68,7 @@ export async function applyLiveInteractiveSchema(pb) {
     { name: 'screenIndex', type: 'number', min: 0, max: 79, onlyInt: true }, text('screenId', 64),
     { name: 'screenType', type: 'select', required: true, maxSelect: 1, values: ['content', 'multiple-choice', 'poll', 'short-answer'] },
     { name: 'screen', type: 'json', required: true, maxSize: 200000 }, { name: 'activityOpen', type: 'bool' }, text('revision', 32),
-    { name: 'closedAt', type: 'date' }, ...Array.from({ length: 8 }, (_, i) => text('option' + i, 64, false)), ...timestampFields(),
+    { name: 'closedAt', type: 'date' }, { name: 'attendanceEnabled', type: 'bool' }, ...Array.from({ length: 8 }, (_, i) => text('option' + i, 64, false)), ...timestampFields(),
   ], {}, [
     'CREATE UNIQUE INDEX idx_live_code ON interactive_sessions (code)',
     "CREATE UNIQUE INDEX idx_live_lesson ON interactive_sessions (lesson) WHERE status = 'live' AND lesson != ''",

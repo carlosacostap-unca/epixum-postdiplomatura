@@ -42,7 +42,7 @@ async function sessionMaterial(pb: PocketBase, session: string) {
 
 export async function startLiveSession(pb: PocketBase, courseId: string, lessonId: string) {
   const user = liveUser(pb);
-  await requireInteractiveCourse(pb, courseId);
+  const course = await requireInteractiveCourse(pb, courseId);
   const lesson = await requireInteractiveLesson(pb, courseId, lessonId);
   const activeFilter = pb.filter('lesson = {:lesson} && status = "live"', { lesson: lessonId });
   const active = await first<LiveSession>(pb, 'interactive_sessions', activeFilter);
@@ -54,7 +54,7 @@ export async function startLiveSession(pb: PocketBase, courseId: string, lessonI
   const screen = publicScreen(material.screens[0]);
   const id = recordId();
   const batch = pb.createBatch();
-  batch.collection('interactive_sessions').create({ id, course: courseId, lesson: lessonId, class: linkedClass.id, controller: user, title: lesson.title, classTitle: linkedClass.title, code: randomBytes(4).toString('hex').toUpperCase(), status: 'live', screenIndex: 0, screenId: screen.id, screenType: screen.type, screen, ...answerOptions(screen), activityOpen: false, revision: nonce() });
+  batch.collection('interactive_sessions').create({ id, course: courseId, lesson: lessonId, class: linkedClass.id, controller: user, title: lesson.title, classTitle: linkedClass.title, attendanceEnabled: Boolean(course.attendanceEnabled), code: randomBytes(4).toString('hex').toUpperCase(), status: 'live', screenIndex: 0, screenId: screen.id, screenType: screen.type, screen, ...answerOptions(screen), activityOpen: false, revision: nonce() });
   batch.collection('interactive_session_materials').create({ session: id, material });
   try { await batch.send(); }
   catch (error) {
