@@ -1,5 +1,5 @@
 import type { InteractiveMaterial } from './interactive-material';
-import { joinSessionSchema, liveCommandSchema, publicScreen, validateLiveAnswer } from './live-interactive-contract';
+import { joinSessionSchema, liveCommandSchema, projectionResults, publicScreen, validateLiveAnswer } from './live-interactive-contract';
 import type { LiveAnswer, LiveCommand, LiveSession, LiveState } from './live-interactive-contract';
 
 export const SIMULATION_CODE = 'PRUEBA01';
@@ -97,6 +97,7 @@ export function simulationTeacherState(model: InteractiveSimulation, results = '
   return {
     role: 'teacher', canControl: true, material: model.material, session: model.session,
     serverTime: now, ownAnswer: null, resultsScreenId,
+    projectionResults: projectionResults(model.session.screen, model.answers),
     participants: model.students.filter((s) => s.joined).map((s) => ({ id: s.id, student: s.id, name: s.name, updated: new Date(s.connected ? now : 0).toISOString() })),
     answers: model.answers.filter((a) => a.screenId === resultsScreenId),
   };

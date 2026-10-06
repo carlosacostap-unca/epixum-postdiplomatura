@@ -8,6 +8,8 @@ import { screenTypeLabels } from '@/lib/interactive-material';
 import type { LiveCommand, LiveState, PublicScreen } from '@/lib/live-interactive-contract';
 import { ContentWindow } from './ContentWindow';
 import { TeacherScript } from './TeacherScript';
+import { ProjectionResults } from './ProjectionResults';
+import studentStyles from './StudentScreen.module.css';
 
 function ScreenBody({ screen }: { screen: PublicScreen }) {
   return <div className="space-y-5">
@@ -31,7 +33,7 @@ function StudentActivity({ state, pending, send }: { state: LiveState; pending: 
         <input type="radio" name={answerId} required value={option.id} checked={(saved ?? answer) === option.id} onChange={() => setAnswer(option.id)} className="size-5 shrink-0" /><span className="break-words">{option.label}</span>
       </label>)}
     </fieldset>
-    {saved !== undefined ? <p role="status" className="rounded-xl bg-[var(--color-surface-container-high)] p-4">Tu respuesta quedó guardada. Sólo el equipo docente puede consultarla.</p> : <>
+    {saved !== undefined ? <p role="status" className="rounded-xl bg-[var(--color-surface-container-high)] p-4">Tu respuesta quedó guardada. Sólo el equipo docente puede verla asociada a tu nombre. Las preguntas con opciones muestran resultados grupales en la proyección.</p> : <>
       <Button type="submit" disabled={disabled || !answer.trim()} isPending={pending}>Enviar respuesta</Button>
       <p className="text-sm text-[var(--color-text-muted)]">{state.session.status === 'closed' ? 'La sesión finalizó.' : state.session.activityOpen ? 'Podés enviar una sola respuesta. No genera una calificación.' : 'Esperá a que el docente abra la actividad.'}</p>
     </>}
@@ -77,8 +79,10 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
       {!active && <p role="status" className="rounded-xl bg-[var(--color-surface-container-high)] p-4">{simulation ? 'El ensayo terminó.' : 'La sesión finalizó.'}</p>}
       <Card><CardContent className="min-h-72">
         <ScreenBody screen={screen} />
-        {'options' in screen && <ul className="mt-6 space-y-3">{screen.options.map((option) => <li key={option.id} className="rounded-xl border border-[var(--color-outline-variant)] p-4">{option.label}</li>)}</ul>}
-        {active && screen.type !== 'content' && <p role="status" className="mt-6 text-[var(--color-text-muted)]">{session.activityOpen ? 'Actividad abierta. Respondé desde tu dispositivo.' : 'Esperá a que el docente abra la actividad.'}</p>}
+        {'options' in screen && (session.activityOpen || teacher.projectionResults.total > 0
+          ? <ProjectionResults screen={screen} results={teacher.projectionResults} participants={teacher.participants.length} open={session.activityOpen} />
+          : <ul className="mt-6 space-y-3">{screen.options.map((option) => <li key={option.id} className="rounded-xl border border-[var(--color-outline-variant)] p-4">{option.label}</li>)}</ul>)}
+        {active && screen.type !== 'content' && <p role="status" className="mt-6 text-[var(--color-text-muted)]">{session.activityOpen ? 'Actividad abierta. Respondé desde tu dispositivo.' : teacher.projectionResults.total > 0 ? 'Respuestas cerradas.' : 'Esperá a que el docente abra la actividad.'}</p>}
       </CardContent></Card>
     </ContentWindow>}
     {!teacher && <ContentWindow title={session.title}>
@@ -86,7 +90,7 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
       {active && !simulation && (!connected || connectionError) && <p role="status" className="text-sm text-[var(--color-text-muted)]">Reconectando · actualización periódica</p>}
       {(error || connectionError) && <div role="alert" className="rounded-xl border border-[var(--color-error)] p-4"><p>{error || connectionError}</p>{!simulation && <Button variant="ghost" onClick={() => void refresh()}>Actualizar ahora</Button>}</div>}
       {!active && <p role="status" className="rounded-xl bg-[var(--color-surface-container-high)] p-4">{simulation ? 'El ensayo terminó.' : 'La sesión finalizó.'}</p>}
-      <Card><CardContent className="min-h-72"><ScreenBody screen={screen} /><StudentActivity key={screen.id} state={state} send={send} pending={pending || Boolean(connectionError)} /></CardContent></Card>
+      <Card><CardContent className={`min-h-72 ${studentStyles.screen}`}><ScreenBody screen={screen} /><StudentActivity key={screen.id} state={state} send={send} pending={pending || Boolean(connectionError)} /></CardContent></Card>
     </ContentWindow>}
     {(error || connectionError || copyError) && <div role="alert" className="rounded-xl border border-[var(--color-error)] p-4"><p>{error || connectionError || copyError}</p>{!simulation && <Button variant="ghost" onClick={() => void refresh()}>Actualizar ahora</Button>}</div>}
     {teacher && active && <Card><CardContent className="flex flex-wrap items-center justify-between gap-5">
@@ -97,7 +101,7 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
     <div className={teacher ? `grid items-start gap-6 ${compact ? '' : 'xl:grid-cols-[minmax(0,1fr)_22rem]'}` : ''}>
       <div className="min-w-0 space-y-5">
         {teacher && <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">Pantalla {session.screenIndex + 1} de {teacher.material.screens.length}</p><Badge tone={session.activityOpen ? 'success' : 'neutral'}>{screen.type === 'content' ? 'Contenido' : session.activityOpen ? 'Respuestas abiertas' : 'Respuestas cerradas'}</Badge></div>}
-        <Card><CardContent className="min-h-72"><ScreenBody screen={screen} />
+        <Card><CardContent className={`min-h-72 ${teacher ? '' : studentStyles.screen}`}><ScreenBody screen={screen} />
           {teacher ? 'options' in screen && <ul className="mt-6 space-y-3">{screen.options.map((o) => <li key={o.id} className="rounded-xl border border-[var(--color-outline-variant)] p-4">{o.label}</li>)}</ul> : <StudentActivity key={screen.id} state={state} send={send} pending={pending || Boolean(connectionError)} />}
         </CardContent></Card>
         {teacher && <>

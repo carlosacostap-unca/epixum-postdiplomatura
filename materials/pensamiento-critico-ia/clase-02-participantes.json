@@ -1,29 +1,26 @@
 {
-  "version": 1,
   "screens": [
     {
+      "body": "**Clase 2 · La consulta es el planteo**\n\nJueves 8 de octubre · 20:00 a 21:30\n\nEn la primera clase vimos por qué comprender el problema y evaluar las respuestas orienta el uso de la IA. Hoy vamos a practicarlo con un reto propio.\n\nTraé una situación y una pregunta por averiguar. Si todavía no las definiste, podés empezar con un caso provisorio.\n\nIng. Daniel Maldonado · Mg. Ing. Carlos Acosta Parra",
       "id": "c02-bienvenida",
       "title": "¿Estamos preguntando por el problema adecuado?",
-      "body": "**Clase 2 · La consulta es el planteo**\n\nJueves 8 de octubre · 20:00 a 21:30\n\nHoy vamos a comparar nuestra primera consulta con otra construida después de mirar mejor el problema.\n\nTraé tu reto y tus notas. Si todavía no lo definiste, podés usar un caso provisorio.\n\nIng. Daniel Maldonado · Mg. Ing. Carlos Acosta Parra",
       "type": "content"
     },
     {
+      "body": "**¿Qué situación elegiste y qué necesitás averiguar primero?**\n\nEscuchemos un ejemplo breve de las notas de la clase 1.\n\nNo hace falta haber usado un asistente ni completado los tres registros para participar hoy. Los tres usos propios forman parte de la Entrega 1, que vence el 15/10.",
       "id": "c02-usos",
-      "title": "Una comprobación que hayas intentado",
-      "body": "**De tus registros: ¿qué comprobaste y cómo?**\n\nEscuchemos un ejemplo breve.\n\nSi todavía no completaste los tres usos, podés participar igual. Conservá lo que falta para completar tu entrega.",
+      "title": "De los ejemplos a una situación propia",
       "type": "content"
     },
     {
+      "body": "1. Recuperá tu reto. Conservá el enunciado inicial: qué ocurre, a quién afecta y por qué importa.\n2. Consultá **como lo harías hoy**, con lo aprendido. No intentes producir una pregunta mala. Guardá la consulta y la respuesta completas.\n3. Elegí una afirmación: **¿qué afirma, en qué se apoya y qué falta comprobar?** Anotá tu revisión antes de pedir otra.\n\nNo incluyas datos personales ajenos ni información reservada. Sin acceso, trabajá acompañado o usá el par preparado de la guía, identificándolo como ejemplo didáctico.",
       "id": "c02-primera-consulta",
-      "title": "Guardá tu primera consulta antes de mirar ejemplos",
-      "body": "1. Recuperá tu reto o elegí uno provisorio.\n2. Escribí **como consultarías hoy**, sin intentar hacerlo mal ni perfeccionarlo todavía.\n3. Pedí ayuda al asistente y conservá la consulta y la respuesta completas.\n4. Anotá una cosa útil o una duda.\n\nSin acceso, podés trabajar acompañado o usar el par preparado en la guía, identificándolo como ejemplo didáctico.",
+      "title": "Tu primera consulta de hoy y tu propia revisión",
       "type": "content"
     },
     {
+      "body": "**Retomamos el taller barrial ficticio de la clase 1.**\n\nHoy construimos la consulta entre todos, explicando qué preguntas nos ayudan.\n\nLa consulta inicial dice:\n\n> Dame ideas para que venga más gente al taller.\n\n¿Qué necesitás entender primero? Elegí un punto de partida y explicá por qué.",
       "id": "c02-caso-preguntas",
-      "title": "Antes de dar ideas, ¿qué preguntarías?",
-      "body": "**Caso ficticio: un grupo organiza un taller barrial.**\n\nLa consulta inicial dice:\n\n> Dame ideas para que venga más gente al taller.\n\n¿Qué necesitás entender primero? Elegí un punto de partida y explicá por qué.",
-      "type": "poll",
       "options": [
         {
           "id": "op1",
@@ -37,81 +34,84 @@
           "id": "op3",
           "label": "Qué busca lograr el grupo y qué recursos tiene para hacer cambios."
         }
-      ]
+      ],
+      "title": "Antes de dar ideas, ¿qué preguntarías?",
+      "type": "poll"
     },
     {
+      "body": "**Datos ficticios del ejercicio:** 20 personas se inscribieron y 8 asistieron el sábado a las 10. Hay dos voluntarios y no hay dinero adicional. Se desconoce por qué faltaron las otras 12.\n\nUna consulta posible después de preguntar:\n\n> Organizamos un taller barrial: se inscribieron 20 personas y asistieron 8. No sabemos por qué faltaron. Tenemos dos voluntarios, sin dinero adicional y dos semanas para decidir qué probar. Proponé tres maneras de averiguar qué dificulta la participación. Comparalas por esfuerzo y por la información útil que aportarían. Mostrá una tabla y aclaraciones sobre sus límites.\n\n**¿Cambió sólo la redacción o cambió lo que queremos averiguar?**",
       "id": "c02-caso-contexto",
       "title": "La consulta se construye con información",
-      "body": "**Datos ficticios del ejercicio:** 20 personas se inscribieron y 8 asistieron el sábado a las 10. Hay dos voluntarios y no hay dinero adicional. Se desconoce por qué faltaron las otras 12.\n\nUna consulta posible después de preguntar:\n\n> Organizamos un taller barrial: se inscribieron 20 personas y asistieron 8. No sabemos por qué faltaron. Tenemos dos voluntarios, sin dinero adicional y dos semanas para decidir qué probar. Proponé tres maneras de averiguar qué dificulta la participación. Comparalas por esfuerzo y por la información útil que aportarían. Mostrá una tabla y aclaraciones sobre sus límites.\n\n**¿Cambió sólo la redacción o cambió lo que queremos averiguar?**",
       "type": "content"
     },
     {
+      "body": "| Primera idea | Pregunta que abre el problema |\n|---|---|\n| Necesito una aplicación para organizarme | ¿En qué momento pierdo tareas o tiempo? |\n| Hay que mandar más mensajes al grupo | ¿Falta información, claridad o posibilidad de responder? |\n| Necesitamos más publicidad para el taller | ¿No se enteran o se inscriben y después no pueden ir? |\n\n**Una solución podría servir. Primero veamos qué dificultad atendería.**",
       "id": "c02-reformular",
       "title": "Una solución elegida puede ocultar la pregunta",
-      "body": "| Primera idea | Pregunta que abre el problema |\n|---|---|\n| Necesito una aplicación para organizarme | ¿En qué momento pierdo tareas o tiempo? |\n| Hay que mandar más mensajes al grupo | ¿Falta información, claridad o posibilidad de responder? |\n| Necesitamos más publicidad para el taller | ¿No se enteran o se inscriben y después no pueden ir? |\n\n**Una solución podría servir. Primero veamos qué dificultad atendería.**",
       "type": "content"
     },
     {
+      "body": "| Apoyo | En palabras simples |\n|---|---|\n| Contexto | Qué necesita saber quien me ayuda |\n| Objetivo | Qué quiero obtener y para qué |\n| Criterios | Qué valoro para elegir |\n| Restricciones | Qué límites debo respetar |\n| Formato | Cómo me sirve recibir la respuesta |\n\nEn el taller barrial: entender las ausencias; comparar esfuerzo e información útil; dos voluntarios, dos semanas y sin dinero extra; una tabla.\n\n**La estructura orienta la consulta; no garantiza la respuesta.**",
       "id": "c02-componentes",
       "title": "Cinco apoyos para comunicar el problema",
-      "body": "| Apoyo | En palabras simples |\n|---|---|\n| Contexto | Qué necesita saber quien me ayuda |\n| Objetivo | Qué quiero obtener y para qué |\n| Criterios | Qué valoro para elegir |\n| Restricciones | Qué límites debo respetar |\n| Formato | Cómo me sirve recibir la respuesta |\n\nEn el taller barrial: entender las ausencias; comparar esfuerzo e información útil; dos voluntarios, dos semanas y sin dinero extra; una tabla.\n\n**La estructura orienta la consulta; no garantiza la respuesta.**",
       "type": "content"
     },
     {
+      "body": "Al volver vamos a mirar el reto propio desde tres lugares:\n\n**Quién vive el problema · Qué estamos suponiendo · Qué podemos abordar**",
       "id": "c02-pausa",
       "title": "Dos minutos de pausa",
-      "body": "Al volver vamos a mirar el reto propio desde tres lugares:\n\n**Quién vive el problema · Qué estamos suponiendo · Qué podemos abordar**",
       "type": "content"
     },
     {
+      "body": "Reescribí tu problema desde estas miradas:\n\n1. **Personas:** ¿para quién es un problema y qué vive esa persona?\n2. **Supuestos:** ¿qué doy por cierto o qué solución ya elegí?\n3. **Alcance:** ¿qué parte puedo abordar y qué cambio quiero observar?\n\nPara cada versión anotá qué cambió. Después elegí una formulación final.\n\nSi una mirada no cambia tu planteo, probá otra perspectiva o escala: no fuerces datos ni te limites a buscar sinónimos.",
       "id": "c02-tres-miradas",
       "title": "Tres versiones, tres propósitos",
-      "body": "Reescribí tu problema desde estas miradas:\n\n1. **Personas:** ¿para quién es un problema y qué vive esa persona?\n2. **Supuestos:** ¿qué doy por cierto o qué solución ya elegí?\n3. **Alcance:** ¿qué parte puedo abordar y qué cambio quiero observar?\n\nPara cada versión anotá qué cambió. Después elegí una formulación final.\n\nSi una mirada no cambia tu planteo, probá otra perspectiva o escala: no fuerces datos ni te limites a buscar sinónimos.",
       "type": "content"
     },
     {
+      "body": "**20 minutos · Guardá todo en tus notas.**\n\n- Versión 1: personas afectadas + qué cambió.\n- Versión 2: supuestos o solución anticipada + qué cambió.\n- Versión 3: alcance o cambio observable + qué cambió.\n- Formulación final + un dato por averiguar.\n\nPodés conversar brevemente con otra persona para recibir una pregunta. La escritura y la decisión son tuyas.\n\n**No hace falta volver a copiar las tres versiones en otro formulario.**",
       "id": "c02-reescrituras",
       "title": "Ahora trabajá sobre tu reto, sin asistente",
-      "body": "**20 minutos · Guardá todo en tus notas.**\n\n- Versión 1: personas afectadas + qué cambió.\n- Versión 2: supuestos o solución anticipada + qué cambió.\n- Versión 3: alcance o cambio observable + qué cambió.\n- Formulación final + un dato por averiguar.\n\nPodés conversar brevemente con otra persona para recibir una pregunta. La escritura y la decisión son tuyas.\n\n**No hace falta volver a copiar las tres versiones en otro formulario.**",
       "type": "content"
     },
     {
+      "body": "Escribí la consulta trabajada con **contexto, objetivo, criterios, restricciones y formato**.\n\nUsá el mismo asistente, preferentemente en una conversación nueva, y guardá su respuesta.\n\n- Compará una afirmación con tu revisión inicial: ¿responde a lo que necesitás?, ¿en qué se apoya?, ¿qué falta comprobar?\n- Pedí una revisión breve: «¿Qué supusiste y qué no está justificado?». Contrastá su aporte con el tuyo. Su autocrítica también necesita evidencia.\n- Anotá qué cambiaste vos, qué aportó la herramienta y qué sigue pendiente.\n\n**Más extensión o mejor presentación no bastan para hablar de mejora.** Sin acceso, contrastá con otra persona o con la revisión preparada.",
       "id": "c02-consulta-trabajada",
       "title": "Volvé a consultar con el problema reformulado",
-      "body": "Escribí la consulta trabajada con **contexto, objetivo, criterios, restricciones y formato**.\n\nUsá el mismo asistente, preferentemente en una conversación nueva, y guardá su respuesta.\n\nCompará con la primera:\n\n- ¿Responde mejor a lo que necesitás? Mostrá un fragmento.\n- ¿Qué cambiaste vos y qué aportó la herramienta?\n- ¿Qué sigue siendo necesario comprobar?\n\n**Más extensión o mejor presentación no bastan para hablar de mejora.**",
       "type": "content"
     },
     {
-      "id": "c02-comparacion",
-      "title": "Un solo registro de lo que cambió",
       "body": "- **Mi primera formulación / mi formulación final:** …\n- **Cambio de fondo y un fragmento que lo muestra en las respuestas:** …\n- **Qué aporté yo, qué aportó el asistente y qué falta verificar:** …\n\nSi reconocés influencia de la primera respuesta, contá dónde. Si no, no hace falta inventarla.\n\nLas tres reescrituras y las conversaciones completas quedan en tus notas para la entrega.",
-      "type": "short-answer",
-      "maxLength": 1800
+      "id": "c02-comparacion",
+      "maxLength": 1800,
+      "title": "Un solo registro de lo que cambió",
+      "type": "short-answer"
     },
     {
+      "body": "Cada participante comparte:\n\n1. Su primera y última formulación.\n2. Un cambio concreto en las respuestas, o una dificultad que permaneció.\n3. Algo que aún necesita averiguar.\n\nEl grupo aporta una pregunta o una perspectiva diferente.\n\n**¿Qué parte de la mejora vino de comprender mejor el problema?**",
       "id": "c02-puesta-comun",
       "title": "Comparemos dos recorridos, con tiempo para preguntar",
-      "body": "Cada participante comparte:\n\n1. Su primera y última formulación.\n2. Un cambio concreto en las respuestas, o una dificultad que permaneció.\n3. Algo que aún necesita averiguar.\n\nEl grupo aporta una pregunta o una perspectiva diferente.\n\n**¿Qué parte de la mejora vino de comprender mejor el problema?**",
       "type": "content"
     },
     {
+      "body": "**Jueves 15/10, 23:59 · 30 % de la nota**\n\n- **A:** primer enunciado de tu reto.\n- **B:** tres usos propios y cómo los revisaste.\n- **C:** tres reescrituras de fondo y formulación final.\n- **D:** las dos consultas, fragmentos y comparación.\n\nIncluí el recuadro sobre qué delegaste, qué retuviste y dónde aceptaste una respuesta floja, si ocurrió.\n\n**Máximo dos carillas + anexo de transcripciones.** Declaración de uso al principio.\n\n[Consigna completa y rúbrica en la guía de apoyo](/classes/85dd32pzv0uq2fi)\n\nResponder en clase no realiza el envío formal.",
       "id": "c02-entrega",
       "title": "Entrega 1: reunir el trabajo que ya empezaste",
-      "body": "**Jueves 15/10, 23:59 · 30 % de la nota**\n\n- **A:** primer enunciado de tu reto.\n- **B:** tres usos propios y cómo los revisaste.\n- **C:** tres reescrituras de fondo y formulación final.\n- **D:** las dos consultas, fragmentos y comparación.\n\nIncluí el recuadro sobre qué delegaste, qué retuviste y dónde aceptaste una respuesta floja, si ocurrió.\n\n**Máximo dos carillas + anexo de transcripciones.** Declaración de uso al principio.\n\n[Consigna completa y rúbrica en la guía de apoyo](/classes/85dd32pzv0uq2fi)\n\nResponder en clase no realiza el envío formal.",
       "type": "content"
     },
     {
-      "id": "c02-salida",
-      "title": "Antes de pedir otra solución, necesito aclarar…",
       "body": "**Necesito aclarar… y podría averiguarlo de esta manera…**\n\nElegí una pregunta o un dato concreto sobre tu reto. También podés contar qué parte del trabajo te resultó difícil.",
-      "type": "short-answer",
-      "maxLength": 700
+      "id": "c02-salida",
+      "maxLength": 700,
+      "title": "Antes de pedir otra solución, necesito aclarar…",
+      "type": "short-answer"
     },
     {
+      "body": "**Precisar el problema ayuda a orientar la respuesta; comprobarla sigue siendo necesario.**\n\nConservá las tres versiones, las dos consultas y sus respuestas.\n\nMartes 13 de octubre, 20:00: **El problema detrás del problema**.\n\n[Guía y consigna completa](/classes/85dd32pzv0uq2fi)",
       "id": "c02-cierre",
       "title": "Una pregunta mejor orienta; la respuesta se revisa",
-      "body": "**Precisar el problema ayuda a orientar la respuesta; comprobarla sigue siendo necesario.**\n\nConservá las tres versiones, las dos consultas y sus respuestas.\n\nMartes 13 de octubre, 20:00: **El problema detrás del problema**.\n\n[Guía y consigna completa](/classes/85dd32pzv0uq2fi)",
       "type": "content"
     }
-  ]
+  ],
+  "version": 1
 }

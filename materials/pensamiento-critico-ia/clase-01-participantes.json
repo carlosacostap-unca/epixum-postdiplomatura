@@ -1,485 +1,172 @@
 {
-  "version": 1,
   "screens": [
     {
+      "body": "**Clase 1 · El criterio orienta el uso de la IA**\n\nPensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial\n\nMartes 6 de octubre · 20:00 a 21:30\n\nHoy vamos a comprender por qué necesitamos estas capacidades y reconocerlas en situaciones cercanas.\n\nIng. Daniel Maldonado · Mg. Ing. Carlos Acosta Parra",
       "id": "c01-bienvenida",
-      "title": "Suena convincente. ¿Cómo sabemos si es cierto?",
-      "body": "**Clase 1 · Plausible no es verdadero**\n\nMartes 6 de octubre · 20:00 a 21:30\n\nHoy vamos a revisar una respuesta, hacer una comprobación y elegir un problema propio.\n\nIng. Daniel Maldonado · Mg. Ing. Carlos Acosta Parra",
+      "title": "Pensar y resolver problemas con ayuda de la IA",
       "type": "content"
     },
     {
-      "id": "c01-diagnostico",
-      "title": "Seis textos y ocho minutos",
-      "body": "Vas a leer seis textos breves. Algunos dicen cosas correctas y otros no. No es un examen ni cuenta para la nota: queremos saber cómo evaluás lo que leés hoy, para compararlo con el final del curso. No busques nada en internet ni consultes a ningún asistente: respondé con lo que sabés y con tu impresión. Tenés unos ocho minutos.\n\nPor cada texto vas a responder dos preguntas: **cuánto le creés** y **en qué te basaste**. El docente abrirá cada pregunta y avanzará al siguiente paso.\n\nNo tenés que escribir tu nombre ni tu correo: ya ingresaste con tu cuenta. Enviá una sola respuesta por pregunta.",
+      "body": "Un asistente puede ayudarnos a redactar, resumir, comparar y proponer alternativas.\n\nPara usar esa ayuda necesitamos decidir:\n\n- Qué problema queremos resolver.\n- Qué información falta.\n- Qué razones respaldan una propuesta.\n- Con qué criterios elegir y cómo revisar el resultado.\n\n**El curso nace de esa necesidad: desarrollar el criterio que orienta el uso de la IA.**",
+      "id": "c01-motivacion",
+      "title": "Podemos obtener respuestas. ¿Cómo decidimos usarlas?",
       "type": "content"
     },
     {
-      "id": "c01-diag-t1-credibilidad",
-      "title": "Texto 1 · ¿Qué tan creíble te parece este texto?",
-      "body": "**Texto para analizar (1 de 6)**\n\nLa Gran Muralla China es la única obra construida por el ser humano que puede verse a simple vista desde la Luna. Esta afirmación, confirmada por astronautas de distintas misiones, se explica por su extraordinaria longitud, que supera los 20 000 kilómetros, y por el marcado contraste de sus materiales con el terreno que la rodea.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "1",
-          "label": "1 — Nada creíble"
-        },
-        {
-          "id": "2",
-          "label": "2"
-        },
-        {
-          "id": "3",
-          "label": "3"
-        },
-        {
-          "id": "4",
-          "label": "4"
-        },
-        {
-          "id": "5",
-          "label": "5 — Totalmente creíble"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t1-fundamento",
-      "title": "Texto 1 · ¿En qué te basaste principalmente?",
-      "body": "**El mismo texto (1 de 6)**\n\nLa Gran Muralla China es la única obra construida por el ser humano que puede verse a simple vista desde la Luna. Esta afirmación, confirmada por astronautas de distintas misiones, se explica por su extraordinaria longitud, que supera los 20 000 kilómetros, y por el marcado contraste de sus materiales con el terreno que la rodea.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "motivo-1",
-          "label": "En lo que yo ya sabía sobre el tema"
-        },
-        {
-          "id": "motivo-2",
-          "label": "En que está bien escrito y ordenado"
-        },
-        {
-          "id": "motivo-3",
-          "label": "En que da datos concretos (cifras, fechas, lugares)"
-        },
-        {
-          "id": "motivo-4",
-          "label": "En que menciona una fuente o un estudio"
-        },
-        {
-          "id": "motivo-5",
-          "label": "En que el razonamiento tiene sentido"
-        },
-        {
-          "id": "motivo-6",
-          "label": "En nada en particular: fue una impresión"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t2-credibilidad",
-      "title": "Texto 2 · ¿Qué tan creíble te parece este texto?",
-      "body": "**Texto para analizar (2 de 6)**\n\nChe, no es que los fideos “no se cocinan” en la montaña. Lo que pasa es que arriba el agua hierve a menos temperatura, porque hay menos presión. En La Quiaca hierve a unos 88 u 89 grados, no a 100. Entonces hervir, hierve igual, pero el agua está menos caliente y todo tarda más en cocinarse.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "1",
-          "label": "1 — Nada creíble"
-        },
-        {
-          "id": "2",
-          "label": "2"
-        },
-        {
-          "id": "3",
-          "label": "3"
-        },
-        {
-          "id": "4",
-          "label": "4"
-        },
-        {
-          "id": "5",
-          "label": "5 — Totalmente creíble"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t2-fundamento",
-      "title": "Texto 2 · ¿En qué te basaste principalmente?",
-      "body": "**El mismo texto (2 de 6)**\n\nChe, no es que los fideos “no se cocinan” en la montaña. Lo que pasa es que arriba el agua hierve a menos temperatura, porque hay menos presión. En La Quiaca hierve a unos 88 u 89 grados, no a 100. Entonces hervir, hierve igual, pero el agua está menos caliente y todo tarda más en cocinarse.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "motivo-1",
-          "label": "En lo que yo ya sabía sobre el tema"
-        },
-        {
-          "id": "motivo-2",
-          "label": "En que está bien escrito y ordenado"
-        },
-        {
-          "id": "motivo-3",
-          "label": "En que da datos concretos (cifras, fechas, lugares)"
-        },
-        {
-          "id": "motivo-4",
-          "label": "En que menciona una fuente o un estudio"
-        },
-        {
-          "id": "motivo-5",
-          "label": "En que el razonamiento tiene sentido"
-        },
-        {
-          "id": "motivo-6",
-          "label": "En nada en particular: fue una impresión"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t3-credibilidad",
-      "title": "Texto 3 · ¿Qué tan creíble te parece este texto?",
-      "body": "**Texto para analizar (3 de 6)**\n\nUn estudio publicado en 2019 por investigadores de una prestigiosa universidad estadounidense demostró que utilizar el teléfono celular durante la hora previa a dormir reduce la calidad del sueño en un 47 %. Los autores concluyeron que la luz de la pantalla es la causa principal del problema, por encima de cualquier otro factor, y recomendaron suspender su uso por completo durante ese período.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "1",
-          "label": "1 — Nada creíble"
-        },
-        {
-          "id": "2",
-          "label": "2"
-        },
-        {
-          "id": "3",
-          "label": "3"
-        },
-        {
-          "id": "4",
-          "label": "4"
-        },
-        {
-          "id": "5",
-          "label": "5 — Totalmente creíble"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t3-fundamento",
-      "title": "Texto 3 · ¿En qué te basaste principalmente?",
-      "body": "**El mismo texto (3 de 6)**\n\nUn estudio publicado en 2019 por investigadores de una prestigiosa universidad estadounidense demostró que utilizar el teléfono celular durante la hora previa a dormir reduce la calidad del sueño en un 47 %. Los autores concluyeron que la luz de la pantalla es la causa principal del problema, por encima de cualquier otro factor, y recomendaron suspender su uso por completo durante ese período.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "motivo-1",
-          "label": "En lo que yo ya sabía sobre el tema"
-        },
-        {
-          "id": "motivo-2",
-          "label": "En que está bien escrito y ordenado"
-        },
-        {
-          "id": "motivo-3",
-          "label": "En que da datos concretos (cifras, fechas, lugares)"
-        },
-        {
-          "id": "motivo-4",
-          "label": "En que menciona una fuente o un estudio"
-        },
-        {
-          "id": "motivo-5",
-          "label": "En que el razonamiento tiene sentido"
-        },
-        {
-          "id": "motivo-6",
-          "label": "En nada en particular: fue una impresión"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t4-credibilidad",
-      "title": "Texto 4 · ¿Qué tan creíble te parece este texto?",
-      "body": "**Texto para analizar (4 de 6)**\n\nContrariamente a una creencia muy difundida, los murciélagos no son ciegos. Tienen ojos funcionales, y muchas especies combinan la visión con la ecolocalización: emiten sonidos de alta frecuencia y se orientan a partir del eco. Algunas especies grandes que se alimentan de frutas dependen principalmente de la vista y del olfato, y casi no utilizan la ecolocalización.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "1",
-          "label": "1 — Nada creíble"
-        },
-        {
-          "id": "2",
-          "label": "2"
-        },
-        {
-          "id": "3",
-          "label": "3"
-        },
-        {
-          "id": "4",
-          "label": "4"
-        },
-        {
-          "id": "5",
-          "label": "5 — Totalmente creíble"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t4-fundamento",
-      "title": "Texto 4 · ¿En qué te basaste principalmente?",
-      "body": "**El mismo texto (4 de 6)**\n\nContrariamente a una creencia muy difundida, los murciélagos no son ciegos. Tienen ojos funcionales, y muchas especies combinan la visión con la ecolocalización: emiten sonidos de alta frecuencia y se orientan a partir del eco. Algunas especies grandes que se alimentan de frutas dependen principalmente de la vista y del olfato, y casi no utilizan la ecolocalización.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "motivo-1",
-          "label": "En lo que yo ya sabía sobre el tema"
-        },
-        {
-          "id": "motivo-2",
-          "label": "En que está bien escrito y ordenado"
-        },
-        {
-          "id": "motivo-3",
-          "label": "En que da datos concretos (cifras, fechas, lugares)"
-        },
-        {
-          "id": "motivo-4",
-          "label": "En que menciona una fuente o un estudio"
-        },
-        {
-          "id": "motivo-5",
-          "label": "En que el razonamiento tiene sentido"
-        },
-        {
-          "id": "motivo-6",
-          "label": "En nada en particular: fue una impresión"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t5-credibilidad",
-      "title": "Texto 5 · ¿Qué tan creíble te parece este texto?",
-      "body": "**Texto para analizar (5 de 6)**\n\nUn vecino que trabaja en la municipalidad me mostró los números: en los meses en que más helado se vende es cuando más gente se ahoga en el río. Así que no es tan loco lo que dicen de prohibir los kioscos cerca de la costa, porque está clarísimo que una cosa lleva a la otra.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "1",
-          "label": "1 — Nada creíble"
-        },
-        {
-          "id": "2",
-          "label": "2"
-        },
-        {
-          "id": "3",
-          "label": "3"
-        },
-        {
-          "id": "4",
-          "label": "4"
-        },
-        {
-          "id": "5",
-          "label": "5 — Totalmente creíble"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t5-fundamento",
-      "title": "Texto 5 · ¿En qué te basaste principalmente?",
-      "body": "**El mismo texto (5 de 6)**\n\nUn vecino que trabaja en la municipalidad me mostró los números: en los meses en que más helado se vende es cuando más gente se ahoga en el río. Así que no es tan loco lo que dicen de prohibir los kioscos cerca de la costa, porque está clarísimo que una cosa lleva a la otra.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "motivo-1",
-          "label": "En lo que yo ya sabía sobre el tema"
-        },
-        {
-          "id": "motivo-2",
-          "label": "En que está bien escrito y ordenado"
-        },
-        {
-          "id": "motivo-3",
-          "label": "En que da datos concretos (cifras, fechas, lugares)"
-        },
-        {
-          "id": "motivo-4",
-          "label": "En que menciona una fuente o un estudio"
-        },
-        {
-          "id": "motivo-5",
-          "label": "En que el razonamiento tiene sentido"
-        },
-        {
-          "id": "motivo-6",
-          "label": "En nada en particular: fue una impresión"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t6-credibilidad",
-      "title": "Texto 6 · ¿Qué tan creíble te parece este texto?",
-      "body": "**Texto para analizar (6 de 6)**\n\nEso de que un rayo nunca cae dos veces en el mismo lugar es mentira. Los edificios muy altos reciben rayos varias veces por año, justamente porque son lo más alto de la zona. Para eso están los pararrayos, que le dan a la descarga un camino seguro para llegar a tierra sin hacer daño.\n\nRespondé con tu impresión, sin buscar información ni consultar un asistente.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "1",
-          "label": "1 — Nada creíble"
-        },
-        {
-          "id": "2",
-          "label": "2"
-        },
-        {
-          "id": "3",
-          "label": "3"
-        },
-        {
-          "id": "4",
-          "label": "4"
-        },
-        {
-          "id": "5",
-          "label": "5 — Totalmente creíble"
-        }
-      ]
-    },
-    {
-      "id": "c01-diag-t6-fundamento",
-      "title": "Texto 6 · ¿En qué te basaste principalmente?",
-      "body": "**El mismo texto (6 de 6)**\n\nEso de que un rayo nunca cae dos veces en el mismo lugar es mentira. Los edificios muy altos reciben rayos varias veces por año, justamente porque son lo más alto de la zona. Para eso están los pararrayos, que le dan a la descarga un camino seguro para llegar a tierra sin hacer daño.\n\nElegí una sola opción: la que más influyó en tu respuesta anterior.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "motivo-1",
-          "label": "En lo que yo ya sabía sobre el tema"
-        },
-        {
-          "id": "motivo-2",
-          "label": "En que está bien escrito y ordenado"
-        },
-        {
-          "id": "motivo-3",
-          "label": "En que da datos concretos (cifras, fechas, lugares)"
-        },
-        {
-          "id": "motivo-4",
-          "label": "En que menciona una fuente o un estudio"
-        },
-        {
-          "id": "motivo-5",
-          "label": "En que el razonamiento tiene sentido"
-        },
-        {
-          "id": "motivo-6",
-          "label": "En nada en particular: fue una impresión"
-        }
-      ]
-    },
-    {
-      "id": "c01-caso-decision",
-      "title": "¿Le recomendarías seguir este plan?",
-      "body": "**Caso inventado para practicar: Sofía prepara un examen.**\n\nTiene seis días para estudiar seis temas. Lee este consejo:\n\n> Estudiá un tema por día, hacé un resumen y repasalo antes de dormir. Así llegás preparada al examen.\n\n**Consejo didáctico inventado; no es una respuesta obtenida de una IA.**\n\n¿Qué harías antes de recomendarlo?",
-      "type": "poll",
-      "options": [
-        {
-          "id": "op1",
-          "label": "Lo usaría como borrador y comprobaría cuánto tiempo demanda cada tema."
-        },
-        {
-          "id": "op2",
-          "label": "Primero averiguaría cuánto tiempo tiene Sofía y qué necesita lograr."
-        },
-        {
-          "id": "op3",
-          "label": "Propondría empezar por un tema y ajustar el plan según esa prueba."
-        }
-      ]
-    },
-    {
-      "id": "c01-caso-datos",
-      "title": "Aparecen los datos que faltaban",
-      "body": "**Información ficticia del caso**\n\n| Dato | Lo que sabemos |\n|---|---|\n| Cuatro noches | 1 hora disponible cada noche |\n| Sábado | 2 horas disponibles |\n| Domingo | Sin tiempo de estudio |\n| Trabajo pendiente | Sofía estima 12 horas; aún debe comprobar esa estimación |\n\n**¿Cuántas horas tiene? ¿Qué parte del consejo revisarías?**\n\nPodés calcularlo en tus notas y conversar con otra persona.",
+      "body": "**Objetivo general:** abordar problemas propios de manera fundamentada, usando la IA como apoyo para comprender, explorar alternativas y revisar decisiones.\n\nDurante el curso vamos a aprender a:\n\n- Formular problemas y reconocer supuestos.\n- Buscar y evaluar información pertinente.\n- Comparar alternativas con criterios explícitos.\n- Justificar decisiones y revisar sus resultados.\n- Reconocer qué aportamos nosotros y qué aporta la IA.",
+      "id": "c01-objetivo",
+      "title": "Qué buscamos aprender",
       "type": "content"
     },
     {
+      "body": "**Durante el curso:**\n\nComprender y reformular un reto → investigar causas y evidencia → comparar alternativas y argumentos → decidir cómo usar la IA y revisar lo logrado.\n\nTrabajaremos sobre un reto propio, con tres entregas a lo largo del curso.\n\n**Hoy:** veremos tres ejemplos y participaremos en «La información que falta», con dos votaciones. Después pondremos nombre a lo que hacemos al pensar y seguiremos una demostración. Al final, cada persona podrá identificar una situación propia.\n\nNo necesitás abrir un asistente durante esta primera clase.",
+      "id": "c01-recorrido",
+      "title": "El recorrido del curso y el de hoy",
+      "type": "content"
+    },
+    {
+      "body": "**Caso y consejo ficticios, preparados para enseñar. No son una respuesta real de IA.**\n\nSofía tiene seis días y seis temas para preparar un examen. Lee este consejo:\n\n> Estudiá un tema por día, hacé un resumen y repasalo antes de dormir. Así llegás preparada al examen.\n\nEl plan está ordenado. Todavía no sabemos cuánto tiempo tiene Sofía ni cuánto necesita para cada tema.",
+      "id": "c01-caso-sofia",
+      "title": "Sofía: un plan que parece razonable",
+      "type": "content"
+    },
+    {
+      "body": "**Datos ficticios del caso:**\n\n| Disponibilidad | Horas |\n|---|---:|\n| Cuatro noches de una hora | 4 |\n| Sábado | 2 |\n| Domingo | 0 |\n\n**4 × 1 + 2 = 6 horas disponibles.** Sofía estima doce horas de trabajo, pero todavía debe comprobar esa estimación.\n\nFalta saber qué temas domina y cuánto requiere cada uno.\n\n**Paso razonable:** probar con un tema, revisar la estimación y establecer prioridades. Repartir temas entre días no alcanza para asegurar que llegará preparada.",
       "id": "c01-caso-comprobacion",
-      "title": "Lo que comprobamos y lo que sigue abierto",
-      "body": "**4 × 1 hora + 2 horas = 6 horas disponibles.**\n\n- El plan no contrastaba el tiempo disponible con el trabajo estimado.\n- Repartir seis temas no dice cuánto demanda cada uno.\n- Todavía falta saber qué domina Sofía y si la estimación de 12 horas es razonable.\n\n**Una revisión útil:** estimar un tema, contrastar con las horas disponibles y acordar prioridades.\n\n¿Qué cambió en tu primera decisión?",
+      "title": "Sofía: comprobar cambia el plan",
       "type": "content"
     },
     {
-      "id": "c01-tres-preguntas",
-      "title": "Tres preguntas para empezar a revisar",
-      "body": "![Una respuesta puede sonar convincente por su claridad, sus cifras y su tono seguro. Para evaluar su fundamento hay que comprobar datos, revisar fuentes y justificar conclusiones. La forma por sí sola no demuestra la verdad.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/convincente-y-fundamentada.svg)\n\n1. **¿Qué afirma o recomienda?**\n2. **¿En qué se apoya?**\n3. **¿Qué falta comprobar antes de usarlo?**\n\nElegí una frase concreta. Una respuesta bien escrita puede necesitar comprobación.",
+      "id": "c01-biblioteca-primera",
+      "type": "poll",
+      "title": "Primera votación · ¿Cuánto respaldo te parece que tiene esta recomendación?",
+      "body": "**Caso ficticio preparado para la clase. La recomendación también es didáctica; no es una ejecución real de IA.**\n\nUna biblioteca quiere extender su horario. Consulta a veinte personas que están allí por la mañana. Dieciséis prefieren que abra más temprano.\n\nEn el caso, un asistente recibe esos resultados y recomienda:\n\n> Conviene abrir una hora antes, porque es la opción preferida por el 80 % de las personas consultadas.\n\n**Primera votación.** Elegí según la información disponible. No lleva nota.",
+      "options": [
+        {
+          "id": "poco",
+          "label": "Poco"
+        },
+        {
+          "id": "algo",
+          "label": "Algo"
+        },
+        {
+          "id": "mucho",
+          "label": "Mucho"
+        }
+      ]
+    },
+    {
+      "id": "c01-biblioteca-dato",
+      "type": "content",
+      "title": "La información que faltaba",
+      "body": "**Seguimos con la misma biblioteca ficticia.**\n\nLa biblioteca también quiere atender a personas que trabajan por la mañana.\n\n**Ninguna de esas personas participó de la consulta.**\n\nEl resultado sigue siendo el mismo: dieciséis de veinte personas consultadas prefieren que abra más temprano.\n\nPensá qué implica esta información antes de volver a votar."
+    },
+    {
+      "id": "c01-biblioteca-segunda",
+      "type": "poll",
+      "title": "Segunda votación · ¿Cuánto respaldo te parece que tiene esta recomendación?",
+      "body": "**Segunda votación · Mismo caso ficticio y misma recomendación.**\n\n> Conviene abrir una hora antes, porque es la opción preferida por el 80 % de las personas consultadas.\n\nSe consultó a veinte personas presentes por la mañana; dieciséis prefieren abrir antes. La biblioteca también quiere atender a personas que trabajan por la mañana y ninguna participó de la consulta.\n\n**Podés mantener o cambiar tu elección.** No hace falta cambiarla para participar bien.",
+      "options": [
+        {
+          "id": "poco",
+          "label": "Poco"
+        },
+        {
+          "id": "algo",
+          "label": "Algo"
+        },
+        {
+          "id": "mucho",
+          "label": "Mucho"
+        }
+      ]
+    },
+    {
+      "id": "c01-biblioteca-conversacion",
+      "type": "content",
+      "title": "¿Qué cambió al conocer ese dato?",
+      "body": "Comparemos las dos votaciones y escuchemos dos razones.\n\n- ¿Qué cambió para ustedes, o qué duda ya tenían?\n- ¿El porcentaje estaba mal calculado?\n- ¿Qué información necesitamos antes de decidir el horario?\n\n**16 de 20 = 80 %.** La cuenta puede ser correcta y la información resultar insuficiente para decidir.\n\nImporta quiénes respondieron, a quiénes queremos atender y qué necesitamos averiguar. Este dato no demuestra por sí solo cuál sería el mejor horario."
+    },
+    {
+      "body": "**Caso ficticio.** Se inscribieron veinte personas en un taller y asistieron ocho. El equipo propone: «Hagamos más publicidad».\n\nNo sabemos por qué faltaron las otras doce personas.\n\n- El horario podría dificultar la asistencia.\n- La información podría haber sido poco clara.\n- Podrían existir otros obstáculos.\n\n**Son posibilidades, no causas comprobadas.**\n\nAntes de elegir una campaña, necesitamos averiguar qué dificulta participar. Una consulta breve a quienes se anotaron podría aportar información, con límites.",
+      "id": "c01-caso-taller",
+      "title": "Taller barrial: ¿necesitamos más difusión?",
       "type": "content"
     },
     {
-      "id": "c01-reto",
-      "title": "Un problema cercano para trabajar durante el curso",
-      "body": "Elegí algo **real, acotado y sobre lo que puedas actuar o recomendar**.\n\nPor ejemplo:\n\n- Me cuesta organizar el tiempo de estudio.\n- En mi grupo las decisiones se pierden entre mensajes.\n- Necesito comparar capacitaciones y no sé con qué criterios.\n- Las consultas de mi emprendimiento quedan sin seguimiento.\n\nPodés usar un caso de práctica si hoy no encontrás uno. Tu reto propio puede ajustarse después.",
+      "body": "**Ejemplo ficticio:** una persona quiere aprender algo que pueda aplicar en su trabajo y sólo dispone de dos horas semanales.\n\n| Alternativa ficticia | Qué ofrece | Qué necesita revisar |\n|---|---|---|\n| A | Muchas horas de contenido y encuentros fijos | Si puede sostener la dedicación y el horario |\n| B | Menos contenido y una práctica vinculada a su tarea | Si la práctica y el acompañamiento cumplen lo prometido |\n\nLa cantidad de contenido no decide por sí sola qué opción sirve.\n\n**Primero:** definir el objetivo, el tiempo disponible y los criterios. **Después:** comprobar información y comparar.",
+      "id": "c01-caso-capacitacion",
+      "title": "Elegir una capacitación: ¿la mejor para qué?",
       "type": "content"
     },
     {
+      "body": "Pensar críticamente es examinar afirmaciones, razones, supuestos y evidencias para formar un juicio fundamentado.\n\nEn el caso de Sofía:\n\n- **Afirmación:** el plan permite llegar preparada.\n- **Supuesto:** un tema por día se ajusta a su tiempo y necesidades.\n- **Comprobación:** dispone de seis horas.\n- **Pendiente:** cuánto trabajo necesita realmente.\n\nPodemos aceptar una parte, revisar otra y reconocer lo que aún no sabemos.",
+      "id": "c01-pensamiento-critico",
+      "title": "Pensar críticamente: examinar antes de aceptar",
+      "type": "content"
+    },
+    {
+      "body": "Resolver problemas implica comprender una situación, definir qué queremos mejorar, explorar alternativas y evaluar cómo avanzar.\n\nEn el taller barrial:\n\n**Situación:** asistieron ocho de veinte personas inscriptas.\n\n**Lo que falta comprender:** qué dificulta participar y qué busca lograr el taller.\n\n**Próximo paso:** obtener información útil antes de decidir una acción.\n\nUna solución puede estar bien ejecutada y atender una dificultad distinta de la que tenemos.",
+      "id": "c01-resolucion-problemas",
+      "title": "Resolver problemas: orientar la acción",
+      "type": "content"
+    },
+    {
+      "body": "1. **¿Qué está pasando y qué queremos lograr?**\n2. **¿Qué sabemos y qué estamos suponiendo?**\n3. **¿Qué alternativas tenemos y con qué criterios las compararíamos?**\n4. **¿Cómo sabremos si una propuesta sirve?**\n\nPara revisar una respuesta concreta:\n\n**¿Qué afirma? ¿En qué se apoya? ¿Qué falta comprobar?**\n\nEstas preguntas nos ayudan antes, durante y después de consultar a una IA.",
+      "id": "c01-preguntas-guia",
+      "title": "Cuatro preguntas para orientar el trabajo",
+      "type": "content"
+    },
+    {
+      "body": "**Demostración didáctica preparada. Las respuestas de este recorrido son inventadas; no muestran una ejecución real de un modelo.**\n\nConsulta inicial:\n> Dame ideas para que venga más gente al taller.\n\nRespuesta preparada:\n> Podrían difundir la actividad en redes, pedir a quienes participan que inviten a otra persona y enviar un recordatorio.\n\nSon propuestas que podemos examinar. Todavía no explican por qué faltaron personas que ya se habían inscripto.",
+      "id": "c01-demo-inicial",
+      "title": "Una respuesta útil para una pregunta incompleta",
+      "type": "content"
+    },
+    {
+      "body": "**Seguimos con el caso ficticio:** hay dos voluntarios, no hay presupuesto adicional y tenemos dos semanas para decidir qué probar.\n\nReformulamos el objetivo: **comprender qué dificulta la participación antes de elegir una acción**.\n\nConsulta trabajada:\n> Se inscribieron veinte personas y asistieron ocho. No sabemos por qué faltaron. Tenemos dos voluntarios, sin presupuesto adicional y dos semanas. Proponé tres maneras de averiguar qué dificulta participar. Comparalas por esfuerzo e información útil y aclará sus límites.\n\nLa mejora empieza en nuestra comprensión del problema.",
+      "id": "c01-demo-reformular",
+      "title": "Nuestro aporte: precisar qué necesitamos averiguar",
+      "type": "content"
+    },
+    {
+      "body": "**Respuesta didáctica preparada, no producida por un modelo.**\n\n| Alternativa | Esfuerzo | Información posible | Límite |\n|---|---|---|---|\n| Consulta breve a quienes se anotaron | Preparar preguntas y leer respuestas | Motivos declarados y horarios posibles | Puede responder sólo una parte |\n| Conversar con algunos ausentes que acepten | Coordinar y conversar | Obstáculos con más detalle | Pocos casos no representan al grupo |\n| Revisar la invitación con participantes | Recuperar el mensaje y pedir devolución | Claridad de fecha, lugar y propósito | No explica por sí sola las ausencias |\n\n**Evaluamos el ajuste al problema y el fundamento, además de la presentación.**",
+      "id": "c01-demo-alternativas",
+      "title": "La IA puede ampliar las alternativas que evaluamos",
+      "type": "content"
+    },
+    {
+      "body": "**Decisión provisional del ejemplo:** empezar con una consulta breve si el equipo puede contactar a las personas y revisar las respuestas.\n\nDespués registrará cuántas respondieron, qué obstáculos mencionaron y qué sigue sin saberse. Con esa información decidirá qué cambio probar y cómo observar su resultado.\n\n**Aporte humano:** definir el problema, elegir criterios, evaluar evidencia y responder por la decisión.\n\n**Apoyo posible de la IA:** proponer preguntas, alternativas y objeciones; ordenar información que podamos compartir.\n\nUna nueva respuesta o una autocrítica también necesita revisión.",
+      "id": "c01-demo-decision",
+      "title": "Elegir un próximo paso y revisar lo que ocurra",
+      "type": "content"
+    },
+    {
+      "body": "Pensá en una dificultad cercana en la que hayas buscado una solución antes de comprender bien el problema.\n\nEn hasta cinco líneas, anotá:\n\n- Qué ocurre, a quién afecta y por qué importa.\n- Qué necesitarías averiguar antes de decidir una solución.\n\nPuede ser una situación de estudio, vida cotidiana, comunidad o trabajo. No incluyas nombres ni datos privados.\n\nConservá una copia en tus notas. Si todavía no encontrás una situación propia, podés usar un caso de hoy y elegir tu reto después.",
       "id": "c01-reto-inicial",
-      "title": "Tu reto en cinco líneas",
-      "body": "- **Qué está pasando:** …\n- **A quién afecta:** …\n- **Por qué te importa:** …\n\nNo hace falta una formulación perfecta. Describí la dificultad antes de decidir una solución.\n\nConservá una copia en tus notas. Sin nombres ni información confidencial.",
-      "type": "short-answer",
-      "maxLength": 800
+      "maxLength": 1000,
+      "title": "Una situación propia para empezar",
+      "type": "short-answer"
     },
     {
-      "id": "c01-acuerdos",
-      "title": "Antes de abrir un asistente",
-      "body": "- Usamos situaciones sin datos personales ajenos ni información reservada.\n- Guardamos qué pedimos y qué respondió.\n- Distinguimos lo que pensamos nosotros de lo que aportó la herramienta.\n- Revisamos antes de usar una respuesta.\n\n**No hace falta una suscripción paga.** Si hoy no tenés acceso, podés trabajar acompañado o con el caso preparado.",
+      "body": "Quien quiera compartir puede contar:\n\n**La situación que eligió y qué necesita averiguar primero.**\n\nEscuchamos uno o dos ejemplos. Podemos aportar una pregunta que ayude a comprender mejor la situación.\n\nNo hace falta resolver el caso hoy.\n\n**¿Qué cambia cuando aclaramos el problema antes de pedir una solución?**",
+      "id": "c01-conversacion-final",
+      "title": "Compartimos una pregunta que abre el problema",
       "type": "content"
     },
     {
-      "id": "c01-taller",
-      "title": "Tu primera revisión, con tres preguntas",
-      "body": "Sobre tu reto, podés pedir:\n\n> Proponé una alternativa inicial para [mi situación, sin datos privados]. Explicá en unas 120 palabras por qué podría servir y qué información te falta.\n\nGuardá consulta y respuesta. Elegí **una afirmación o recomendación** y revisala primero por tu cuenta:\n\n**¿Qué afirma? ¿En qué se apoya? ¿Qué falta comprobar?**\n\nSi no hay acceso, usá el caso de Sofía y su registro de horas.",
-      "type": "content"
-    },
-    {
-      "id": "c01-taller-analisis",
-      "title": "Una afirmación bajo la lupa",
-      "body": "- **Frase que elegí:** …\n- **En qué se apoya / qué da por supuesto:** …\n- **Qué comprobaría y cómo:** …\n\nSi pudiste comprobar algo, indicá con qué dato o fuente. Si todavía no, dejalo como pendiente.\n\nGuardá tu primera revisión antes de volver al asistente.",
-      "type": "short-answer",
-      "maxLength": 1200
-    },
-    {
-      "id": "c01-taller-paso2",
-      "title": "Ahora contrastá tu revisión",
-      "body": "![Compará tu análisis previo con la autocrítica del asistente. Contrastá las coincidencias y diferencias con evidencia: una corrección puede quedar comprobada o seguir pendiente. La autocrítica no valida por sí sola la respuesta.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/dos-revisiones-y-evidencia.svg)\n\nPodés pedir:\n\n> Revisá tu respuesta: ¿qué supusiste, qué no está justificado y cómo podríamos comprobarlo?\n\n**Compará con tu primera lectura.** Elegí un aporte útil o una duda que permanezca.\n\nSi trabajás sin asistente, contrastá con otra persona o con la revisión preparada del caso.",
-      "type": "content"
-    },
-    {
-      "id": "c01-taller-contraste",
-      "title": "¿Qué cambió después de revisar?",
-      "body": "- **Mantengo o cambio mi primera revisión porque…**\n- **Quedó comprobado… / Sigue pendiente…**\n\nIndicá si contrastaste con un asistente, otra persona o el ejemplo preparado. Si no hubo un aporte nuevo, también podés decirlo.",
-      "type": "short-answer",
-      "maxLength": 800
-    },
-    {
-      "id": "c01-puesta-comun",
-      "title": "Dos hallazgos que podamos entender entre todos",
-      "body": "Quien comparte cuenta:\n\n1. La frase que revisó.\n2. Qué comprobó o qué falta comprobar.\n3. Qué cambió después de contrastar.\n\nQuienes escuchan aportan **una pregunta útil**.\n\nCompartir es voluntario. Buscamos aprender del procedimiento.",
-      "type": "content"
-    },
-    {
+      "body": "**Para el jueves 8, a las 20:00:** traé una situación propia y una pregunta sobre lo que necesitás averiguar. Conservá tu primer enunciado.\n\nEn la clase 2 vamos a consultar, revisar una afirmación, reformular el problema y comparar respuestas.\n\nLos **tres usos propios de IA** forman parte de la Entrega 1; podés empezar a registrarlos, pero no necesitás completarlos para entrar al taller del jueves.\n\nLa consigna completa se presenta el jueves 8. **Vence el 15/10 a las 23:59 y vale el 30 % de la nota.**\n\n[Guía y condiciones del curso](/classes/mxehf2lr0f35d3d)",
       "id": "c01-continuidad",
-      "title": "Qué conservar para el próximo encuentro",
-      "body": "**Conservá el primer enunciado de tu reto.**\n\nAntes del jueves, registrá tres usos propios de un asistente:\n\n- Qué pediste y qué respondió, en una línea.\n- Si verificaste y cómo.\n- Qué habrías hecho sin el asistente.\n\nDespués distinguí qué delegaste, qué retuviste y dónde aceptaste una respuesta floja, si ocurrió.\n\nLa Entrega 1 se presenta el jueves y vence el **15/10 a las 23:59**. [Guía y condiciones del curso](/classes/mxehf2lr0f35d3d)",
+      "title": "Cómo continuamos el jueves",
       "type": "content"
     },
     {
-      "id": "c01-salida",
-      "title": "Una comprobación que vas a incorporar",
-      "body": "**Antes de usar una respuesta, voy a comprobar… de esta manera…**\n\nPodés agregar qué necesitás practicar más. Evitá quedarte sólo con «voy a tener cuidado».",
-      "type": "short-answer",
-      "maxLength": 600
-    },
-    {
+      "body": "**Tres ideas para llevarnos:**\n\n- Una respuesta convincente necesita fundamento.\n- Comprender y formular el problema orienta las soluciones que buscamos.\n- La IA puede ampliar nuestro trabajo; nosotros evaluamos qué hacer con sus aportes.\n\n**Primero comprender qué necesitamos. Después elegir cómo pedir ayuda y revisar lo obtenido.**\n\nEl jueves lo llevamos a la práctica sobre un reto propio.",
       "id": "c01-cierre",
-      "title": "Una pausa antes de creer y usar",
-      "body": "**¿Qué afirma? ¿En qué se apoya? ¿Qué falta comprobar?**\n\nHoy revisamos una respuesta y elegimos un reto propio.\n\nEl jueves 8, a las 20:00, damos un paso atrás: **¿estamos pidiendo ayuda para el problema que realmente tenemos?**\n\n[Guía de apoyo: preguntas, ejemplos y entregas](/classes/mxehf2lr0f35d3d)",
+      "title": "El criterio orienta el uso de la IA",
       "type": "content"
     }
-  ]
+  ],
+  "version": 1
 }
