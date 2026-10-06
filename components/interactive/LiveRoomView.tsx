@@ -9,6 +9,7 @@ import type { LiveCommand, LiveState, PublicScreen } from '@/lib/live-interactiv
 import { ContentWindow } from './ContentWindow';
 import { TeacherScript } from './TeacherScript';
 import { ProjectionResults } from './ProjectionResults';
+import studentStyles from './StudentScreen.module.css';
 
 function ScreenBody({ screen }: { screen: PublicScreen }) {
   return <div className="space-y-5">
@@ -89,7 +90,7 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
       {active && !simulation && (!connected || connectionError) && <p role="status" className="text-sm text-[var(--color-text-muted)]">Reconectando · actualización periódica</p>}
       {(error || connectionError) && <div role="alert" className="rounded-xl border border-[var(--color-error)] p-4"><p>{error || connectionError}</p>{!simulation && <Button variant="ghost" onClick={() => void refresh()}>Actualizar ahora</Button>}</div>}
       {!active && <p role="status" className="rounded-xl bg-[var(--color-surface-container-high)] p-4">{simulation ? 'El ensayo terminó.' : 'La sesión finalizó.'}</p>}
-      <Card><CardContent className="min-h-72"><ScreenBody screen={screen} /><StudentActivity key={screen.id} state={state} send={send} pending={pending || Boolean(connectionError)} /></CardContent></Card>
+      <Card><CardContent className={`min-h-72 ${studentStyles.screen}`}><ScreenBody screen={screen} /><StudentActivity key={screen.id} state={state} send={send} pending={pending || Boolean(connectionError)} /></CardContent></Card>
     </ContentWindow>}
     {(error || connectionError || copyError) && <div role="alert" className="rounded-xl border border-[var(--color-error)] p-4"><p>{error || connectionError || copyError}</p>{!simulation && <Button variant="ghost" onClick={() => void refresh()}>Actualizar ahora</Button>}</div>}
     {teacher && active && <Card><CardContent className="flex flex-wrap items-center justify-between gap-5">
@@ -100,7 +101,7 @@ export function LiveRoomView({ state, results, setResults, send, pending = false
     <div className={teacher ? `grid items-start gap-6 ${compact ? '' : 'xl:grid-cols-[minmax(0,1fr)_22rem]'}` : ''}>
       <div className="min-w-0 space-y-5">
         {teacher && <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">Pantalla {session.screenIndex + 1} de {teacher.material.screens.length}</p><Badge tone={session.activityOpen ? 'success' : 'neutral'}>{screen.type === 'content' ? 'Contenido' : session.activityOpen ? 'Respuestas abiertas' : 'Respuestas cerradas'}</Badge></div>}
-        <Card><CardContent className="min-h-72"><ScreenBody screen={screen} />
+        <Card><CardContent className={`min-h-72 ${teacher ? '' : studentStyles.screen}`}><ScreenBody screen={screen} />
           {teacher ? 'options' in screen && <ul className="mt-6 space-y-3">{screen.options.map((o) => <li key={o.id} className="rounded-xl border border-[var(--color-outline-variant)] p-4">{o.label}</li>)}</ul> : <StudentActivity key={screen.id} state={state} send={send} pending={pending || Boolean(connectionError)} />}
         </CardContent></Card>
         {teacher && <>

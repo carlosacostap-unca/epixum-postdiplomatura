@@ -1,0 +1,43 @@
+.screen {
+  min-width: 0;
+  font-size: 1.125rem;
+  line-height: 1.65;
+}
+
+.screen h2 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.screen :global(.reading-content),
+.screen textarea,
+.screen button[type="submit"] {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.screen :global(.reading-content) table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 1em;
+}
+
+.screen form :global(.text-sm) {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 48rem) {
+  .screen {
+    font-size: 1.375rem;
+  }
+
+  .screen h2 {
+    font-size: 2.25rem;
+  }
+
+  .screen form :global(.text-sm) {
+    font-size: 1.125rem;
+  }
+}
