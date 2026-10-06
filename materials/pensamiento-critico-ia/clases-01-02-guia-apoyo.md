@@ -6,7 +6,7 @@ Revisión del 6 de octubre de 2026. Las actividades interactivas son formativas;
 
 ## Lo esencial de la primera clase
 
-La primera clase busca comprender por qué el pensamiento crítico y la resolución de problemas orientan el uso de la IA. El docente explica tres situaciones y una demostración preparada. No hace falta abrir un asistente; la participación se concentra en una reflexión breve al final.
+La primera clase busca comprender por qué el pensamiento crítico y la resolución de problemas orientan el uso de la IA. El docente explica tres situaciones y una demostración preparada. Después de Sofía, el grupo participa en «La información que falta», con dos votaciones sobre una biblioteca ficticia. No hace falta abrir un asistente. Se conserva la reflexión breve sobre una situación propia al final.
 
 **Objetivo general del curso:** abordar problemas propios de manera fundamentada, usando la IA como apoyo para comprender, explorar alternativas y revisar decisiones.
 
@@ -17,7 +17,7 @@ Pensar críticamente es examinar afirmaciones, razones, supuestos y evidencias p
 | Acto | Minutos | Propósito |
 |---|---|---|
 | 1. Para qué existe este curso | 0–15 | Comprender la motivación, el objetivo y el recorrido |
-| 2. Situaciones en las que una respuesta rápida no alcanza | 15–40 | Observar los casos de Sofía, el taller barrial y una capacitación |
+| 2. Situaciones en las que una respuesta rápida no alcanza | 15–40 | Observar a Sofía, votar sobre la biblioteca y continuar con el taller barrial y una capacitación |
 | 3. Qué tienen en común los casos | 40–55 | Reconocer pensamiento crítico y resolución de problemas |
 | 4. Qué lugar ocupa la IA | 55–75 | Seguir una demostración de consulta, evaluación y decisión provisional |
 | 5. Llevar el procedimiento a una situación propia | 75–90 | Identificar una dificultad y qué necesitamos averiguar |
@@ -35,6 +35,20 @@ Registro ficticio: cuatro noches de una hora, sábado de dos horas y domingo sin
 Comprobación: 4 × 1 + 2 = 6 horas disponibles, frente a 12 estimadas. No sabemos aún cuánto necesita realmente ni qué temas domina. Contar temas no estima su dificultad.
 
 Revisión didáctica preparada: «El consejo supone que cada tema requiere un tiempo parecido. Hay seis horas disponibles y doce estimadas de trabajo. Hace falta contrastar la estimación con un tema y revisar prioridades». El docente muestra este razonamiento en la clase 1. En la clase 2 puede servir para contrastar una revisión propia si no hay acceso a un asistente; no debe atribuirse a una ejecución de IA.
+
+## La información que falta: biblioteca ficticia
+
+Actividad de seis minutos, después del caso de Sofía. Una biblioteca quiere extender su horario. Consulta a veinte personas presentes por la mañana; dieciséis prefieren que abra más temprano. La recomendación preparada dice: «Conviene abrir una hora antes, porque es la opción preferida por el 80 % de las personas consultadas». Se presenta como parte de un caso con un asistente, pero no es una ejecución real de IA.
+
+**Primera votación:** «¿Cuánto respaldo te parece que tiene esta recomendación?». Opciones: Poco, Algo, Mucho.
+
+**Dato nuevo:** la biblioteca también quiere atender a personas que trabajan por la mañana y ninguna participó de la consulta.
+
+**Segunda votación:** la misma pregunta y las mismas opciones. Se puede mantener o cambiar la elección; interesa explicar la razón. Las rondas se guardan por separado y no llevan nota.
+
+La conversación recupera qué cambió o qué duda ya existía, si la cuenta era correcta y qué información falta. **16 de 20 = 80 %**: el porcentaje puede ser correcto y aun así no alcanzar para decidir. Importa quiénes respondieron y a quiénes se quiere atender. No sabemos todavía qué horario prefieren quienes no participaron.
+
+Al comparar los resultados, se considera cuántas personas respondieron en cada ronda. Una diferencia en las proporciones del grupo no prueba que cada persona haya cambiado. No hace falta modificar la respuesta para participar bien.
 
 ## Elegir una capacitación: ejemplo ficticio
 

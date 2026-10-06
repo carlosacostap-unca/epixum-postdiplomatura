@@ -4,7 +4,7 @@ Curso Pensamiento Crítico y Resolución de Problemas en Entornos de Inteligenci
 
 Revisión del 6 de octubre: la primera clase busca que los participantes comprendan la necesidad del pensamiento crítico y la resolución de problemas, reconozcan esas capacidades en situaciones cercanas y entiendan cómo orientan el uso de la IA.
 
-Son **19 pantallas: 18 de contenido y una respuesta breve al final**. Predominan la explicación docente, los casos desarrollados y una demostración preparada. No se pide abrir un asistente durante este encuentro.
+Son **23 pantallas: 20 de contenido, dos encuestas y una respuesta breve al final**. Predominan la explicación docente, los casos desarrollados y una demostración preparada. Después de Sofía se realiza «La información que falta», durante seis minutos. No se pide abrir un asistente durante este encuentro.
 
 ## Recorrido por actos
 
@@ -13,10 +13,10 @@ Los actos orientan la preparación y el guion docente; sus nombres no aparecen e
 | Acto | Pantallas | Minutos | Resultado esperado |
 |---|---|---|---|
 | 1. Para qué existe este curso | 1–4 | 0–15 | Comprender la motivación, el objetivo general y el recorrido |
-| 2. Situaciones en las que una respuesta rápida no alcanza | 5–8 | 15–40 | Reconocer la necesidad de comprobar, formular problemas y definir criterios |
-| 3. Qué tienen en común estos casos | 9–11 | 40–55 | Comprender pensamiento crítico y resolución de problemas a partir de los ejemplos |
-| 4. Qué lugar ocupa la IA | 12–15 | 55–75 | Distinguir el aporte humano y la ayuda del asistente en una decisión provisional |
-| 5. Llevar el procedimiento a una situación propia | 16–19 | 75–90 | Identificar una dificultad propia y una pregunta por averiguar |
+| 2. Situaciones en las que una respuesta rápida no alcanza | 5–12 | 15–40 | Reconocer la necesidad de comprobar, formular problemas y definir criterios |
+| 3. Qué tienen en común estos casos | 13–15 | 40–55 | Comprender pensamiento crítico y resolución de problemas a partir de los ejemplos |
+| 4. Qué lugar ocupa la IA | 16–19 | 55–75 | Distinguir el aporte humano y la ayuda del asistente en una decisión provisional |
+| 5. Llevar el procedimiento a una situación propia | 20–23 | 75–90 | Identificar una dificultad propia y una pregunta por averiguar |
 
 ## Pantalla por pantalla
 
@@ -28,21 +28,33 @@ Los actos orientan la preparación y el guion docente; sus nombres no aparecen e
 | 4 | 1 | 12–15 | El recorrido del curso y el de hoy |
 | 5 | 2 | 15–19 | Sofía: un plan que parece razonable |
 | 6 | 2 | 19–24 | Sofía: comprobar cambia el plan |
-| 7 | 2 | 24–32 | Taller barrial: ¿necesitamos más difusión? |
-| 8 | 2 | 32–40 | Elegir una capacitación: ¿la mejor para qué? |
-| 9 | 3 | 40–45 | Pensar críticamente: examinar antes de aceptar |
-| 10 | 3 | 45–50 | Resolver problemas: orientar la acción |
-| 11 | 3 | 50–55 | Cuatro preguntas para orientar el trabajo |
-| 12 | 4 | 55–59 | Una respuesta útil para una pregunta incompleta |
-| 13 | 4 | 59–64 | Nuestro aporte: precisar qué necesitamos averiguar |
-| 14 | 4 | 64–69 | La IA puede ampliar las alternativas que evaluamos |
-| 15 | 4 | 69–75 | Elegir un próximo paso y revisar lo que ocurra |
-| 16 | 5 | 75–81 | Una situación propia para empezar |
-| 17 | 5 | 81–85 | Compartimos una pregunta que abre el problema |
-| 18 | 5 | 85–88 | Cómo continuamos el jueves |
-| 19 | 5 | 88–90 | El criterio orienta el uso de la IA |
+| 7 | 2 | 24–26 | Primera votación · ¿Cuánto respaldo te parece que tiene esta recomendación? |
+| 8 | 2 | 26–27 | La información que faltaba |
+| 9 | 2 | 27–28 | Segunda votación · ¿Cuánto respaldo te parece que tiene esta recomendación? |
+| 10 | 2 | 28–30 | ¿Qué cambió al conocer ese dato? |
+| 11 | 2 | 30–35 | Taller barrial: ¿necesitamos más difusión? |
+| 12 | 2 | 35–40 | Elegir una capacitación: ¿la mejor para qué? |
+| 13 | 3 | 40–45 | Pensar críticamente: examinar antes de aceptar |
+| 14 | 3 | 45–50 | Resolver problemas: orientar la acción |
+| 15 | 3 | 50–55 | Cuatro preguntas para orientar el trabajo |
+| 16 | 4 | 55–59 | Una respuesta útil para una pregunta incompleta |
+| 17 | 4 | 59–64 | Nuestro aporte: precisar qué necesitamos averiguar |
+| 18 | 4 | 64–69 | La IA puede ampliar las alternativas que evaluamos |
+| 19 | 4 | 69–75 | Elegir un próximo paso y revisar lo que ocurra |
+| 20 | 5 | 75–81 | Una situación propia para empezar |
+| 21 | 5 | 81–85 | Compartimos una pregunta que abre el problema |
+| 22 | 5 | 85–88 | Cómo continuamos el jueves |
+| 23 | 5 | 88–90 | El criterio orienta el uso de la IA |
 
-La reflexión de la pantalla 16 puede conservarse en notas; el envío es formativo y no lleva nota. La pantalla 17 permite uno o dos intercambios voluntarios.
+La reflexión de la pantalla 20 puede conservarse en notas; el envío es formativo y no lleva nota. La pantalla 21 permite uno o dos intercambios voluntarios.
+
+## Actividad: La información que falta
+
+Se inserta después de Sofía, en las pantallas 7–10 (minutos 24–30): primera votación, revelación de un dato, segunda votación y conversación. Ambas encuestas preguntan lo mismo y usan Poco, Algo y Mucho; sus identificadores distintos conservan las dos respuestas. El caso y la recomendación son ficticios. El guion evita anticipar el dato y admite mantener la elección.
+
+El docente registra los conteos y el total de cada ronda y recupera la comparación oralmente; el panel privado permite consultar ambas actividades. La proyección muestra una actividad a la vez. Si cambia la cantidad de respuestas, debe señalarlo antes de interpretar las proporciones. Los resultados grupales no permiten afirmar que cada persona cambió de opinión.
+
+El taller barrial y la capacitación pasan a cinco minutos cada uno, con speeches abreviados. Desde el minuto 40 se conserva el recorrido anterior y el cierre sigue siendo a las 21:30.
 
 ## Casos y conducción
 
@@ -50,7 +62,7 @@ Sofía muestra la diferencia entre datos y estimaciones. El taller barrial muest
 
 Todos los casos son ficticios. La demostración del taller incluye consultas y respuestas preparadas, rotuladas como tales; no son ejecuciones reales ni una prueba del rendimiento de un modelo. El docente hace visible su razonamiento y deja explícitas las incertidumbres. El resultado del caso es un próximo paso condicionado, no una promesa de éxito.
 
-El guion privado incluye acto, horario y un speech redactado para cada una de las 19 pantallas: apertura, explicación de conceptos y casos, consignas y cierre. El texto hablado se distingue de las pausas, las indicaciones de conducción y los enlaces a la siguiente pantalla. En la conversación final hay frases alternativas para acompañar intervenciones o retomar un caso si nadie comparte. El docente puede adaptar el texto y el ritmo dentro del tiempo de cada pantalla.
+El guion privado incluye acto, horario y un speech redactado para cada una de las 23 pantallas: apertura, explicación de conceptos y casos, consignas y cierre. El texto hablado se distingue de las pausas, las indicaciones de conducción y los enlaces a la siguiente pantalla. En la conversación final hay frases alternativas para acompañar intervenciones o retomar un caso si nadie comparte. El docente puede adaptar el texto y el ritmo dentro del tiempo de cada pantalla.
 
 El speech se guardó y verificó en `teacherNotes` el 6/10; la copia pública no contiene guion docente. Se consulta desde «Guion docente» y «Abrir guion en otra ventana». Los diagramas anteriores se conservan como activos históricos; esta versión usa textos y tablas.
 

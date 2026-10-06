@@ -19,7 +19,7 @@
       "type": "content"
     },
     {
-      "body": "**Durante el curso:**\n\nComprender y reformular un reto → investigar causas y evidencia → comparar alternativas y argumentos → decidir cómo usar la IA y revisar lo logrado.\n\nTrabajaremos sobre un reto propio, con tres entregas a lo largo del curso.\n\n**Hoy:** veremos tres situaciones, pondremos nombre a lo que hacemos al pensar y seguiremos una demostración. Al final, cada persona podrá identificar una situación propia.\n\nNo necesitás abrir un asistente durante esta primera clase.",
+      "body": "**Durante el curso:**\n\nComprender y reformular un reto → investigar causas y evidencia → comparar alternativas y argumentos → decidir cómo usar la IA y revisar lo logrado.\n\nTrabajaremos sobre un reto propio, con tres entregas a lo largo del curso.\n\n**Hoy:** veremos tres ejemplos y participaremos en «La información que falta», con dos votaciones. Después pondremos nombre a lo que hacemos al pensar y seguiremos una demostración. Al final, cada persona podrá identificar una situación propia.\n\nNo necesitás abrir un asistente durante esta primera clase.",
       "id": "c01-recorrido",
       "title": "El recorrido del curso y el de hoy",
       "type": "content"
@@ -35,6 +35,58 @@
       "id": "c01-caso-comprobacion",
       "title": "Sofía: comprobar cambia el plan",
       "type": "content"
+    },
+    {
+      "id": "c01-biblioteca-primera",
+      "type": "poll",
+      "title": "Primera votación · ¿Cuánto respaldo te parece que tiene esta recomendación?",
+      "body": "**Caso ficticio preparado para la clase. La recomendación también es didáctica; no es una ejecución real de IA.**\n\nUna biblioteca quiere extender su horario. Consulta a veinte personas que están allí por la mañana. Dieciséis prefieren que abra más temprano.\n\nEn el caso, un asistente recibe esos resultados y recomienda:\n\n> Conviene abrir una hora antes, porque es la opción preferida por el 80 % de las personas consultadas.\n\n**Primera votación.** Elegí según la información disponible. No lleva nota.",
+      "options": [
+        {
+          "id": "poco",
+          "label": "Poco"
+        },
+        {
+          "id": "algo",
+          "label": "Algo"
+        },
+        {
+          "id": "mucho",
+          "label": "Mucho"
+        }
+      ]
+    },
+    {
+      "id": "c01-biblioteca-dato",
+      "type": "content",
+      "title": "La información que faltaba",
+      "body": "**Seguimos con la misma biblioteca ficticia.**\n\nLa biblioteca también quiere atender a personas que trabajan por la mañana.\n\n**Ninguna de esas personas participó de la consulta.**\n\nEl resultado sigue siendo el mismo: dieciséis de veinte personas consultadas prefieren que abra más temprano.\n\nPensá qué implica esta información antes de volver a votar."
+    },
+    {
+      "id": "c01-biblioteca-segunda",
+      "type": "poll",
+      "title": "Segunda votación · ¿Cuánto respaldo te parece que tiene esta recomendación?",
+      "body": "**Segunda votación · Mismo caso ficticio y misma recomendación.**\n\n> Conviene abrir una hora antes, porque es la opción preferida por el 80 % de las personas consultadas.\n\nSe consultó a veinte personas presentes por la mañana; dieciséis prefieren abrir antes. La biblioteca también quiere atender a personas que trabajan por la mañana y ninguna participó de la consulta.\n\n**Podés mantener o cambiar tu elección.** No hace falta cambiarla para participar bien.",
+      "options": [
+        {
+          "id": "poco",
+          "label": "Poco"
+        },
+        {
+          "id": "algo",
+          "label": "Algo"
+        },
+        {
+          "id": "mucho",
+          "label": "Mucho"
+        }
+      ]
+    },
+    {
+      "id": "c01-biblioteca-conversacion",
+      "type": "content",
+      "title": "¿Qué cambió al conocer ese dato?",
+      "body": "Comparemos las dos votaciones y escuchemos dos razones.\n\n- ¿Qué cambió para ustedes, o qué duda ya tenían?\n- ¿El porcentaje estaba mal calculado?\n- ¿Qué información necesitamos antes de decidir el horario?\n\n**16 de 20 = 80 %.** La cuenta puede ser correcta y la información resultar insuficiente para decidir.\n\nImporta quiénes respondieron, a quiénes queremos atender y qué necesitamos averiguar. Este dato no demuestra por sí solo cuál sería el mejor horario."
     },
     {
       "body": "**Caso ficticio.** Se inscribieron veinte personas en un taller y asistieron ocho. El equipo propone: «Hagamos más publicidad».\n\nNo sabemos por qué faltaron las otras doce personas.\n\n- El horario podría dificultar la asistencia.\n- La información podría haber sido poco clara.\n- Podrían existir otros obstáculos.\n\n**Son posibilidades, no causas comprobadas.**\n\nAntes de elegir una campaña, necesitamos averiguar qué dificulta participar. Una consulta breve a quienes se anotaron podría aportar información, con límites.",
