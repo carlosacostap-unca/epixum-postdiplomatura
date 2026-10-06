@@ -55,7 +55,7 @@ describe('contenido en ventana secundaria', () => {
     expect(projection.close).toHaveBeenCalled();
     unmount(); notes.iframe.remove(); projection.iframe.remove();
   });
-  it('proyecta sólo el contenido público y mantiene controles, identidades, resultados y soluciones en el panel docente', async () => {
+  it('proyecta resultados grupales en vivo y mantiene identidades, textos y soluciones en el panel docente', async () => {
     const { iframe, popup, close } = mockPopup();
     const user = userEvent.setup();
     const material = parseInteractiveMaterial(example)!;
@@ -76,12 +76,24 @@ describe('contenido en ventana secundaria', () => {
     expect(projection.getByText('Buscar evidencias y contrastarlas')).toBeInTheDocument();
     expect(projection.getByText('Esperá a que el docente abra la actividad.')).toBeInTheDocument();
     open();
+    rerender(view());
+    expect(projection.getByText('0 de 1 participantes respondieron.')).toBeInTheDocument();
+    expect(projection.getAllByText('0 respuestas · 0 %')).toHaveLength(3);
     model = simulationCommand(model, { studentId: 'sim-1' }, { kind: 'answer', screenId: model.session.screenId, revision: model.session.revision, answer: 'a' });
     rerender(view());
     expect(projection.getByText('Actividad abierta. Respondé desde tu dispositivo.')).toBeInTheDocument();
     expect(screen.getByText(/Opción prevista/)).toBeInTheDocument();
     expect(screen.getByText(/1 de 1 participantes respondieron/)).toBeInTheDocument();
-    for (const text of [/Opción prevista/, /participantes respondieron/, /Nombre privado/, /PRUEBA01/, /Respuestas · sólo docentes/]) {
+    expect(projection.getByText('1 respuesta · 100 %')).toBeInTheDocument();
+    model = joinSimulation(model, 'sim-2', SIMULATION_CODE);
+    model = simulationCommand(model, { studentId: 'sim-2' }, { kind: 'answer', screenId: model.session.screenId, revision: model.session.revision, answer: 'b' });
+    results = 'encuesta'; rerender(view());
+    expect(projection.getByText('2 de 2 participantes respondieron.')).toBeInTheDocument();
+    expect(projection.getAllByText('1 respuesta · 50 %')).toHaveLength(2);
+    model = simulationCommand(model, 'teacher', { kind: 'activity', open: false, revision: model.session.revision });
+    rerender(view());
+    expect(projection.getAllByText('1 respuesta · 50 %')).toHaveLength(2);
+    for (const text of [/Opción prevista/, /Nombre privado/, /PRUEBA01/, /Respuestas · sólo docentes/]) {
       expect(projection.queryByText(text)).not.toBeInTheDocument();
     }
     expect(projection.queryByRole('button')).not.toBeInTheDocument();
@@ -89,7 +101,10 @@ describe('contenido en ventana secundaria', () => {
     expect(projection.queryByRole('combobox')).not.toBeInTheDocument();
     move(2); results = 'pregunta'; rerender(view());
     expect(projection.getByRole('heading', { name: '¿Cómo preferís explorar un tema nuevo?' })).toBeInTheDocument();
-    expect(screen.getByText(/1 de 1 participantes respondieron/)).toBeInTheDocument();
+    expect(screen.getByText(/2 de 2 participantes respondieron/)).toBeInTheDocument();
+    expect(projection.queryByRole('region', { name: 'Resultados de la pregunta' })).not.toBeInTheDocument();
+    open(); rerender(view());
+    expect(projection.getByText('0 de 2 participantes respondieron.')).toBeInTheDocument();
     move(3); open(); results = '';
     model = simulationCommand(model, { studentId: 'sim-1' }, { kind: 'answer', screenId: model.session.screenId, revision: model.session.revision, answer: 'REFLEXIÓN PRIVADA' });
     rerender(view());

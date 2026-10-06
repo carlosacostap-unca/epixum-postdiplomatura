@@ -1,18 +1,10 @@
 {
-  "images": [
-    {
-      "file": "convincente-y-fundamentada.svg",
-      "screenId": "c01-tres-preguntas",
-      "alt": "Una respuesta puede sonar convincente por su claridad, sus cifras y su tono seguro. Para evaluar su fundamento hay que comprobar datos, revisar fuentes y justificar conclusiones. La forma por sí sola no demuestra la verdad.",
-      "title": "Sonar convincente y tener fundamento son cosas distintas",
-      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/convincente-y-fundamentada.svg"
-    },
-    {
-      "file": "dos-revisiones-y-evidencia.svg",
-      "screenId": "c01-taller-paso2",
-      "alt": "Compará tu análisis previo con la autocrítica del asistente. Contrastá las coincidencias y diferencias con evidencia: una corrección puede quedar comprobada o seguir pendiente. La autocrítica no valida por sí sola la respuesta.",
-      "title": "Dos revisiones que también necesitan evidencia",
-      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/0486f5368ea5dcc64367ec6796b21648449147c5/public/interactive/pensamiento-critico-ia/clase-01/dos-revisiones-y-evidencia.svg"
-    }
-  ]
+  "images": [],
+  "historicalAssets": [
+    "convincente-y-fundamentada.svg",
+    "dos-revisiones-y-evidencia.svg",
+    "delegar-retener-amplificar.svg",
+    "informacion-supuestos-conclusion.svg"
+  ],
+  "note": "La versión del 6/10 presenta los casos con texto y tablas. Los SVG anteriores se conservan como activos históricos."
 }

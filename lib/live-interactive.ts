@@ -4,7 +4,7 @@ import type { RecordModel } from 'pocketbase';
 import type { Course, Class } from '@/types';
 import { requireInteractiveCourse, requireInteractiveLesson } from './interactive-class-access';
 import { isInteractiveLessonReady, parseInteractiveMaterial } from './interactive-material';
-import { publicScreen, validateLiveAnswer, type LiveSession, type LiveState, type LiveCommand, type LiveAnswer } from './live-interactive-contract';
+import { projectionResults, publicScreen, validateLiveAnswer, type LiveSession, type LiveState, type LiveCommand, type LiveAnswer } from './live-interactive-contract';
 
 export class LiveError extends Error {
   constructor(message: string, public status = 400) { super(message); }
@@ -99,10 +99,11 @@ export async function readLiveState(pb: PocketBase, sessionId: string, resultsSc
   const selected = material.screens.some((screen) => screen.id === resultsScreenId) ? resultsScreenId! : session.screenId;
   const [participants, answers] = await Promise.all([
     pb.collection('interactive_participants').getFullList({ filter: pb.filter('session = {:session}', { session: sessionId }), expand: 'student', fields: 'id,student,updated,expand.student.name,expand.student.id', sort: 'created,id' }),
-    pb.collection('interactive_responses').getFullList({ filter: pb.filter('session = {:session} && screenId = {:screen}', { session: sessionId, screen: selected }), sort: 'created,id' }),
+    pb.collection('interactive_responses').getFullList({ filter: pb.filter('session = {:session} && (screenId = {:screen} || screenId = {:current})', { session: sessionId, screen: selected, current: session.screenId }), sort: 'created,id' }),
   ]);
   return { ...base, role: 'teacher', canControl: session.controller === user, material, resultsScreenId: selected,
-    participants: participants.map((p) => ({ id: p.id, student: p.student, updated: p.updated, name: p.expand?.student?.name || `Alumno ${p.student.slice(-6)}` })), answers: answers.map(answerDto) };
+    projectionResults: projectionResults(session.screen, answers.map(answerDto)),
+    participants: participants.map((p) => ({ id: p.id, student: p.student, updated: p.updated, name: p.expand?.student?.name || `Alumno ${p.student.slice(-6)}` })), answers: answers.filter((a) => a.screenId === selected).map(answerDto) };
 }
 
 export async function executeLiveCommand(pb: PocketBase, sessionId: string, command: LiveCommand) {

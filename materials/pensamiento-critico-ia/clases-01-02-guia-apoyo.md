@@ -2,11 +2,29 @@
 
 Pensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial
 
-Revisión del 4 de octubre de 2026. Las actividades interactivas son formativas; no reemplazan el envío formal.
+Revisión del 6 de octubre de 2026. Las actividades interactivas son formativas; no reemplazan el envío formal.
 
 ## Lo esencial de la primera clase
 
-¿Qué afirma? ¿En qué se apoya? ¿Qué falta comprobar antes de usarlo? Elegí una frase, distinguí un dato de una suposición y registrá qué comprobaste o cómo podrías hacerlo. Una corrección del asistente también necesita revisión.
+La primera clase busca comprender por qué el pensamiento crítico y la resolución de problemas orientan el uso de la IA. El docente explica tres situaciones y una demostración preparada. No hace falta abrir un asistente; la participación se concentra en una reflexión breve al final.
+
+**Objetivo general del curso:** abordar problemas propios de manera fundamentada, usando la IA como apoyo para comprender, explorar alternativas y revisar decisiones.
+
+Pensar críticamente es examinar afirmaciones, razones, supuestos y evidencias para formar un juicio fundamentado. Resolver problemas implica comprender una situación, definir qué queremos mejorar, explorar alternativas y evaluar cómo avanzar.
+
+## La primera clase en cinco actos
+
+| Acto | Minutos | Propósito |
+|---|---|---|
+| 1. Para qué existe este curso | 0–15 | Comprender la motivación, el objetivo y el recorrido |
+| 2. Situaciones en las que una respuesta rápida no alcanza | 15–40 | Observar los casos de Sofía, el taller barrial y una capacitación |
+| 3. Qué tienen en común los casos | 40–55 | Reconocer pensamiento crítico y resolución de problemas |
+| 4. Qué lugar ocupa la IA | 55–75 | Seguir una demostración de consulta, evaluación y decisión provisional |
+| 5. Llevar el procedimiento a una situación propia | 75–90 | Identificar una dificultad y qué necesitamos averiguar |
+
+Cuatro preguntas orientan el trabajo: ¿qué ocurre y qué queremos lograr?, ¿qué sabemos y qué suponemos?, ¿qué alternativas tenemos y con qué criterios las compararíamos?, ¿cómo sabremos si una propuesta sirve?
+
+Para revisar una respuesta concreta usamos: **¿qué afirma?, ¿en qué se apoya?, ¿qué falta comprobar?** Una corrección del asistente también necesita revisión.
 
 ## El caso de Sofía: material didáctico inventado
 
@@ -16,9 +34,21 @@ Registro ficticio: cuatro noches de una hora, sábado de dos horas y domingo sin
 
 Comprobación: 4 × 1 + 2 = 6 horas disponibles, frente a 12 estimadas. No sabemos aún cuánto necesita realmente ni qué temas domina. Contar temas no estima su dificultad.
 
-Revisión didáctica preparada para trabajar sin asistente: «El consejo supone que cada tema requiere un tiempo parecido. Hay seis horas disponibles y doce estimadas de trabajo. Hace falta contrastar la estimación con un tema y revisar prioridades». Compará esta revisión con la tuya; no la atribuyas a una ejecución de IA.
+Revisión didáctica preparada: «El consejo supone que cada tema requiere un tiempo parecido. Hay seis horas disponibles y doce estimadas de trabajo. Hace falta contrastar la estimación con un tema y revisar prioridades». El docente muestra este razonamiento en la clase 1. En la clase 2 puede servir para contrastar una revisión propia si no hay acceso a un asistente; no debe atribuirse a una ejecución de IA.
 
-## Mi reto y mi primera revisión
+## Elegir una capacitación: ejemplo ficticio
+
+Una persona busca aprender algo aplicable a su trabajo y dispone de dos horas semanales. La opción A ofrece muchas horas de contenido y encuentros fijos; la B ofrece menos contenido y una práctica vinculada a su tarea. Son alternativas inventadas, no recomendaciones comerciales.
+
+La cantidad de contenido no permite elegir por sí sola. Primero se necesitan objetivos y criterios: aplicación, dedicación posible, modalidad, costo si corresponde y evidencia de lo ofrecido. Después se comprueba la información. No hay datos suficientes para declarar una ganadora.
+
+## Mi situación para el próximo encuentro
+
+Al final de la clase 1, elegí una dificultad cercana y anotá en hasta cinco líneas qué ocurre, a quién afecta, por qué importa y qué necesitás averiguar antes de decidir una solución. Conservá ese primer enunciado. Si usaste un caso preparado, elegí luego un reto propio.
+
+No hace falta haber usado una IA ni completar tres consultas antes de la clase 2.
+
+## Mi primera revisión: práctica de la clase 2
 
 - Qué ocurre, a quién afecta y por qué importa (hasta cinco líneas).
 - Frase revisada.
@@ -30,9 +60,13 @@ El reto para la entrega debe ser propio, abierto, abarcable en cuatro semanas y 
 
 ## Segunda clase: tres miradas para reformular
 
-Guardá una primera consulta antes de mirar ejemplos. Después escribí al menos tres versiones de fondo: personas afectadas; supuestos o solución anticipada; alcance y cambio observable. Anotá qué cambió y elegí una versión final. No inventes datos para completar campos.
+Guardá tu primera consulta de ese día y su respuesta. Consultá como lo harías con lo aprendido; no simules desconocimiento ni intentes escribir una pregunta mala. Elegí una afirmación y revisala por tu cuenta antes de pedir otra revisión.
+
+Después escribí al menos tres versiones de fondo del problema: personas afectadas; supuestos o solución anticipada; alcance y cambio observable. Anotá qué cambió y elegí una versión final. No inventes datos para completar campos.
 
 La consulta trabajada incluye contexto, objetivo, criterios, restricciones y formato. Compará respuestas por ajuste, fundamento y utilidad, no sólo por extensión. Guardá consultas y respuestas completas en tus notas.
+
+Contrastá una afirmación con tu análisis inicial y pedí una revisión breve al asistente sobre sus supuestos y lo que no justificó. Registrá qué aporta y qué sigue pendiente: la autocrítica no constituye una comprobación. Sin acceso, contrastá con otra persona o con una revisión preparada.
 
 ## Un par preparado si no tenés acceso: taller barrial
 
@@ -55,6 +89,8 @@ Respuesta B preparada:
 | Revisar el mensaje de invitación con participantes | Recuperar mensaje y pedir devolución | Si fecha, lugar y propósito resultaban claros | No explica por sí solo las ausencias |
 
 Ninguna alternativa prueba por sí misma la causa. El cambio de consulta redefine el objetivo: comprender antes de elegir difusión. Una mejor presentación tampoco garantiza mejores datos.
+
+En la demostración de clase 1, el equipo elige provisionalmente una consulta breve si puede contactar a las personas y analizar las respuestas. Luego registra cuántas respondieron, qué obstáculos mencionaron y qué queda por conocer. Con eso decide qué cambio probar y cómo observar sus resultados. No se promete que esta acción aumentará la asistencia.
 
 Podés comparar A y B como ejercicio preparado. Para la entrega, registrá tus usos propios y sus respuestas reales; si hoy trabajaste con este ejemplo, aclaralo.
 
@@ -117,9 +153,11 @@ A lo largo del curso vamos a registrar qué aportó el asistente y qué resolvim
 
 La verificación también depende de las consecuencias de un error. **“Mal estructurado” describe el problema; no califica a quien lo plantea.**
 
-## Registro de tres usos para el jueves
+## Registro de tres usos para la Entrega 1
 
-**Para el jueves 8 de octubre:** conservá el enunciado inicial de tu reto y registrá tres usos propios de un asistente. Para cada uso, anotá:
+**Para el jueves 8 de octubre:** traé una situación propia y una pregunta por averiguar. Conservá el enunciado inicial de tu reto.
+
+Los tres usos propios se completan para la **Entrega 1, el jueves 15 de octubre**. Podés empezarlos antes del próximo encuentro, pero no son un requisito para participar del taller del jueves 8. Para cada uso, anotá:
 
 - Qué le pediste.
 - Qué respondió, en una línea.

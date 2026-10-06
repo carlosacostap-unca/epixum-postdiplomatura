@@ -12,11 +12,24 @@ export interface LiveSession {
 }
 export interface LiveParticipant { id: string; student: string; name: string; updated: string }
 export interface LiveAnswer { id: string; student: string; screenId: string; answer: string; created: string }
+export interface LiveProjectionResults { screenId: string; total: number; counts: Record<string, number> }
+export function projectionResults(screen: PublicScreen, answers: Pick<LiveAnswer, 'screenId' | 'answer'>[]): LiveProjectionResults {
+  const counts: Record<string, number> = Object.fromEntries('options' in screen ? screen.options.map((option) => [option.id, 0]) : []);
+  let total = 0;
+  for (const answer of answers) {
+    if (answer.screenId === screen.id && Object.hasOwn(counts, answer.answer)) {
+      counts[answer.answer] += 1;
+      total += 1;
+    }
+  }
+  return { screenId: screen.id, total, counts };
+}
 export type LiveState = {
   session: LiveSession; serverTime: number; ownAnswer: LiveAnswer | null;
 } & ({ role: 'student' } | {
   role: 'teacher'; canControl: boolean; material: InteractiveMaterial;
   participants: LiveParticipant[]; answers: LiveAnswer[]; resultsScreenId: string;
+  projectionResults: LiveProjectionResults;
 });
 const id = z.string().regex(/^[a-z0-9]{15}$/);
 const revision = z.string().regex(/^[a-f0-9]{24}$/);
