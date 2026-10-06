@@ -8,6 +8,8 @@ Son **19 pantallas: 18 de contenido y una respuesta breve al final**. Predominan
 
 ## Recorrido por actos
 
+Los actos orientan la preparación y el guion docente; sus nombres no aparecen en las pantallas proyectadas a los alumnos.
+
 | Acto | Pantallas | Minutos | Resultado esperado |
 |---|---|---|---|
 | 1. Para qué existe este curso | 1–4 | 0–15 | Comprender la motivación, el objetivo general y el recorrido |
