@@ -1,62 +1,55 @@
-# Clase 1 · Menos carga manual, mejores decisiones
+# Clase 1 · Inteligencia artificial: conocernos, entender y empezar a experimentar
 
 Curso **Gestión de Soluciones Tecnológicas y Automatización**. Miércoles **7 de octubre de 2026, de 17:00 a 19:00**, hora de Argentina.
 
-Revisión del 4 de octubre: primera clase orientada a despertar interés a partir de un problema profesional reconocible, mostrar una mejora concreta y delimitar una oportunidad propia. El panorama del curso se organiza por preguntas y capacidades, sin asignar contenidos a semanas ni fijar herramientas, equipos o próximas entregas.
+**Docentes:** Mg. Ing. Carlos Acosta Parra y Dr. Gabriel Vilallonga.
+
+La revisión del 7 de octubre está aplicada a la clase interactiva del campus. Su objetivo es conocernos y construir una base común sobre inteligencia artificial, alternando explicaciones breves, demostraciones y preguntas sobre experiencias, intereses y dudas. Sustituye el recorrido anterior centrado en Quebrada Azul y el taller de oportunidades.
 
 ## Recorrido de 120 minutos
 
 | Minutos | Experiencia |
 |---|---|
-| 0–10 | Una tarea que consume tiempo y qué nos gustaría mejorar |
-| 10–25 | Caso Quebrada Azul; anticipación, ejecución y revisión de seis registros |
-| 25–40 | Dos decisiones con alternativas defendibles y condiciones para cambiar de opinión |
-| 40–50 | Propósito del curso y preguntas que guían el recorrido |
-| 50–60 | Preguntas del grupo y pausa de cinco minutos |
-| 60–80 | Comparación de soluciones cuando cambian la repetición y el seguimiento |
-| 80–100 | Una sola oportunidad propia en una ficha breve |
-| 100–115 | Puesta en común y ajuste de las oportunidades |
-| 115–120 | Devolución y cierre |
+| 0–20 | Presentaciones, experiencia con IA y objetivo del módulo |
+| 20–35 | IA, aprendizaje automático, IA generativa, modelo y aplicación |
+| 35–55 | Prompts: observar, comparar, formular un pedido e iterar |
+| 55–60 | Pausa |
+| 60–80 | Tokens, ventana de contexto, entrenamiento y memoria |
+| 80–95 | Errores, verificación, fuentes y herramientas |
+| 95–110 | Asistentes, flujos y agentes; conversación sobre delegación |
+| 110–120 | Integración en parejas y salida |
 
-La preparación contiene **22 pantallas**: 15 de contenido, 3 encuestas de criterio sin clave y 4 respuestas breves. Cada pantalla tiene un guion docente privado con tiempos, texto sugerido y pautas de conducción. La ficha usa cuatro campos: tarea/problema, resultado/usuario, datos/incertidumbre y revisión/responsable. No exige una herramienta elegida ni un To-Be terminado. Se puede usar el caso común.
+El material contiene **24 pantallas**: 20 de contenido, 2 encuestas y 2 respuestas breves. Las pantallas de contenido también incluyen preguntas orales y actividades en parejas. Cada pantalla dispone de un guion docente privado. La participación es formativa y sin nota; no requiere conocimientos previos ni crear cuentas.
 
-## Acceso
+## Demostraciones
 
-En el campus: **Docencia → Gestión de Soluciones Tecnológicas y Automatización → Clases interactivas → Clase 1 · Menos carga manual, mejores decisiones → Simulación**.
+El caso ficticio **Taller Gestión Clara** conecta los conceptos del encuentro:
 
-La clase habitual y la preparación conservan sus identificadores y la asociación existente. El horario y las condiciones académicas no cambian. La participación interactiva es formativa y no reemplaza entregas formales. No se inició una sesión real.
+- Comparar un pedido genérico de invitación con otro que aporta público, datos y formato.
+- Agregar una ficha y actualizar el horario para observar el uso del contexto. Esta prueba no demuestra saturación de una ventana ni memoria persistente.
+- Contrastar una respuesta preparada con la ficha e identificar afirmaciones sin sustento. El texto se presenta como ejemplo didáctico, no como ejecución registrada de IA.
+- Representar entre los docentes cómo un agente consulta una herramienta y decide el siguiente paso. Es una simulación oral, sin reservas ni envíos reales.
 
-## Demostración preparada
+El guion incluye prompts y respaldos preparados para trabajar sin conexión. Los conceptos avanzados quedan para encuentros posteriores; no se exige memorizar siglas.
 
-El recurso **Demostración sin conexión · Seis comprobantes y una revisión** contiene un ZIP con:
+## Acceso y estado
 
-- `demo-comprobantes.html`: aplicación didáctica autónoma, sin dependencias ni conexión.
-- `demo_seis_comprobantes.csv`: los seis registros ficticios seleccionados del caso original.
-- `pedido-asistente.txt`: pedido opcional para contrastar una respuesta real de un asistente.
-- `LEEME.txt`: instrucciones de uso y límites del ejercicio.
+En el campus: **Docencia → Gestión de Soluciones Tecnológicas y Automatización → Clases interactivas → Clase 1 · Inteligencia artificial: conocernos, entender y empezar a experimentar → Simulación**.
 
-Descargar y descomprimir antes de clase. Abrir el HTML en un navegador. Anticipar qué revisar, pulsar **Procesar**, contrastar los tres registros señalados y cambiar el umbral de 1.000.000 a 2.000.000: quedan dos. Restablecer permite comenzar de nuevo. El umbral es didáctico y no representa una norma contable.
+Se actualizaron el material, los guiones, el título y la descripción de la preparación existente, además del título y la descripción de la clase asociada. Se conservaron identificadores, asociación, fecha y estado `ready`. La actualización no inició ninguna sesión en vivo.
 
-La demo **ejecuta reglas locales; no usa IA**. Los datos ya están transcriptos, no se extraen de documentos. No se envían mensajes ni se registran operaciones contables. Tampoco se comprueba autenticidad, se detectan duplicados o se acredita seguridad de una integración. El borrador de acuse es una plantilla fija y distingue recepción de registro contable. La ejecución opcional con un asistente requiere revisión contra el CSV y se identifica como una experiencia diferente.
-
-La pantalla siguiente incluye un resultado esperado, identificado como **ejemplo resuelto**, para contrastar la ejecución o como respaldo si no se puede abrir el navegador. No se presenta como captura de una ejecución de IA.
-
-## Recursos y material anterior
-
-Se conservan los cinco recursos originales, incluido el apunte, la plantilla, la ficha, el kit y el CSV. Se añade el ZIP de demostración. El apunte y la plantilla se identifican como **consulta opcional**: el encuentro revisado pide una única ficha, no tres candidatas ni doble carga de información. La descripción de la clase explicita esta diferencia. El contenido original de esos archivos no fue alterado.
-
-Se conservan dos diagramas publicados, con texto alternativo y enlace para ampliar: circuito del caso y flujo con aprobación humana. El diagrama de tres tareas dejó de formar parte del recorrido. Los SVG anteriores siguen disponibles como activos históricos.
+Los recursos anteriores de Quebrada Azul, la plantilla y la demostración con comprobantes quedan como consulta opcional para otros momentos del módulo. No son actividades obligatorias de este encuentro. El manifiesto de imágenes y los SVG anteriores se conservan como activos históricos; las 24 pantallas actuales no los utilizan.
 
 ## Archivos y privacidad
 
-`clase-01-participantes.json` es una copia pública compatible con el importador, sin guiones docentes. `clase-01-imagenes.json` describe las imágenes utilizadas.
+- [clase-01-participantes.json](./clase-01-participantes.json): copia principal del material publicado, compatible con el importador y sin guiones docentes.
+- [clase-01-introduccion-participantes.json](./clase-01-introduccion-participantes.json): copia del rediseño, con el mismo contenido que el archivo principal.
+- [clase-01-introduccion-glosario.txt](./clase-01-introduccion-glosario.txt): glosario breve y fuentes de consulta.
 
-La carpeta `privado/`, excluida de Git, conserva la preparación completa, guiones, metadatos, fuentes originales, ZIP de demostración y scripts de actualización. En PocketBase los guiones permanecen separados en `teacherNotes`.
-
-El respaldo previo está en `backups/pocketbase/modulo4-clase1-revision-20261004.json`, también excluido de Git. Incluye clase, preparación y recursos anteriores. Los archivos locales previos están en `privado/revision-anterior/`.
+La carpeta `privado/`, excluida de Git, conserva el plan completo, los guiones y los prompts. En PocketBase las notas permanecen separadas en `teacherNotes`. Los respaldos de la base de datos y los recibos de publicación también están excluidos del repositorio público.
 
 ## Verificación
 
-Se validaron el esquema del material, los 120 minutos continuos, la separación de notas y la ausencia de guiones en la copia pública. El ensayo recorrió las 22 pantallas y respondió las siete actividades, comprobando sincronización de proyección/alumno/guion, carga de ambas imágenes y ausencia de desborde horizontal. Se inspeccionaron capturas y se corrigió la presentación de la ficha.
+Se validaron el esquema de importación, los 120 minutos continuos, las 24 notas docentes y la ausencia de guiones en el material público. La lectura posterior a la actualización confirmó que material, notas, título y descripción coinciden con lo preparado, y que se mantienen fecha y estado.
 
-La demo se probó con el umbral inicial y modificado, entrada vacía, restablecimiento, navegador sin conexión y ancho móvil de 390 píxeles. Los recibos de actualización y descarga verificada se guardan en `output/modulo4-clase1/`. Estas comprobaciones verifican contenido y funcionamiento; no sustituyen observar la participación de un grupo real.
+Antes de sincronizar este documento con GitHub se volvió a comprobar que la copia pública local coincide con el material del campus. Estas comprobaciones verifican los datos guardados; no equivalen a un nuevo ensayo visual completo ni a una sesión con estudiantes.
