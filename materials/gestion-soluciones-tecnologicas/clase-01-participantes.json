@@ -8,42 +8,6 @@
       "type": "content"
     },
     {
-      "id": "conocernos",
-      "title": "¿Quién sos y qué te gustaría aprender?",
-      "body": "Compartí tu **nombre**, tu **actividad o ámbito** y una de estas frases:\n\n«Con la IA me pasó que…»\n\n«Todavía no la usé y me da curiosidad…»\n\n«Me gustaría que me ayudara con…»\n\nPodés elegir qué compartir. No necesitamos datos de clientes ni de tu organización.",
-      "type": "content"
-    },
-    {
-      "id": "experiencia",
-      "title": "¿Cómo aparece la IA en tu vida hoy?",
-      "body": "Elegí la opción que más se acerca a tu experiencia. Después escuchamos dos ejemplos.",
-      "type": "poll",
-      "options": [
-        {
-          "id": "op1",
-          "label": "Todavía no usé conscientemente una herramienta de IA."
-        },
-        {
-          "id": "op2",
-          "label": "La probé algunas veces por curiosidad."
-        },
-        {
-          "id": "op3",
-          "label": "La uso para estudiar o para tareas personales."
-        },
-        {
-          "id": "op4",
-          "label": "La uso habitualmente en mi trabajo."
-        }
-      ]
-    },
-    {
-      "id": "objetivo",
-      "title": "Para qué nos sirve esta base en el módulo",
-      "body": "**Entender → pedir con claridad → revisar → decidir qué delegar.**\n\nHoy buscamos poder explicar con nuestras palabras qué hacen estas herramientas y qué necesitan de nosotros.\n\nEn el módulo usaremos esa base para analizar y gestionar soluciones tecnológicas.",
-      "type": "content"
-    },
-    {
       "id": "ia",
       "title": "¿Qué llamamos inteligencia artificial?",
       "body": "![IA es un campo amplio. Reconocer patrones, interpretar lenguaje, predecir y generar contenido son capacidades que pueden combinarse. Un aviso con una regla fija no requiere IA.](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/ia-mapa-capacidades.svg)\n\n[Ampliar diagrama](https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/ia-mapa-capacidades.svg)\n\nUn campo que desarrolla sistemas capaces de realizar tareas como reconocer patrones, interpretar lenguaje, hacer predicciones o generar contenido.\n\n**Ejemplos:** detectar mensajes no deseados, recomendar contenidos o reconocer voz.\n\nMuchos sistemas aprenden patrones a partir de datos: eso se llama **aprendizaje automático**.\n\nNo toda automatización utiliza IA.",

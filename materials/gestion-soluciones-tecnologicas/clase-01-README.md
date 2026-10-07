@@ -10,7 +10,8 @@ La revisión del 7 de octubre está aplicada a la clase interactiva del campus. 
 
 | Minutos | Experiencia |
 |---|---|
-| 0–20 | Presentaciones, experiencia con IA y objetivo del módulo |
+| 0–4 | Bienvenida |
+| 4–20 | Tiempo liberado por la eliminación de tres pantallas, sin actividad nueva asignada |
 | 20–35 | IA, aprendizaje automático, IA generativa, modelo y aplicación |
 | 35–55 | Prompts: observar, comparar, formular un pedido e iterar |
 | 55–60 | Pausa |
@@ -19,7 +20,7 @@ La revisión del 7 de octubre está aplicada a la clase interactiva del campus. 
 | 95–110 | Asistentes, flujos y agentes; conversación sobre delegación |
 | 110–120 | Integración en parejas y salida |
 
-El material contiene **24 pantallas**: 20 de contenido, 2 encuestas y 2 respuestas breves. Las pantallas de contenido también incluyen preguntas orales y actividades en parejas. Cada pantalla dispone de un guion docente privado. La participación es formativa y sin nota; no requiere conocimientos previos ni crear cuentas.
+El material contiene **21 pantallas**: 18 de contenido, 1 encuesta y 2 respuestas breves. Las pantallas de contenido también incluyen preguntas orales y actividades en parejas. Cada pantalla dispone de un guion docente privado. La participación es formativa y sin nota; no requiere conocimientos previos ni crear cuentas.
 
 ## Demostraciones
 
@@ -56,8 +57,10 @@ La carpeta `privado/`, excluida de Git, conserva el plan completo, los guiones y
 
 ## Verificación
 
-Se validaron el esquema de importación, los 120 minutos continuos, las 24 notas docentes y la ausencia de guiones en el material público. La lectura posterior a la actualización confirmó que material, notas, título y descripción coinciden con lo preparado, y que se mantienen fecha y estado.
+Se validaron el esquema de importación, los tiempos del recorrido original, las 21 notas docentes y la ausencia de guiones en el material público. La lectura posterior a la actualización confirmó que material, notas, título y descripción coinciden con lo preparado, y que se mantienen fecha y estado.
 
 Antes de sincronizar este documento con GitHub se volvió a comprobar que la copia pública local coincide con el material del campus. Estas comprobaciones verifican los datos guardados; no equivalen a un nuevo ensayo visual completo ni a una sesión con estudiantes.
 
-Para las imágenes se comprobó la descarga de los once SVG, su tipo de contenido y su coincidencia con los archivos locales. Se inspeccionó visualmente la galería completa y una vista previa Markdown de la pantalla de contexto a 1366 y 390 píxeles de ancho. Esa vista previa es local, no una sesión en vivo del campus. La lectura posterior de PocketBase confirmó los once enlaces y la conservación de las 24 pantallas, las notas docentes, las actividades y el estado `ready`.
+Para las imágenes se comprobó la descarga de los once SVG, su tipo de contenido y su coincidencia con los archivos locales. Se inspeccionó visualmente la galería completa y una vista previa Markdown de la pantalla de contexto a 1366 y 390 píxeles de ancho. Esa vista previa es local, no una sesión en vivo del campus. La lectura posterior de PocketBase confirmó los once enlaces y la conservación de las 21 pantallas, las notas docentes, las actividades y el estado `ready`.
+
+Se retiraron, a pedido del docente, «¿Quién sos y qué te gustaría aprender?», «¿Cómo aparece la IA en tu vida hoy?» y «Para qué nos sirve esta base en el módulo», junto con sus notas privadas. Se conservaron las demás pantallas, sus imágenes y el horario de la clase. Los tiempos de las pantallas restantes son los del guion original: quedan 16 minutos sin asignación tras esta eliminación.
