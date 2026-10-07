@@ -1,0 +1,32 @@
+GLOSARIO BREVE · CLASE 1
+
+IA: campo que construye sistemas para tareas como reconocer patrones, interpretar lenguaje, predecir o generar.
+Aprendizaje automático: métodos que aprenden patrones a partir de datos.
+IA generativa: sistemas que producen contenido a partir de patrones aprendidos y entradas.
+Modelo: sistema entrenado que procesa entradas y produce resultados.
+Aplicación: producto que combina una interfaz, modelos y otras funciones.
+LLM: modelo de lenguaje de gran escala.
+Entrenamiento: proceso de ajustar parámetros del modelo con datos.
+Inferencia: uso de un modelo para producir un resultado.
+Multimodal: capaz de trabajar con más de un tipo de información, según el sistema.
+Prompt: instrucción o entrada con la que solicitamos una tarea.
+Token: unidad de procesamiento; en texto no equivale necesariamente a una palabra.
+Contexto: información disponible para producir una respuesta.
+Ventana de contexto: capacidad limitada para procesar esa información; los detalles dependen del modelo.
+Memoria: mecanismo de una aplicación para conservar y recuperar información entre interacciones.
+Alucinación: salida que presenta contenido inventado o no sustentado como válido.
+Herramienta: capacidad externa que el sistema puede invocar, como buscar o consultar un calendario.
+RAG: recuperación de información combinada con generación de una respuesta.
+Flujo: secuencia de pasos definida de antemano, que puede incluir IA.
+Agente: sistema que decide próximos pasos y usa herramientas para un objetivo dentro de límites.
+
+No hace falta memorizar las definiciones: interesa poder usarlas para explicar un ejemplo.
+
+
+FUENTES DE CONSULTA · REVISADAS EL 7/10/2026
+
+Qué es IA · IBM · https://www.ibm.com/think/topics/artificial-intelligence
+Ventanas de contexto · Documentación de Anthropic · https://platform.claude.com/docs/es/build-with-claude/context-windows
+Selección de contexto y memoria externa · Anthropic · https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+Flujos y agentes · Anthropic · https://www.anthropic.com/engineering/building-effective-agents
+Errores y alucinaciones · IBM · https://www.ibm.com/think/topics/ai-hallucinations

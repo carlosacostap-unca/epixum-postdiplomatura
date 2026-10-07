@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "screens": [
+    {
+      "id": "bienvenida",
+      "title": "Conocernos y construir una base común sobre inteligencia artificial",
+      "body": "**Gestión de Soluciones Tecnológicas y Automatización · Clase 1**\n\nMg. Ing. Carlos Acosta Parra · Dr. Gabriel Vilallonga\n\nHoy vamos a compartir experiencias, entender conceptos y observar ejemplos. No hace falta haber usado IA antes.",
+      "type": "content"
+    },
+    {
+      "id": "conocernos",
+      "title": "¿Quién sos y qué te gustaría aprender?",
+      "body": "Compartí tu **nombre**, tu **actividad o ámbito** y una de estas frases:\n\n«Con la IA me pasó que…»\n\n«Todavía no la usé y me da curiosidad…»\n\n«Me gustaría que me ayudara con…»\n\nPodés elegir qué compartir. No necesitamos datos de clientes ni de tu organización.",
+      "type": "content"
+    },
+    {
+      "id": "experiencia",
+      "title": "¿Cómo aparece la IA en tu vida hoy?",
+      "body": "Elegí la opción que más se acerca a tu experiencia. Después escuchamos dos ejemplos.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "op1",
+          "label": "Todavía no usé conscientemente una herramienta de IA."
+        },
+        {
+          "id": "op2",
+          "label": "La probé algunas veces por curiosidad."
+        },
+        {
+          "id": "op3",
+          "label": "La uso para estudiar o para tareas personales."
+        },
+        {
+          "id": "op4",
+          "label": "La uso habitualmente en mi trabajo."
+        }
+      ]
+    },
+    {
+      "id": "objetivo",
+      "title": "Para qué nos sirve esta base en el módulo",
+      "body": "**Entender → pedir con claridad → revisar → decidir qué delegar.**\n\nHoy buscamos poder explicar con nuestras palabras qué hacen estas herramientas y qué necesitan de nosotros.\n\nEn el módulo usaremos esa base para analizar y gestionar soluciones tecnológicas.",
+      "type": "content"
+    },
+    {
+      "id": "ia",
+      "title": "¿Qué llamamos inteligencia artificial?",
+      "body": "Un campo que desarrolla sistemas capaces de realizar tareas como reconocer patrones, interpretar lenguaje, hacer predicciones o generar contenido.\n\n**Ejemplos:** detectar mensajes no deseados, recomendar contenidos o reconocer voz.\n\nMuchos sistemas aprenden patrones a partir de datos: eso se llama **aprendizaje automático**.\n\nNo toda automatización utiliza IA.",
+      "type": "content"
+    },
+    {
+      "id": "generativa",
+      "title": "¿Qué tiene de particular la IA generativa?",
+      "body": "Produce contenido —texto, imágenes, audio o código— a partir de patrones aprendidos y de la información que recibe.\n\n- Clasificar un correo como no deseado: una tarea de clasificación.\n- Redactar una respuesta a ese correo: generación de contenido.\n\n**Un mismo sistema puede combinar ambas tareas.**\n\nGenerar una respuesta no demuestra que sea verdadera.",
+      "type": "content"
+    },
+    {
+      "id": "modelo-aplicacion",
+      "title": "El modelo y la aplicación no son lo mismo",
+      "body": "**Modelo:** sistema entrenado que procesa entradas y produce resultados.\n\n**LLM:** modelo de lenguaje de gran escala, que genera texto como una secuencia de unidades llamadas tokens.\n\n**Aplicación:** combina modelos con una interfaz y, a veces, archivos, búsqueda, memoria o herramientas.\n\n**Para conversar:** cuando probaste una herramienta, ¿qué creías que podía ver o consultar?",
+      "type": "content"
+    },
+    {
+      "id": "prompt",
+      "title": "Un prompt es la instrucción o entrada que damos",
+      "body": "Podemos pedir, preguntar, aportar información o mostrar un ejemplo.\n\nPara empezar, ayuda indicar:\n\n- **Qué querés lograr.**\n- **Qué información debe usar.**\n- **Para quién es el resultado.**\n- **Qué formato necesitás y qué límites respetar.**\n\nDespués revisamos y ajustamos. No existe una frase que garantice una buena respuesta.",
+      "type": "content"
+    },
+    {
+      "id": "demo-prompt",
+      "title": "Veamos qué cambia cuando damos información útil",
+      "body": "**Pedido A:** «Escribí una invitación a un taller».\n\n**Pedido B:** «Redactá una invitación de hasta 70 palabras para personas que recién empiezan. Usá sólo esta ficha: Taller Gestión Clara; jueves a las 18:00; virtual; sin conocimientos previos. El enlace todavía no está definido. No lo inventes».\n\n¿Qué cambió en el pedido? ¿Qué miraríamos en la respuesta?",
+      "type": "content"
+    },
+    {
+      "id": "tu-pedido",
+      "title": "Traé una tarea de tu mundo",
+      "body": "¿Qué le pedirías a una IA en tu trabajo, estudio o vida cotidiana?\n\nCompletá:\n\n«Quiero que me ayude a…»\n\n«Para que pueda hacerlo, necesitaría contarle…»\n\nPodés usar el taller ficticio si preferís.",
+      "type": "short-answer",
+      "maxLength": 1200
+    },
+    {
+      "id": "iterar",
+      "title": "Conversar también es revisar y ajustar",
+      "body": "**Primer pedido → leer el resultado → detectar qué falta → ajustar.**\n\nEjemplo: «La invitación es demasiado técnica. Reescribila con palabras cotidianas y mantené sólo los datos de la ficha».\n\n¿Qué información de tu tarea sería importante? ¿Qué sería innecesario compartir?",
+      "type": "content"
+    },
+    {
+      "id": "pausa",
+      "title": "Pausa · 5 minutos",
+      "body": "Al volver: tokens, contexto, memoria y por qué una respuesta puede equivocarse.",
+      "type": "content"
+    },
+    {
+      "id": "tokens",
+      "title": "Tokens: las unidades con las que trabaja el modelo",
+      "body": "En texto, un token puede corresponder a una palabra, parte de una palabra o un signo.\n\n**Tokens y palabras no son equivalentes.**\n\nSe usan para expresar límites de procesamiento y, en algunos servicios, consumo.\n\nNo necesitamos contarlos a mano: nos interesa entender que la capacidad es limitada.",
+      "type": "content"
+    },
+    {
+      "id": "contexto",
+      "title": "La ventana de contexto: qué tiene a disposición ahora",
+      "body": "Es la capacidad disponible para procesar información en una interacción, medida en tokens.\n\nPuede incluir instrucciones, mensajes anteriores incorporados, fragmentos de archivos y resultados de herramientas; también hay que contemplar la salida según el modelo.\n\n**Pensalo como una mesa de trabajo de capacidad limitada.**\n\nQue un archivo esté guardado en la aplicación no significa que todo su contenido esté presente en cada respuesta.",
+      "type": "content"
+    },
+    {
+      "id": "demo-contexto",
+      "title": "Mostremos qué cambia al aportar contexto",
+      "body": "**Sin ficha:** «¿A qué hora empieza el Taller Gestión Clara?»\n\n**Con ficha:** «Usá esta ficha: Taller Gestión Clara, jueves 18:00. ¿A qué hora empieza?»\n\n**Con actualización:** «Cambio confirmado: empieza a las 19:00. El resto sigue igual. Reescribí la invitación».\n\n¿Qué información necesita estar disponible para responder bien?",
+      "type": "content"
+    },
+    {
+      "id": "memoria",
+      "title": "Contexto, memoria y entrenamiento",
+      "body": "| Concepto | Para qué sirve la distinción |\n|---|---|\n| Entrenamiento | Construye o ajusta capacidades del modelo |\n| Contexto | Información disponible para esta respuesta |\n| Memoria de la aplicación | Puede conservar y recuperar información entre interacciones, según el servicio |\n\n**¿Alguna vez sentiste que una IA “se olvidó” de algo? ¿Qué ocurrió?**",
+      "type": "content"
+    },
+    {
+      "id": "errores",
+      "title": "Una respuesta convincente puede ser incorrecta",
+      "body": "Una **alucinación** es una salida que presenta información inventada o no sustentada como si fuera válida. También puede contradecir lo que aportamos.\n\nPuede incluir fechas, citas o enlaces inexistentes.\n\n**Para conversar:** ¿alguna vez recibiste una respuesta que parecía correcta y después no lo era? ¿Cómo lo descubriste?",
+      "type": "content"
+    },
+    {
+      "id": "revision",
+      "title": "¿Qué está sustentado y qué fue agregado?",
+      "body": "**Ficha ficticia:** Taller Gestión Clara; jueves 18:00; modalidad virtual. No informa precio ni certificado.\n\n**Respuesta preparada para analizar:** «El taller será el jueves a las 18:00, es gratuito y entrega certificado oficial».\n\n¿Qué parte podemos respaldar con la ficha?\n\nEste texto es un ejemplo escrito para la actividad, no una salida registrada de IA.",
+      "type": "content"
+    },
+    {
+      "id": "fuentes-herramientas",
+      "title": "Generar, buscar y consultar documentos son cosas distintas",
+      "body": "**Generar:** producir una respuesta.\n\n**Buscar:** consultar una fuente externa mediante una herramienta disponible.\n\n**Consultar documentos:** incorporar o recuperar contenido relevante como contexto. Cuando se combina recuperación y generación, se suele hablar de **RAG**.\n\nUn enlace o una cita también se revisan: ¿existen y respaldan la afirmación?\n\n¿Qué fuente necesitarías para confiar en una respuesta sobre tu trabajo?",
+      "type": "content"
+    },
+    {
+      "id": "agentes",
+      "title": "¿Qué es un agente de IA?",
+      "body": "Un sistema que usa un modelo para elegir próximos pasos y herramientas con el fin de alcanzar un objetivo, dentro de límites.\n\n**Objetivo → elegir una acción → usar una herramienta → observar el resultado → decidir cómo seguir.**\n\nPor ejemplo: consultar disponibilidad, buscar otra opción si está ocupada y preparar una propuesta.\n\nPoder actuar exige definir permisos y cuándo interviene una persona.",
+      "type": "content"
+    },
+    {
+      "id": "asistente-flujo-agente",
+      "title": "Una tarea, tres formas de organizarla",
+      "body": "| Forma de trabajo | Ejemplo con el taller ficticio |\n|---|---|\n| Asistente | Le pedís un borrador de invitación y lo revisás |\n| Flujo | Una inscripción dispara un registro y una confirmación predefinida |\n| Agente | Consulta disponibilidad y selecciona próximos pasos para proponer una fecha |\n\nUn asistente puede incluir capacidades de agente. Un flujo puede incorporar IA. **Estas categorías pueden combinarse.**",
+      "type": "content"
+    },
+    {
+      "id": "delegar",
+      "title": "¿Qué te sentirías cómodo delegando primero?",
+      "body": "Pensá en tu ámbito. Elegí un punto de partida y contanos **qué necesitarías para confiar**.",
+      "type": "poll",
+      "options": [
+        {
+          "id": "op1",
+          "label": "Preparar un borrador que yo revise."
+        },
+        {
+          "id": "op2",
+          "label": "Consultar información y mostrarme las fuentes."
+        },
+        {
+          "id": "op3",
+          "label": "Ejecutar una tarea acotada después de mi aprobación."
+        },
+        {
+          "id": "op4",
+          "label": "Prefiero observar más ejemplos antes de decidir."
+        }
+      ]
+    },
+    {
+      "id": "integracion",
+      "title": "Expliquemos juntos lo que pasó",
+      "body": "Un equipo aporta la ficha de un taller, pide una invitación y revisa el texto. Después considera conectar el calendario.\n\n¿Dónde aparecen el **prompt**, el **contexto** y la **generación**?\n\n¿Qué sería una **herramienta**? ¿Qué tendría que cambiar para hablar de un **agente**?\n\nElegí una parte y explicásela a otra persona con tus palabras.",
+      "type": "content"
+    },
+    {
+      "id": "salida",
+      "title": "¿Qué entendemos mejor y qué queremos seguir aprendiendo?",
+      "body": "Completá:\n\n**Ahora puedo explicar…**\n\n**Me gustaría usarlo para…**\n\n**Todavía me queda la duda de…**\n\nGracias por compartir tu experiencia. Estas respuestas nos ayudarán a preparar los próximos encuentros.",
+      "type": "short-answer",
+      "maxLength": 1200
+    }
+  ]
+}
