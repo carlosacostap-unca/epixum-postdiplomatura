@@ -1,18 +1,81 @@
 {
   "images": [
     {
-      "file": "quebrada-azul-circuito.svg",
-      "screenId": "caso",
-      "title": "El circuito de recepción de Quebrada Azul",
-      "alt": "Caso ficticio: correo, formulario, WhatsApp y papel llegan a Sofía y Paula, que reciben y cargan comprobantes manualmente en una planilla para su seguimiento. Entradas por distintos canales pueden duplicarse; el problema está en el circuito de trabajo.",
-      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/quebrada-azul-circuito.svg"
+      "file": "ia-mapa-capacidades.svg",
+      "screenId": "ia",
+      "title": "Distintas capacidades de la IA",
+      "alt": "IA es un campo amplio. Reconocer patrones, interpretar lenguaje, predecir y generar contenido son capacidades que pueden combinarse. Un aviso con una regla fija no requiere IA.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/ia-mapa-capacidades.svg"
     },
     {
-      "file": "flujo-aprobacion-humana.svg",
-      "screenId": "demo-flujo",
-      "title": "Un flujo con validación y aprobación humana",
-      "alt": "Un formulario inicia el registro y la clasificación. Si la validación falla, el flujo detiene el envío y deriva a revisión. Si valida, una persona revisa y aprueba antes del envío. Una excepción no se envía automáticamente. Es un esquema didáctico, no una integración activa.",
-      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/4e065b7a3ed0d5011b7fb74d920fcfd56f1198f9/public/interactive/gestion-soluciones-tecnologicas/clase-01/flujo-aprobacion-humana.svg"
+      "file": "ia-generativa.svg",
+      "screenId": "generativa",
+      "title": "IA generativa: producir contenido",
+      "alt": "Una entrada con instrucciones y datos pasa por un modelo generativo y produce texto, imagen, audio o código, según sus capacidades. Generar no equivale a verificar.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/ia-generativa.svg"
+    },
+    {
+      "file": "modelo-aplicacion.svg",
+      "screenId": "modelo-aplicacion",
+      "title": "Modelo y aplicación",
+      "alt": "La aplicación contiene una interfaz y puede combinar un modelo con archivos, búsqueda y otras herramientas. No todas las aplicaciones tienen las mismas funciones.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/modelo-aplicacion.svg"
+    },
+    {
+      "file": "prompt-cuatro-piezas.svg",
+      "screenId": "prompt",
+      "title": "Cuatro piezas para un pedido claro",
+      "alt": "Un prompt puede indicar objetivo, información, destinatario y formato con límites. Son apoyos para comunicar la tarea, no una fórmula que garantice aciertos.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/prompt-cuatro-piezas.svg"
+    },
+    {
+      "file": "tokens-unidades.svg",
+      "screenId": "tokens",
+      "title": "Tokens como unidades de procesamiento",
+      "alt": "Una frase se representa como unidades de procesamiento. Cada unidad puede ser palabra, parte de palabra o signo. La segmentación dibujada es ilustrativa y no corresponde a un tokenizer real.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/tokens-unidades.svg"
+    },
+    {
+      "file": "contexto-mesa.svg",
+      "screenId": "contexto",
+      "title": "La mesa de trabajo del contexto",
+      "alt": "Una mesa limitada reúne instrucciones, mensajes, fragmentos de archivos y resultados de herramientas disponibles para la respuesta. Un archivo guardado fuera de esa mesa puede necesitar recuperarse.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/contexto-mesa.svg"
+    },
+    {
+      "file": "entrenamiento-contexto-memoria.svg",
+      "screenId": "memoria",
+      "title": "Entrenamiento, contexto y memoria",
+      "alt": "Tres conceptos diferentes: el entrenamiento ajusta capacidades del modelo; el contexto aporta información para una respuesta; la memoria de la aplicación conserva y recupera información entre interacciones.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/entrenamiento-contexto-memoria.svg"
+    },
+    {
+      "file": "respuesta-verificacion.svg",
+      "screenId": "revision",
+      "title": "Contrastar respuesta y evidencia",
+      "alt": "La ficha confirma jueves a las 18:00 y modalidad virtual. En el ejemplo preparado, gratuidad y certificado no están respaldados: deben retirarse o verificarse.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/respuesta-verificacion.svg"
+    },
+    {
+      "file": "herramientas-fuentes.svg",
+      "screenId": "fuentes-herramientas",
+      "title": "Generar, buscar y recuperar",
+      "alt": "Generar produce contenido. Buscar consulta una fuente con una herramienta. Recuperar selecciona información relevante para aportarla como contexto. Las fuentes también se verifican.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/herramientas-fuentes.svg"
+    },
+    {
+      "file": "agente-ciclo.svg",
+      "screenId": "agentes",
+      "title": "Un agente usa resultados para decidir cómo seguir",
+      "alt": "Con un objetivo y límites, el agente elige una acción, usa una herramienta, observa su resultado y decide el siguiente paso o cuándo detenerse. Una persona interviene cuando corresponde.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/agente-ciclo.svg"
+    },
+    {
+      "file": "asistente-flujo-agente.svg",
+      "screenId": "asistente-flujo-agente",
+      "title": "Asistente, flujo y agente",
+      "alt": "Asistente: pedido y borrador revisado. Flujo: pasos fijados antes de ejecutar. Agente: elige próximos pasos según resultados. Pueden combinarse; usar una herramienta por sí solo no convierte un sistema en agente.",
+      "url": "https://raw.githubusercontent.com/carlosacostap-unca/epixum-postdiplomatura/b59baf0d31218c14116453969dfb223c20b6870b/public/interactive/gestion-soluciones-tecnologicas/clase-01/asistente-flujo-agente.svg"
     }
   ]
 }

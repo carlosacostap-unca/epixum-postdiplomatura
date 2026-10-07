@@ -32,13 +32,19 @@ El caso ficticio **Taller Gestión Clara** conecta los conceptos del encuentro:
 
 El guion incluye prompts y respaldos preparados para trabajar sin conexión. Los conceptos avanzados quedan para encuentros posteriores; no se exige memorizar siglas.
 
+## Apoyos visuales
+
+Once pantallas incorporan diagramas SVG sobre capacidades de la IA, generación, modelo y aplicación, prompts, tokens, ventana de contexto, entrenamiento y memoria, verificación, fuentes, ciclo de un agente y comparación entre asistente, flujo y agente. Cada imagen tiene texto alternativo y un enlace para ampliarla.
+
+Los archivos están en `public/interactive/gestion-soluciones-tecnologicas/clase-01/`. El manifiesto `clase-01-imagenes.json` vincula cada imagen con su pantalla y con una URL de GitHub fijada a un commit. Se conserva el texto original de las pantallas, las actividades y los guiones docentes.
+
 ## Acceso y estado
 
 En el campus: **Docencia → Gestión de Soluciones Tecnológicas y Automatización → Clases interactivas → Clase 1 · Inteligencia artificial: conocernos, entender y empezar a experimentar → Simulación**.
 
 Se actualizaron el material, los guiones, el título y la descripción de la preparación existente, además del título y la descripción de la clase asociada. Se conservaron identificadores, asociación, fecha y estado `ready`. La actualización no inició ninguna sesión en vivo.
 
-Los recursos anteriores de Quebrada Azul, la plantilla y la demostración con comprobantes quedan como consulta opcional para otros momentos del módulo. No son actividades obligatorias de este encuentro. El manifiesto de imágenes y los SVG anteriores se conservan como activos históricos; las 24 pantallas actuales no los utilizan.
+Los recursos anteriores de Quebrada Azul, la plantilla y la demostración con comprobantes quedan como consulta opcional para otros momentos del módulo. No son actividades obligatorias de este encuentro. Los SVG anteriores se conservan como activos históricos; el manifiesto actual describe los once diagramas de nivelación.
 
 ## Archivos y privacidad
 
@@ -53,3 +59,5 @@ La carpeta `privado/`, excluida de Git, conserva el plan completo, los guiones y
 Se validaron el esquema de importación, los 120 minutos continuos, las 24 notas docentes y la ausencia de guiones en el material público. La lectura posterior a la actualización confirmó que material, notas, título y descripción coinciden con lo preparado, y que se mantienen fecha y estado.
 
 Antes de sincronizar este documento con GitHub se volvió a comprobar que la copia pública local coincide con el material del campus. Estas comprobaciones verifican los datos guardados; no equivalen a un nuevo ensayo visual completo ni a una sesión con estudiantes.
+
+Para las imágenes se comprobó la descarga de los once SVG, su tipo de contenido y su coincidencia con los archivos locales. Se inspeccionó visualmente la galería completa y una vista previa Markdown de la pantalla de contexto a 1366 y 390 píxeles de ancho. Esa vista previa es local, no una sesión en vivo del campus. La lectura posterior de PocketBase confirmó los once enlaces y la conservación de las 24 pantallas, las notas docentes, las actividades y el estado `ready`.
