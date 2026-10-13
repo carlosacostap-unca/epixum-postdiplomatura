@@ -1,6 +1,6 @@
 import { LINK_RULES, COURSE_CONTENT_RULES } from './course-content-schema.mjs';
 import { ASSIGNMENT_RULES, CLASS_RULES } from './weekly-schema.mjs';
-import { visiblePublicationRule, withPublicationField, withScheduledPublicationFields } from './publication-fields.mjs';
+import { visiblePublicationRule, withResourcePublicationFields, withScheduledPublicationFields } from './publication-fields.mjs';
 
 export async function applyResourcePublicationSchema(pb) {
   // All parent fields must exist before installing resource rules.
@@ -11,7 +11,7 @@ export async function applyResourcePublicationSchema(pb) {
   }
   for (const [name, rules] of [['classes', CLASS_RULES], ['assignments', ASSIGNMENT_RULES], ['course_contents', COURSE_CONTENT_RULES], ['links', LINK_RULES]]) {
     const collection = await pb.collections.getOne(name);
-    const patch = { ...(name === 'links' ? { fields: withPublicationField(collection.fields) } : {}), ...rules };
+    const patch = { ...(name === 'links' ? { fields: withResourcePublicationFields(collection.fields) } : {}), ...rules };
     if (Object.entries(patch).some(([key, value]) => JSON.stringify(value) !== JSON.stringify(collection[key]))) {
       await pb.collections.update(collection.id, patch);
     }

@@ -65,6 +65,23 @@ try {
   assert.equal((await student.pb.collection('assignments').getOne(tp.id)).id, tp.id);
   assert.equal((await student.pb.collection('links').getOne(tpResource.id)).id, tpResource.id);
   await denied(() => student.pb.collection('links').getOne(tpDraft.id), 'Publicar TP no publica adjuntos');
+  // Published teaching resources remain private, for both parent types and both resource types.
+  for (const parent of [{ class: cls.id }, { assignment: tp.id }]) {
+    for (const type of ['link', 'file']) {
+      const privateResource = await create('links', { ...parent, title: 'Material docente privado', url: 'https://example.com/guia', type, publicationStatus: 'published', audience: 'teachers' }, teacher.pb);
+      await denied(() => student.pb.collection('links').getOne(privateResource.id), 'Alumno no lee recurso docente por ID');
+      const [field, id] = Object.entries(parent)[0];
+      const list = await student.pb.collection('links').getFullList({ filter: student.pb.filter(`${field} = {:id}`, { id }) });
+      assert.ok(!list.some(resource => resource.id === privateResource.id));
+      await denied(() => student.pb.collection('links').update(privateResource.id, { audience: 'everyone' }), 'Alumno no cambia disponibilidad');
+      await denied(() => outsider.pb.collection('links').getOne(privateResource.id), 'Docente ajeno no lee');
+      for (const manager of [teacher, appAdmin]) assert.equal((await manager.pb.collection('links').getOne(privateResource.id)).audience, 'teachers');
+      await teacher.pb.collection('links').update(privateResource.id, { audience: 'everyone' });
+      assert.equal((await student.pb.collection('links').getOne(privateResource.id)).id, privateResource.id);
+      await teacher.pb.collection('links').update(privateResource.id, { audience: 'teachers' });
+      await denied(() => student.pb.collection('links').getOne(privateResource.id), 'Volver a reservar para docentes');
+    }
+  }
   await teacher.pb.collection('links').update(draft.id, { publicationStatus: 'published' });
   assert.equal((await student.pb.collection('links').getOne(draft.id)).id, draft.id);
   await teacher.pb.collection('links').update(draft.id, { publicationStatus: 'draft' });
@@ -116,7 +133,7 @@ try {
   assert.equal((await student.pb.collection('links').getOne(published.id)).id, published.id);
   assert.equal((await student.pb.collection('assignments').getOne(tp.id)).id, tp.id);
   await denied(() => student.pb.collection('links').getOne(draft.id), 'Unidad publicada no publica recursos');
-  console.log('Permisos verificados: listados, IDs directos, transiciones, publicación automática de clases/TP/contenidos al llegar la fecha, recursos, compatibilidad, matrícula, docencia contextual, admin, unidad y entregas.');
+  console.log('Permisos verificados: recursos solo docentes (enlaces/archivos) de clases y TP, listados, IDs directos, transiciones de audiencia y publicación, programación automática, compatibilidad, matrícula, docencia contextual, admin, unidad y entregas.');
   if (process.argv.includes('--keep-for-browser')) {
     await admin.collection('courses').update(course.id, { organizationMode: 'tradicional' });
     await admin.collection('assignments').update(tp.id, { publicationStatus: 'draft' });

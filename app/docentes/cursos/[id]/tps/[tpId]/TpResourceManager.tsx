@@ -1,6 +1,7 @@
 "use client";
 
 import { PublicationBadge } from '@/components/course/PublicationBadge';
+import { ResourceAudienceBadge } from '@/components/course/ResourceAudienceBadge';
 import { useState } from "react";
 import { Link as LinkType } from "@/types";
 import { deleteLink, getResourceDownloadUrl } from "@/lib/actions";
@@ -97,7 +98,7 @@ export default function TpResourceManager({ links, assignmentId }: TpResourceMan
               onClick={(e) => handleResourceClick(e, link)}
               className="flex-1 text-sm font-medium text-[var(--color-on-surface)] hover:text-[var(--color-primary)] transition-colors truncate"
             >
-              <span className="block truncate">{downloadingId === link.id ? 'Descargando...' : link.title}</span><PublicationBadge status={link.publicationStatus} />
+              <span className="block truncate">{downloadingId === link.id ? 'Descargando...' : link.title}</span><span className="mt-1 inline-flex flex-wrap gap-2"><PublicationBadge status={link.publicationStatus} /><ResourceAudienceBadge audience={link.audience} /></span>
             </a>
             <div className="flex shrink-0 gap-1">
               <button

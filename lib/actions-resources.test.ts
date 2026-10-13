@@ -91,6 +91,7 @@ describe('recursos de contenidos independientes', () => {
     await expect(createLink(linkForm({ contentId: 'content-1' }))).resolves.toEqual({ success: true });
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ content: 'content-1' }));
     expect(mocks.create.mock.calls[0][0]).not.toHaveProperty('class');
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty('audience');
   });
 
   it('rechaza padres ausentes o múltiples', async () => {
@@ -240,5 +241,40 @@ describe('recursos de contenidos independientes', () => {
     expect(mocks.upload).not.toHaveBeenCalled();
     record.publishAt = '2000-01-01T00:00:00Z';
     expect(await getUploadUrl('entrega.pdf', 'application/pdf', 'tp-1')).toMatchObject({ success: true });
+  });
+
+  it.each(['class', 'assignment'] as const)('crea y edita recursos solo docentes de %s sin alterar publicación', async parent => {
+    const form = linkForm(parent === 'class' ? { classId: 'class-1' } : { assignmentId: 'tp-1' });
+    form.set('audience', 'teachers'); form.set('publicationStatus', 'published');
+    expect(await createLink(form)).toMatchObject({ success: true });
+    expect(mocks.create).toHaveBeenLastCalledWith(expect.objectContaining({ audience: 'teachers', publicationStatus: 'published' }));
+    const id = parent === 'class' ? 'class-link' : 'tp-link';
+    expect(await updateLink(id, form)).toMatchObject({ success: true });
+    expect(mocks.update).toHaveBeenLastCalledWith(id, expect.objectContaining({ audience: 'teachers' }));
+    form.delete('audience'); await updateLink(id, form);
+    expect(mocks.update.mock.calls.at(-1)?.[1]).not.toHaveProperty('audience');
+    form.set('audience', 'everyone'); await updateLink(id, form);
+    expect(mocks.update).toHaveBeenLastCalledWith(id, expect.objectContaining({ audience: 'everyone' }));
+  });
+
+  it('rechaza audiencias inválidas y no permite que un alumno cambie el acceso', async () => {
+    const form = linkForm({ classId: 'class-1' }); form.set('audience', 'invalid');
+    expect(await createLink(form)).toMatchObject({ success: false });
+    expect(mocks.create).not.toHaveBeenCalled();
+    mocks.model = { id: 'student-1', role: 'estudiante' }; form.set('audience', 'teachers');
+    expect(await updateLink('class-link', form)).toMatchObject({ success: false });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it.each(['class-link', 'tp-link'])('impide firmar descargas solo docentes de %s aunque el recurso esté publicado', async linkId => {
+    records.assignments['tp-1'].publicationStatus = 'published';
+    records.links[linkId].publicationStatus = 'published'; records.links[linkId].audience = 'teachers';
+    mocks.model = { id: 'student-1', role: 'estudiante' };
+    expect(await getResourceDownloadUrl(linkId)).toMatchObject({ success: false });
+    expect(mocks.download).not.toHaveBeenCalled();
+    mocks.model = { id: 'teacher-1', role: 'estudiante' };
+    expect(await getResourceDownloadUrl(linkId)).toMatchObject({ success: true });
+    mocks.model = { id: 'admin-1', role: 'admin' };
+    expect(await getResourceDownloadUrl(linkId)).toMatchObject({ success: true });
   });
 });

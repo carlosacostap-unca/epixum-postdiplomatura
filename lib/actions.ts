@@ -17,6 +17,7 @@ import {
 import { teacherCanManageCourse } from "./teacher-scope";
 import { getErrorResponse, getErrorMessage } from "./errors";
 import { isPublished, isPublicationVisible, publicationPatch, scheduledPublicationPatch } from "./publication";
+import { isSharedResourceAudience, resourceAudiencePatch } from './resource-audience';
 import { isWeekEffectivelyVisible } from "./course-weeks";
 import { getExclusiveResourceParent, resourceParentField, type ResourceParent } from "./resource-parent";
 import { serializeDeliveryUrlForAssignment } from "./delivery-github";
@@ -262,7 +263,7 @@ export async function getResourceDownloadUrl(linkId: string) {
       : parent.type === 'assignment'
         ? await studentCanAccessContent(pb, user, 'assignments', parent.id)
         : await studentCanAccessIndependentContent(pb, user, parent.id);
-    if (!managerAllowed && (!studentAllowed || (parent.type !== 'content' && !isPublished(link.publicationStatus)))) {
+    if (!managerAllowed && (!studentAllowed || (parent.type !== 'content' && (!isPublished(link.publicationStatus) || !isSharedResourceAudience(link.audience))))) {
       return { success: false, error: 'No autorizado para este curso' };
     }
 
@@ -762,6 +763,7 @@ export async function createLink(formData: FormData) {
   try {
     const data: Record<string, unknown> = {
       ...(parent.type !== 'content' ? publicationPatch(formData.get('publicationStatus'), true) : {}),
+      ...(parent.type !== 'content' ? resourceAudiencePatch(formData.get('audience'), true) : {}),
       title,
       url,
       type,
@@ -800,6 +802,7 @@ export async function updateLink(linkId: string, formData: FormData) {
   try {
     const data: Record<string, unknown> = {
       ...(parent.type !== 'content' ? publicationPatch(formData.get('publicationStatus')) : {}),
+      ...(parent.type !== 'content' ? resourceAudiencePatch(formData.get('audience')) : {}),
       title,
       url,
     };

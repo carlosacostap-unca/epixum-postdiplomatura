@@ -9,8 +9,8 @@ try {
   const inventory = async () => Object.fromEntries(await Promise.all(names.map(async name => [
     name, (await pb.collection(name).getFullList({ sort: 'id' })).map(record => {
       // A new optional select appears empty without changing existing data.
-      const { publicationStatus, publishAt, ...rest } = record;
-      return { ...rest, publicationStatus: publicationStatus || '', ...(name !== 'links' ? { publishAt: publishAt || '' } : {}) };
+      const { publicationStatus, publishAt, audience, ...rest } = record;
+      return { ...rest, publicationStatus: publicationStatus || '', ...(name !== 'links' ? { publishAt: publishAt || '' } : { audience: audience || '' }) };
     }),
   ])));
   const schema = await pb.collections.getFullList();

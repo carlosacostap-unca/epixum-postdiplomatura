@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/pocketbase-service';
 import { requireBedelAssignment } from '@/lib/course-bedel-access';
 import type { CourseBedel } from '@/lib/course-bedels';
 import { readAttendanceReport } from '@/lib/course-attendance-service';
+import { isSharedResource } from '@/lib/resource-audience';
 import type { Assignment, Class, Course, CourseContent, CourseWeek, InteractiveLesson, Link } from '@/types';
 
 const COURSE_FIELDS = 'id,title,description,status,organizationMode,contentsEnabled,interactiveClassesEnabled,reviewsEnabled';
@@ -45,10 +46,10 @@ export async function getBedelCourse(courseId: string) {
     course.interactiveClassesEnabled ? service.collection('interactive_lessons').getFullList<InteractiveLesson>({ filter, sort: 'title', fields: 'id,title,description,material' }) : [],
     service.collection('links').getFullList<Link>({
       filter: service.filter('(class.course = {:courseId} || assignment.course = {:courseId}' + (course.contentsEnabled ? ' || content.course = {:courseId}' : '') + ')', { courseId }),
-      fields: 'id,title,url,type,class,assignment,content',
+      fields: 'id,title,url,type,class,assignment,content,audience',
     }),
   ]);
-  return { course, classes, assignments, contents, weeks, lessons, links };
+  return { course, classes, assignments, contents, weeks, lessons, links: links.filter(isSharedResource) };
 }
 
 export interface BedelAttendance {

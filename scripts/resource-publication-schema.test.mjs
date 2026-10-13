@@ -25,6 +25,9 @@ for (const locked of [true, false]) test(`migración idempotente conserva datos,
     if (name !== 'links') {
       assert.equal(collection.fields.filter(f => f.name === 'publishAt').length, 1);
       assert.ok(collection.fields.find(f => f.name === 'publicationStatus').values.includes('scheduled'));
+    } else {
+      assert.equal(collection.fields.filter(f => f.name === 'audience').length, 1);
+      assert.deepEqual(collection.fields.find(f => f.name === 'audience').values, ['everyone', 'teachers']);
     }
   }
   assert.equal(collections.get('assignments').viewRule, ASSIGNMENT_RULES.viewRule);
@@ -48,6 +51,8 @@ test('publicación se aplica a matrícula, sin quitar acceso docente ni visibili
   for (const parent of ['class', 'assignment', 'content']) {
     assert.ok(LINK_RULES.viewRule.includes(`${parent}.publishAt <= @now`));
   }
+  assert.equal(LINK_RULES.viewRule.split('(audience = "" || audience = "everyone")').length - 1, 2);
+  assert.equal(LINK_RULES.listRule, LINK_RULES.viewRule);
 });
 
 test('actualiza restricciones de entregas anteriores para aceptar programados vencidos', async () => {

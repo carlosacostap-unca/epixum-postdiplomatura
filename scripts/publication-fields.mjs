@@ -8,6 +8,14 @@ export function withPublicationField(fields = []) {
   return [...fields.filter((field) => field.name !== PUBLICATION_FIELD.name), { ...previous, ...PUBLICATION_FIELD }];
 }
 
+export function withResourcePublicationFields(fields = []) {
+  const previous = fields.find(field => field.name === 'audience');
+  return [...withPublicationField(fields).filter(field => field.name !== 'audience'),
+    { ...previous, name: 'audience', type: 'select', required: false, maxSelect: 1, values: ['everyone', 'teachers'] }];
+}
+
+export const sharedResourceAudienceRule = '(audience = "" || audience = "everyone")';
+
 export function withScheduledPublicationFields(fields = []) {
   const statusFields = withPublicationField(fields).map(field => field.name === 'publicationStatus'
     ? { ...field, values: ['draft', 'published', 'scheduled'] } : field);

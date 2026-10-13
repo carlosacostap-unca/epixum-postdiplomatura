@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createLink, getResourceUploadUrl } from "@/lib/actions";
 import { getErrorMessage } from "@/lib/errors";
 import { PublicationField } from '@/components/course/PublicationField';
+import { ResourceAudienceField } from '@/components/course/ResourceAudienceField';
 
 interface NewResourceFormProps {
   courseId: string;
@@ -69,6 +70,7 @@ export default function NewResourceForm({ courseId, classId }: NewResourceFormPr
       finalFormData.append('type', resourceType);
       finalFormData.append("classId", classId);
       finalFormData.set('publicationStatus', formData.get('publicationStatus')!);
+      finalFormData.set('audience', formData.get('audience')!);
 
       const result = await createLink(finalFormData);
 
@@ -95,6 +97,7 @@ export default function NewResourceForm({ courseId, classId }: NewResourceFormPr
       )}
 
       <PublicationField />
+      <ResourceAudienceField disabled={loading} />
 
       {/* Resource Type Selection */}
       <div className="flex flex-col gap-3">

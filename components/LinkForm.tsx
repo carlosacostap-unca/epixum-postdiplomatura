@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui";
 import { PublicationField } from '@/components/course/PublicationField';
+import { ResourceAudienceField } from '@/components/course/ResourceAudienceField';
 
 interface LinkFormProps {
   link?: LinkType;
@@ -78,6 +79,7 @@ export default function LinkForm({ link, classId, assignmentId, contentId, onClo
       finalFormData.append('url', url);
       finalFormData.append('type', resourceType);
       if (formData.has('publicationStatus')) finalFormData.set('publicationStatus', formData.get('publicationStatus')!);
+      if (formData.has('audience')) finalFormData.set('audience', formData.get('audience')!);
       
       if (classId) finalFormData.append("classId", classId);
       if (assignmentId) finalFormData.append("assignmentId", assignmentId);
@@ -217,6 +219,7 @@ export default function LinkForm({ link, classId, assignmentId, contentId, onClo
         )}
 
         {(classId || assignmentId || link?.class || link?.assignment) && <PublicationField existing={Boolean(link)} status={link?.publicationStatus} />}
+        {(classId || assignmentId || link?.class || link?.assignment) && <ResourceAudienceField audience={link?.audience} disabled={loading} />}
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           {onClose && <Button variant="ghost" onClick={onClose} disabled={loading}>Cancelar</Button>}

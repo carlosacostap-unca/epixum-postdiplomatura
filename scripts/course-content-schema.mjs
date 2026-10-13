@@ -1,16 +1,16 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
-import { publishedRule, visiblePublicationRule, withPublicationField, withScheduledPublicationFields } from './publication-fields.mjs';
+import { publishedRule, visiblePublicationRule, withResourcePublicationFields, withScheduledPublicationFields, sharedResourceAudienceRule } from './publication-fields.mjs';
 
 const weekVisibilityRule = (parent) =>
   `(${parent}.week.status = "publicada" || (${parent}.week.status = "programada" && ${parent}.week.publishAt != "" && ${parent}.week.publishAt <= @now))`;
 
 const CLASS_STUDENT_READ =
-  `${publishedRule()} && ${visiblePublicationRule('class.')} && ` +
+  `${sharedResourceAudienceRule} && ${publishedRule()} && ${visiblePublicationRule('class.')} && ` +
   'class.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
   `(class.course.organizationMode != "semanal" || (class.week != "" && ${weekVisibilityRule('class')}))`;
 
 const ASSIGNMENT_STUDENT_READ =
-  `${publishedRule()} && ${visiblePublicationRule('assignment.')} && ` +
+  `${sharedResourceAudienceRule} && ${publishedRule()} && ${visiblePublicationRule('assignment.')} && ` +
   'assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
   `(assignment.course.organizationMode != "semanal" || (assignment.week != "" && ${weekVisibilityRule('assignment')}))`;
 
@@ -141,7 +141,7 @@ async function ensureCourseContents(pb, courses) {
 async function ensureContentLink(pb, contents) {
   const links = await pb.collections.getOne('links');
   return pb.collections.update(links.id, {
-    fields: withPublicationField(mergeFields(links.fields, [
+    fields: withResourcePublicationFields(mergeFields(links.fields, [
       { name: 'content', type: 'relation', required: false, collectionId: contents.id, cascadeDelete: true, maxSelect: 1 },
     ])),
     ...LINK_RULES,

@@ -26,6 +26,7 @@ export interface User extends BaseModel {
 }
 
 export interface Link extends BaseModel {
+  audience?: 'everyone' | 'teachers' | '';
   publicationStatus?: 'draft' | 'published' | '';
   title: string;
   url: string;
