@@ -71,6 +71,39 @@ try {
   await denied(() => student.pb.collection('links').getOne(draft.id), 'Volver recurso a borrador');
   await teacher.pb.collection('assignments').update(tp.id, { publicationStatus: 'draft' });
   await denied(() => student.pb.collection('links').getOne(tpResource.id), 'Volver TP a borrador');
+  // All parent types protect direct reads and attached resources before publication.
+  const parents = [
+    { name: 'classes', record: cls, resource: published, field: 'class' },
+    { name: 'assignments', record: tp, resource: tpResource, field: 'assignment' },
+    { name: 'course_contents', record: content, resource: independent, field: 'content' },
+  ];
+  for (const parent of parents) {
+    await teacher.pb.collection(parent.name).update(parent.record.id, { publicationStatus: 'draft' });
+    await denied(() => student.pb.collection(parent.name).getOne(parent.record.id), `${parent.name} borrador`);
+    await denied(() => student.pb.collection('links').getOne(parent.resource.id), `Recurso de ${parent.name} borrador`);
+    await teacher.pb.collection(parent.name).update(parent.record.id, { publicationStatus: 'scheduled', publishAt: '2099-01-01T00:00:00Z' });
+    await denied(() => student.pb.collection(parent.name).getOne(parent.record.id), `${parent.name} futuro`);
+    await denied(() => student.pb.collection('links').getOne(parent.resource.id), `Recurso de ${parent.name} futuro`);
+    const list = await student.pb.collection(parent.name).getFullList({ filter: student.pb.filter('course = {:id}', { id: course.id }) });
+    assert.ok(!list.some(record => record.id === parent.record.id));
+    const resources = await student.pb.collection('links').getFullList({ filter: student.pb.filter(`${parent.field} = {:id}`, { id: parent.record.id }) });
+    assert.equal(resources.length, 0);
+    assert.equal((await teacher.pb.collection(parent.name).getOne(parent.record.id)).id, parent.record.id);
+    await denied(() => student.pb.collection(parent.name).update(parent.record.id, { publicationStatus: 'published' }), 'Estudiante no publica padres');
+    await denied(() => outsider.pb.collection(parent.name).update(parent.record.id, { publicationStatus: 'published' }), 'Docente ajeno no publica padres');
+  }
+  // Cross the scheduled instant without any further record mutation.
+  const publicationTime = Date.now() + 5000;
+  for (const parent of parents) {
+    await teacher.pb.collection(parent.name).update(parent.record.id, { publishAt: new Date(publicationTime).toISOString() });
+  }
+  await new Promise(resolve => setTimeout(resolve, Math.max(0, publicationTime - Date.now() + 1000)));
+  for (const parent of parents) {
+    assert.equal((await student.pb.collection(parent.name).getOne(parent.record.id)).id, parent.record.id);
+    assert.equal((await student.pb.collection('links').getOne(parent.resource.id)).id, parent.resource.id);
+    assert.equal((await admin.collection(parent.name).getOne(parent.record.id)).publicationStatus, 'scheduled');
+  }
+  await denied(() => student.pb.collection('links').getOne(tpDraft.id), 'Programar TP no publica adjuntos');
   // Weekly visibility must compose with publication.
   await admin.collection('courses').update(course.id, { organizationMode: 'semanal' });
   const week = await create('course_weeks', { course: course.id, title: 'Unidad de prueba', number: 1, status: 'borrador' });
@@ -78,11 +111,12 @@ try {
   await admin.collection('assignments').update(tp.id, { week: week.id, publicationStatus: 'published' });
   await denied(() => student.pb.collection('assignments').getOne(tp.id), 'Unidad oculta');
   await denied(() => student.pb.collection('links').getOne(published.id), 'Recurso de unidad oculta');
+  await denied(() => student.pb.collection('classes').getOne(cls.id), 'Clase programada vencida de unidad oculta');
   await admin.collection('course_weeks').update(week.id, { status: 'publicada' });
   assert.equal((await student.pb.collection('links').getOne(published.id)).id, published.id);
   assert.equal((await student.pb.collection('assignments').getOne(tp.id)).id, tp.id);
   await denied(() => student.pb.collection('links').getOne(draft.id), 'Unidad publicada no publica recursos');
-  console.log('Permisos verificados: listados, IDs directos, transiciones, compatibilidad, matrícula, docencia contextual, admin, unidad y entregas.');
+  console.log('Permisos verificados: listados, IDs directos, transiciones, publicación automática de clases/TP/contenidos al llegar la fecha, recursos, compatibilidad, matrícula, docencia contextual, admin, unidad y entregas.');
   if (process.argv.includes('--keep-for-browser')) {
     await admin.collection('courses').update(course.id, { organizationMode: 'tradicional' });
     await admin.collection('assignments').update(tp.id, { publicationStatus: 'draft' });

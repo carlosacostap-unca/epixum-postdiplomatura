@@ -185,7 +185,7 @@ export default function TpManagementActions({ assignment, courseId, weeks }: TpM
                 />
               </div>
 
-              <PublicationField assignment existing status={assignment.publicationStatus} />
+              <PublicationField scheduling assignment existing status={assignment.publicationStatus} publishAt={assignment.publishAt} />
               <input type="hidden" name="systemPrompt" value={assignment.systemPrompt || ""} />
 
               <div className="flex flex-wrap justify-end gap-3 pt-2">

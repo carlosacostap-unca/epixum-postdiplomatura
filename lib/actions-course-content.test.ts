@@ -43,7 +43,7 @@ function buildPocketBase({ role = 'docente', userId = 'teacher-1', enabled = tru
       return {
         async getOne(id: string) {
           const record = state[name].find((candidate) => candidate.id === id);
-          if (!record) throw new Error('not found');
+          if (!record) throw Object.assign(new Error('not found'), { status: 404 });
           return structuredClone(record);
         },
         async getFullList(options?: { filter?: string }) {
@@ -105,16 +105,29 @@ describe('contenidos de curso', () => {
       links: [{ id: 'link-1' }],
     });
     await expect(getCourseContentWithResources('course-1', 'content-other')).resolves.toBeNull();
+    await expect(getCourseContentWithResources('course-1', 'content-hidden')).resolves.toBeNull();
   });
 
-  it('crea al final con visibilidad inmediata y actualiza sólo dentro del curso', async () => {
+  it('crea al final en borrador y actualiza sólo dentro del curso', async () => {
     const created = await createCourseContent('course-1', form('  Nuevo  '));
     expect(created).toEqual({ success: true, contentId: 'content-4' });
-    expect(mocks.pb?.state.course_contents.find((item) => item.id === 'content-4')).toMatchObject({ title: 'Nuevo', position: 2 });
+    expect(mocks.pb?.state.course_contents.find((item) => item.id === 'content-4')).toMatchObject({ title: 'Nuevo', position: 2, publicationStatus: 'draft', publishAt: '' });
 
     await expect(updateCourseContent('course-1', 'content-a', form('Actualizado'))).resolves.toEqual({ success: true, contentId: 'content-a' });
     expect(mocks.pb?.state.course_contents.find((item) => item.id === 'content-a')?.title).toBe('Actualizado');
     await expect(updateCourseContent('course-1', 'content-other', form())).resolves.toMatchObject({ success: false, error: expect.stringContaining('no pertenece') });
+  });
+
+  it('programa contenido, conserva la programación en una edición parcial y permite cancelarla', async () => {
+    const data = form('Programado');
+    data.set('publicationStatus', 'scheduled'); data.set('publishAt', '2027-01-01T15:00:00Z');
+    await expect(updateCourseContent('course-1', 'content-a', data)).resolves.toMatchObject({ success: true });
+    expect(mocks.pb?.state.course_contents.find(item => item.id === 'content-a')).toMatchObject({ publicationStatus: 'scheduled', publishAt: '2027-01-01T15:00:00.000Z' });
+    await updateCourseContent('course-1', 'content-a', form('Nuevo título'));
+    expect(mocks.pb?.batchUpdates.at(-1)?.data).not.toHaveProperty('publicationStatus');
+    data.set('publicationStatus', 'draft');
+    await updateCourseContent('course-1', 'content-a', data);
+    expect(mocks.pb?.state.course_contents.find(item => item.id === 'content-a')).toMatchObject({ publicationStatus: 'draft', publishAt: '' });
   });
 
   it('rechaza curso deshabilitado y docente ajeno', async () => {

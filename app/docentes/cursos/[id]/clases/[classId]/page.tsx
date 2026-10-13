@@ -1,3 +1,4 @@
+import { PublicationBadge } from '@/components/course/PublicationBadge';
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import FormattedDate from "@/components/FormattedDate";
@@ -28,6 +29,7 @@ export default async function TeacherClassManagementPage({ params }: { params: P
         actions={<Link href={`/docentes/cursos/${course.id}/clases/${classData.id}/editar`} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 py-2.5 text-sm font-bold"><span className="material-symbols-outlined text-lg" aria-hidden="true">edit</span>Editar clase</Link>}
       />
 
+    <PublicationBadge status={classData.publicationStatus} publishAt={classData.publishAt} />
       <section aria-labelledby="class-description-title">
         <Card><CardContent>
           <h2 id="class-description-title" className="font-headline text-2xl font-bold">Descripción de la clase</h2>

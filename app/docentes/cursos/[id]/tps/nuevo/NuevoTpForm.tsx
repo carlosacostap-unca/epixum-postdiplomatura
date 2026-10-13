@@ -89,7 +89,7 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
         />
       </div>
 
-      <PublicationField assignment />
+      <PublicationField scheduling assignment />
 
       <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
         <Button variant="ghost" disabled={loading} onClick={() => router.back()}>Cancelar</Button>

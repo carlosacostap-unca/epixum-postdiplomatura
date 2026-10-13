@@ -112,7 +112,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
             {classes.map((classItem) => (
               <Link key={classItem.id} href={`/docentes/cursos/${course.id}/clases/${classItem.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                 <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
-                  <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{classItem.title}</h3><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span></div>
+                  <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{classItem.title}</h3><PublicationBadge status={classItem.publicationStatus} publishAt={classItem.publishAt} /><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span></div>
                   <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{classItem.date ? <FormattedDate date={classItem.date} showTime /> : "Sin fecha programada"}</p>
                 </CardContent></Card>
               </Link>
@@ -136,7 +136,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
               return (
                 <Link key={assignment.id} href={`/docentes/cursos/${course.id}/tps/${assignment.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                   <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
-                    <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{assignment.title}</h3><PublicationBadge status={assignment.publicationStatus} />{pendingCount > 0 && <Badge tone="warning">{pendingCount} por revisar</Badge>}</div>
+                    <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{assignment.title}</h3><PublicationBadge status={assignment.publicationStatus} publishAt={assignment.publishAt} />{pendingCount > 0 && <Badge tone="warning">{pendingCount} por revisar</Badge>}</div>
                     <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{assignment.dueDate ? <>Vence <FormattedDate date={assignment.dueDate} showTime /></> : "Sin fecha límite"}</p>
                     <p className="mt-2 text-sm font-medium">{assignmentDeliveries.length} {assignmentDeliveries.length === 1 ? "entrega" : "entregas"}</p>
                   </CardContent></Card>

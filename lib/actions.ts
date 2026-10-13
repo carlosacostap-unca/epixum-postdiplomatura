@@ -10,10 +10,13 @@ import {
   type AIVerdict,
   type CourseWeek,
   type Delivery,
+  type Class,
+  type Assignment,
+  type CourseContent,
 } from "@/types";
 import { teacherCanManageCourse } from "./teacher-scope";
-import { getErrorResponse } from "./errors";
-import { isPublished, publicationPatch } from "./publication";
+import { getErrorResponse, getErrorMessage } from "./errors";
+import { isPublished, isPublicationVisible, publicationPatch, scheduledPublicationPatch } from "./publication";
 import { isWeekEffectivelyVisible } from "./course-weeks";
 import { getExclusiveResourceParent, resourceParentField, type ResourceParent } from "./resource-parent";
 import { serializeDeliveryUrlForAssignment } from "./delivery-github";
@@ -61,9 +64,9 @@ async function studentCanAccessContent(
   recordId: string,
 ) {
   try {
-    const record = await pb.collection(collection).getOne(recordId, { fields: collection === "assignments" ? "id,course,week,publicationStatus" : "id,course,week" });
-    if (collection === "assignments" && !isPublished(record.publicationStatus)) return false;
-    if (!(await studentCanAccessCourse(pb, user, record.course))) return false;
+    const record = await pb.collection(collection).getOne<Class | Assignment>(recordId, { fields: "id,course,week,publicationStatus,publishAt" });
+    if (!isPublicationVisible(record)) return false;
+    if (!record.course || !(await studentCanAccessCourse(pb, user, record.course))) return false;
     const course = await pb.collection("courses").getOne(record.course, { fields: "id,organizationMode" });
     if (course.organizationMode !== "semanal") return true;
     if (!record.week) return false;
@@ -147,7 +150,9 @@ async function canManageResourceParent(pb: ServerPocketBase, user: { id: string;
 
 async function studentCanAccessIndependentContent(pb: ServerPocketBase, user: { id: string; role?: string }, contentId: string) {
   try {
-    const courseId = await contentCourseId(pb, contentId);
+    const content = await pb.collection('course_contents').getOne<CourseContent>(contentId, { fields: 'id,course,publicationStatus,publishAt' });
+    if (!isPublicationVisible(content)) return false;
+    const courseId = content.course;
     if (!(await studentCanAccessCourse(pb, user, courseId))) return false;
     const course = await pb.collection('courses').getOne(courseId!, { fields: 'id,contentsEnabled' });
     return course.contentsEnabled === true;
@@ -388,15 +393,16 @@ export async function createClassForCourse(courseId: string, formData: FormData)
       date: dateObj,
       course: courseId, // Relacionar directamente la clase con el curso
       week,
+      ...scheduledPublicationPatch(formData, true),
     };
     
     const newClass = await pb.collection('classes').create(data);
     
-    revalidatePath(`/docentes/cursos/${courseId}`);
+    revalidateResourceViews({ type: 'class', id: newClass.id }, courseId);
     return { success: true, classId: newClass.id };
   } catch (error) {
     console.error('Failed to create class for course:', error);
-    return { success: false, error: 'Failed to create class' };
+    return { success: false, error: getErrorMessage(error, 'No pudimos crear la clase') };
   }
 }
 
@@ -421,6 +427,7 @@ export async function createClass(formData: FormData) {
       title,
       description,
       date: date ? new Date(date).toISOString() : null,
+      ...scheduledPublicationPatch(formData, true),
     };
     
     await pb.collection('classes').create(data);
@@ -466,9 +473,11 @@ export async function updateClass(classId: string, formData: FormData) {
       description,
       date: dateObj,
       week,
+      ...scheduledPublicationPatch(formData),
     };
 
     await pb.collection('classes').update(classId, data);
+    revalidateResourceViews({ type: 'class', id: classId }, scopedCourseId);
     
     revalidatePath('/');
     revalidatePath(`/classes/${classId}`);
@@ -476,7 +485,7 @@ export async function updateClass(classId: string, formData: FormData) {
     return { success: true };
   } catch (error) {
     console.error('Failed to update class:', error);
-    return { success: false, error: 'Failed to update class' };
+    return { success: false, error: getErrorMessage(error, 'No pudimos actualizar la clase') };
   }
 }
 
@@ -538,7 +547,7 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
     }
 
     const data: Record<string, unknown> = {
-      ...publicationPatch(formData.get('publicationStatus'), true),
+      ...scheduledPublicationPatch(formData, true),
       title,
       description,
       dueDate: dateObj,
@@ -565,7 +574,7 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
     return { success: true, assignmentId: newAssignment.id };
   } catch (error) {
     console.error('Failed to create assignment for course:', error);
-    return { success: false, error: 'Failed to create assignment' };
+    return { success: false, error: getErrorMessage(error, 'No pudimos crear el trabajo práctico') };
   }
 }
 
@@ -588,7 +597,7 @@ export async function createAssignment(formData: FormData) {
 
   try {
     const data: Record<string, unknown> = {
-      ...publicationPatch(formData.get('publicationStatus'), true),
+      ...scheduledPublicationPatch(formData, true),
       title,
       description,
       systemPrompt: systemPrompt || "",
@@ -629,7 +638,7 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
   try {
     const week = await validatedWeekId(pb, scopedCourseId!, formData.get('week'));
     const data: Record<string, unknown> = {
-      ...publicationPatch(formData.get('publicationStatus')),
+      ...scheduledPublicationPatch(formData),
       title,
       description,
       systemPrompt: systemPrompt || "",
@@ -656,7 +665,7 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
     if (response) {
       console.error('PocketBase validation errors:', JSON.stringify(response, null, 2));
     }
-    return { success: false, error: 'Failed to update assignment' };
+    return { success: false, error: getErrorMessage(error, 'No pudimos actualizar el trabajo práctico') };
   }
 }
 

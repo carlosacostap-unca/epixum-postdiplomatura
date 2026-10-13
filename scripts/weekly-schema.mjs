@@ -1,5 +1,5 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
-import { publishedRule, withPublicationField } from './publication-fields.mjs';
+import { visiblePublicationRule, withScheduledPublicationFields } from './publication-fields.mjs';
 
 export { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
 
@@ -44,9 +44,11 @@ export const CONTENT_RULES = {
 
 export const ASSIGNMENT_RULES = {
   ...CONTENT_RULES,
-  listRule: `${CONTENT_MANAGE_RULE} || (${CONTENT_READ_RULE} && ${publishedRule()})`,
-  viewRule: `${CONTENT_MANAGE_RULE} || (${CONTENT_READ_RULE} && ${publishedRule()})`,
+  listRule: `${CONTENT_MANAGE_RULE} || (${CONTENT_READ_RULE} && ${visiblePublicationRule()})`,
+  viewRule: `${CONTENT_MANAGE_RULE} || (${CONTENT_READ_RULE} && ${visiblePublicationRule()})`,
 };
+
+export const CLASS_RULES = { ...ASSIGNMENT_RULES };
 
 const INQUIRY_SCOPE_RULE =
   `${CONTENT_SCOPE_RULE} && (class = "" || class.course.id = course.id) && ` +
@@ -85,10 +87,10 @@ export const INQUIRY_RESPONSE_RULES = {
 export const DELIVERY_RULES = {
   listRule: '@request.auth.role = "admin" || student = @request.auth.id || assignment.course.teachers.id ?= @request.auth.id',
   viewRule: '@request.auth.role = "admin" || student = @request.auth.id || assignment.course.teachers.id ?= @request.auth.id',
-  createRule: `student = @request.auth.id && assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ${publishedRule('assignment.')}`,
+  createRule: `student = @request.auth.id && assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ${visiblePublicationRule('assignment.')}`,
   updateRule:
     '@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id || (' +
-    `student = @request.auth.id && assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ${publishedRule('assignment.')} && ` +
+    `student = @request.auth.id && assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ${visiblePublicationRule('assignment.')} && ` +
     '@request.body.grade:isset = false && @request.body.feedback:isset = false && @request.body.verdict:isset = false && @request.body.status:isset = false)',
   deleteRule: null,
 };
@@ -174,8 +176,8 @@ async function ensureWeeksCollection(pb, courses) {
 
 async function ensureWeekRelation(pb, collectionName, weeks, rules) {
   let collection = await pb.collections.getOne(collectionName);
-  if (collectionName === 'assignments') {
-    collection = await pb.collections.update(collection.id, { fields: withPublicationField(collection.fields) });
+  if (['classes', 'assignments'].includes(collectionName)) {
+    collection = await pb.collections.update(collection.id, { fields: withScheduledPublicationFields(collection.fields) });
   }
   collection = await addField(pb, collection, {
     name: 'week',
@@ -191,7 +193,7 @@ async function ensureWeekRelation(pb, collectionName, weeks, rules) {
 export async function applyWeeklySchema(pb) {
   const { courses, initialized } = await ensureCourseMode(pb);
   const weeks = await ensureWeeksCollection(pb, courses);
-  await ensureWeekRelation(pb, 'classes', weeks, CONTENT_RULES);
+  await ensureWeekRelation(pb, 'classes', weeks, CLASS_RULES);
   await ensureWeekRelation(pb, 'assignments', weeks, ASSIGNMENT_RULES);
   await ensureWeekRelation(pb, 'inquiries', weeks, INQUIRY_RULES);
   const responses = await getCollection(pb, 'inquiry_responses');

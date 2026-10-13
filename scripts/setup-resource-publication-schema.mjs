@@ -5,12 +5,12 @@ import { applyResourcePublicationSchema } from './resource-publication-schema.mj
 
 try {
   const pb = await testAdmin();
-  const names = ['assignments', 'links'];
+  const names = ['classes', 'assignments', 'course_contents', 'links'];
   const inventory = async () => Object.fromEntries(await Promise.all(names.map(async name => [
     name, (await pb.collection(name).getFullList({ sort: 'id' })).map(record => {
       // A new optional select appears empty without changing existing data.
-      const { publicationStatus, ...rest } = record;
-      return { ...rest, publicationStatus: publicationStatus || '' };
+      const { publicationStatus, publishAt, ...rest } = record;
+      return { ...rest, publicationStatus: publicationStatus || '', ...(name !== 'links' ? { publishAt: publishAt || '' } : {}) };
     }),
   ])));
   const schema = await pb.collections.getFullList();
@@ -18,6 +18,10 @@ try {
   const backup = `backups/pocketbase/resource-publication-${Date.now()}.json`;
   await mkdir('backups/pocketbase', { recursive: true });
   await writeFile(backup, JSON.stringify({ schema, records: before }, null, 2), { flag: 'wx' });
+  if (process.argv.includes('--snapshot-only')) {
+    console.log(JSON.stringify({ backup, counts: Object.fromEntries(names.map(name => [name, before[name].length])) }));
+    process.exit(0);
+  }
   await applyResourcePublicationSchema(pb);
   assert.deepEqual(await inventory(), before, 'La migración debe conservar los registros');
   const first = await pb.collections.getFullList();

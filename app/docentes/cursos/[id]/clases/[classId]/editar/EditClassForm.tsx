@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PublicationField } from "@/components/course/PublicationField";
 import { useRouter } from "next/navigation";
 import { updateClass } from "@/lib/actions";
 import { Class, CourseWeek } from "@/types";
@@ -19,12 +20,12 @@ export default function EditClassForm({ courseId, classData, weeks }: { courseId
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    const formData = new FormData();
+    const formData = new FormData(e.currentTarget);
     formData.append("title", title);
     formData.append("description", description);
     formData.append("week", week);
@@ -90,6 +91,8 @@ export default function EditClassForm({ courseId, classData, weeks }: { courseId
             placeholder="Breve resumen de los temas a tratar..."
           />
         </div>
+
+        <PublicationField scheduling entity="clase" disabled={isLoading} existing status={classData.publicationStatus} publishAt={classData.publishAt} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>

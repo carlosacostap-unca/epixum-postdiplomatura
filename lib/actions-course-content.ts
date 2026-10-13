@@ -7,6 +7,7 @@ import { createServerClient } from './pocketbase-server';
 import { getErrorMessage } from './errors';
 import { isCompleteCourseContentOrder, normalizeCourseContentTitle, sortCourseContents } from './course-content';
 import { requireEnabledTeacherCourse, requireScopedCourseContent } from './course-content-access';
+import { scheduledPublicationPatch } from './publication';
 
 export type CourseContentActionResult =
   | { success: true; contentId?: string }
@@ -48,7 +49,7 @@ export async function createCourseContent(courseId: string, formData: FormData):
       fields: 'id,position',
     });
     const position = records.reduce((maximum, record) => Math.max(maximum, Number(record.position) || 0), -1) + 1;
-    const content = await pb.collection('course_contents').create<CourseContent>({ course: courseId, title, description, position });
+    const content = await pb.collection('course_contents').create<CourseContent>({ course: courseId, title, description, position, ...scheduledPublicationPatch(formData, true) });
     revalidateCourseContentPaths(courseId, content.id);
     return { success: true, contentId: content.id };
   } catch (error) {
@@ -64,7 +65,7 @@ export async function updateCourseContent(courseId: string, contentId: string, f
     await requireScopedCourseContent(pb, courseId, contentId);
     const title = normalizeCourseContentTitle(formData.get('title'));
     const description = String(formData.get('description') || '');
-    await pb.collection('course_contents').update(contentId, { title, description });
+    await pb.collection('course_contents').update(contentId, { title, description, ...scheduledPublicationPatch(formData) });
     revalidateCourseContentPaths(courseId, contentId);
     return { success: true, contentId };
   } catch (error) {

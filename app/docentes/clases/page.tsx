@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import FormattedDate from "@/components/FormattedDate";
+import { PublicationBadge } from '@/components/course/PublicationBadge';
 import { Badge, Card, CardContent, EmptyState, PageHeader } from "@/components/ui";
 import { getClassesByCourse, getTeacherCourses } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
@@ -35,6 +36,7 @@ export default async function DocenteClasesPage() {
                     <Link key={classItem.id} href={`/docentes/cursos/${course.id}/clases/${classItem.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                       <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
                         <h3 className="font-headline text-xl font-bold">{classItem.title}</h3>
+                        <div className="mt-2"><PublicationBadge status={classItem.publicationStatus} publishAt={classItem.publishAt} /></div>
                         <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{classItem.date ? <FormattedDate date={classItem.date} showTime /> : "Sin fecha programada"}</p>
                         <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--color-primary)]">Gestionar <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></span>
                       </CardContent></Card>

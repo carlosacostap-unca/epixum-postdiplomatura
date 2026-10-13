@@ -1,6 +1,7 @@
 import type { CourseContent, Link } from '@/types';
 import { createServerClient } from './pocketbase-server';
 import { sortCourseContents } from './course-content';
+import { getErrorStatus } from './errors';
 
 export async function getCourseContents(courseId: string) {
   const pb = await createServerClient();
@@ -13,7 +14,11 @@ export async function getCourseContents(courseId: string) {
 
 export async function getCourseContentWithResources(courseId: string, contentId: string) {
   const pb = await createServerClient();
-  const content = await pb.collection('course_contents').getOne<CourseContent>(contentId);
+  const content = await pb.collection('course_contents').getOne<CourseContent>(contentId).catch(error => {
+    if (getErrorStatus(error) === 404) return null;
+    throw error;
+  });
+  if (!content) return null;
   if (content.course !== courseId) return null;
   const links = await pb.collection('links').getFullList<Link>({
     filter: pb.filter('content = {:content}', { content: contentId }),

@@ -57,7 +57,7 @@ vi.mock('./s3', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-import { createLink, updateLink, createAssignmentForCourse, updateAssignment, getUploadUrl, createDelivery, getResourceDownloadUrl, getResourceUploadUrl } from './actions';
+import { createLink, updateLink, createClassForCourse, updateClass, createAssignmentForCourse, updateAssignment, getUploadUrl, createDelivery, getResourceDownloadUrl, getResourceUploadUrl } from './actions';
 import { revalidatePath } from 'next/cache';
 
 function linkForm(parent: { classId?: string; assignmentId?: string; contentId?: string }) {
@@ -71,6 +71,8 @@ function linkForm(parent: { classId?: string; assignmentId?: string; contentId?:
 
 describe('recursos de contenidos independientes', () => {
   beforeEach(() => {
+    records.classes['class-1'] = { id: 'class-1', course: 'course-1' };
+    records.course_contents['content-1'] = { id: 'content-1', course: 'course-1' };
     records.assignments['tp-1'] = { id: 'tp-1', course: 'course-1', publicationStatus: 'draft' };
     records.links['class-link'] = { id: 'class-link', class: 'class-1', title: 'Guía', url: 'https://files.example/file.pdf', publicationStatus: 'draft' };
     records.links['tp-link'] = { id: 'tp-link', assignment: 'tp-1', title: 'Guía', url: 'https://files.example/file.pdf', publicationStatus: 'published' };
@@ -200,5 +202,43 @@ describe('recursos de contenidos independientes', () => {
     expect(await createDelivery(form)).toMatchObject({ success: false });
     expect(mocks.create).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
+  });
+
+  it('crea clases en borrador y permite programar clases y trabajos sin cambiar el curso', async () => {
+    const form = linkForm({});
+    expect(await createClassForCourse('course-1', form)).toMatchObject({ success: true });
+    expect(mocks.create).toHaveBeenLastCalledWith(expect.objectContaining({ publicationStatus: 'draft', publishAt: '' }));
+    form.set('publicationStatus', 'scheduled'); form.set('publishAt', '2027-01-01T12:00:00-03:00');
+    for (const update of [updateClass, updateAssignment]) {
+      expect(await update(update === updateClass ? 'class-1' : 'tp-1', form)).toMatchObject({ success: true });
+      expect(mocks.update).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ publicationStatus: 'scheduled', publishAt: '2027-01-01T15:00:00.000Z' }));
+    }
+    form.set('publishAt', 'invalid'); mocks.update.mockClear();
+    expect(await updateClass('class-1', form)).toMatchObject({ success: false, error: expect.stringContaining('fecha y hora') });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it.each(['class', 'content'] as const)('protege descargas según el estado del padre %s', async parent => {
+    mocks.model = { id: 'student-1', role: 'estudiante' };
+    const record = parent === 'class' ? records.classes['class-1'] : records.course_contents['content-1'];
+    const linkId = parent === 'class' ? 'class-link' : 'link-1';
+    records.links[linkId].publicationStatus = 'published';
+    record.publicationStatus = 'draft';
+    expect(await getResourceDownloadUrl(linkId)).toMatchObject({ success: false });
+    record.publicationStatus = 'scheduled'; record.publishAt = '2099-01-01T00:00:00Z';
+    expect(await getResourceDownloadUrl(linkId)).toMatchObject({ success: false });
+    expect(mocks.download).not.toHaveBeenCalled();
+    record.publishAt = '2000-01-01T00:00:00Z';
+    expect(await getResourceDownloadUrl(linkId)).toMatchObject({ success: true });
+  });
+
+  it('permite subir entregas solamente desde la fecha programada del trabajo', async () => {
+    mocks.model = { id: 'student-1', role: 'estudiante' };
+    const record = records.assignments['tp-1'];
+    record.publicationStatus = 'scheduled'; record.publishAt = '2099-01-01T00:00:00Z';
+    expect(await getUploadUrl('entrega.pdf', 'application/pdf', 'tp-1')).toMatchObject({ success: false });
+    expect(mocks.upload).not.toHaveBeenCalled();
+    record.publishAt = '2000-01-01T00:00:00Z';
+    expect(await getUploadUrl('entrega.pdf', 'application/pdf', 'tp-1')).toMatchObject({ success: true });
   });
 });

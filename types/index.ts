@@ -36,6 +36,8 @@ export interface Link extends BaseModel {
 }
 
 export interface Class extends BaseModel {
+  publicationStatus?: 'draft' | 'published' | 'scheduled' | '';
+  publishAt?: string;
   title: string;
   description: string;
   date: string;
@@ -50,7 +52,8 @@ export interface Class extends BaseModel {
 }
 
 export interface Assignment extends BaseModel {
-  publicationStatus?: 'draft' | 'published' | '';
+  publicationStatus?: 'draft' | 'published' | 'scheduled' | '';
+  publishAt?: string;
   title: string;
   description: string;
   dueDate?: string; // Adding dueDate as it might be useful without sprints
@@ -333,6 +336,8 @@ export interface AIPreevaluationAttempt extends BaseModel {
 }
 
 export interface CourseContent extends BaseModel {
+  publicationStatus?: 'draft' | 'published' | 'scheduled' | '';
+  publishAt?: string;
   course: string;
   title: string;
   description: string;

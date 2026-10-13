@@ -1,21 +1,21 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
-import { publishedRule, withPublicationField } from './publication-fields.mjs';
+import { publishedRule, visiblePublicationRule, withPublicationField, withScheduledPublicationFields } from './publication-fields.mjs';
 
 const weekVisibilityRule = (parent) =>
   `(${parent}.week.status = "publicada" || (${parent}.week.status = "programada" && ${parent}.week.publishAt != "" && ${parent}.week.publishAt <= @now))`;
 
 const CLASS_STUDENT_READ =
-  `${publishedRule()} && ` +
+  `${publishedRule()} && ${visiblePublicationRule('class.')} && ` +
   'class.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
   `(class.course.organizationMode != "semanal" || (class.week != "" && ${weekVisibilityRule('class')}))`;
 
 const ASSIGNMENT_STUDENT_READ =
-  `${publishedRule()} && ${publishedRule('assignment.')} && ` +
+  `${publishedRule()} && ${visiblePublicationRule('assignment.')} && ` +
   'assignment.course.course_enrollments_via_course.student.id ?= @request.auth.id && ' +
   `(assignment.course.organizationMode != "semanal" || (assignment.week != "" && ${weekVisibilityRule('assignment')}))`;
 
 const CONTENT_STUDENT_READ =
-  'content.course.contentsEnabled = true && content.course.course_enrollments_via_course.student.id ?= @request.auth.id';
+  `${visiblePublicationRule('content.')} && content.course.contentsEnabled = true && content.course.course_enrollments_via_course.student.id ?= @request.auth.id`;
 
 const CLASS_READ =
   '(class != "" && (@request.auth.role = "admin" || class.course.teachers.id ?= @request.auth.id || ' +
@@ -46,10 +46,10 @@ const PARENT_EXCLUSIVE_RULE =
 export const COURSE_CONTENT_RULES = {
   listRule:
     'course.contentsEnabled = true && (@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id || ' +
-    'course.course_enrollments_via_course.student.id ?= @request.auth.id)',
+    `(${visiblePublicationRule()} && course.course_enrollments_via_course.student.id ?= @request.auth.id))`,
   viewRule:
     'course.contentsEnabled = true && (@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id || ' +
-    'course.course_enrollments_via_course.student.id ?= @request.auth.id)',
+    `(${visiblePublicationRule()} && course.course_enrollments_via_course.student.id ?= @request.auth.id))`,
   createRule:
     '(@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id) && course.contentsEnabled = true',
   updateRule:
@@ -125,13 +125,13 @@ async function ensureCourseContents(pb, courses) {
     return pb.collections.create({
       name: 'course_contents',
       type: 'base',
-      fields: contentFields(courses.id),
+      fields: withScheduledPublicationFields(contentFields(courses.id)),
       indexes: [index],
       ...COURSE_CONTENT_RULES,
     });
   }
   contents = await pb.collections.update(contents.id, {
-    fields: mergeFields(contents.fields, contentFields(courses.id)),
+    fields: withScheduledPublicationFields(mergeFields(contents.fields, contentFields(courses.id))),
     indexes: mergeIndexes(contents.indexes, [index]),
     ...COURSE_CONTENT_RULES,
   });
@@ -149,8 +149,10 @@ async function ensureContentLink(pb, contents) {
 }
 
 export async function applyCourseContentSchema(pb) {
-  const assignments = await pb.collections.getOne('assignments');
-  await pb.collections.update(assignments.id, { fields: withPublicationField(assignments.fields) });
+  for (const name of ['assignments', 'classes']) {
+    const collection = await pb.collections.getOne(name);
+    await pb.collections.update(collection.id, { fields: withScheduledPublicationFields(collection.fields) });
+  }
   const courses = await ensureCourseConfiguration(pb);
   const contents = await ensureCourseContents(pb, courses);
   const links = await ensureContentLink(pb, contents);
