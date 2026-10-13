@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/tmp/
+/output/
 /backups/pocketbase/
 /.playwright-cli/
 /output/playwright/

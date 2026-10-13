@@ -1,0 +1,58 @@
+{
+  "active": true,
+  "criteria": [
+    {
+      "id": "formulacion",
+      "title": "Formulación clara del problema",
+      "weight": 20,
+      "description": "Comparar el planteo inicial en una oración con la formulación final de un problema real, concreto y abarcable. Valorar contexto, objetivo, criterios y restricciones; considerar el formato cuando aporta claridad. No penalizar la diferencia entre cuatro elementos del enunciado y cinco apoyos de clase ni exigir esos rótulos literalmente. Reconocer formulaciones equivalentes y distinguir el problema de una solución anticipada."
+    },
+    {
+      "id": "desagregacion",
+      "title": "Desagregación en partes y etapas",
+      "weight": 20,
+      "description": "Valorar una desagregación propia distinguible de la propuesta de Gemini, partes relevantes y etapas ordenadas y coherentes, más una resolución concreta de al menos una parte. Contrastar el registro de lo hecho antes de consultar a la IA, sin afirmar que la cronología o la autoría quedaron comprobadas por el documento. Reconocer logros parciales y estructuras equivalentes."
+    },
+    {
+      "id": "revision-critica",
+      "title": "Revisión crítica de la propuesta de IA y verificación",
+      "weight": 20,
+      "description": "Valorar el prompt de desagregación, la propuesta de Gemini, qué conservó o modificó el estudiante y por qué. Identificar razones vinculadas al contexto, supuestos, límites, factibilidad y evidencia. Incluir al menos un dato contrastado al resolver una parte, con indicación de dónde se verificó y qué resultado obtuvo. Una nueva respuesta de IA no constituye por sí sola verificación externa. No confundir una fuente declarada con una verificación externa realizada por el evaluador."
+    },
+    {
+      "id": "prompts",
+      "title": "Prompts acotados y vinculados al esquema",
+      "weight": 20,
+      "description": "Valorar los prompts utilizados para desagregar y resolver una parte: pedidos delimitados, contexto pertinente y aprovechamiento de las partes o etapas previamente armadas. Los prompts deben ser identificables en el informe o anexos, sin exigir conversaciones completas adicionales que el enunciado vigente no pide. No exigir técnicas avanzadas ni fórmulas rígidas."
+    },
+    {
+      "id": "reflexion",
+      "title": "Reflexión y criterio propio",
+      "weight": 20,
+      "description": "Valorar una reflexión de cinco a diez líneas o extensión equivalente que explique qué cambió al trabajar el problema, en qué ayudó Gemini y qué decisiones retuvo el estudiante. Buscar ejemplos concretos de juicio propio y límites reconocidos. No inferir plagio, falta de autoría ni uso indebido de IA por estilo o fluidez; el uso de Gemini forma parte de la consigna."
+    }
+  ],
+  "requiredChecks": [
+    "Identificar el problema real elegido y el planteo inicial en una oración.",
+    "Comparar el planteo inicial con la formulación del problema.",
+    "Reconocer contexto, objetivo, criterios y restricciones; valorar también formato sin penalizar la diferencia entre cuatro y cinco.",
+    "Localizar la desagregación propia previa según el registro presentado y distinguir partes de etapas.",
+    "Localizar el prompt de desagregación y qué propuso Gemini.",
+    "Identificar qué cambió, qué conservó y las razones del estudiante.",
+    "Identificar la resolución de al menos una parte concreta.",
+    "Localizar los prompts de resolución y su relación con el esquema.",
+    "Identificar al menos un dato verificado y dónde; distinguir fuente declarada de comprobación externa.",
+    "Localizar la reflexión sobre cambios, ayuda de la IA y decisiones propias.",
+    "Informar si la evidencia está ilegible, omitida o no disponible; no inferir ausencia por limitaciones de lectura.",
+    "Revisar los seis componentes de entrega y los cinco criterios sin sumar criterios nuevos ni duplicar descuentos."
+  ],
+  "allowedVerdicts": [
+    "Aprobado",
+    "Corregir y reenviar"
+  ],
+  "gradeEnabled": true,
+  "gradeMin": 0,
+  "gradeMax": 10,
+  "messageGuidance": "Redactá en español una devolución respetuosa y concreta dirigida directamente al estudiante. Incluí una valoración general, observaciones breves de los cinco criterios con evidencia del informe, fortalezas y próximos pasos. Si está aprobado, las mejoras son recomendaciones sin pedido de reenvío. Si debe corregir, indicá qué completar y cómo. No reproduzcas nombres ni datos personales; no incluyas instrucciones internas para el docente ni afirmes verificaciones externas que no realizaste.",
+  "additionalInstructions": "Aplicá el enunciado publicado del Trabajo Práctico 1 de este curso, no los TP de programación de otros cursos. La entrega es un informe sobre un problema real trabajado con Gemini. Evaluá exclusivamente sus cinco criterios con igual peso: 20% cada uno (hasta 2 puntos en escala 0-10). Reconocé avances parciales y soluciones equivalentes. Nota sugerida >= 6: Aprobado. Nota < 6: Corregir y reenviar. No apliques topes ocultos, requisitos eliminatorios ni descuentos duplicados. La falta observable de un componente se valora en el criterio correspondiente. No penalices la diferencia entre los cuatro elementos mencionados por el enunciado y los cinco apoyos de clase (contexto, objetivo, criterios, restricciones y formato). No exijas rotulación literal. El trabajo pide seis componentes: planteo inicial, formulación, desagregación propia, desagregación con IA y revisión, resolución de una parte con prompts y al menos un dato verificado indicando dónde, y reflexión. Usá esos componentes para ubicar evidencias, sin convertirlos en seis criterios nuevos. No incorpores las tres reescrituras, tres usos de IA ni otros requisitos de consignas alternativas visibles en materiales de clase si no forman parte del TP publicado. Dos o tres páginas y reflexión de cinco a diez líneas orientan la síntesis: no descontar automáticamente por pequeñas diferencias de extensión, por saltos de línea o por paginación que no pueda leerse. No penalizar vencimiento en la rúbrica; los materiales publicados muestran horarios diferentes y eso corresponde a la gestión docente. La preevaluación lee el informe y sus evidencias; no puede demostrar la cronología, la autoría ni la validez externa de una fuente sólo porque se menciona. Distinguí verificaciones documentadas por el estudiante, errores observables y limitaciones del análisis. Si imágenes de DOCX o archivos omitidos impiden ver un componente, marcar no_verificable y recomendar revisión docente sin atribuirlo al estudiante ni descontar puntos por esa limitación. No inventar prompts, resultados de Gemini, fuentes ni datos verificados. Evaluar el razonamiento visible; el tema elegido no requiere programación, repositorio GitHub ni aplicación funcional. La decisión y publicación finales son docentes."
+}

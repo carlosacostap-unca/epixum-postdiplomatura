@@ -3,6 +3,14 @@ import { buildAIPreevaluationFeedback } from './ai-preevaluation-report';
 import { reportFixture } from '@/test/ai-preevaluation-report-fixture';
 
 describe('informe completo para el estudiante', () => {
+  it('identifica documentos por huella y versión sin inventar un commit', () => {
+    const text = buildAIPreevaluationFeedback({ ...reportFixture, commitSha: '', sourceType: 'documents', sourceDigest: 'd'.repeat(64), submissionVersion: 3 });
+    expect(text).toContain('Huella SHA-256');
+    expect(text).toContain('Versión de la entrega: 3');
+    expect(text).toContain('No comprueba fuentes externas');
+    expect(text).not.toContain('Commit analizado:');
+    expect(text).not.toContain('Texto analizado:');
+  });
   it('incluye todos los criterios, observaciones, listas y evidencia sin resumirlos', () => {
     const text = buildAIPreevaluationFeedback(reportFixture);
     expect(text).toContain(reportFixture.result.proposedMessage);

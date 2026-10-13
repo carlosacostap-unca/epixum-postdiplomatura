@@ -1,4 +1,5 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
+import { DOCUMENT_ATTEMPT_FIELDS } from './document-preevaluation-schema.mjs';
 
 export const ASSIGNMENT_AI_CONFIG_RULES = {
   listRule: '@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id',
@@ -68,7 +69,8 @@ function attemptFields(collections) {
     { name: 'delivery', type: 'relation', required: true, collectionId: collections.deliveries.id, cascadeDelete: true, maxSelect: 1 },
     { name: 'requestedBy', type: 'relation', required: true, collectionId: collections.users.id, cascadeDelete: false, maxSelect: 1 },
     { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['processing', 'completed', 'failed'] },
-    { name: 'commitSha', type: 'text', required: true, min: 40, max: 40, pattern: '^[a-f0-9]{40}$' },
+    { name: 'commitSha', type: 'text', required: false, min: 0, max: 40, pattern: '^[a-f0-9]{40}$' },
+    ...DOCUMENT_ATTEMPT_FIELDS,
     { name: 'model', type: 'text', required: true, max: 80 },
     { name: 'configVersion', type: 'number', required: true, min: 1, onlyInt: true },
     { name: 'configSnapshot', type: 'json', required: true, maxSize: 128_000 },

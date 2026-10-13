@@ -36,6 +36,9 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 import { updateDeliveryEvaluation } from './actions';
 import { buildAIPreevaluationFeedback } from './ai-preevaluation-report';
 import { reportFixture } from '@/test/ai-preevaluation-report-fixture';
+import { prepareDocumentEvidence, submissionReferenceHash } from './document-preevaluation';
+
+vi.mock('./document-preevaluation', () => ({ prepareDocumentEvidence: vi.fn(), submissionReferenceHash: vi.fn(() => 'd'.repeat(64)) }));
 
 describe('evaluación versionada de entregas', () => {
   beforeEach(() => {
@@ -43,6 +46,10 @@ describe('evaluación versionada de entregas', () => {
     mocks.currentDelivery.submissionVersion = 2;
     mocks.currentDelivery.status = 'pending';
     mocks.attempt.commitSha = 'b'.repeat(40);
+    for (const field of ['sourceType', 'sourceDigest', 'submissionVersion', 'submissionReferenceHash']) delete (mocks.attempt as Record<string, unknown>)[field];
+    mocks.currentDelivery.repositoryUrl = JSON.stringify({ type: 'url', url: 'https://github.com/example/tp', provider: 'github', repositoryFullName: 'example/tp', commitSha: 'b'.repeat(40), commitCapturedAt: '2026-09-02T10:00:00.000Z', captureSource: 'student-update' });
+    vi.mocked(prepareDocumentEvidence).mockReset();
+    vi.mocked(submissionReferenceHash).mockReturnValue('d'.repeat(64));
     mocks.deliveryUpdate.mockReset().mockResolvedValue({});
     mocks.attemptUpdate.mockReset().mockResolvedValue({});
     mocks.serviceClient.mockReset().mockImplementation(async () => ({
@@ -71,6 +78,17 @@ describe('evaluación versionada de entregas', () => {
     expect(result).toEqual({ success: true });
     expect(mocks.deliveryUpdate).toHaveBeenCalledWith('delivery0000001', expect.objectContaining({ status: 'published', evaluatedVersion: 2, verdict: 'Aprobado' }));
     expect(mocks.attemptUpdate).toHaveBeenCalledWith('attempt-1', expect.objectContaining({ adoptedAs: 'published', adoptedBy: 'teacher-1' }));
+  });
+
+  it('adopta un informe con huella vigente y rechaza modificaciones externas', async () => {
+    mocks.currentDelivery.repositoryUrl = JSON.stringify([{ name: 'informe.pdf', url: 'https://storage.example/informe.pdf' }]);
+    Object.assign(mocks.attempt, { sourceType: 'documents', commitSha: '', sourceDigest: 'e'.repeat(64), submissionVersion: 2, submissionReferenceHash: 'd'.repeat(64) });
+    vi.mocked(prepareDocumentEvidence).mockResolvedValue({ sourceDigest: 'e'.repeat(64) } as Awaited<ReturnType<typeof prepareDocumentEvidence>>);
+    expect(await updateDeliveryEvaluation('delivery0000001', 8, 'Bien.', 'Aprobado', 'draft', 2, 'attempt-1')).toEqual({ success: true });
+    mocks.deliveryUpdate.mockClear();
+    vi.mocked(prepareDocumentEvidence).mockResolvedValue({ sourceDigest: 'f'.repeat(64) } as Awaited<ReturnType<typeof prepareDocumentEvidence>>);
+    expect(await updateDeliveryEvaluation('delivery0000001', 8, 'Bien.', 'Aprobado', 'published', 2, 'attempt-1')).toMatchObject({ success: false, error: expect.stringContaining('versión anterior') });
+    expect(mocks.deliveryUpdate).not.toHaveBeenCalled();
   });
 
   it('bloquea a un docente ajeno antes de usar el cliente de servicio', async () => {

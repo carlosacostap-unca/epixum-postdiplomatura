@@ -3,6 +3,9 @@ import type { AICriterionResult, AIEvaluationCriterion, AIPreevaluationResult, R
 export interface AIPreevaluationReportInput {
   result: AIPreevaluationResult;
   commitSha: string;
+  sourceType?: 'github' | 'documents';
+  sourceDigest?: string;
+  submissionVersion?: number;
   configVersion: number;
   rubric?: AIEvaluationCriterion[];
   coverage?: RepositoryCoverage;
@@ -18,16 +21,18 @@ const outcomes: Record<AICriterionResult['outcome'], string> = {
 /** Publica justificaciones explícitas, no el intento privado ni razonamiento interno. */
 export function buildAIPreevaluationFeedback(input: AIPreevaluationReportInput): string {
   const { result, coverage } = input;
+  const documents = input.sourceType === 'documents';
   const rubric = new Map(input.rubric?.map((criterion) => [criterion.id, criterion]));
   const sections = [
     result.proposedMessage.trim(),
     'INFORME DETALLADO DE LA EVALUACIÓN',
     [
       'Alcance y método',
-      `Commit analizado: ${input.commitSha}`,
+      documents ? `Huella SHA-256 de los informes analizados: ${input.sourceDigest}` : `Commit analizado: ${input.commitSha}`,
+      ...(documents ? [`Versión de la entrega: ${input.submissionVersion}`, 'Los documentos se leyeron al solicitar la preevaluación. La huella identifica su contenido en ese momento.'] : []),
       `Versión de la rúbrica: ${input.configVersion}`,
       `Sugerencia inicial de la preevaluación: ${result.verdict}. Nota sugerida: ${result.suggestedGrade === null ? 'sin nota numérica' : result.suggestedGrade}.`,
-      'La preevaluación asistida por IA analiza de forma estática el código y la documentación seleccionados del commit entregado y los contrasta con el enunciado y la rúbrica docente. No ejecuta, compila ni prueba la aplicación.',
+      documents ? 'La preevaluación asistida por IA lee los informes adjuntos y los contrasta con el enunciado y la rúbrica docente. No comprueba fuentes externas ni demuestra la autoría o el orden temporal declarado. Los PDF incluyen texto e imágenes; en DOCX se extrae texto y las imágenes y la paginación requieren revisión docente.' : 'La preevaluación asistida por IA analiza de forma estática el código y la documentación seleccionados del commit entregado y los contrasta con el enunciado y la rúbrica docente. No ejecuta, compila ni prueba la aplicación.',
       'Las observaciones que siguen son las justificaciones registradas por criterio. La nota y el veredicto oficiales son los confirmados por el docente; no se inventan puntajes por criterio ni pasos internos del modelo.',
     ].join('\n'),
     'RESULTADOS POR CRITERIO',
@@ -62,12 +67,12 @@ export function buildAIPreevaluationFeedback(input: AIPreevaluationReportInput):
   if (coverage) {
     sections.push([
       'COBERTURA DEL ANÁLISIS',
-      `Archivos incluidos: ${coverage.includedFiles.length}. Archivos omitidos: ${coverage.omittedFiles.length}. Texto analizado: ${coverage.includedBytes} bytes.`,
+      `Archivos incluidos: ${coverage.includedFiles.length}. Archivos omitidos: ${coverage.omittedFiles.length}. ${documents ? 'Documentos enviados' : 'Texto analizado'}: ${coverage.includedBytes} bytes.`,
       'Archivos incluidos:',
       ...(coverage.includedFiles.length ? coverage.includedFiles.map((path) => `- ${path}`) : ['No se registraron archivos incluidos.']),
       'Archivos omitidos y motivos:',
       ...(coverage.omittedFiles.length ? coverage.omittedFiles.map((file) => `- ${file.path}: ${file.reason}`) : ['No se registraron omisiones.']),
-      'Un archivo omitido del análisis no equivale a un archivo faltante en el repositorio. Los aspectos que dependan de evidencia no disponible requieren revisión docente; no se debe atribuir esa limitación al estudiante.',
+      `Un archivo omitido del análisis no equivale a un archivo faltante en ${documents ? 'la entrega' : 'el repositorio'}. Los aspectos que dependan de evidencia no disponible requieren revisión docente; no se debe atribuir esa limitación al estudiante.`,
     ].join('\n'));
   } else {
     sections.push('COBERTURA DEL ANÁLISIS\nNo está disponible el detalle de archivos incluidos y omitidos para esta preevaluación. No se infiere que falten archivos del trabajo.');

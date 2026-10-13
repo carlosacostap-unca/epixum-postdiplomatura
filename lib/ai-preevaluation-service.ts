@@ -10,6 +10,10 @@ import { assignmentAIConfigInputSchema, createAIPreevaluationResultSchema, valid
 import { AI_PREEVALUATION_INSTRUCTIONS, buildAIPreevaluationInput } from './ai-preevaluation-prompt';
 import { downloadGithubZipball, GithubRepositoryError, prepareRepositoryEvidence, resolvePublicGithubRepository } from './github-repository';
 import { parseGithubRepositoryUrl } from './github-url';
+import { isDocumentSubmission } from './document-submission';
+import { DocumentEvidenceError, prepareDocumentEvidence, submissionReferenceHash } from './document-preevaluation';
+import { normalizeDeliveryWorkflow } from './delivery-workflow';
+import type { ResponseInputFile } from 'openai/resources/responses/responses';
 import {
   isGithubDeliverySubmission,
   parseDeliverySubmission,
@@ -32,6 +36,9 @@ export interface AIPreevaluationDTO {
   id: string;
   status: 'processing' | 'completed' | 'failed';
   commitSha: string;
+  sourceType?: 'github' | 'documents';
+  sourceDigest?: string;
+  submissionVersion?: number;
   captureSource: 'student-submission' | 'student-update' | 'legacy-first-evaluation';
   model: string;
   configVersion: number;
@@ -56,6 +63,7 @@ interface AuthorizedContext {
 function dto(record: Partial<AIPreevaluationAttempt>, captureSource: AIPreevaluationDTO['captureSource'] = 'student-submission'): AIPreevaluationDTO {
   return {
     id: String(record.id || ''), status: record.status || 'failed', commitSha: String(record.commitSha || ''), captureSource,
+    sourceType: record.sourceType || 'github', sourceDigest: record.sourceDigest || undefined, submissionVersion: record.submissionVersion || undefined,
     model: String(record.model || MODEL), configVersion: Number(record.configVersion || 1), coverage: record.coverage,
     result: record.result, errorCategory: record.errorCategory, errorMessage: record.errorMessage,
     rubric: record.configSnapshot?.criteria?.map(({ id, title, description, weight }) => ({ id, title, description, weight })),
@@ -68,7 +76,7 @@ async function authorizeDelivery(deliveryId: string): Promise<AuthorizedContext>
   const pb = await createServerClient();
   const user = pb.authStore.model;
   if (!user) throw new Error('No autorizado');
-  const delivery = await pb.collection('deliveries').getOne<Delivery>(deliveryId, { fields: 'id,assignment,repositoryUrl,created,updated' });
+  const delivery = await pb.collection('deliveries').getOne<Delivery>(deliveryId, { fields: 'id,assignment,repositoryUrl,submissionVersion,created,updated' });
   const assignment = await pb.collection('assignments').getOne<Assignment>(delivery.assignment, { fields: 'id,title,description,course' });
   if (!assignment.course) throw new Error('No autorizado');
   const course = await pb.collection('courses').getOne<Course>(assignment.course, { fields: 'id,teachers,aiPreevaluationEnabled' });
@@ -114,10 +122,10 @@ async function capturedRepository(servicePb: Awaited<ReturnType<typeof createSer
     commitSha: repository.commitSha, commitCapturedAt: capturedAt, captureSource: 'legacy-first-evaluation' as const };
 }
 
-async function existingProcessing(servicePb: Awaited<ReturnType<typeof createServiceClient>>, deliveryId: string, commitSha: string, configVersion: number) {
+async function existingProcessing(servicePb: Awaited<ReturnType<typeof createServiceClient>>, deliveryId: string, commitSha: string, configVersion: number, sourceDigest?: string, submissionVersion?: number) {
   try {
     const record = await servicePb.collection('ai_preevaluations').getFirstListItem<AIPreevaluationAttempt>(
-      servicePb.filter('delivery = {:deliveryId} && commitSha = {:commitSha} && configVersion = {:configVersion} && status = "processing"', { deliveryId, commitSha, configVersion }), { sort: '-created' },
+      servicePb.filter(`delivery = {:deliveryId} && ${sourceDigest ? 'sourceDigest = {:sourceDigest} && submissionVersion = {:submissionVersion}' : 'commitSha = {:commitSha}'} && configVersion = {:configVersion} && status = "processing"`, { deliveryId, commitSha, configVersion, sourceDigest, submissionVersion }), { sort: '-created' },
     );
     const updated = Date.parse(record.updated || record.created);
     if (Number.isFinite(updated) && Date.now() - updated < STALE_PROCESSING_MS) return record;
@@ -127,6 +135,7 @@ async function existingProcessing(servicePb: Awaited<ReturnType<typeof createSer
 }
 
 function sanitizedFailure(error: unknown): { category: AIPreevaluationErrorCategory; message: string } {
+  if (error instanceof DocumentEvidenceError) return { category: 'insufficient_evidence', message: error.message };
   if (error instanceof GithubRepositoryError) return { category: error.category, message: error.message };
   if (error instanceof ZodError || (error instanceof Error && /proveedor|respuesta|veredicto|criterios|nota sugerida/i.test(error.message))) {
     return { category: 'openai_invalid_response', message: 'OpenAI no devolvió una preevaluación utilizable. Podés volver a intentar.' };
@@ -139,13 +148,14 @@ function sanitizedFailure(error: unknown): { category: AIPreevaluationErrorCateg
   return { category: 'unknown', message: 'No se pudo completar la preevaluación. Podés volver a intentar.' };
 }
 
-async function callOpenAI(params: { assignment: Assignment; config: ReturnType<typeof assignmentAIConfigInputSchema.parse>; commitSha: string; evidence: string }) {
+async function callOpenAI(params: { assignment: Assignment; config: ReturnType<typeof assignmentAIConfigInputSchema.parse>; commitSha: string; sourceDigest?: string; evidence: string; files?: ResponseInputFile[] }) {
   if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY_MISSING');
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 60_000, maxRetries: 1 });
+  const inputText = buildAIPreevaluationInput({ assignmentTitle: params.assignment.title, assignmentDescription: params.assignment.description || '', config: params.config, commitSha: params.commitSha, sourceDigest: params.sourceDigest, evidence: params.evidence });
   const response = await client.responses.parse({
     model: MODEL, reasoning: { effort: 'medium' }, store: false, tools: [], max_output_tokens: 8_000,
     instructions: AI_PREEVALUATION_INSTRUCTIONS,
-    input: buildAIPreevaluationInput({ assignmentTitle: params.assignment.title, assignmentDescription: params.assignment.description || '', config: params.config, commitSha: params.commitSha, evidence: params.evidence }),
+    input: params.files?.length ? [{ role: 'user', content: [{ type: 'input_text', text: inputText }, ...params.files] }] : inputText,
     text: { format: zodTextFormat(createAIPreevaluationResultSchema(params.config.allowedVerdicts, { enabled: params.config.gradeEnabled, min: params.config.gradeMin, max: params.config.gradeMax }), 'academic_preevaluation') },
   });
   if (!response.output_parsed) throw new Error('Respuesta del proveedor ausente o rechazada.');
@@ -161,25 +171,35 @@ export async function requestAIPreevaluationForDelivery(deliveryId: string): Pro
     servicePb = await createServiceClient();
     const config = await activeConfig(servicePb, context);
     if (!process.env.OPENAI_API_KEY) return { success: false, error: 'OpenAI no está configurado en el servidor.' };
-    const repository = await capturedRepository(servicePb, context);
-    captureSource = repository.captureSource;
-    const duplicate = await existingProcessing(servicePb, deliveryId, repository.commitSha, config.version);
+    const submission = parseDeliverySubmission(context.delivery.repositoryUrl);
+    const documents = isDocumentSubmission(submission);
+    const documentEvidence = documents ? await prepareDocumentEvidence(context.delivery) : null;
+    const repository = documents ? null : await capturedRepository(servicePb, context);
+    const commitSha = repository?.commitSha || '';
+    const sourceDigest = documentEvidence?.sourceDigest;
+    captureSource = repository?.captureSource || 'student-submission';
+    const submissionVersion = normalizeDeliveryWorkflow(context.delivery).submissionVersion;
+    const referenceHash = submissionReferenceHash(context.delivery);
+    const duplicate = await existingProcessing(servicePb, deliveryId, commitSha, config.version, sourceDigest, submissionVersion);
     if (duplicate) return { success: true, attempt: dto(duplicate, captureSource) };
     let attempt: AIPreevaluationAttempt;
     try {
       attempt = await servicePb.collection('ai_preevaluations').create<AIPreevaluationAttempt>({
         course: context.course.id, assignment: context.assignment.id, delivery: context.delivery.id, requestedBy: context.user.id,
-        status: 'processing', commitSha: repository.commitSha, model: MODEL, configVersion: config.version, configSnapshot: config.parsed,
+        status: 'processing', commitSha, model: MODEL, configVersion: config.version, configSnapshot: config.parsed,
+        ...(documents ? { sourceType: 'documents', sourceDigest, submissionVersion, submissionReferenceHash: referenceHash } : {}),
       });
     } catch (error) {
-      const concurrent = await existingProcessing(servicePb, deliveryId, repository.commitSha, config.version).catch(() => null);
+      const concurrent = await existingProcessing(servicePb, deliveryId, commitSha, config.version, sourceDigest, submissionVersion).catch(() => null);
       if (concurrent) return { success: true, attempt: dto(concurrent, captureSource) };
       throw error;
     }
     attemptId = attempt.id;
-    const zip = await downloadGithubZipball(repository.repositoryFullName, repository.commitSha);
-    const evidence = await prepareRepositoryEvidence(zip, repository.commitSha);
-    const generated = await callOpenAI({ assignment: context.assignment, config: config.parsed, commitSha: repository.commitSha, evidence: evidence.text });
+    const evidence = documentEvidence || await prepareRepositoryEvidence(await downloadGithubZipball(repository!.repositoryFullName, commitSha), commitSha);
+    const generated = await callOpenAI({ assignment: context.assignment, config: config.parsed, commitSha, sourceDigest, evidence: evidence.text, files: documentEvidence?.files });
+    const latestDelivery = documents ? await servicePb.collection('deliveries').getOne<Delivery>(deliveryId) : null;
+    if (latestDelivery && (submissionReferenceHash(latestDelivery) !== referenceHash || normalizeDeliveryWorkflow(latestDelivery).submissionVersion !== submissionVersion)) throw new DocumentEvidenceError('La entrega cambió durante el análisis. Solicitá una nueva preevaluación.');
+    if (documentEvidence?.limitations.length) generated.result.warnings = [...new Set([...generated.result.warnings, ...documentEvidence.limitations])].slice(0, 30);
     const usage = generated.response.usage ? { inputTokens: generated.response.usage.input_tokens, outputTokens: generated.response.usage.output_tokens, totalTokens: generated.response.usage.total_tokens } : undefined;
     const completed = await servicePb.collection('ai_preevaluations').update<AIPreevaluationAttempt>(attemptId, {
       status: 'completed', coverage: evidence.coverage, result: generated.result, usage,
@@ -187,7 +207,7 @@ export async function requestAIPreevaluationForDelivery(deliveryId: string): Pro
     });
     return { success: true, attempt: dto(completed, captureSource) };
   } catch (error) {
-    if (error instanceof Error && (error.message === 'No autorizado' || error.message.startsWith('La preevaluación') || error.message.startsWith('Este trabajo') || error.message.startsWith('La entrega') || error.message.startsWith('La captura'))) {
+    if (!attemptId && error instanceof Error && (error.message === 'No autorizado' || error.message.startsWith('La preevaluación') || error.message.startsWith('Este trabajo') || error.message.startsWith('La entrega') || error.message.startsWith('La captura'))) {
       return { success: false, error: error.message };
     }
     const failure = error instanceof Error && error.message === 'OPENAI_API_KEY_MISSING' ? { category: 'configuration' as const, message: 'OpenAI no está configurado en el servidor.' } : sanitizedFailure(error);
@@ -206,9 +226,12 @@ export async function getLatestAIPreevaluationForDelivery(deliveryId: string): P
   const servicePb = await createServiceClient();
   try {
     const submission = parseDeliverySubmission(context.delivery.repositoryUrl);
-    if (!isGithubDeliverySubmission(submission)) return null;
+    const documents = isDocumentSubmission(submission);
+    if (!documents && !isGithubDeliverySubmission(submission)) return null;
     const record = await servicePb.collection('ai_preevaluations').getFirstListItem<AIPreevaluationAttempt>(
-      servicePb.filter('delivery = {:deliveryId} && commitSha = {:commitSha}', { deliveryId, commitSha: submission.commitSha }),
+      documents
+        ? servicePb.filter('delivery = {:deliveryId} && sourceType = "documents" && submissionVersion = {:version} && submissionReferenceHash = {:reference}', { deliveryId, version: normalizeDeliveryWorkflow(context.delivery).submissionVersion, reference: submissionReferenceHash(context.delivery) })
+        : servicePb.filter('delivery = {:deliveryId} && commitSha = {:commitSha}', { deliveryId, commitSha: isGithubDeliverySubmission(submission) ? submission.commitSha : '' }),
       { sort: '-created' },
     );
     const source = isGithubDeliverySubmission(submission) ? submission.captureSource : 'student-submission';

@@ -322,6 +322,10 @@ export interface AIPreevaluationAttempt extends BaseModel {
   requestedBy: string;
   status: AIPreevaluationStatus;
   commitSha: string;
+  sourceType?: 'github' | 'documents';
+  sourceDigest?: string;
+  submissionVersion?: number;
+  submissionReferenceHash?: string;
   model: string;
   configVersion: number;
   configSnapshot: Omit<AssignmentAIConfig, keyof BaseModel | 'assignment'>;

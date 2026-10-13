@@ -15,6 +15,7 @@ import { getAIPreevaluationProviderStatus, getLatestAIPreevaluation } from "@/ap
 import { parseGithubRepositoryUrl } from "@/lib/github-url";
 import { isAdmin, isAssignedTeacher } from "@/lib/course-roles";
 import { normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
+import { isDocumentSubmission } from '@/lib/document-submission';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,8 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
     additionalInstructions: aiConfig.additionalInstructions,
   }) : null;
   const githubCandidate = submission.type === 'url' ? parseGithubRepositoryUrl(submission.url) : null;
-  const aiEligible = Boolean(course.aiPreevaluationEnabled && configValidation?.success && configValidation.data.active && githubCandidate);
+  const documents = isDocumentSubmission(submission);
+  const aiEligible = Boolean(course.aiPreevaluationEnabled && configValidation?.success && configValidation.data.active && (githubCandidate || documents));
   const initialAttempt = aiEligible ? await getLatestAIPreevaluation(delivery.id).catch(() => null) : null;
 
   const workflow = normalizeDeliveryWorkflow(delivery);
@@ -85,6 +87,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
             deliveryId={delivery.id}
             submissionVersion={normalizeDeliveryWorkflow(delivery).submissionVersion}
             aiEligible={aiEligible}
+            sourceType={documents ? 'documents' : 'github'}
             repositoryUrl={submission.type === 'url' ? submission.url : undefined}
             repositoryFullName={isGithubDeliverySubmission(submission) ? submission.repositoryFullName : githubCandidate?.fullName}
             commitSha={isGithubDeliverySubmission(submission) ? submission.commitSha : undefined}

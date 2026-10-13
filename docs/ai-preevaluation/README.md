@@ -2,7 +2,9 @@
 
 ## Alcance
 
-El piloto analiza únicamente URLs raíz HTTPS de repositorios públicos de GitHub. El servidor fija un commit, descarga el ZIP de ese SHA, selecciona texto y código y lo envía a OpenAI sin ejecutar, compilar, instalar dependencias ni correr pruebas del repositorio. La salida es siempre una sugerencia privada para el docente.
+El piloto analiza URLs raíz HTTPS de repositorios públicos de GitHub e informes documentales compatibles. Para GitHub, el servidor fija un commit, descarga el ZIP de ese SHA, selecciona texto y código y lo envía a OpenAI sin ejecutar, compilar, instalar dependencias ni correr pruebas del repositorio. Para informes, lee PDF, DOCX, TXT o Markdown del almacenamiento del aula y exportaciones de texto de Google Docs públicos, y conserva la huella SHA-256 y la versión de entrega. La salida es siempre una sugerencia privada para el docente.
+
+El soporte documental, sus límites y la rúbrica del TP1 están documentados en [Pensamiento Crítico - TP1](./pensamiento-critico-tp1.md). En instancias existentes, aplicar `npm run schema:ai-documents` antes de desplegar el soporte de informes. No se publican devoluciones automáticamente.
 
 ## Variables privadas
 
@@ -129,3 +131,18 @@ Registrar aquí, en cada despliegue candidato, fecha, commit de Epixum, resultad
 - Validación: esquema real `assignmentAIConfigInputSchema`, pesos sumados a 100%, lectura posterior de configuración y enunciado iguales al contenido preparado. Las tres entregas conservaron exactamente sus registros. No se invocó OpenAI, no se preevaluaron alumnos ni se enviaron devoluciones.
 - Compatibilidad local: 22 pruebas aprobadas en los cuatro archivos de esquema, prompt, informe e ingestión GitHub; el proceso de prueba no utilizó repositorios de alumnos ni invocó OpenAI.
 - Esta operación sólo configura la Unidad 6 y documenta lo guardado; no despliega código ni hace push a GitHub. La aplicación utiliza la configuración almacenada en PocketBase sin requerir un nuevo despliegue para estos datos; EJS e informe completo dependen del despliegue del código que los incorpora.
+
+### Configuración de la Unidad 7 - 6 de octubre de 2026
+
+- Curso: `Desarrollo Back End con Node.js (Cohorte 6)` (`szd5mys6jjhfzzn`).
+- Práctico: `Trabajo Práctico Unidad 7` (`n6l8x8rqwkrd3ig`), **Persistencia inicial de reservas de salas**.
+- Configuración activa versión 1: `hkpsz56wb69vy6v`. Copia reproducible en [unidad-07-config.json](./unidad-07-config.json).
+- Cinco criterios y pesos del PDF: preparación/configuración/conexión 20%, modelo/reglas 25%, creación/consulta 20%, evidencia/pruebas negativas 20%, organización/calidad/README/continuidad HTTP 15%. Suman 100%, equivalentes a 2, 2.5, 2, 2 y 1.5 puntos. Incluye 28 controles.
+- Escala 0-10: desde 6 `Aprobado`; debajo de 6 `Corregir y reenviar`. No permite `Desaprobado`, topes ocultos ni descuentos duplicados. Acepta logros parciales, responsabilidades equivalentes y alternativas autorizadas de DNS documentadas.
+- Se evalúa el laboratorio Atlas/Mongoose de terminal; el sitio Express sigue en memoria. No se exige migrar rutas/controladores a MongoDB ni mostrar las reservas persistentes en EJS. Se revisan conexión/configuración privada, esquema del dominio, promesas realmente esperadas, cierres/errores, evidencia entre procesos, matriz y continuidad de vistas/layout/parciales/formularios/CSS/HTTP.
+- La IA no ejecuta, instala, renderiza EJS ni conecta al Atlas del alumno. Distingue implementación estática, resultados documentados por el alumno y límites de cobertura. La falta real de matriz/ensayo se valora sólo en su criterio; imágenes o archivos omitidos por el selector no se consideran ausentes ni generan descuento por esa limitación. No se publican URI privadas ni credenciales.
+- Fuente: PDF adjunto `unidad-07-trabajo-practico-07.pdf`, recurso `l5t6prj7mf8q0x0`; SHA-256 `bae53c3939ffe88b1063827534b7f35ee9cab5e51e933d5ef0ee0a2f271342ce`. Se leyeron y contrastaron sus seis páginas, con las tablas del modelo, matriz y pesos. Transcripción completa de las 13 secciones en [unidad-07-enunciado.md](./unidad-07-enunciado.md).
+- El campo `assignments.description` estaba vacío. Se incorporó el enunciado completo como HTML escapado, conservando el PDF y sin modificar título, semana, publicación o vencimiento. El modelo recibe esa descripción; no lee automáticamente el PDF adjunto.
+- Se exige mensaje dirigido al estudiante y un informe autosuficiente con los cinco criterios, evidencia observable, fortalezas, recomendaciones/correcciones y advertencias. Aprobado con recomendaciones no pide reenvío. Se mantiene la revisión y publicación docentes por el flujo existente de informe completo.
+- Validación: esquema real `assignmentAIConfigInputSchema`, pesos, 13 secciones y SHA del PDF remoto; fixtures sintéticos de nota 6 y 5.9 e informe completo con los cinco criterios y cobertura. Lectura posterior independiente confirmó configuración/enunciado exactamente iguales a lo preparado. Las 22 pruebas de esquema, prompt, informe e ingestión GitHub aprobaron; el primer intento de pruebas fue impedido por permisos de caché temporal del sandbox y el reintento autorizado completó correctamente.
+- Había cero entregas del TP7; no se modificaron entregas, no se invocó OpenAI ni se preevaluó o publicó devolución de alumnos. La operación configura datos de PocketBase sin requerir despliegue. No se hizo commit ni push a GitHub.

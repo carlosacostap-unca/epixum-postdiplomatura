@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   resolve: vi.fn(),
   download: vi.fn(),
   prepare: vi.fn(),
+  prepareDocuments: vi.fn(),
   openaiParse: vi.fn(),
   attemptCreate: vi.fn(),
   attemptUpdate: vi.fn(),
@@ -28,6 +29,11 @@ vi.mock('./pocketbase-server', () => ({
   })),
 }));
 vi.mock('./pocketbase-service', () => ({ createServiceClient: mocks.serviceClient }));
+vi.mock('./document-preevaluation', () => ({
+  DocumentEvidenceError: class DocumentEvidenceError extends Error {},
+  prepareDocumentEvidence: mocks.prepareDocuments,
+  submissionReferenceHash: () => 'd'.repeat(64),
+}));
 vi.mock('./github-repository', () => ({
   GithubRepositoryError: class GithubRepositoryError extends Error {},
   resolvePublicGithubRepository: mocks.resolve,
@@ -54,12 +60,14 @@ describe('autorización previa a efectos externos', () => {
     mocks.resolve.mockReset();
     mocks.download.mockReset();
     mocks.prepare.mockReset();
+    mocks.prepareDocuments.mockReset();
     mocks.openaiParse.mockReset();
     mocks.attemptCreate.mockReset();
     mocks.attemptUpdate.mockReset();
     mocks.serviceClient.mockReset().mockImplementation(async () => ({
       filter: (value: string) => value,
       collection: (name: string) => ({
+        getOne: vi.fn(async () => ({ id: 'delivery0000001', repositoryUrl: mocks.repositoryUrl, submissionVersion: 1 })),
         getFirstListItem: vi.fn(async () => {
           if (name === 'assignment_ai_configs' && mocks.config) return mocks.config;
           if (name === 'ai_preevaluations' && mocks.processing) return mocks.processing;
@@ -116,6 +124,23 @@ describe('autorización previa a efectos externos', () => {
     delete process.env.OPENAI_API_KEY;
   });
 
+  it('preevalúa informes sin GitHub y conserva huella, versión y límites de lectura', async () => {
+    process.env.OPENAI_API_KEY = 'test-key';
+    mocks.repositoryUrl = JSON.stringify([{ name: 'informe.docx', url: 'https://storage.example.com/informe.docx' }]);
+    mocks.config = { active: true, version: 1, criteria: [{ id: 'c1', title: 'Reflexión', description: 'Juicio propio', weight: 100 }], requiredChecks: [], allowedVerdicts: ['Aprobado'], gradeEnabled: false, gradeMin: null, gradeMax: null, messageGuidance: '', additionalInstructions: '' };
+    mocks.prepareDocuments.mockResolvedValue({ text: 'Documento NO CONFIABLE', files: [{ type: 'input_file', filename: 'informe-1.docx', file_data: 'data:application/octet-stream;base64,UEs=' }], sourceDigest: 'e'.repeat(64), limitations: ['Imágenes requieren revisión docente'], coverage: { commitSha: '', includedFiles: ['informe-1.docx'], omittedFiles: [], includedBytes: 2, expandedBytes: 2, totalEntries: 1, partial: true } });
+    mocks.attemptCreate.mockResolvedValue({ id: 'attempt-doc', status: 'processing' });
+    mocks.attemptUpdate.mockImplementation(async (_id, data) => ({ id: 'attempt-doc', sourceType: 'documents', sourceDigest: 'e'.repeat(64), submissionVersion: 1, ...data }));
+    mocks.openaiParse.mockResolvedValue({ id: 'resp-doc', output_parsed: { verdict: 'Aprobado', suggestedGrade: null, criteria: [{ criterionId: 'c1', criterion: 'Reflexión', outcome: 'cumple', observation: 'Correcto' }], strengths: [], corrections: [], warnings: [], proposedMessage: 'Buen trabajo.' } });
+    const result = await requestAIPreevaluationForDelivery('delivery0000001');
+    expect(result).toMatchObject({ success: true, attempt: { sourceType: 'documents', sourceDigest: 'e'.repeat(64), result: { warnings: ['Imágenes requieren revisión docente'] } } });
+    expect(mocks.resolve).not.toHaveBeenCalled();
+    expect(mocks.download).not.toHaveBeenCalled();
+    expect(mocks.attemptCreate).toHaveBeenCalledWith(expect.objectContaining({ commitSha: '', sourceType: 'documents', sourceDigest: 'e'.repeat(64), submissionVersion: 1, submissionReferenceHash: 'd'.repeat(64) }));
+    expect(mocks.openaiParse.mock.calls[0][0].input[0].content).toContainEqual(expect.objectContaining({ type: 'input_file', filename: 'informe-1.docx' }));
+    delete process.env.OPENAI_API_KEY;
+  });
+
   it.each([
     { user: null, label: 'sin sesión' },
     { user: { id: 'student-1', role: 'estudiante' }, label: 'estudiante' },
@@ -126,6 +151,10 @@ describe('autorización previa a efectos externos', () => {
     expect(result).toMatchObject({ success: false, error: 'No autorizado' });
     expect(mocks.resolve).not.toHaveBeenCalled();
     expect(mocks.download).not.toHaveBeenCalled();
+    mocks.repositoryUrl = JSON.stringify([{ name: 'informe.pdf', url: 'https://storage.example/informe.pdf' }]);
+    expect(await requestAIPreevaluationForDelivery('delivery0000001')).toMatchObject({ success: false, error: 'No autorizado' });
+    expect(mocks.prepareDocuments).not.toHaveBeenCalled();
+    expect(mocks.openaiParse).not.toHaveBeenCalled();
   });
 
   it('rechaza curso deshabilitado y configuración ausente antes de GitHub/OpenAI', async () => {

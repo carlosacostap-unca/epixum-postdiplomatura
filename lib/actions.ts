@@ -24,6 +24,8 @@ import { serializeDeliveryUrlForAssignment } from "./delivery-github";
 import { GithubRepositoryError } from "./github-repository";
 import { createServiceClient } from "./pocketbase-service";
 import { initialDeliveryWorkflow, normalizeDeliveryWorkflow, prepareDeliveryRevision } from "./delivery-workflow";
+import { prepareDocumentEvidence, submissionReferenceHash } from './document-preevaluation';
+import type { AIPreevaluationAttempt } from '@/types';
 
 type ServerPocketBase = Awaited<ReturnType<typeof createServerClient>>;
 
@@ -1185,13 +1187,24 @@ export async function updateDeliveryEvaluation(
     if (status === 'draft' && workflow.status === 'published') {
       return { success: false, error: 'Una evaluación publicada no puede volver a borrador. Editala y publicala nuevamente.' };
     }
-    let attempt: { id: string; delivery: string; status: string; commitSha: string } | null = null;
+    let attempt: Pick<AIPreevaluationAttempt, 'id' | 'delivery' | 'status' | 'commitSha'> | null = null;
     if (attemptId) {
-      const selectedAttempt = await servicePb.collection('ai_preevaluations').getOne<{ id: string; delivery: string; status: string; commitSha: string }>(attemptId, { fields: 'id,delivery,status,commitSha' });
+      const selectedAttempt = await servicePb.collection('ai_preevaluations').getOne<AIPreevaluationAttempt>(attemptId, { fields: 'id,delivery,status,commitSha,sourceType,sourceDigest,submissionVersion,submissionReferenceHash' });
       if (selectedAttempt.delivery !== deliveryId || selectedAttempt.status !== 'completed') return { success: false, error: 'La sugerencia de IA no corresponde a esta entrega' };
       const submission = parseDeliverySubmission(currentDelivery.repositoryUrl);
-      if (!isGithubDeliverySubmission(submission) || submission.commitSha !== selectedAttempt.commitSha) {
+      const matches = selectedAttempt.sourceType === 'documents'
+        ? selectedAttempt.submissionVersion === workflow.submissionVersion
+          && selectedAttempt.submissionReferenceHash === submissionReferenceHash(currentDelivery)
+          && selectedAttempt.sourceDigest === (await prepareDocumentEvidence(currentDelivery)).sourceDigest
+        : isGithubDeliverySubmission(submission) && submission.commitSha === selectedAttempt.commitSha;
+      if (!matches) {
         return { success: false, error: 'La sugerencia de IA corresponde a una versión anterior. Solicitá una nueva preevaluación.' };
+      }
+      if (selectedAttempt.sourceType === 'documents') {
+        const latest = await servicePb.collection('deliveries').getOne<Delivery>(deliveryId);
+        if (normalizeDeliveryWorkflow(latest).submissionVersion !== expectedVersion || submissionReferenceHash(latest) !== selectedAttempt.submissionReferenceHash) {
+          return { success: false, error: 'La entrega cambió mientras verificabas los documentos. Revisá la versión vigente.' };
+        }
       }
       attempt = selectedAttempt;
     }

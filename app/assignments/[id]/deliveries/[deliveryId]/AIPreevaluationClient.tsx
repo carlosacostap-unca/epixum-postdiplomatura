@@ -14,6 +14,7 @@ interface Props {
   deliveryId: string;
   submissionVersion: number;
   aiEligible: boolean;
+  sourceType?: 'github' | 'documents';
   repositoryUrl?: string;
   repositoryFullName?: string;
   commitSha?: string;
@@ -91,25 +92,27 @@ export default function AIPreevaluationClient(props: Props) {
 
   const effectiveCommit = attempt?.commitSha || props.commitSha;
   const effectiveSource = attempt?.captureSource || props.captureSource;
+  const documents = (attempt?.sourceType || props.sourceType) === 'documents';
 
   return <div className="mt-8 space-y-8 border-t border-[var(--color-outline-variant)] pt-8">
     {props.aiEligible && <Card>
       <CardContent className="space-y-6">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-          <div><h2 className="font-headline text-2xl font-bold">Sugerencia de preevaluación con IA</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Analiza el commit capturado sin ejecutar el código. El docente conserva la decisión final.</p></div>
+          <div><h2 className="font-headline text-2xl font-bold">Sugerencia de preevaluación con IA</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">{documents ? 'Lee los informes entregados y aplica la rúbrica. El docente conserva la decisión final.' : 'Analiza el commit capturado sin ejecutar el código. El docente conserva la decisión final.'}</p></div>
           <Badge tone={attempt?.status === 'completed' ? 'success' : attempt?.status === 'failed' ? 'error' : attempt?.status === 'processing' ? 'warning' : 'neutral'}>{attempt?.status === 'completed' ? 'Lista para revisar' : attempt?.status === 'failed' ? 'Fallida' : attempt?.status === 'processing' ? 'Procesando' : 'Sin solicitar'}</Badge>
         </div>
 
         <div className="grid gap-3 rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container-high)] p-4 text-sm sm:grid-cols-2">
-          <p><span className="font-bold">Repositorio:</span> {props.repositoryFullName || props.repositoryUrl}</p>
-          <p><span className="font-bold">Commit:</span> <code>{effectiveCommit ? effectiveCommit.slice(0, 12) : 'se capturará al solicitar'}</code></p>
-          {effectiveSource && <p className="sm:col-span-2 text-[var(--color-on-surface-variant)]">Origen: {sourceCopy[effectiveSource]}.</p>}
+          <p><span className="font-bold">{documents ? 'Informe:' : 'Repositorio:'}</span> {documents ? `versión ${props.submissionVersion}` : props.repositoryFullName || props.repositoryUrl}</p>
+          <p><span className="font-bold">{documents ? 'Huella SHA-256:' : 'Commit:'}</span> <code>{documents ? attempt?.sourceDigest?.slice(0, 12) || 'se calculará al solicitar' : effectiveCommit ? effectiveCommit.slice(0, 12) : 'se capturará al solicitar'}</code></p>
+          {!documents && effectiveSource && <p className="sm:col-span-2 text-[var(--color-on-surface-variant)]">Origen: {sourceCopy[effectiveSource]}.</p>}
         </div>
         {effectiveSource === 'legacy-first-evaluation' && <p className="rounded-[var(--epixum-radius-md)] bg-[var(--color-warning)]/10 p-4 text-sm">Advertencia: esta entrega era heredada. El commit se fijó al iniciar la primera preevaluación y puede no coincidir con el estado original de la fecha de entrega.</p>}
         {!props.providerStatus.openaiConfigured && <p role="status" className="rounded-[var(--epixum-radius-md)] bg-[var(--color-error)]/10 p-4 text-sm text-[var(--color-error)]">OpenAI no está configurado en el servidor. La evaluación manual sigue disponible.</p>}
-        {!props.providerStatus.githubTokenConfigured && <p className="text-sm text-[var(--color-on-surface-variant)]">GitHub se consultará sin token; el piloto puede encontrar límites compartidos más bajos.</p>}
+        {!documents && !props.providerStatus.githubTokenConfigured && <p className="text-sm text-[var(--color-on-surface-variant)]">GitHub se consultará sin token; el piloto puede encontrar límites compartidos más bajos.</p>}
+        {documents && <p className="text-sm text-[var(--color-on-surface-variant)]">Admite PDF, DOCX, TXT, Markdown y Google Docs públicos. Las imágenes y la paginación de un DOCX requieren revisión docente; podés usar PDF para incluirlas.</p>}
         {(error || attempt?.errorMessage) && <p role="alert" className="rounded-[var(--epixum-radius-md)] bg-[var(--color-error)]/10 p-4 text-sm text-[var(--color-error)]">{error || attempt?.errorMessage}</p>}
-        <Button onClick={preevaluate} isPending={processing} pendingLabel="Analizando repositorio…" disabled={!props.providerStatus.openaiConfigured} leadingIcon={<span className="material-symbols-outlined">auto_awesome</span>}>{attempt ? 'Solicitar nueva preevaluación' : 'Solicitar preevaluación con IA'}</Button>
+        <Button onClick={preevaluate} isPending={processing} pendingLabel={documents ? 'Analizando informe…' : 'Analizando repositorio…'} disabled={!props.providerStatus.openaiConfigured} leadingIcon={<span className="material-symbols-outlined">auto_awesome</span>}>{attempt ? 'Solicitar nueva preevaluación' : 'Solicitar preevaluación con IA'}</Button>
 
         {attempt?.coverage && <section className="space-y-3"><h3 className="font-bold">Cobertura analizada</h3><div className="grid gap-3 text-sm sm:grid-cols-3"><p><span className="font-bold">Archivos incluidos:</span> {attempt.coverage.includedFiles.length}</p><p><span className="font-bold">Omitidos:</span> {attempt.coverage.omittedFiles.length}</p><p><span className="font-bold">Texto enviado:</span> {Math.ceil(attempt.coverage.includedBytes / 1024)} KiB</p></div>{attempt.coverage.partial && <details><summary className="cursor-pointer text-sm font-bold">Ver archivos omitidos</summary><ul className="mt-2 max-h-48 space-y-1 overflow-auto text-xs text-[var(--color-on-surface-variant)]">{attempt.coverage.omittedFiles.map((item) => <li key={`${item.path}-${item.reason}`}><code>{item.path}</code>: {item.reason}</li>)}</ul></details>}</section>}
 

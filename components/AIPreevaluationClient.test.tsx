@@ -21,6 +21,14 @@ const attempt = {
 const base = { deliveryId: 'delivery0000001', submissionVersion: 2, aiEligible: true, repositoryUrl: 'https://github.com/epixum/tp', repositoryFullName: 'epixum/tp', providerStatus: { openaiConfigured: true, githubTokenConfigured: true, githubPublicAccessAvailable: true }, initialGrade: null, initialFeedback: '', initialStatus: 'pending' as const };
 
 describe('AIPreevaluationClient', () => {
+  it('muestra informes y su huella sin pedir configuración GitHub', () => {
+    const documentAttempt = { ...attempt, commitSha: '', sourceType: 'documents' as const, sourceDigest: 'd'.repeat(64), submissionVersion: 2 };
+    render(<ToastProvider><AIPreevaluationClient {...base} sourceType="documents" providerStatus={{ ...base.providerStatus, githubTokenConfigured: false }} initialAttempt={documentAttempt} /></ToastProvider>);
+    expect(screen.getByText('Huella SHA-256:')).toBeInTheDocument();
+    expect(screen.queryByText('Repositorio:')).not.toBeInTheDocument();
+    expect(screen.queryByText(/GitHub se consultará sin token/)).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Devolución para el estudiante' })).toHaveValue(buildAIPreevaluationFeedback(documentAttempt));
+  });
   beforeEach(() => vi.clearAllMocks());
   it('muestra cobertura parcial, resultado y permite descartar sin publicar', async () => {
     const user = userEvent.setup();
