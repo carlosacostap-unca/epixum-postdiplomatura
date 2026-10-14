@@ -1,6 +1,6 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
-export const preparationTeacherRule = '@request.auth.id != "" && course.preparationEnabled = true && course.teachers.id ?= @request.auth.id';
-export const preparationResultRule = `@request.auth.id != "" && course.preparationEnabled = true && (course.teachers.id ?= @request.auth.id || (student = @request.auth.id && course.course_enrollments_via_course.student.id ?= @request.auth.id))`;
+export const preparationTeacherRule = '@request.auth.id != "" && course.preparationEnabled = true && (@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id)';
+export const preparationResultRule = `@request.auth.id != "" && course.preparationEnabled = true && (@request.auth.role = "admin" || course.teachers.id ?= @request.auth.id || (student = @request.auth.id && course.course_enrollments_via_course.student.id ?= @request.auth.id))`;
 const dates = [{ name: 'created', type: 'autodate', onCreate: true, onUpdate: false }, { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true }];
 const relation = (name, collectionId, cascadeDelete = true) => ({ name, type: 'relation', required: true, collectionId, maxSelect: 1, cascadeDelete });
 const json = (name, maxSize = 200000) => ({ name, type: 'json', required: true, maxSize });
@@ -17,7 +17,7 @@ export async function applyPreparationSchema(pb) {
   const courses = await pb.collections.getOne('courses'); const users = await pb.collections.getOne('users');
   await ensure(pb, 'courses', [{ name: 'preparationEnabled', type: 'bool', required: false }], { updateRule: COURSE_UPDATE_RULE });
   const scope = relation('course', courses.id);
-  const quiz = await ensure(pb, 'practice_quizzes', [scope, title, { name: 'description', type: 'text', max: 2000 }, { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['draft', 'published', 'archived'] }, { ...json('questions'), required: false }, ...dates], {
+  const quiz = await ensure(pb, 'practice_quizzes', [scope, title, { name: 'description', type: 'text', max: 2000 }, { name: 'durationMinutes', type: 'number', min: 0, max: 240, onlyInt: true }, { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['draft', 'published', 'archived'] }, { ...json('questions'), required: false }, ...dates], {
     listRule: preparationTeacherRule, viewRule: preparationTeacherRule, createRule: preparationTeacherRule,
     updateRule: `${preparationTeacherRule} && @request.body.course:changed = false`, deleteRule: null,
   }, ['CREATE INDEX idx_practice_quizzes_course ON practice_quizzes (course, updated)']);

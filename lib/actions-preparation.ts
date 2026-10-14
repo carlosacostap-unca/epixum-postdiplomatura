@@ -13,6 +13,7 @@ function message(error: unknown) {
   return 'No pudimos completar la operación. Revisá tu acceso e intentá nuevamente.';
 }
 function refresh(course: string) {
+  revalidatePath(`/admin/courses/${course}/preparacion`, 'layout');
   revalidatePath(`/docentes/cursos/${course}/preparacion`, 'layout');
   revalidatePath(`/estudiantes/cursos/${course}/preparacion`, 'layout');
 }

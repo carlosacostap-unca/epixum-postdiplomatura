@@ -1,8 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { gradePractice, practiceQuizSchema, publicPracticeQuestions, type PracticeQuestion } from './preparation';
+import { gradePractice, practiceDeadline, practiceGrade, practiceQuizSchema, publicPracticeQuestions, type PracticeQuestion } from './preparation';
 
 export const question: PracticeQuestion = { id: 'q1', prompt: '¿Qué nivel elegir?', options: [{ id: 'a', label: 'El adecuado al problema' }, { id: 'b', label: 'Siempre el más complejo' }], correctOptionId: 'a', explanation: 'La complejidad debe justificarse.' };
 describe('preparación: validación y corrección', () => {
+  it('valida la duración y conserva prácticas históricas sin reloj', () => {
+    const input = { title: 'Examen', status: 'published', questions: [question] };
+    expect(practiceQuizSchema.parse(input).durationMinutes).toBe(0);
+    for (const durationMinutes of [-1, 0.5, 241, '60', NaN]) expect(practiceQuizSchema.safeParse({ ...input, durationMinutes }).success).toBe(false);
+    const snapshot = practiceQuizSchema.parse({ ...input, durationMinutes: 60 });
+    expect(practiceDeadline({ created: '2026-10-14 12:00:00.000Z', snapshot })).toBe('2026-10-14T13:00:00.000Z');
+    expect(practiceDeadline({ created: '2026-10-14 12:00:00.000Z', snapshot: practiceQuizSchema.parse(input) })).toBeNull();
+    expect(practiceGrade(2, 3)).toBe(6.7);
+    expect(practiceGrade(0, 3)).toBe(0);
+    expect(practiceGrade(3, 3)).toBe(10);
+  });
   it('permite borrador vacío pero exige preguntas para publicar', () => {
     expect(practiceQuizSchema.safeParse({ title: 'Práctica', status: 'draft', questions: [] }).success).toBe(true);
     expect(practiceQuizSchema.safeParse({ title: 'Práctica', status: 'published', questions: [] }).success).toBe(false);

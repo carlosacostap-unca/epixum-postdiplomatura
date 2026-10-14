@@ -16,6 +16,7 @@ export const practiceQuizSchema = z.object({
   title: z.string().trim().min(1, 'Completá el título.').max(160),
   description: z.string().trim().max(2000).default(''),
   status: z.enum(['draft', 'published', 'archived']),
+  durationMinutes: z.number().int().min(0).max(240).default(0),
   questions: z.array(practiceQuestionSchema).max(80),
 }).strict().superRefine((quiz, ctx) => {
   if (quiz.status === 'published' && !quiz.questions.length) ctx.addIssue({ code: 'custom', message: 'Agregá al menos una pregunta antes de publicar.' });
@@ -46,4 +47,17 @@ export function gradePractice(questions: PracticeQuestion[], input: unknown) {
   const review = questions.map(question => ({ question, selectedOptionId: answers[question.id] ?? null, correct: answers[question.id] === question.correctOptionId }));
   const correct = review.filter(r => r.correct).length;
   return { correct, total: questions.length, percentage: Math.round(correct / questions.length * 100), review };
+}
+
+/** Zero preserves the existing untimed practice mode and historical snapshots. */
+export function practiceDeadline(attempt: Pick<PracticeAttempt, 'created' | 'snapshot'>) {
+  const minutes = attempt.snapshot.durationMinutes || 0;
+  if (!minutes) return null;
+  const started = Date.parse(attempt.created.replace(' ', 'T'));
+  if (!Number.isFinite(started) || !Number.isInteger(minutes) || minutes < 1 || minutes > 240) throw new Error('Duración del intento inválida.');
+  return new Date(started + minutes * 60_000).toISOString();
+}
+
+export function practiceGrade(correct: number, total: number) {
+  return total > 0 ? Math.round(correct / total * 100) / 10 : 0;
 }

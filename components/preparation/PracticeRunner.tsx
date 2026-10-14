@@ -7,11 +7,12 @@ import { beginPractice, submitPractice, submitPracticeAnswer } from '@/lib/actio
 import type { PracticeResult, PracticeReview as ReviewItem, PublicPracticeQuestion } from '@/lib/preparation';
 import { PracticeReview, QuestionFeedback } from './PracticeReview';
 
-export function BeginPracticeButton({ courseId, quizId }: { courseId: string; quizId: string }) {
+export function BeginPracticeButton({ courseId, quizId, durationMinutes = 0 }: { courseId: string; quizId: string; durationMinutes?: number }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState('');
   return <div><Button isPending={pending} onClick={() => {
+    if (durationMinutes && !window.confirm(`Esta simulación dura ${durationMinutes} minutos. El reloj continúa aunque salgas y la corrección se muestra al finalizar. ¿Comenzar o continuar?`)) return;
     setError('');
     startTransition(async () => {
       const result = await beginPractice(courseId, quizId);

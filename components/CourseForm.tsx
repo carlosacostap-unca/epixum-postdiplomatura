@@ -204,7 +204,7 @@ export default function CourseForm({
         <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
           <label className="flex cursor-pointer items-start gap-3" htmlFor="preparationEnabled">
             <input type="checkbox" id="preparationEnabled" name="preparationEnabled" value="true" defaultChecked={course?.preparationEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)] text-[var(--color-primary)]" />
-            <span><span className="block text-sm font-bold">Habilitar preparación</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Evaluaciones simuladas de opción múltiple para practicar. Los docentes gestionan cuestionarios y consultan resultados. Deshabilitar conserva el historial.</span></span>
+            <span><span className="block text-sm font-bold">Habilitar preparación</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Incluye simulaciones de parciales y exámenes de opción múltiple con duración y nota de 0 a 10. Administradores y docentes del curso gestionan cuestionarios y consultan resultados. Deshabilitar conserva el historial.</span></span>
           </label>
         </div>
         <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">

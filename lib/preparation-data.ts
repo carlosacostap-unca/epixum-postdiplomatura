@@ -8,9 +8,9 @@ export async function getPreparation(courseId: string, mode: 'teacher' | 'studen
   const pb = await createServerClient();
   const course = await requirePreparationCourse(pb, courseId, mode);
   const service = await createServiceClient();
-  const quizzes = await service.collection('practice_quizzes').getList<Pick<PracticeQuiz, 'id' | 'title' | 'description' | 'status'>>(preparationPage(page), 20, {
+  const quizzes = await service.collection('practice_quizzes').getList<Pick<PracticeQuiz, 'id' | 'title' | 'description' | 'status' | 'durationMinutes'>>(preparationPage(page), 20, {
     filter: service.filter('course = {:course}', { course: courseId }) + (mode === 'student' ? ' && status = "published"' : ''),
-    sort: '-updated,id', fields: 'id,title,description,status',
+    sort: '-updated,id', fields: 'id,title,description,status,durationMinutes',
   });
   const history = await practiceHistory(pb, service, courseId, mode, historyPage);
   return { course, quizzes, history };

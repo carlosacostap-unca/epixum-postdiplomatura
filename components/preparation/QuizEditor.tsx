@@ -9,23 +9,25 @@ import { practiceQuizSchema, type PracticeQuiz, type PracticeQuizInput, type Pra
 const field = 'mt-2 w-full rounded-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-3 text-[var(--color-on-surface)]';
 const newQuestion = (): PracticeQuestion => { const options = Array.from({ length: 4 }, () => ({ id: crypto.randomUUID(), label: '' })); return { id: crypto.randomUUID(), prompt: '', options, correctOptionId: options[0].id, explanation: '' }; };
 
-export function QuizEditor({ courseId, quiz }: { courseId: string; quiz: PracticeQuiz | null }) {
+export function QuizEditor({ courseId, quiz, basePath = `/docentes/cursos/${courseId}/preparacion`, defaultTimed = false }: { courseId: string; quiz: PracticeQuiz | null; basePath?: string; defaultTimed?: boolean }) {
   const router = useRouter();
   const [title, setTitle] = useState(quiz?.title || '');
   const [description, setDescription] = useState(quiz?.description || '');
+  const [timed, setTimed] = useState(quiz ? !!quiz.durationMinutes : defaultTimed);
+  const [duration, setDuration] = useState(quiz?.durationMinutes || 60);
   const [questions, setQuestions] = useState<PracticeQuestion[]>(quiz?.questions || []);
   const [error, setError] = useState('');
   const [pending, startTransition] = useTransition();
   const update = (id: string, data: Partial<PracticeQuestion>) => setQuestions(items => items.map(q => q.id === id ? { ...q, ...data } : q));
   const move = (index: number, offset: number) => setQuestions(items => { const next = [...items]; [next[index], next[index + offset]] = [next[index + offset], next[index]]; return next; });
   const save = (status: PracticeQuizInput['status']) => {
-    const parsed = practiceQuizSchema.safeParse({ title, description, questions, status });
+    const parsed = practiceQuizSchema.safeParse({ title, description, questions, status, durationMinutes: timed ? duration : 0 });
     if (!parsed.success) { setError(parsed.error.issues[0].message); return; }
     if (status === 'archived' && !window.confirm('¿Archivar esta práctica? Se conservarán los intentos y dejará de admitir prácticas nuevas.')) return;
     setError(''); startTransition(async () => {
       const result = await savePracticeQuiz(courseId, quiz?.id || null, parsed.data);
       if (!result.success) { setError(result.error); return; }
-      router.push(`/docentes/cursos/${courseId}/preparacion`); router.refresh();
+      router.push(basePath); router.refresh();
     });
   };
   return <form className="space-y-6" onSubmit={e => { e.preventDefault(); save(quiz?.status === 'published' ? 'published' : 'draft'); }}>
@@ -33,7 +35,9 @@ export function QuizEditor({ courseId, quiz }: { courseId: string; quiz: Practic
       <Card><CardContent className="space-y-5">
         <label className="block font-semibold">Título<input className={field} value={title} maxLength={160} onChange={e => setTitle(e.target.value)} required /></label>
         <label className="block font-semibold">Instrucciones para el alumno<textarea className={field} rows={3} value={description} maxLength={2000} onChange={e => setDescription(e.target.value)} /></label>
-        <p className="text-sm text-[var(--color-text-muted)]">Una respuesta correcta por pregunta. Intentos ilimitados, devolución después de cada respuesta y resumen al finalizar. El avance se guarda en la cuenta del alumno. Los resultados no modifican notas oficiales.</p>
+        <label className="flex items-center gap-3 font-semibold"><input type="checkbox" checked={timed} onChange={e => setTimed(e.target.checked)} />Simulación de parcial o examen con tiempo límite</label>
+        {timed && <label className="block font-semibold">Duración en minutos<input className={field} type="number" min={1} max={240} required value={duration} onChange={e => setDuration(Number(e.target.value))} /></label>}
+        <p className="text-sm text-[var(--color-text-muted)]">{timed ? 'El reloj comienza al iniciar y continúa aunque el alumno salga. Las respuestas se confirman una vez. La corrección y la nota de 0 a 10 se muestran al entregar o agotarse el tiempo. Las preguntas sin responder cuentan como incorrectas.' : 'Una respuesta correcta por pregunta. Intentos ilimitados, devolución después de cada respuesta y resumen al finalizar.'} El avance se guarda en la cuenta del alumno. Los resultados no modifican notas oficiales.</p>
       </CardContent></Card>
       {questions.map((q, index) => <Card key={q.id}><CardContent className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Pregunta {index + 1}</h2><div className="flex flex-wrap gap-2">
@@ -50,7 +54,7 @@ export function QuizEditor({ courseId, quiz }: { courseId: string; quiz: Practic
           </div>)}
           <Button variant="secondary" disabled={q.options.length >= 8} onClick={() => update(q.id, { options: [...q.options, { id: crypto.randomUUID(), label: '' }] })}>Agregar opción</Button>
         </fieldset>
-        <label className="block font-semibold">Explicación de la pregunta {index + 1}<textarea className={field} rows={3} maxLength={4000} value={q.explanation} onChange={e => update(q.id, { explanation: e.target.value })} /><span className="mt-1 block text-sm font-normal text-[var(--color-text-muted)]">Se mostrará al confirmar esta respuesta. Podés explicar el razonamiento e indicar qué sección de los apuntes repasar.</span></label>
+        <label className="block font-semibold">Explicación de la pregunta {index + 1}<textarea className={field} rows={3} maxLength={4000} value={q.explanation} onChange={e => update(q.id, { explanation: e.target.value })} /><span className="mt-1 block text-sm font-normal text-[var(--color-text-muted)]">{timed ? 'Se mostrará al finalizar el examen.' : 'Se mostrará al confirmar esta respuesta.'} Podés explicar el razonamiento e indicar qué sección de los apuntes repasar.</span></label>
       </CardContent></Card>)}
       <Button variant="secondary" disabled={questions.length >= 80} onClick={() => setQuestions(items => [...items, newQuestion()])}>Agregar pregunta</Button>
       <p className="text-sm text-[var(--color-text-muted)]">{questions.length} de 80 preguntas. Los cambios no afectan los intentos que ya se iniciaron.</p>

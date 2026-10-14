@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui';
 import type { PracticeResult, PracticeReview as ReviewItem } from '@/lib/preparation';
+import { practiceGrade } from '@/lib/preparation';
 
 export function QuestionFeedback({ item, index, audience = 'student' }: { item: ReviewItem; index: number; audience?: 'teacher' | 'student' }) {
   return <Card><CardContent className="space-y-4">
@@ -14,7 +15,7 @@ export function QuestionFeedback({ item, index, audience = 'student' }: { item: 
 
 export function PracticeReview({ result, audience = 'student' }: { result: PracticeResult; audience?: 'teacher' | 'student' }) {
   return <div className="space-y-5">
-    <Card><CardContent><h2 className="text-2xl font-bold">Resultado de práctica</h2><p className="my-3 text-3xl font-bold text-[var(--color-primary)]">{result.correct} de {result.total} correctas · {result.percentage}%</p><p>{audience === 'teacher' ? 'Resultado para seguimiento docente. No modifica las notas oficiales del alumno.' : 'No modifica tus notas oficiales. Revisá las explicaciones y volvé a practicar cuando quieras.'}</p></CardContent></Card>
+    <Card><CardContent><h2 className="text-2xl font-bold">Resultado de práctica</h2><p className="my-3 text-3xl font-bold text-[var(--color-primary)]">Nota simulada: {practiceGrade(result.correct, result.total).toLocaleString('es-AR')} / 10</p><p>{result.correct} de {result.total} correctas · {result.percentage}%</p><p>{audience === 'teacher' ? 'Resultado para seguimiento docente. No modifica las notas oficiales del alumno.' : 'No modifica tus notas oficiales. Revisá las explicaciones y volvé a practicar cuando quieras.'}</p></CardContent></Card>
     <p>Correctas: {result.correct} · Incorrectas: {result.review.filter(r => r.selectedOptionId && !r.correct).length}{result.review.some(r => !r.selectedOptionId) ? ` · Sin responder: ${result.review.filter(r => !r.selectedOptionId).length}` : ''}.</p>
     {result.review.map((item, i) => <QuestionFeedback key={item.question.id} item={item} index={i} audience={audience} />)}
   </div>;
