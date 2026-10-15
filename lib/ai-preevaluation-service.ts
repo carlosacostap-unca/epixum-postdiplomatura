@@ -45,6 +45,7 @@ export interface AIPreevaluationDTO {
   coverage?: RepositoryCoverage;
   result?: AIPreevaluationResult;
   rubric?: AIEvaluationCriterion[];
+  studentFeedbackMode?: AssignmentAIConfig['studentFeedbackMode'];
   errorCategory?: AIPreevaluationErrorCategory;
   errorMessage?: string;
   created: string;
@@ -67,6 +68,7 @@ function dto(record: Partial<AIPreevaluationAttempt>, captureSource: AIPreevalua
     model: String(record.model || MODEL), configVersion: Number(record.configVersion || 1), coverage: record.coverage,
     result: record.result, errorCategory: record.errorCategory, errorMessage: record.errorMessage,
     rubric: record.configSnapshot?.criteria?.map(({ id, title, description, weight }) => ({ id, title, description, weight })),
+    studentFeedbackMode: record.configSnapshot?.studentFeedbackMode,
     created: String(record.created || ''), updated: String(record.updated || ''), adoptedAt: record.adoptedAt, adoptedAs: record.adoptedAs,
   };
 }
@@ -96,6 +98,7 @@ async function activeConfig(servicePb: Awaited<ReturnType<typeof createServiceCl
     active: record.active, criteria: record.criteria, requiredChecks: record.requiredChecks, allowedVerdicts: record.allowedVerdicts,
     gradeEnabled: record.gradeEnabled, gradeMin: record.gradeMin ?? null, gradeMax: record.gradeMax ?? null,
     messageGuidance: record.messageGuidance || '', additionalInstructions: record.additionalInstructions || '',
+    studentFeedbackMode: record.studentFeedbackMode || undefined,
   });
   if (!parsed.success || !parsed.data.active) throw new Error('Este trabajo práctico no tiene una configuración de IA completa y activa.');
   return { parsed: parsed.data, version: Math.max(1, Number(record.version || 1)) };

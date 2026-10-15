@@ -53,6 +53,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
     gradeMin: aiConfig.gradeMin,
     gradeMax: aiConfig.gradeMax,
     messageGuidance: aiConfig.messageGuidance,
+    studentFeedbackMode: aiConfig.studentFeedbackMode,
     additionalInstructions: aiConfig.additionalInstructions,
   }) : null;
   const githubCandidate = submission.type === 'url' ? parseGithubRepositoryUrl(submission.url) : null;

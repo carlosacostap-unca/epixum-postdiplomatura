@@ -3,6 +3,12 @@ import { buildAIPreevaluationFeedback } from './ai-preevaluation-report';
 import { reportFixture } from '@/test/ai-preevaluation-report-fixture';
 
 describe('informe completo para el estudiante', () => {
+  it('prepara solo el mensaje para las rúbricas que lo piden, sin anexos de preevaluación', () => {
+    const text = buildAIPreevaluationFeedback({ ...reportFixture, studentFeedbackMode: 'message_only' });
+    expect(text).toBe(reportFixture.result.proposedMessage.trim());
+    expect(text).not.toMatch(/INFORME DETALLADO|preevaluación|COBERTURA|Commit analizado|Versión de la rúbrica/);
+    expect(buildAIPreevaluationFeedback({ ...reportFixture, studentFeedbackMode: 'full_report' })).toContain('INFORME DETALLADO');
+  });
   it('identifica documentos por huella y versión sin inventar un commit', () => {
     const text = buildAIPreevaluationFeedback({ ...reportFixture, commitSha: '', sourceType: 'documents', sourceDigest: 'd'.repeat(64), submissionVersion: 3 });
     expect(text).toContain('Huella SHA-256');

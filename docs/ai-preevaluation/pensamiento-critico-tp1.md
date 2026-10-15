@@ -1,10 +1,10 @@
 # Preevaluación del TP1 de Pensamiento Crítico
 
-Configuración guardada y verificada el 13 de octubre de 2026 en PocketBase de Postdiplomatura.
+Configuración inicial guardada el 13 de octubre de 2026; revisión flexible y devolución breve actualizadas el 15 de octubre de 2026 en PocketBase de Postdiplomatura.
 
 - Curso: Pensamiento Crítico y Resolución de Problemas en Entornos de Inteligencia Artificial (`mgk8u25zr4krpaw`).
 - Trabajo: Trabajo Práctico 1 (`3rroynqs1ms3c9c`).
-- Rúbrica activa: `w8rlnu29ccgtjt0`, versión 1. IA habilitada para el curso.
+- Rúbrica activa: `w8rlnu29ccgtjt0`, versión 2. IA habilitada para el curso.
 - Copia reproducible: [pensamiento-critico-tp1-config.json](./pensamiento-critico-tp1-config.json).
 
 | Criterio del enunciado | Peso |
@@ -15,7 +15,17 @@ Configuración guardada y verificada el 13 de octubre de 2026 en PocketBase de P
 | Prompts acotados y vinculados al esquema | 20% |
 | Reflexión y criterio propio | 20% |
 
-Escala de 0 a 10; desde 6, `Aprobado`; debajo de 6, `Corregir y reenviar`. Se reconoce progreso parcial y no hay requisitos eliminatorios ni descuentos duplicados. Los pesos iguales y la escala son decisiones de configuración; el enunciado no especificaba pesos.
+Escala de 0 a 10; desde 6, `Aprobado`; debajo de 6, `Corregir y reenviar`. Revisión introductoria MUY LAXA: se valora participación, esfuerzo y comprensión general. Una entrega sencilla con avances comprensibles puede aprobar aunque omita apartados, prompts literales, referencias formales o distinciones precisas entre partes y etapas. Las omisiones secundarias son recomendaciones, sin acumulación de descuentos ni requisitos eliminatorios. El reenvío queda reservado a casos excepcionales sin trabajo sustancialmente evaluable o ajenos a la consigna; las limitaciones de lectura no demuestran incumplimiento. Los pesos iguales y la escala son decisiones de configuración; el enunciado no especificaba pesos.
+
+## Mensaje para el estudiante
+
+La versión 2 elige `studentFeedbackMode: message_only`: sólo se prepara `proposedMessage` en la devolución oficial, sin anexar el informe técnico. El mensaje es un párrafo cercano de 50 a 90 palabras (máximo 100), reconoce un avance concreto y puede sugerir una mejora sencilla y opcional. No incluye referencias a preevaluación, IA evaluadora, nota sugerida, rúbrica, cobertura ni metadatos; puede mencionar el uso de Gemini por el estudiante cuando sea pertinente. La nota y el veredicto se muestran en sus campos propios.
+
+El docente conserva el detalle privado de criterios, fortalezas, correcciones y cobertura, y revisa el mensaje antes de guardar o publicar. El formato se conserva en el snapshot de cada nueva revisión. Los intentos anteriores conservan su formato y las devoluciones guardadas no se reescriben. Para obtener el nuevo criterio y mensaje, solicitar una nueva preevaluación. Otros trabajos mantienen el informe completo por defecto.
+
+La migración `npm run schema:ai-feedback` agrega un campo opcional a `assignment_ai_configs`, sin cambiar permisos o datos históricos. Las nuevas instalaciones del esquema general ya incluyen el campo. La configuración de severidad y tono se aplica desde PocketBase; el formato de mensaje sin informe agregado requiere desplegar el código actualizado.
+
+Validación del 15/10: configuración versión 2 guardada y leída nuevamente, permisos conservados, 36 pruebas de configuración, servicio, informe e interfaz aprobadas, cuatro pruebas de esquema aprobadas, TypeScript, lint de archivos modificados y build correctos. Con autorización docente se probó el modelo actual con una entrega ficticia sencilla sin transcripciones ni fuentes formales: resultado `Aprobado`, nota 8.5 y mensaje de 72 palabras sin referencias a preevaluación ni metadatos. No se enviaron entregas reales ni se modificaron notas o devoluciones anteriores.
 
 El enunciado publicado pide seis componentes: planteo inicial, formulación, desagregación propia, desagregación con Gemini y revisión, resolución de una parte con prompts y al menos un dato verificado indicando dónde, y reflexión. No se añaden los requisitos diferentes presentes en algunos materiales de clase ni criterios de programación.
 

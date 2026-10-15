@@ -17,6 +17,7 @@ export function assignmentAIConfigDTO(record: Partial<AssignmentAIConfig>): Assi
     gradeMin: typeof record.gradeMin === 'number' ? record.gradeMin : null,
     gradeMax: typeof record.gradeMax === 'number' ? record.gradeMax : null,
     messageGuidance: String(record.messageGuidance || ''),
+    studentFeedbackMode: record.studentFeedbackMode || undefined,
     additionalInstructions: String(record.additionalInstructions || ''),
     version: Math.max(1, Number(record.version || 1)),
   };

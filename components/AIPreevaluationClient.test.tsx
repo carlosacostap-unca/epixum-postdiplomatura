@@ -21,6 +21,20 @@ const attempt = {
 const base = { deliveryId: 'delivery0000001', submissionVersion: 2, aiEligible: true, repositoryUrl: 'https://github.com/epixum/tp', repositoryFullName: 'epixum/tp', providerStatus: { openaiConfigured: true, githubTokenConfigured: true, githubPublicAccessAvailable: true }, initialGrade: null, initialFeedback: '', initialStatus: 'pending' as const };
 
 describe('AIPreevaluationClient', () => {
+  it('prepara y publica solo el mensaje breve y conserva el detalle en la revisión docente', async () => {
+    const user = userEvent.setup();
+    const concise = { ...attempt, studentFeedbackMode: 'message_only' as const, result: { ...attempt.result, verdict: 'Aprobado' as const, proposedMessage: 'Buen trabajo: pudiste ordenar el problema y elegir un primer paso. Como idea para seguir, podés aclarar qué dato te ayudaría a decidir.' } };
+    vi.mocked(requestAIPreevaluation).mockResolvedValue({ success: true, attempt: concise });
+    vi.mocked(updateDeliveryEvaluation).mockResolvedValue({ success: true });
+    render(<ToastProvider><AIPreevaluationClient {...base} initialAttempt={null} /></ToastProvider>);
+    await user.click(screen.getByRole('button', { name: /solicitar preevaluación con ia/i }));
+    expect(screen.getByRole('textbox', { name: 'Devolución para el estudiante' })).toHaveValue(concise.result.proposedMessage);
+    expect(screen.getByText('Resultados por criterio')).toBeInTheDocument();
+    expect(updateDeliveryEvaluation).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /publicar evaluación/i }));
+    await user.click(screen.getByRole('button', { name: /publicar ahora/i }));
+    expect(updateDeliveryEvaluation).toHaveBeenCalledWith('delivery0000001', null, concise.result.proposedMessage, 'Aprobado', 'published', 2, 'attempt-1');
+  });
   it('muestra informes y su huella sin pedir configuración GitHub', () => {
     const documentAttempt = { ...attempt, commitSha: '', sourceType: 'documents' as const, sourceDigest: 'd'.repeat(64), submissionVersion: 2 };
     render(<ToastProvider><AIPreevaluationClient {...base} sourceType="documents" providerStatus={{ ...base.providerStatus, githubTokenConfigured: false }} initialAttempt={documentAttempt} /></ToastProvider>);

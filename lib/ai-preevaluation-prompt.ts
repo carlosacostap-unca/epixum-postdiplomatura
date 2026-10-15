@@ -16,6 +16,7 @@ export function buildAIPreevaluationInput(params: {
     allowedVerdicts: params.config.allowedVerdicts,
     grade: params.config.gradeEnabled ? { enabled: true, min: params.config.gradeMin, max: params.config.gradeMax } : { enabled: false },
     messageGuidance: params.config.messageGuidance,
+    studentFeedbackMode: params.config.studentFeedbackMode,
     additionalInstructions: params.config.additionalInstructions,
   };
   return [

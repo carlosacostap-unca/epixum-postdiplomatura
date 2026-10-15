@@ -269,6 +269,7 @@ export interface AssignmentAIConfig extends BaseModel {
   gradeMin?: number | null;
   gradeMax?: number | null;
   messageGuidance: string;
+  studentFeedbackMode?: 'full_report' | 'message_only';
   additionalInstructions: string;
   version: number;
 }

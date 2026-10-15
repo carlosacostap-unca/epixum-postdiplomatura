@@ -19,6 +19,7 @@ export const assignmentAIConfigInputSchema = z.object({
   gradeMin: z.number().finite().nullable(),
   gradeMax: z.number().finite().nullable(),
   messageGuidance: z.string().trim().max(4_000),
+  studentFeedbackMode: z.enum(['full_report', 'message_only']).optional(),
   additionalInstructions: z.string().trim().max(12_000),
 }).strict().superRefine((value, context) => {
   if (value.active && value.criteria.length === 0) {

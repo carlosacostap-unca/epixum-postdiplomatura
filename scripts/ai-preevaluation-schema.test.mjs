@@ -72,6 +72,7 @@ test('crea el esquema, mantiene cursos deshabilitados y migra prompts como inact
   assert.equal(records.assignment_ai_configs[0].version, 1);
   assert.equal(collections.get('assignment_ai_configs').fields.find((field) => field.name === 'assignment').cascadeDelete, true);
   assert.equal(collections.get('assignment_ai_configs').fields.find((field) => field.name === 'created').type, 'autodate');
+  assert.deepEqual(collections.get('assignment_ai_configs').fields.find((field) => field.name === 'studentFeedbackMode').values, ['full_report', 'message_only']);
   assert.equal(collections.get('ai_preevaluations').fields.find((field) => field.name === 'delivery').cascadeDelete, true);
   assert.equal(collections.get('ai_preevaluations').fields.find((field) => field.name === 'created').type, 'autodate');
 });

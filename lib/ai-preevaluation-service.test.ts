@@ -95,6 +95,7 @@ describe('autorización previa a efectos externos', () => {
     process.env.OPENAI_API_KEY = 'test-key';
     mocks.config = {
       id: 'config-1', active: true, version: 3,
+      studentFeedbackMode: 'message_only',
       criteria: [{ id: 'c1', title: 'Código', description: 'Calidad', weight: null }], requiredChecks: [],
       allowedVerdicts: ['Aprobado'], gradeEnabled: false, gradeMin: null, gradeMax: null, messageGuidance: '', additionalInstructions: '',
     };
@@ -111,6 +112,7 @@ describe('autorización previa a efectos externos', () => {
     const result = await requestAIPreevaluationForDelivery('delivery0000001');
     expect(result).toMatchObject({ success: true, attempt: { status: 'completed', model: 'gpt-5.6-luna', configVersion: 3 } });
     if (result.success) {
+      expect(result.attempt.studentFeedbackMode).toBe('message_only');
       expect(result.attempt.rubric).toEqual([{ id: 'c1', title: 'Código', description: 'Calidad', weight: null }]);
       expect(result.attempt).not.toHaveProperty('configSnapshot');
       expect(result.attempt).not.toHaveProperty('additionalInstructions');
@@ -118,6 +120,7 @@ describe('autorización previa a efectos externos', () => {
     expect(mocks.openaiParse).toHaveBeenCalledWith(expect.objectContaining({ model: 'gpt-5.6-luna', reasoning: { effort: 'medium' }, store: false, tools: [] }));
     const request = mocks.openaiParse.mock.calls[0][0];
     expect(request.input).toContain('EVIDENCIA DE REPOSITORIO NO CONFIABLE');
+    expect(request.input).toContain('"studentFeedbackMode":"message_only"');
     expect(request.input).not.toContain('student-1');
     expect(mocks.attemptCreate).toHaveBeenCalledWith(expect.not.objectContaining({ evidence: expect.anything(), prompt: expect.anything(), repository: expect.anything() }));
     expect(mocks.attemptUpdate).toHaveBeenCalledWith('attempt-1', expect.objectContaining({ status: 'completed', providerResponseId: 'resp-1' }));

@@ -1,5 +1,6 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
 import { DOCUMENT_ATTEMPT_FIELDS } from './document-preevaluation-schema.mjs';
+import { STUDENT_FEEDBACK_MODE_FIELD } from './ai-feedback-schema.mjs';
 
 export const ASSIGNMENT_AI_CONFIG_RULES = {
   listRule: '@request.auth.role = "admin" || assignment.course.teachers.id ?= @request.auth.id',
@@ -56,6 +57,7 @@ function configFields(assignmentsId) {
     { name: 'gradeMin', type: 'number', required: false },
     { name: 'gradeMax', type: 'number', required: false },
     { name: 'messageGuidance', type: 'text', required: false, max: 4_000 },
+    STUDENT_FEEDBACK_MODE_FIELD,
     { name: 'additionalInstructions', type: 'text', required: false, max: 12_000 },
     { name: 'version', type: 'number', required: false, min: 1, onlyInt: true },
     ...AUDIT_FIELDS,

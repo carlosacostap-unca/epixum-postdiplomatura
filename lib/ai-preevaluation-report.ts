@@ -8,6 +8,7 @@ export interface AIPreevaluationReportInput {
   submissionVersion?: number;
   configVersion: number;
   rubric?: AIEvaluationCriterion[];
+  studentFeedbackMode?: 'full_report' | 'message_only';
   coverage?: RepositoryCoverage;
 }
 
@@ -20,6 +21,7 @@ const outcomes: Record<AICriterionResult['outcome'], string> = {
 
 /** Publica justificaciones explícitas, no el intento privado ni razonamiento interno. */
 export function buildAIPreevaluationFeedback(input: AIPreevaluationReportInput): string {
+  if (input.studentFeedbackMode === 'message_only') return input.result.proposedMessage.trim();
   const { result, coverage } = input;
   const documents = input.sourceType === 'documents';
   const rubric = new Map(input.rubric?.map((criterion) => [criterion.id, criterion]));

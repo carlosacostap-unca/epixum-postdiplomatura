@@ -14,6 +14,11 @@ const config = assignmentAIConfigInputSchema.parse({
 });
 
 describe('contrato estructurado de IA', () => {
+  it('admite mensaje breve por trabajo y conserva configuraciones históricas sin formato explícito', () => {
+    expect(assignmentAIConfigInputSchema.parse(config).studentFeedbackMode).toBeUndefined();
+    expect(assignmentAIConfigInputSchema.parse({ ...config, studentFeedbackMode: 'message_only' }).studentFeedbackMode).toBe('message_only');
+    expect(assignmentAIConfigInputSchema.safeParse({ ...config, studentFeedbackMode: 'otro' }).success).toBe(false);
+  });
   it('acepta todos los campos y criterios configurados', () => {
     expect(validateAIResultForConfig({ verdict: 'Aprobado', suggestedGrade: 8, criteria: [{ criterionId: 'c1', criterion: 'Código', outcome: 'cumple', observation: 'Bien' }], strengths: ['Legible'], corrections: [], warnings: [], proposedMessage: 'Buen trabajo' }, config)).toMatchObject({ suggestedGrade: 8 });
   });
