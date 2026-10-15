@@ -16,16 +16,18 @@ import { getDeadlineState } from "@/lib/student-learning";
 import { Delivery, isGithubDeliverySubmission, isValidDeliveryUrl, parseDeliverySubmission } from "@/types";
 import { canStudentModifyDelivery, getStudentDeliveryState, latestPublishedEvaluation, normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 import { studentDeliveryPresentation } from "@/lib/delivery-presentation";
+import { canSubmitAssignment } from '@/lib/assignment-deadline';
+import DeliveryTimingBadge from './DeliveryTimingBadge';
 
-export default function TpStudentDelivery({ assignmentId, courseId, delivery, dueDate }: { assignmentId: string; courseId: string; delivery: Delivery | null; dueDate?: string }) {
+export default function TpStudentDelivery({ assignmentId, courseId, delivery, dueDate, allowLateSubmissions = false }: { assignmentId: string; courseId: string; delivery: Delivery | null; dueDate?: string; allowLateSubmissions?: boolean }) {
   const deadline = getDeadlineState(dueDate);
   const isPastDue = deadline === "overdue";
   const workflow = delivery ? normalizeDeliveryWorkflow(delivery) : null;
   const studentState = delivery ? getStudentDeliveryState(delivery) : null;
   const presentation = delivery ? studentDeliveryPresentation(delivery) : null;
-  const canModify = delivery ? canStudentModifyDelivery(delivery, isPastDue) : !isPastDue;
+  const canModify = delivery ? canStudentModifyDelivery(delivery, isPastDue, allowLateSubmissions) : canSubmitAssignment({ dueDate, allowLateSubmissions });
   const existingSubmission = delivery ? parseDeliverySubmission(delivery.repositoryUrl) : { type: "files" as const, files: [] };
-  const [isEditing, setIsEditing] = useState(!delivery && !isPastDue);
+  const [isEditing, setIsEditing] = useState(!delivery && canModify);
   const [mode, setMode] = useState<"files" | "url">(existingSubmission.type);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [deliveryUrl, setDeliveryUrl] = useState(existingSubmission.type === "url" ? existingSubmission.url : "");
@@ -118,6 +120,7 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
   const history = workflow?.history || [];
 
   return <div className="space-y-6">
+    {isPastDue && allowLateSubmissions && canModify && <p role="status" className="rounded-2xl bg-[var(--color-surface-container-high)] p-4 text-sm text-[var(--color-warning)]">La fecha límite ya pasó, pero este trabajo permite entregas fuera de término. Tu envío quedará identificado como fuera de término.</p>}
     {delivery && !isEditing && (
       <Card>
         <CardContent className="space-y-5">
@@ -125,6 +128,7 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
             <div>
               <div className="flex flex-wrap items-center gap-3"><Badge tone={presentation?.tone}>{presentation?.label}</Badge><Badge tone="neutral">Versión {workflow?.submissionVersion}</Badge></div>
               <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">Enviada <FormattedDate date={workflow?.submittedAt || delivery.created} showTime /></p>
+              <DeliveryTimingBadge delivery={delivery} dueDate={dueDate} />
             </div>
             {canModify && <Button variant="secondary" leadingIcon={<span className="material-symbols-outlined text-lg">edit</span>} onClick={() => setIsEditing(true)}>{studentState === "correction_requested" ? "Reenviar corrección" : "Actualizar entrega"}</Button>}
           </div>
@@ -159,7 +163,7 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
 
     {history.length > 0 && <Card><CardContent className="space-y-5"><div><h3 className="font-headline text-xl font-bold">Historial de intentos</h3><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Versiones anteriores y devoluciones publicadas.</p></div><ol className="space-y-4">{[...history].reverse().map((entry) => { const submission = entry.repositoryUrl ? parseDeliverySubmission(entry.repositoryUrl) : null; return <li key={entry.version} className="rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container-high)] p-4"><div className="flex flex-wrap items-center justify-between gap-3"><span className="font-bold">Versión {entry.version}</span><FormattedDate date={entry.submittedAt} showTime /></div>{entry.contentUnavailable && <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">El contenido original de esta versión histórica no estaba disponible al migrar la entrega.</p>}{submission?.type === "url" && <a href={submission.url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center gap-2 font-bold text-[var(--color-primary)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span>Abrir enlace entregado</a>}{submission?.type === "files" && <div className="mt-3 grid gap-2 sm:grid-cols-2">{submission.files.map((file, index) => <Button key={`${entry.version}-${file.url}-${index}`} variant="secondary" isPending={downloadingIndex === `${entry.version}:${index}`} pendingLabel="Preparando…" onClick={() => download(index, file.name, entry.version)} className="justify-start"><span className="truncate">{file.name}</span></Button>)}</div>}{entry.evaluation && <div className="mt-4 border-t border-[var(--color-outline-variant)] pt-4"><div className="flex flex-wrap items-center gap-3"><Badge tone={entry.evaluation.verdict === "Aprobado" ? "success" : entry.evaluation.verdict === "Desaprobado" ? "error" : "warning"}>{entry.evaluation.verdict}</Badge>{typeof entry.evaluation.grade === "number" && <span className="font-bold">Nota: {entry.evaluation.grade}</span>}</div><p className="mt-3 whitespace-pre-wrap text-sm text-[var(--color-on-surface-variant)]">{entry.evaluation.feedback}</p></div>}</li>; })}</ol></CardContent></Card>}
 
-    {isEditing && canModify && (
+    {(isEditing || !delivery) && canModify && (
       <Card>
         <CardContent className="space-y-5">
           <div><h3 className="font-headline text-xl font-bold">{studentState === "correction_requested" ? "Reenviar corrección" : delivery ? "Actualizar entrega" : "Enviar entrega"}</h3><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Elegí archivos o compartí un enlace. {delivery ? "Se guardará como una nueva versión de tu entrega." : "Después de enviar vas a ver la confirmación y el estado de revisión."}</p></div>
@@ -195,6 +199,6 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
       </Card>
     )}
 
-    {!delivery && isPastDue && <EmptyState icon="lock" title="Entrega cerrada" description="La fecha límite ya pasó y no registraste una entrega. Si necesitás ayuda, hacé una consulta al docente." />}
+    {!delivery && isPastDue && !allowLateSubmissions && <EmptyState icon="lock" title="Entrega cerrada" description="La fecha límite ya pasó y no registraste una entrega. Si necesitás ayuda, hacé una consulta al docente." />}
   </div>;
 }

@@ -1,6 +1,7 @@
 import { PublicationBadge } from '@/components/course/PublicationBadge';
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
+import DeliveryTimingBadge from '@/components/DeliveryTimingBadge';
 import CourseKeyManager from "@/components/CourseKeyManager";
 import { TeacherCourseContext } from "@/components/course/TeacherCourseContext";
 import TeacherWeeklyCourseManager from "@/components/course/TeacherWeeklyCourseManager";
@@ -79,6 +80,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
                 <Link key={delivery.id} href={`/docentes/cursos/${course.id}/tps/${delivery.assignment}#entregas`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                   <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
                     <Badge tone={presentation.tone}>{presentation.label}</Badge>
+                    <DeliveryTimingBadge delivery={delivery} dueDate={assignment?.dueDate} />
                     <h3 className="mt-4 font-bold">{assignment?.title || "Trabajo práctico"}</h3>
                     <p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">{delivery.expand?.student?.name || "Estudiante"} · Versión {workflow.submissionVersion} · <FormattedDate date={workflow.submittedAt} /></p>
                   </CardContent></Card>

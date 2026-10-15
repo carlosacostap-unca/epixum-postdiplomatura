@@ -3,7 +3,9 @@ import type {
   Delivery,
   DeliveryHistoryEntry,
   DeliveryPublishedEvaluation,
+  DeliveryDeadlineSnapshot,
 } from '@/types';
+import { parseDeadlineSnapshot } from './assignment-deadline';
 
 export type StudentDeliveryState =
   | 'pending'
@@ -22,6 +24,7 @@ export interface NormalizedDeliveryWorkflow {
   evaluatedAt?: string;
   resubmissionCount: number;
   history: DeliveryHistoryEntry[];
+  deadlineSnapshot?: DeliveryDeadlineSnapshot;
 }
 
 export interface DeliveryRevisionPatch {
@@ -36,6 +39,7 @@ export interface DeliveryRevisionPatch {
   evaluatedAt: string;
   resubmissionCount: number;
   history: DeliveryHistoryEntry[];
+  deadlineSnapshot?: DeliveryDeadlineSnapshot;
 }
 
 const VERDICTS: AIVerdict[] = ['Aprobado', 'Desaprobado', 'Corregir y reenviar'];
@@ -77,9 +81,11 @@ export function normalizeDeliveryHistory(value: unknown): DeliveryHistoryEntry[]
       ? candidate.repositoryUrl
       : undefined;
     const evaluation = publishedEvaluation(candidate.evaluation);
+    const deadlineSnapshot = parseDeadlineSnapshot(candidate.deadlineSnapshot);
     return [{
       version: Number(candidate.version),
       submittedAt: candidate.submittedAt,
+      ...(deadlineSnapshot ? { deadlineSnapshot } : {}),
       ...(repositoryUrl ? { repositoryUrl } : {}),
       ...(!repositoryUrl && candidate.contentUnavailable === true ? { contentUnavailable: true } : {}),
       ...(evaluation ? { evaluation } : {}),
@@ -106,6 +112,7 @@ export function normalizeDeliveryWorkflow(delivery: Delivery): NormalizedDeliver
         : {}),
     resubmissionCount: nonNegativeInteger(delivery.resubmissionCount, 0),
     history: normalizeDeliveryHistory(delivery.history),
+    ...(parseDeadlineSnapshot(delivery.deadlineSnapshot) ? { deadlineSnapshot: parseDeadlineSnapshot(delivery.deadlineSnapshot) } : {}),
   };
 }
 
@@ -129,13 +136,13 @@ export function isDeliveryPendingReview(delivery: Delivery) {
   return normalizeDeliveryWorkflow(delivery).status !== 'published';
 }
 
-export function canStudentModifyDelivery(delivery: Delivery, isPastDue: boolean) {
+export function canStudentModifyDelivery(delivery: Delivery, isPastDue: boolean, allowLateSubmissions = false) {
   const workflow = normalizeDeliveryWorkflow(delivery);
   if (workflow.status === 'published') {
     if (delivery.verdict === 'Aprobado' || delivery.verdict === 'Desaprobado') return false;
     if (delivery.verdict === 'Corregir y reenviar') return true;
   }
-  return !isPastDue;
+  return !isPastDue || allowLateSubmissions;
 }
 
 export function currentPublishedEvaluation(delivery: Delivery): DeliveryPublishedEvaluation | undefined {
@@ -169,8 +176,10 @@ export function prepareDeliveryRevision(
   repositoryUrl: string,
   now: string,
   isPastDue: boolean,
+  allowLateSubmissions = false,
+  deadlineSnapshot?: DeliveryDeadlineSnapshot,
 ): { success: true; patch: DeliveryRevisionPatch; correctionResubmission: boolean } | { success: false; error: string } {
-  if (!canStudentModifyDelivery(delivery, isPastDue)) {
+  if (!canStudentModifyDelivery(delivery, isPastDue, allowLateSubmissions)) {
     if (delivery.status === 'published' && (delivery.verdict === 'Aprobado' || delivery.verdict === 'Desaprobado')) {
       return { success: false, error: 'La entrega ya tiene un resultado final y no admite nuevos cambios.' };
     }
@@ -185,6 +194,7 @@ export function prepareDeliveryRevision(
     version: workflow.submissionVersion,
     submittedAt: workflow.submittedAt,
     repositoryUrl: delivery.repositoryUrl,
+    ...(workflow.deadlineSnapshot ? { deadlineSnapshot: workflow.deadlineSnapshot } : {}),
     ...(evaluation ? { evaluation } : {}),
   };
 
@@ -203,6 +213,7 @@ export function prepareDeliveryRevision(
       evaluatedAt: '',
       resubmissionCount: workflow.resubmissionCount + (correctionResubmission ? 1 : 0),
       history: [...workflow.history, archived],
+      ...(deadlineSnapshot ? { deadlineSnapshot } : {}),
     },
   };
 }

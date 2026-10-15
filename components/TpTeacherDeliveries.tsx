@@ -17,6 +17,7 @@ import { getTeacherDeliveryFileDownloadUrl, updateDeliveryEvaluation } from "@/l
 import { Delivery, parseDeliverySubmission, type AIVerdict } from "@/types";
 import { getTeacherDeliveryState, normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
+import DeliveryTimingBadge from './DeliveryTimingBadge';
 
 type ReviewFilter = "all" | "pending" | "resubmitted" | "draft" | "published";
 
@@ -26,7 +27,7 @@ function reviewStatus(delivery: Delivery): Exclude<ReviewFilter, "all"> {
   return "published";
 }
 
-export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId }: { deliveries: Delivery[]; courseId: string; assignmentId: string }) {
+export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId, dueDate }: { deliveries: Delivery[]; courseId: string; assignmentId: string; dueDate?: string }) {
   const [expandedDelivery, setExpandedDelivery] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -111,7 +112,7 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{studentLabel.charAt(0).toUpperCase()}</span>
                     <span className="min-w-0"><span className="block truncate font-bold">{studentLabel}</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Versión {workflow.submissionVersion} · {submission.type === "url" ? "Enlace" : `${files.length} ${files.length === 1 ? "archivo" : "archivos"}`} · <FormattedDate date={workflow.submittedAt} showTime /></span></span>
                   </div>
-                  <span className="flex max-w-full items-center gap-3 self-end"><Badge tone={presentation.tone}>{presentation.label}</Badge><span className={`material-symbols-outlined shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true">expand_more</span></span>
+                  <span className="flex max-w-full flex-wrap items-center gap-3 self-end"><DeliveryTimingBadge delivery={delivery} dueDate={dueDate} /><Badge tone={presentation.tone}>{presentation.label}</Badge><span className={`material-symbols-outlined shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true">expand_more</span></span>
                 </button>
 
                 {isExpanded && (
@@ -133,7 +134,7 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
                         {submission.type === "url" ? "Abrir detalle y evaluación" : "Abrir detalle y preevaluación con IA"}
                       </Link>
                     </section>
-                    <TeacherDeliveryHistory delivery={delivery} downloadingFile={downloadingFile} onDownload={download} />
+                    <TeacherDeliveryHistory delivery={delivery} dueDate={dueDate} downloadingFile={downloadingFile} onDownload={download} />
                     <FeedbackForm delivery={delivery} courseId={courseId} assignmentId={assignmentId} />
                   </div>
                 )}
@@ -148,10 +149,12 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
 
 function TeacherDeliveryHistory({
   delivery,
+  dueDate,
   downloadingFile,
   onDownload,
 }: {
   delivery: Delivery;
+  dueDate?: string;
   downloadingFile: string | null;
   onDownload: (deliveryId: string, fileIndex: number, name: string, version?: number) => Promise<void>;
 }) {
@@ -164,6 +167,7 @@ function TeacherDeliveryHistory({
         const submission = entry.repositoryUrl ? parseDeliverySubmission(entry.repositoryUrl) : null;
         return <li key={entry.version} className="rounded-[var(--epixum-radius-lg)] bg-[var(--color-surface-container-high)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-3"><span className="font-bold">Versión {entry.version}</span><FormattedDate date={entry.submittedAt} showTime /></div>
+          <DeliveryTimingBadge delivery={entry} dueDate={dueDate} />
           {entry.contentUnavailable && <p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">El contenido original no estaba disponible al migrar este intento.</p>}
           {submission?.type === "url" && <a href={submission.url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center gap-2 font-bold text-[var(--color-primary)]"><span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span>Abrir enlace histórico</a>}
           {submission?.type === "files" && <div className="mt-3 grid gap-2 sm:grid-cols-2">{submission.files.map((file, index) => <Button key={`${entry.version}-${file.url}-${index}`} variant="secondary" isPending={downloadingFile === `${delivery.id}:${entry.version}:${index}`} pendingLabel="Preparando…" onClick={() => onDownload(delivery.id, index, file.name, entry.version)} className="justify-start"><span className="truncate">{file.name}</span></Button>)}</div>}

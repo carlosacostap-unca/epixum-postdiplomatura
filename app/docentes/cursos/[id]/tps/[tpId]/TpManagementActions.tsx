@@ -1,4 +1,5 @@
 "use client";
+import AssignmentLateSubmissionField from '@/components/AssignmentLateSubmissionField';
 import { PublicationField } from '@/components/course/PublicationField';
 
 import RichTextEditor from "@/components/RichTextEditor";
@@ -186,6 +187,7 @@ export default function TpManagementActions({ assignment, courseId, weeks }: TpM
               </div>
 
               <PublicationField scheduling assignment existing status={assignment.publicationStatus} publishAt={assignment.publishAt} />
+              <AssignmentLateSubmissionField defaultChecked={assignment.allowLateSubmissions === true} />
               <input type="hidden" name="systemPrompt" value={assignment.systemPrompt || ""} />
 
               <div className="flex flex-wrap justify-end gap-3 pt-2">

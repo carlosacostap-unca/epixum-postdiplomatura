@@ -81,6 +81,19 @@ describe('flujo versionado de entregas', () => {
     expect(prepareDeliveryRevision(current, 'nuevo', '2026-09-10T12:00:00.000Z', true)).toMatchObject({ success: false });
   });
 
+  it('permite nuevas versiones tardías autorizadas y archiva el plazo de la anterior', () => {
+    const deadlineSnapshot = { dueDate: '2026-09-01T13:00:00Z', late: false };
+    const current = delivery({ status: 'pending', submittedAt: '2026-09-01T12:00:00Z', deadlineSnapshot });
+    const next = { dueDate: '2026-09-01T13:00:00Z', late: true };
+    expect(canStudentModifyDelivery(current, true, true)).toBe(true);
+    const result = prepareDeliveryRevision(current, 'v2', '2026-09-10T12:00:00Z', true, true, next);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.patch.deadlineSnapshot).toEqual(next);
+    expect(result.patch.history[0].deadlineSnapshot).toEqual(deadlineSnapshot);
+    expect(canStudentModifyDelivery(delivery({ status: 'published', verdict: 'Aprobado' }), true, true)).toBe(false);
+  });
+
   it('conserva el informe completo de la versión corregida en el historial', () => {
     const feedback = buildAIPreevaluationFeedback(reportFixture);
     const current = delivery({ status: 'published', verdict: 'Corregir y reenviar', feedback, grade: 5, submissionVersion: 1, evaluatedVersion: 1 });

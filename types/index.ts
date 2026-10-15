@@ -58,6 +58,7 @@ export interface Assignment extends BaseModel {
   title: string;
   description: string;
   dueDate?: string; // Adding dueDate as it might be useful without sprints
+  allowLateSubmissions?: boolean;
   systemPrompt?: string; // Prompt de sistema para preevaluación con IA
   course?: string; // Relation to Course ID
   week?: string; // Optional relation to CourseWeek ID
@@ -108,9 +109,15 @@ export interface DeliveryPublishedEvaluation {
   evaluatedAt?: string;
 }
 
+export interface DeliveryDeadlineSnapshot {
+  dueDate: string | null;
+  late: boolean;
+}
+
 export interface DeliveryHistoryEntry {
   version: number;
   submittedAt: string;
+  deadlineSnapshot?: DeliveryDeadlineSnapshot;
   repositoryUrl?: string;
   contentUnavailable?: boolean;
   evaluation?: DeliveryPublishedEvaluation;
@@ -127,6 +134,7 @@ export interface Delivery extends BaseModel {
   submissionVersion?: number;
   evaluatedVersion?: number;
   submittedAt?: string;
+  deadlineSnapshot?: DeliveryDeadlineSnapshot;
   evaluatedAt?: string;
   resubmissionCount?: number;
   history?: DeliveryHistoryEntry[];

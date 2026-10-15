@@ -1,6 +1,7 @@
 "use client";
 
 import { createAssignmentForCourse } from "@/lib/actions";
+import AssignmentLateSubmissionField from '@/components/AssignmentLateSubmissionField';
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -90,6 +91,7 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
       </div>
 
       <PublicationField scheduling assignment />
+      <AssignmentLateSubmissionField />
 
       <div className="flex flex-col-reverse gap-3 pt-3 sm:flex-row sm:justify-end">
         <Button variant="ghost" disabled={loading} onClick={() => router.back()}>Cancelar</Button>

@@ -11,6 +11,7 @@ import { getAssignmentsByCourse, getClassesByCourse, getCourse, getCourseOrganiz
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { getDeadlineState } from "@/lib/student-learning";
 import { studentDeliveryPresentation } from "@/lib/delivery-presentation";
+import { canSubmitAssignment } from '@/lib/assignment-deadline';
 import type { Assignment, Class, CourseWeek, Delivery, Inquiry } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ function AssignmentCard({ courseId, assignment, delivery, now }: { courseId: str
   const deadline = getDeadlineState(assignment.dueDate, now);
   const badge = delivery
     ? studentDeliveryPresentation(delivery)
-    : deadline === "overdue" ? { tone: "error" as const, label: "Vencido sin entrega" }
+    : deadline === "overdue" ? assignment.allowLateSubmissions ? { tone: "warning" as const, label: "Admite entrega fuera de término" } : { tone: "error" as const, label: "Vencido sin entrega" }
       : deadline === "due-soon" ? { tone: "warning" as const, label: "Vence en menos de 72 h" }
         : { tone: "neutral" as const, label: "Pendiente" };
   return <Link href={`/estudiantes/cursos/${courseId}/tps/${assignment.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4"><Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent><div className="flex items-start justify-between gap-4"><Badge tone={badge.tone}>{badge.label}</Badge><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span></div><h3 className="mt-4 font-headline text-xl font-bold">{assignment.title}</h3><p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{assignment.dueDate ? <>Fecha límite: <FormattedDate date={assignment.dueDate} showTime /></> : "Sin fecha límite"}</p></CardContent></Card></Link>;
@@ -66,7 +67,7 @@ export default async function EstudianteCoursePage({ params }: { params: Promise
   const now = new Date();
   const sortedClasses = [...classes].sort((a, b) => (a.date ? new Date(a.date).getTime() : Number.POSITIVE_INFINITY) - (b.date ? new Date(b.date).getTime() : Number.POSITIVE_INFINITY));
   const nextClass = sortedClasses.find((item) => item.date && new Date(item.date) >= now);
-  const pendingAssignments = assignments.filter((assignment) => !deliveryByAssignment.get(assignment.id) && getDeadlineState(assignment.dueDate, now) !== "overdue").sort((a, b) => (a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY) - (b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY));
+  const pendingAssignments = assignments.filter((assignment) => !deliveryByAssignment.get(assignment.id) && canSubmitAssignment(assignment, now)).sort((a, b) => (a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY) - (b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY));
   const nextAssignment = pendingAssignments[0];
   const nextClassTime = nextClass?.date ? new Date(nextClass.date).getTime() : Number.POSITIVE_INFINITY;
   const assignmentTime = nextAssignment?.dueDate ? new Date(nextAssignment.dueDate).getTime() : Number.POSITIVE_INFINITY;

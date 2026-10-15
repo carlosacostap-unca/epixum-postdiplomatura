@@ -4,9 +4,10 @@ import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 import PocketBase from 'pocketbase';
 import { cookies } from 'next/headers';
-import { extractEnrolledCourses, getDeadlineState } from './student-learning';
+import { extractEnrolledCourses } from './student-learning';
 import { filterContentForCourseMode, groupContentByWeek, isWeekEffectivelyVisible, unassignedContent } from './course-weeks';
 import { buildUserParticipationSummaries } from './user-participations';
+import { canSubmitAssignment } from './assignment-deadline';
 
 // Helper to create client with token for cached functions
 const createClientWithToken = (token: string | undefined) => {
@@ -252,7 +253,7 @@ export async function getStudentDashboardData(studentId: string): Promise<Studen
   const deliveredIds = new Set(deliveries.map((delivery) => delivery.assignment));
   const now = new Date();
   const pendingAssignments = assignments
-    .filter((assignment) => !deliveredIds.has(assignment.id) && getDeadlineState(assignment.dueDate, now) !== "overdue")
+    .filter((assignment) => !deliveredIds.has(assignment.id) && canSubmitAssignment(assignment, now))
     .sort((a, b) => {
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;

@@ -194,6 +194,18 @@ describe('recursos de contenidos independientes', () => {
     expect(mocks.update).toHaveBeenLastCalledWith('tp-1', expect.objectContaining({ publicationStatus: 'published' }));
   });
 
+  it('guarda y desactiva la casilla de entregas tardías en alta y edición autorizadas', async () => {
+    const form = linkForm({});
+    form.set('allowLateSubmissions', 'on');
+    expect(await createAssignmentForCourse('course-1', form)).toMatchObject({ success: true });
+    expect(mocks.create).toHaveBeenLastCalledWith(expect.objectContaining({ allowLateSubmissions: true }));
+    expect(await updateAssignment('tp-1', form)).toMatchObject({ success: true });
+    expect(mocks.update).toHaveBeenLastCalledWith('tp-1', expect.objectContaining({ allowLateSubmissions: true }));
+    form.delete('allowLateSubmissions');
+    expect(await updateAssignment('tp-1', form)).toMatchObject({ success: true });
+    expect(mocks.update).toHaveBeenLastCalledWith('tp-1', expect.objectContaining({ allowLateSubmissions: false }));
+  });
+
   it('impide subir y entregar a trabajos completos en borrador', async () => {
     mocks.model = { id: 'student-1', role: 'estudiante' };
     expect(await getUploadUrl('entrega.pdf', 'application/pdf', 'tp-1')).toMatchObject({ success: false });

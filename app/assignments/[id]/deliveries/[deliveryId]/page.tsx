@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/pocketbase-server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
+import DeliveryTimingBadge from '@/components/DeliveryTimingBadge';
 import { Badge, Breadcrumbs, Card, CardContent, PageHeader } from "@/components/ui";
 import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
 import DownloadButtonClient from './DownloadButtonClient';
@@ -77,6 +78,7 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
           <div className="min-w-0"><p className="font-semibold">{studentName}</p><p className="break-all text-sm text-[var(--color-on-surface-variant)]">{student?.email}</p></div>
         </div>
         <p className="text-sm text-[var(--color-on-surface-variant)]">Enviada el <FormattedDate date={workflow.submittedAt} showTime /></p>
+        <DeliveryTimingBadge delivery={delivery} dueDate={assignment.dueDate} />
       </CardContent></Card>
       <Card><CardContent className="space-y-4">
         <h2 className="text-sm font-semibold text-[var(--color-text-muted)]">{submission.type === "url" ? "Enlace entregado" : "Archivos entregados"}</h2>

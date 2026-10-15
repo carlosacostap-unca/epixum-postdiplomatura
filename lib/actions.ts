@@ -24,6 +24,7 @@ import { serializeDeliveryUrlForAssignment } from "./delivery-github";
 import { GithubRepositoryError } from "./github-repository";
 import { createServiceClient } from "./pocketbase-service";
 import { initialDeliveryWorkflow, normalizeDeliveryWorkflow, prepareDeliveryRevision } from "./delivery-workflow";
+import { canSubmitAssignment, createDeadlineSnapshot, isAfterDeadline, lateSubmissionsFromForm } from './assignment-deadline';
 import { prepareDocumentEvidence, submissionReferenceHash } from './document-preevaluation';
 import type { AIPreevaluationAttempt } from '@/types';
 
@@ -103,13 +104,17 @@ function revalidateDeliveryViews(courseId: string | undefined, assignmentId: str
 
 async function createVersionedDelivery(assignmentId: string, studentId: string, repositoryUrl: string) {
   const servicePb = await createServiceClient();
+  const assignment = await servicePb.collection('assignments').getOne<Assignment>(assignmentId);
   const now = new Date().toISOString();
-  return servicePb.collection('deliveries').create({
+  if (!canSubmitAssignment(assignment, now)) return { success: false as const, error: 'El plazo de entrega ha finalizado' };
+  await servicePb.collection('deliveries').create({
     assignment: assignmentId,
     student: studentId,
     repositoryUrl,
     ...initialDeliveryWorkflow(now),
+    deadlineSnapshot: createDeadlineSnapshot(assignment.dueDate, now),
   });
+  return { success: true as const };
 }
 
 async function updateVersionedDelivery(
@@ -117,14 +122,15 @@ async function updateVersionedDelivery(
   expectedStudentId: string,
   expectedAssignmentId: string,
   repositoryUrl: string,
-  isPastDue: boolean,
 ) {
   const servicePb = await createServiceClient();
   const current = await servicePb.collection('deliveries').getOne<Delivery>(deliveryId);
   if (current.student !== expectedStudentId || current.assignment !== expectedAssignmentId) {
     return { success: false as const, error: 'No autorizado' };
   }
-  const transition = prepareDeliveryRevision(current, repositoryUrl, new Date().toISOString(), isPastDue);
+  const assignment = await servicePb.collection('assignments').getOne<Assignment>(expectedAssignmentId);
+  const now = new Date().toISOString();
+  const transition = prepareDeliveryRevision(current, repositoryUrl, now, isAfterDeadline(assignment.dueDate, now), assignment.allowLateSubmissions === true, createDeadlineSnapshot(assignment.dueDate, now));
   if (!transition.success) return transition;
   await servicePb.collection('deliveries').update(deliveryId, transition.patch);
   return { success: true as const, correctionResubmission: transition.correctionResubmission };
@@ -554,6 +560,7 @@ export async function createAssignmentForCourse(courseId: string, formData: Form
       title,
       description,
       dueDate: dateObj,
+      allowLateSubmissions: lateSubmissionsFromForm(formData),
       systemPrompt: systemPrompt || "",
       course: courseId,
       week,
@@ -604,6 +611,7 @@ export async function createAssignment(formData: FormData) {
       title,
       description,
       systemPrompt: systemPrompt || "",
+      allowLateSubmissions: lateSubmissionsFromForm(formData),
     };
     if (dueDate) data.dueDate = new Date(dueDate).toISOString();
     
@@ -646,6 +654,7 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
       description,
       systemPrompt: systemPrompt || "",
       dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+      allowLateSubmissions: lateSubmissionsFromForm(formData),
       week,
     };
 
@@ -669,6 +678,24 @@ export async function updateAssignment(assignmentId: string, formData: FormData)
       console.error('PocketBase validation errors:', JSON.stringify(response, null, 2));
     }
     return { success: false, error: getErrorMessage(error, 'No pudimos actualizar el trabajo práctico') };
+  }
+}
+
+export async function updateAssignmentLateSubmissions(assignmentId: string, allowLateSubmissions: boolean) {
+  const pb = await createServerClient();
+  const user = pb.authStore.model;
+  if (!user || typeof allowLateSubmissions !== 'boolean') return { success: false, error: 'No autorizado o valor inválido' };
+  const courseId = await assignmentCourseId(pb, assignmentId).catch(() => undefined);
+  if (!courseId || !(await canManageCourse(pb, user, courseId))) return { success: false, error: 'No tienes permisos para gestionar este trabajo' };
+  try {
+    await pb.collection('assignments').update(assignmentId, { allowLateSubmissions });
+    revalidateDeliveryViews(courseId, assignmentId);
+    revalidatePath(`/admin/courses/${courseId}`);
+    revalidatePath(`/docentes/cursos/${courseId}`);
+    revalidatePath(`/estudiantes/cursos/${courseId}`);
+    return { success: true };
+  } catch {
+    return { success: false, error: 'No pudimos guardar la política de entregas' };
   }
 }
 
@@ -866,15 +893,16 @@ export async function createDelivery(formData: FormData) {
 
   try {
     // Check deadline
-    const assignment = await pb.collection('assignments').getOne(assignmentId);
+    const assignment = await pb.collection('assignments').getOne<Assignment>(assignmentId);
     if (!(await studentCanAccessContent(pb, user, "assignments", assignmentId))) {
       return { success: false, error: "No estás matriculado en este curso" };
     }
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+    if (!canSubmitAssignment(assignment)) {
         return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
-    await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    const result = await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    if (!result.success) return result;
     revalidateDeliveryViews(assignment.course, assignmentId);
     return { success: true };
   } catch (error) {
@@ -900,16 +928,17 @@ export async function createDeliveryWithFiles(assignmentId: string, courseId: st
   }
 
   try {
-    const assignment = await pb.collection('assignments').getOne(assignmentId);
+    const assignment = await pb.collection('assignments').getOne<Assignment>(assignmentId);
     if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, "assignments", assignmentId))) {
       return { success: false, error: "No estás matriculado en este curso" };
     }
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+    if (!canSubmitAssignment(assignment)) {
       return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
     const repositoryUrl = JSON.stringify(files);
-    await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    const result = await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    if (!result.success) return result;
     revalidateDeliveryViews(courseId, assignmentId);
     return { success: true };
   } catch (error) {
@@ -947,7 +976,6 @@ export async function updateDeliveryWithFiles(deliveryId: string, courseId: stri
       user.id,
       assignmentId,
       JSON.stringify(files),
-      Boolean(assignment.dueDate && new Date() > new Date(assignment.dueDate)),
     );
     if (!result.success) return result;
     revalidateDeliveryViews(courseId, assignmentId, deliveryId);
@@ -972,16 +1000,17 @@ export async function createDeliveryWithUrl(assignmentId: string, courseId: stri
   }
 
   try {
-    const assignment = await pb.collection('assignments').getOne(assignmentId);
+    const assignment = await pb.collection('assignments').getOne<Assignment>(assignmentId);
     if (assignment.course !== courseId || !(await studentCanAccessContent(pb, user, 'assignments', assignmentId))) {
       return { success: false, error: 'No estás matriculado en este curso' };
     }
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+    if (!canSubmitAssignment(assignment)) {
       return { success: false, error: 'El plazo de entrega ha finalizado' };
     }
 
     const repositoryUrl = await serializeDeliveryUrlForAssignment(assignmentId, courseId, url, 'student-submission');
-    await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    const result = await createVersionedDelivery(assignmentId, user.id, repositoryUrl);
+    if (!result.success) return result;
     revalidateDeliveryViews(courseId, assignmentId);
     return { success: true };
   } catch (error) {
@@ -1025,7 +1054,6 @@ export async function updateDeliveryWithUrl(deliveryId: string, courseId: string
       user.id,
       assignmentId,
       repositoryUrl,
-      Boolean(assignment.dueDate && new Date() > new Date(assignment.dueDate)),
     );
     if (!result.success) return result;
     revalidateDeliveryViews(courseId, assignmentId, deliveryId);
@@ -1137,7 +1165,6 @@ export async function updateDelivery(deliveryId: string, formData: FormData) {
       user.id,
       currentDelivery.assignment,
       repositoryUrl,
-      Boolean(assignment.dueDate && new Date() > new Date(assignment.dueDate)),
     );
     if (!result.success) return result;
     revalidateDeliveryViews(assignment.course, currentDelivery.assignment, deliveryId);

@@ -44,7 +44,7 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
 
       <div className="flex flex-wrap gap-3">
         <PublicationBadge status={assignment.publicationStatus} publishAt={assignment.publishAt} />
-        <Badge tone={isPastDue ? "error" : "success"}>{isPastDue ? "Plazo cerrado" : "Plazo abierto"}</Badge>
+        <Badge tone={isPastDue ? assignment.allowLateSubmissions ? "warning" : "error" : "success"}>{isPastDue ? assignment.allowLateSubmissions ? "Admite entregas fuera de término" : "Plazo cerrado" : "Plazo abierto"}</Badge>
         <Badge tone={pending ? "warning" : "neutral"}>{pending} por revisar</Badge>
         <Badge tone="info">{deliveries.length} {deliveries.length === 1 ? "entrega" : "entregas"}</Badge>
       </div>
@@ -60,7 +60,7 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
         </section>
         <section id="entregas" aria-labelledby="deliveries-title" className="scroll-mt-6 space-y-5">
           <div><h2 id="deliveries-title" className="font-headline text-2xl font-bold">Entregas</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Buscá, filtrá y evaluá sin perder el contexto del trabajo.</p></div>
-          <TpTeacherDeliveries deliveries={deliveries} courseId={course.id} assignmentId={assignment.id} />
+          <TpTeacherDeliveries deliveries={deliveries} courseId={course.id} assignmentId={assignment.id} dueDate={assignment.dueDate} />
         </section>
       </div>
     </div>

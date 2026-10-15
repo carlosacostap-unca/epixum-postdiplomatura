@@ -1,5 +1,6 @@
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
+import DeliveryTimingBadge from '@/components/DeliveryTimingBadge';
 import {
   Badge,
   Card,
@@ -95,7 +96,7 @@ export default async function DocentesPage() {
                             <p className="truncate font-bold">{assignment?.title || "Trabajo práctico"}</p>
                             <p className="mt-1 truncate text-sm text-[var(--color-on-surface-variant)]">{studentName(delivery)} · Versión {workflow.submissionVersion} enviada <FormattedDate date={workflow.submittedAt} /></p>
                           </div>
-                          <Badge tone={presentation.tone}>{presentation.label}</Badge>
+                          <div className="flex flex-wrap gap-2"><DeliveryTimingBadge delivery={delivery} dueDate={assignment?.dueDate} /><Badge tone={presentation.tone}>{presentation.label}</Badge></div>
                         </CardContent>
                       </Card>
                     </Link>
