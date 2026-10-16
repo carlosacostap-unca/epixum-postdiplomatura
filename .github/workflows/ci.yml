@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Pruebas, lint y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_POCKETBASE_URL: https://pocketbase.example.invalid
+      POCKETBASE_ADMIN_EMAIL: ci@example.invalid
+      POCKETBASE_ADMIN_PASSWORD: ci-placeholder
+      COURSE_ENROLLMENT_SECRET: ci-only-not-for-production-000000000000
+      OPENAI_API_KEY: ci-placeholder
+      IDRIVE_ENDPOINT: https://storage.example.invalid
+      IDRIVE_REGION: us-east-1
+      IDRIVE_ACCESS_KEY_ID: ci-placeholder
+      IDRIVE_SECRET_ACCESS_KEY: ci-placeholder
+      IDRIVE_BUCKET_NAME: ci-placeholder
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar pruebas de interfaz
+        run: npm run test:ui
+
+      - name: Ejecutar pruebas de esquema
+        run: npm run schema:test
+
+      - name: Ejecutar pruebas del MCP de PocketBase
+        run: npm run mcp:pocketbase:test
+
+      - name: Validar OpenSpec
+        run: npx --no-install openspec validate --all --strict --no-interactive
+
+      - name: Ejecutar lint
+        run: npm run lint
+
+      - name: Compilar para producción
+        run: npm run build
