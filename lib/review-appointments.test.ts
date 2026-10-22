@@ -3,6 +3,12 @@ import { generateReviewSlots, reviewEvaluationSchema, reviewDate, reviewSchema, 
 
 const input: ReviewBlockInput = { teacher: 'teacher00000001', date: '2026-10-20', start: '18:00', end: '19:00', duration: 15, breakEvery: 2, breakMinutes: 10 };
 describe('agenda de revisiones', () => {
+  it('admite mensajes opcionales, conserva saltos de línea y limita su longitud', () => {
+    const data = { number: 1, title: 'Revisión', instructions: '', open: true };
+    expect(reviewSchema.parse(data).bookingMessage).toBe('');
+    expect(reviewSchema.parse({ ...data, bookingMessage: '  Traé tu proyecto.\nRevisá los requisitos.  ' }).bookingMessage).toBe('Traé tu proyecto.\nRevisá los requisitos.');
+    expect(reviewSchema.safeParse({ ...data, bookingMessage: 'x'.repeat(4001) }).success).toBe(false);
+  });
   it('crea borradores y borra programaciones al publicar u ocultar', () => {
     const data = { number: 1, title: 'Revisión', instructions: '', open: true };
     expect(reviewSchema.parse(data)).toMatchObject({ publicationStatus: 'draft', publishAt: '' });
@@ -34,5 +40,11 @@ describe('agenda de revisiones', () => {
   it('no permite aprobar un ausente', () => {
     expect(reviewEvaluationSchema.safeParse({ attendance: 'absent', status: 'passed', feedback: '' }).success).toBe(false);
     expect(reviewEvaluationSchema.safeParse({ attendance: 'absent', status: 'not_passed', feedback: '' }).success).toBe(true);
+  });
+  it('admite evaluaciones anteriores sin notas y limita las notas privadas', () => {
+    const evaluation = { attendance: 'present', status: 'passed', feedback: 'Buen trabajo' };
+    expect(reviewEvaluationSchema.parse(evaluation).teacherNotes).toBe('');
+    expect(reviewEvaluationSchema.parse({ ...evaluation, teacherNotes: '  Interno  ' }).teacherNotes).toBe('Interno');
+    expect(reviewEvaluationSchema.safeParse({ ...evaluation, teacherNotes: 'x'.repeat(8001) }).success).toBe(false);
   });
 });

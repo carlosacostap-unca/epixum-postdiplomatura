@@ -45,6 +45,7 @@ export function ReviewEditor({ courseId, review, nextNumber = 1 }: { courseId: s
     mutation.run(() => saveReviewAction(courseId, review?.id || null, review?.revision || '', {
       number: review?.number ?? Number(form.get('number')), title: form.get('title'), instructions: form.get('instructions'), open: form.get('open') === 'on',
       publicationStatus, publishAt: publicationStatus === 'scheduled' && publishAt ? new Date(`${publishAt}:00-03:00`).toISOString() : '',
+      bookingMessage: form.get('bookingMessage'),
     }), id => { if (!review && id) router.push(`/docentes/cursos/${courseId}/revisiones/${id}`); });
   }}>
     <fieldset disabled={mutation.pending} className="space-y-4">
@@ -53,6 +54,8 @@ export function ReviewEditor({ courseId, review, nextNumber = 1 }: { courseId: s
         <Field label="Título"><input className={reviewInput} name="title" maxLength={160} required defaultValue={review?.title} placeholder="Por ejemplo: Revisión de avances" /></Field>
       </div>
       <Field label="Instrucciones para los alumnos"><textarea className={reviewInput} name="instructions" rows={3} maxLength={4000} defaultValue={review?.instructions} placeholder="Qué preparar, dónde encontrarse o enlace de la reunión…" /></Field>
+      <Field label="Mensaje antes de solicitar turno"><textarea className={reviewInput} name="bookingMessage" rows={3} maxLength={4000} defaultValue={review?.bookingMessage} placeholder="Por ejemplo: Antes de reservar, asegurate de tener tu proyecto disponible para mostrar…" /></Field>
+      <p className="text-xs text-[var(--color-text-muted)]">Opcional. El alumno verá este mensaje al elegir una franja y deberá confirmar la solicitud después de leerlo. Dejalo vacío para reservar directamente.</p>
       <Field label="Estado de publicación"><select className={reviewInput} name="publicationStatus" value={publicationStatus} onChange={e => setPublicationStatus(e.target.value)}>
         <option value="draft">Borrador</option><option value="published">Publicado</option><option value="scheduled">Programado</option>
       </select></Field>
@@ -92,7 +95,7 @@ export function ReviewBlockEditor({ courseId, review, teachers, block, onDone }:
       <p className="text-sm text-[var(--color-text-muted)]">Horarios de Argentina (UTC−3). Para omitir descansos, dejá ambos campos en cero. Cada turno admite un alumno.</p>
       <div className="flex flex-wrap gap-3"><button type="submit" className={reviewSecondary}>Previsualizar turnos</button><button type="button" className={reviewSecondary} onClick={onDone}>Cerrar</button></div>
       {preview && <div className="space-y-4 rounded-xl border border-[var(--color-primary)] bg-[var(--color-surface-container)] p-4">
-        <div><p className="text-lg font-bold">{preview.plan.slots.length} turnos disponibles para reservar</p><p className="text-sm text-[var(--color-text-muted)]">{preview.plan.breaks.length} descansos · {teachers.find(t => t.id === preview.input.teacher)?.name}. Los alumnos elegirán su turno.</p></div>
+        <div><p className="text-lg font-bold">{preview.plan.slots.length} turnos disponibles para reservar</p><p className="text-sm text-[var(--color-text-muted)]">{preview.plan.breaks.length} descansos · {teachers.find(t => t.id === preview.input.teacher)?.name}. Los alumnos elegirán la franja y recibirán el primer turno libre.</p></div>
         <ol className="grid max-h-64 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">{[...preview.plan.slots.map(s => ({ ...s, kind: 'Turno' })), ...preview.plan.breaks.map(s => ({ ...s, kind: 'Descanso' }))].sort((a, b) => a.startsAt.localeCompare(b.startsAt)).map(s => <li key={s.startsAt} className={`rounded-lg px-3 py-2 text-sm ${s.kind === 'Descanso' ? 'border border-dashed border-[var(--color-outline)] text-[var(--color-text-muted)]' : 'bg-[var(--color-surface-container-high)]'}`}><span className="font-semibold">{reviewDate(s.startsAt, true)}–{reviewDate(s.endsAt, true)}</span> · {s.kind}</li>)}</ol>
         <button type="button" className={reviewButton} onClick={() => mutation.run(() => saveReviewBlockAction(courseId, review.id, review.revision, block?.id || null, preview.input), onDone)}>{mutation.pending ? 'Guardando…' : block ? 'Confirmar cambios de franja' : 'Crear turnos libres'}</button>
       </div>}
@@ -105,12 +108,14 @@ export function ReviewEvaluationForm({ courseId, reviewId, bookingId }: { course
   const mutation = useReviewMutation(); const [attendance, setAttendance] = useState('present');
   return <form className="mt-4 space-y-4" onSubmit={e => {
     e.preventDefault(); const form = new FormData(e.currentTarget);
-    mutation.run(() => evaluateReviewAction(courseId, reviewId, bookingId, { attendance, status: attendance === 'absent' ? 'not_passed' : form.get('status'), feedback: form.get('feedback') }));
+    mutation.run(() => evaluateReviewAction(courseId, reviewId, bookingId, { attendance, status: attendance === 'absent' ? 'not_passed' : form.get('status'), feedback: form.get('feedback'), teacherNotes: form.get('teacherNotes') }));
   }}>
     <fieldset disabled={mutation.pending} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2"><Field label="Asistencia"><select className={reviewInput} value={attendance} onChange={e => setAttendance(e.target.value)}><option value="present">Asistió</option><option value="absent">Ausente</option></select></Field>
-        <Field label="Resultado"><select key={attendance} className={reviewInput} name="status" defaultValue="not_passed" disabled={attendance === 'absent'}><option value="not_passed">Todavía no aprobó</option><option value="passed">Aprobó</option></select></Field></div>
+        <Field label="Resultado"><select key={attendance} className={reviewInput} name="status" defaultValue="not_passed" disabled={attendance === 'absent'}><option value="not_passed">No aprobado</option><option value="passed">Aprobado</option></select></Field></div>
       <Field label="Devolución para el alumno"><textarea className={reviewInput} name="feedback" rows={3} maxLength={8000} placeholder="Qué logró y qué necesita trabajar para el próximo intento…" /></Field>
+      <Field label="Notas privadas para docentes"><textarea className={reviewInput} name="teacherNotes" rows={3} maxLength={8000} placeholder="Observaciones internas para el equipo docente…" /></Field>
+      <p className="text-xs text-[var(--color-text-muted)]">El alumno verá el resultado y la devolución. Las notas privadas solo pueden verlas los docentes asignados al curso.</p>
       <p className="text-xs text-[var(--color-text-muted)]">El resultado queda registrado en el historial. Si no aprobó o estuvo ausente, podrá reservar otro turno.</p>
       <button type="submit" className={reviewButton}>{mutation.pending ? 'Guardando…' : 'Guardar evaluación definitiva'}</button>
     </fieldset>{mutation.feedback}

@@ -6,11 +6,17 @@ Desde **Administración → Curso → Editar**, activar **Habilitar revisiones p
 
 1. Abrir el curso y la pestaña **Revisiones**. Crear una revisión con número único, título e instrucciones (por ejemplo, lugar o enlace del encuentro). Las nuevas revisiones empiezan en **Borrador**: solo las ven los docentes asignados y pueden preparar sus franjas sin mostrarlas a los alumnos. La revisión es independiente de los trabajos prácticos.
 2. Agregar una franja: docente asignado al curso, fecha, inicio, fin, duración de cada turno y, opcionalmente, frecuencia y duración del descanso. Ambos campos de descanso en cero omiten los descansos.
-3. Revisar **Previsualizar turnos** y confirmar **Crear turnos libres**. Nunca se asignan alumnos automáticamente. Todos los horarios se interpretan en Argentina, UTC−3, y se guardan en UTC.
+3. Revisar **Previsualizar turnos** y confirmar **Crear turnos libres**. Al crear la franja todavía no se asignan alumnos: cada solicitud recibe el primer turno libre de esa franja. Todos los horarios se interpretan en Argentina, UTC−3, y se guardan en UTC.
 4. Cualquier docente asignado al curso puede gestionar las franjas de los demás. Una franja futura puede editarse o retirarse mientras no tenga reservas pendientes. Los turnos reemplazados se desactivan y las cancelaciones históricas se conservan.
-5. Después de finalizar un turno reservado, registrar **Asistió / Ausente**, **Aprobó / Todavía no aprobó** y una devolución. La evaluación guardada es definitiva. Un ausente queda no aprobado. No afecta calificaciones ni entregas de trabajos prácticos.
+5. Después de finalizar un turno reservado, abrir **Evaluar turno: resultado, devolución y notas privadas** y registrar **Asistió / Ausente**, **Aprobado / No aprobado**, una **Devolución para el alumno** y, opcionalmente, **Notas privadas para docentes**. El alumno ve únicamente su resultado y devolución; las notas solo pueden leerlas los docentes asignados al curso. La evaluación guardada es definitiva. Un ausente queda no aprobado. No afecta calificaciones ni entregas de trabajos prácticos.
 
 Cerrar las reservas de una revisión impide nuevas reservas, pero conserva su visibilidad, los turnos existentes, las cancelaciones antes del inicio y las evaluaciones pendientes. La validación de superposición docente se aplica dentro de cada revisión.
+
+### Mensaje antes de reservar
+
+En **Editar revisión y publicación**, completar **Mensaje antes de solicitar turno** con las indicaciones para esa revisión, por ejemplo, tener el proyecto preparado o revisar requisitos antes de pedir un lugar. Es opcional, admite hasta 4000 caracteres y conserva saltos de línea. Vaciarlo desactiva el aviso.
+
+Al elegir **Solicitar turno en esta franja**, el alumno verá las indicaciones y el rango horario en un diálogo. Recién **Confirmar solicitud** asigna el primer turno libre; **Volver sin reservar** cierra el diálogo sin guardar una reserva. Si el mensaje cambió desde que se abrió la página, el servidor rechaza la confirmación anterior y pide leer las indicaciones actualizadas. Si no hay mensaje configurado, la solicitud conserva la asignación directa. Las instrucciones generales de la revisión siguen siendo independientes de este aviso previo.
 
 ### Publicación
 
@@ -20,7 +26,11 @@ Volver a Borrador o programar una fecha futura oculta la revisión, los turnos y
 
 ## Uso estudiantil
 
-Los alumnos con matrícula vigente ven la disponibilidad y reservan un turno libre. Cada alumno puede tener una reserva pendiente por revisión, y cada turno admite un alumno. Puede cancelar antes del inicio y elegir otro turno. Un turno vencido sigue pendiente hasta que el docente lo evalúe.
+Los alumnos con matrícula vigente ven las franjas con su fecha, hora de inicio y hora de fin, sin nombre del docente ni selección de horarios individuales. **Solicitar turno en esta franja** asigna automáticamente el primer turno activo, futuro y libre, ordenado por inicio. El horario exacto asignado aparece en **Mis reservas y devoluciones**. No se envían al navegador los docentes de las franjas ni los horarios individuales de otros alumnos o aún sin asignar.
+
+Cada alumno puede tener una reserva pendiente por revisión, y cada turno admite un alumno. Puede cancelar antes del inicio y solicitar nuevamente una franja. Una cancelación libera ese hueco para la siguiente solicitud, sin mover reservas existentes. Un turno vencido sigue pendiente hasta que el docente lo evalúe. Una franja completa muestra que no tiene disponibilidad y no admite solicitudes.
+
+El servidor vuelve a comprobar la disponibilidad al confirmar. Las solicitudes simultáneas se resuelven con el control de versión y los índices únicos, reintentando la selección del primer turno libre hasta ocho veces. Nunca se confirma una reserva incierta ni se asignan dos alumnos al mismo turno. Cada docente sigue viendo la agenda completa y sus participantes.
 
 Una evaluación no aprobada o ausente habilita un nuevo intento. La aprobación impide reservar más turnos de esa revisión. Cada revisión funciona de manera independiente y el alumno solamente accede a su historial; la disponibilidad no expone identidades ni devoluciones de otros alumnos. **Actualizar disponibilidad** permite traer cambios realizados por otros usuarios.
 
@@ -31,6 +41,7 @@ Una evaluación no aprobada o ausente habilita un nuevo intento. La aprobación 
 - `review_blocks`: configuración de franjas asignadas a docentes.
 - `review_slots`: intervalos individuales, conservados aunque se retire o reemplace la franja.
 - `review_bookings`: reserva e intento, asistencia y evaluación.
+- `review_booking_notes`: notas privadas por reserva, separadas de los datos visibles al alumno. Solo los docentes asignados pueden leerlas, incluso mediante la API o expansiones de relaciones. Se guardan junto con la evaluación en el mismo lote atómico, con una nota por reserva y sin modificaciones posteriores. Una evaluación sin notas no crea un registro privado.
 
 Los índices únicos parciales impiden más de una reserva no cancelada por turno y más de un estado reservado/aprobado por alumno y revisión. Los lotes autenticados comparan la versión de la revisión y hacen que los cambios de agenda y reserva sean atómicos. Un conflicto solicita actualizar, sin confirmar una operación incierta. Las reglas de PocketBase también impiden alteraciones directas de identidades, horarios reservados, estados finales y resultados por parte de alumnos.
 
@@ -38,10 +49,16 @@ Una franja admite hasta 96 turnos, de 5 a 240 minutos cada uno. Se omiten interv
 
 ## Migración y verificación
 
+Para agregar el aviso previo a una instalación existente, ejecutar `npm run schema:review-message` antes de desplegar. Respalda el esquema, agrega `course_reviews.bookingMessage` como texto opcional y limita su modificación a docentes asignados. Conserva el resto de las reglas, las revisiones y las reservas anteriores. `schema:reviews` también incluye este campo para instalaciones nuevas.
+
+Para agregar notas privadas a una instalación que ya tiene revisiones, ejecutar `npm run schema:review-notes` antes de desplegar la aplicación. Este comando respalda el esquema y agrega únicamente la colección privada, sin modificar reservas ni evaluaciones anteriores. `schema:reviews` también incluye esta colección para instalaciones nuevas. Los resultados históricos siguen disponibles sin notas.
+
+Para habilitar solicitudes por franja, ejecutar `npm run schema:review-blocks` antes del despliegue. Agrega `course_reviews.orderedBooking` y actualiza únicamente las reglas de las revisiones y de creación de reservas; no reasigna ni elimina turnos existentes. La versión nueva activa este modo al abrir una agenda estudiantil o solicitar una franja. A partir de allí, la creación de reservas exige una capacidad que solo calcula el servidor con su configuración de servicio y que nunca se guarda en registros consultables por alumnos. Si se cambia la contraseña de servicio o la URL de PocketBase, volver a ejecutar esta migración junto con el cambio de configuración. La API estudiantil no puede desactivar el modo ordenado ni confirmar horarios individuales en esas revisiones.
+
 ```powershell
 npm run schema:reviews
 npm run schema:reviews:test
-npm run test:ui -- lib/review-appointments.test.ts lib/actions-courses.test.ts components/reviews/ReviewForms.test.tsx
+npm run test:ui -- lib/review-appointments.test.ts lib/review-appointments-data.test.ts lib/actions-courses.test.ts components/reviews/ReviewForms.test.tsx components/reviews/ReviewAgenda.test.tsx
 $env:REVIEWS_INTEGRATION='1'
 npm run test:ui -- lib/review-appointments.integration.test.ts
 ```

@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import type PocketBase from 'pocketbase';
 import type { Course } from '@/types';
+import { createServiceClient } from './pocketbase-service';
+import { reviewAllocationKey } from './review-allocation-key.mjs';
 import { isPublicationVisible } from './publication';
 import { generateReviewSlots, ReviewError, reviewSchema, reviewBlockSchema, reviewEvaluationSchema, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking } from './review-appointments';
 
@@ -55,7 +57,7 @@ export async function createReview(pb: PocketBase, courseId: string, input: unkn
 export async function updateReview(pb: PocketBase, courseId: string, reviewId: string, expected: string, input: unknown) {
   const { review } = await scopedReview(pb, courseId, reviewId, 'teacher');
   checkVersion(review, expected);
-  const data = reviewSchema.parse(input && typeof input === 'object' ? { publicationStatus: review.publicationStatus || 'published', publishAt: review.publishAt || '', ...input } : input);
+  const data = reviewSchema.parse(input && typeof input === 'object' ? { publicationStatus: review.publicationStatus || 'published', publishAt: review.publishAt || '', bookingMessage: review.bookingMessage || '', ...input } : input);
   if (data.publicationStatus === 'scheduled' && Date.parse(data.publishAt) <= Date.now() && (review.publicationStatus !== 'scheduled' || Date.parse(data.publishAt) !== Date.parse(review.publishAt || ''))) throw new ReviewError('La fecha de publicación debe estar en el futuro.');
   if (data.number !== review.number) throw new ReviewError('El número de una revisión existente no se puede cambiar.');
   const batch = pb.createBatch();
@@ -105,17 +107,46 @@ export async function removeReviewBlock(pb: PocketBase, courseId: string, review
   await commit(batch);
 }
 
-export async function reserveReviewSlot(pb: PocketBase, courseId: string, reviewId: string, slotId: string) {
-  const { course, review } = await scopedReview(pb, courseId, reviewId, 'student');
-  if (!review.open) throw new ReviewError('Esta revisión no está abierta para nuevas reservas.');
-  const slot = await pb.collection('review_slots').getOne<ReviewSlot>(slotId);
-  if (slot.review !== review.id || !slot.active || !course.teachers?.includes(slot.teacher) || Date.parse(slot.startsAt) <= Date.now()) throw new ReviewError('El turno ya no está disponible.');
-  const existing = await pb.collection('review_bookings').getList<ReviewBooking>(1, 1, { filter: pb.filter('review = {:review} && student = {:student} && (status = "reserved" || status = "passed")', { review: review.id, student: pb.authStore.record!.id }) });
-  if (existing.items[0]?.status === 'passed') throw new ReviewError('Ya aprobaste esta revisión.');
-  if (existing.items.length) throw new ReviewError('Ya tenés un turno reservado o pendiente de evaluación para esta revisión.');
-  const batch = guard(pb, review);
-  batch.collection('review_bookings').create({ review: review.id, slot: slot.id, student: pb.authStore.record!.id, status: 'reserved' });
-  await commit(batch);
+// Enable ordered booking lazily for legacy reviews; the capability stays server-side.
+// Authenticated batches still enforce the revision guard and all booking rules.
+export async function ensureReviewAllocationKey(service: PocketBase, reviewId: string) {
+  const allocationKey = reviewAllocationKey();
+  const record = await service.collection('course_reviews').getOne<{ orderedBooking: boolean }>(reviewId, { fields: 'orderedBooking' });
+  if (!record.orderedBooking) await service.collection('course_reviews').update(reviewId, { orderedBooking: true });
+  return allocationKey;
+}
+
+export async function reserveReviewBlock(pb: PocketBase, courseId: string, reviewId: string, blockId: string, acknowledgedMessage = '') {
+  let service: PocketBase | undefined;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const { course, review } = await scopedReview(pb, courseId, reviewId, 'student');
+    if (!review.open) throw new ReviewError('Esta revisión no está abierta para nuevas reservas.');
+    if ((review.bookingMessage || '') !== acknowledgedMessage) throw new ReviewError('Las indicaciones para reservar cambiaron. Actualizá la página y leelas antes de confirmar la solicitud.');
+    const block = await pb.collection('review_blocks').getOne<ReviewBlock>(blockId);
+    if (block.review !== review.id || !block.active || !course.teachers?.includes(block.teacher) || Date.parse(block.endsAt) <= Date.now()) throw new ReviewError('La franja ya no está disponible.');
+    const existing = await pb.collection('review_bookings').getList<ReviewBooking>(1, 1, { filter: pb.filter('review = {:review} && student = {:student} && (status = "reserved" || status = "passed")', { review: review.id, student: pb.authStore.record!.id }) });
+    if (existing.items[0]?.status === 'passed') throw new ReviewError('Ya aprobaste esta revisión.');
+    if (existing.items.length) throw new ReviewError('Ya tenés un turno reservado o pendiente de evaluación para esta revisión.');
+    service ??= await createServiceClient();
+    const allocationKey = await ensureReviewAllocationKey(service, review.id);
+    const slots = await pb.collection('review_slots').getFullList<ReviewSlot>({ filter: pb.filter('review = {:review} && block = {:block} && active = true && startsAt > {:now}', { review: review.id, block: block.id, now: new Date().toISOString() }), sort: 'startsAt,id' });
+    const occupied = await service.collection('review_bookings').getFullList<{ slot: string }>({ filter: pb.filter('review = {:review} && slot.block = {:block} && status != "cancelled"', { review: review.id, block: block.id }), fields: 'slot' });
+    const taken = new Set(occupied.map(booking => booking.slot));
+    const slot = slots.find(candidate => !taken.has(candidate.id));
+    if (!slot) throw new ReviewError('Esta franja ya no tiene turnos disponibles. Elegí otra franja.');
+    const batch = guard(pb, review);
+    batch.collection('review_bookings').create({ review: review.id, slot: slot.id, student: pb.authStore.record!.id, status: 'reserved', allocationKey });
+    try {
+      await batch.send();
+      return slot.id;
+    } catch {
+      // Re-read authoritative availability after a concurrent allocation. Never
+      // replay an uncertain write without checking the student's reservations.
+      const own = await pb.collection('review_bookings').getList<ReviewBooking>(1, 1, { filter: pb.filter('review = {:review} && student = {:student} && status = "reserved"', { review: review.id, student: pb.authStore.record!.id }) });
+      if (own.items.length) throw new ReviewError('Ya tenés un turno reservado. Actualizá la página para ver el horario asignado.');
+      if (attempt === 7) throw new ReviewError('La disponibilidad está cambiando. Actualizá la página y volvé a solicitar una franja.');
+    }
+  }
 }
 
 export async function cancelReviewBooking(pb: PocketBase, courseId: string, reviewId: string, bookingId: string, mode: ReviewMode) {
@@ -132,12 +163,13 @@ export async function cancelReviewBooking(pb: PocketBase, courseId: string, revi
 
 export async function evaluateReviewBooking(pb: PocketBase, courseId: string, reviewId: string, bookingId: string, input: unknown) {
   const { review } = await scopedReview(pb, courseId, reviewId, 'teacher');
-  const data = reviewEvaluationSchema.parse(input);
+  const { teacherNotes, ...data } = reviewEvaluationSchema.parse(input);
   const booking = await pb.collection('review_bookings').getOne<ReviewBooking>(bookingId);
   if (booking.review !== review.id || booking.status !== 'reserved') throw new ReviewError('La reserva no está pendiente de evaluación en esta revisión.');
   const slot = await pb.collection('review_slots').getOne<ReviewSlot>(booking.slot);
   if (Date.parse(slot.endsAt) > Date.now()) throw new ReviewError('La evaluación se registra después de finalizar el turno.');
   const batch = guard(pb, review);
   batch.collection('review_bookings').update(booking.id, { ...data, evaluatedBy: pb.authStore.record!.id });
+  if (teacherNotes) batch.collection('review_booking_notes').create({ booking: booking.id, notes: teacherNotes, author: pb.authStore.record!.id });
   await commit(batch);
 }

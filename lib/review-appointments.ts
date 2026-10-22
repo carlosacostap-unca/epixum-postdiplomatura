@@ -7,6 +7,7 @@ export const reviewSchema = z.object({
   number: z.number().int().min(1).max(9999),
   title: z.string().trim().min(1, 'Escribí un título.').max(160),
   instructions: z.string().trim().max(4000),
+  bookingMessage: z.string().trim().max(4000).default(''),
   open: z.boolean(),
   publicationStatus: z.enum(['draft', 'published', 'scheduled']).default('draft'),
   publishAt: z.string().default(''),
@@ -26,7 +27,7 @@ export const reviewBlockSchema = z.object({
 }).refine(v => (v.breakEvery === 0) === (v.breakMinutes === 0), { message: 'Para incluir descansos indicá cada cuántos turnos y su duración; para omitirlos dejá ambos en cero.' });
 export type ReviewBlockInput = z.infer<typeof reviewBlockSchema>;
 export type ReviewInput = z.infer<typeof reviewSchema>;
-export interface Review extends Omit<ReviewInput, 'publicationStatus' | 'publishAt'>, Publication { id: string; course: string; revision: string }
+export interface Review extends Omit<ReviewInput, 'publicationStatus' | 'publishAt' | 'bookingMessage'>, Publication { id: string; course: string; revision: string; bookingMessage?: string }
 
 export function reviewPublicationDate(value?: string | null) {
   if (!value || !Number.isFinite(Date.parse(value))) return '';
@@ -41,10 +42,12 @@ export interface ReviewBooking {
   attendance: '' | 'present' | 'absent'; feedback: string; evaluatedBy: string;
   created: string; updated: string;
 }
+export interface ReviewBookingNote { id: string; booking: string; notes: string; author: string }
 export const reviewEvaluationSchema = z.object({
   attendance: z.enum(['present', 'absent']),
   status: z.enum(['passed', 'not_passed']),
   feedback: z.string().trim().max(8000),
+  teacherNotes: z.string().trim().max(8000).default(''),
 }).refine(v => v.attendance !== 'absent' || v.status === 'not_passed', { message: 'Un alumno ausente no puede quedar aprobado.' });
 export type ReviewEvaluation = z.infer<typeof reviewEvaluationSchema>;
 export class ReviewError extends Error {}
@@ -83,5 +86,5 @@ export function reviewDate(value: string, timeOnly = false) {
   }).format(new Date(value));
 }
 export const bookingLabels: Record<ReviewBookingStatus, string> = {
-  reserved: 'Reservado · pendiente de evaluación', cancelled: 'Cancelado', not_passed: 'Todavía no aprobó', passed: 'Aprobó',
+  reserved: 'Reservado · pendiente de evaluación', cancelled: 'Cancelado', not_passed: 'No aprobado', passed: 'Aprobado',
 };

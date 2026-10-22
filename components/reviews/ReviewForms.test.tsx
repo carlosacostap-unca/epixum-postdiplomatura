@@ -12,8 +12,17 @@ describe('formularios de revisiones', () => {
     render(<ReviewEditor courseId="course1" />);
     expect(screen.getByLabelText('Estado de publicación')).toHaveValue('draft');
     fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Preparando revisión' } });
+    fireEvent.change(screen.getByLabelText('Mensaje antes de solicitar turno'), { target: { value: 'Traé tu proyecto listo para mostrar.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear revisión' }));
-    expect(mocks.saveReview).toHaveBeenCalledWith('course1', null, '', expect.objectContaining({ publicationStatus: 'draft', publishAt: '', open: true }));
+    expect(mocks.saveReview).toHaveBeenCalledWith('course1', null, '', expect.objectContaining({ publicationStatus: 'draft', publishAt: '', open: true, bookingMessage: 'Traé tu proyecto listo para mostrar.' }));
+    await screen.findByText('Cambios guardados.');
+  });
+  it('permite consultar y quitar un mensaje existente', async () => {
+    render(<ReviewEditor courseId="course1" review={{ ...review, bookingMessage: 'Traé tus avances.' }} />);
+    expect(screen.getByLabelText('Mensaje antes de solicitar turno')).toHaveValue('Traé tus avances.');
+    fireEvent.change(screen.getByLabelText('Mensaje antes de solicitar turno'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar revisión' }));
+    expect(mocks.saveReview).toHaveBeenCalledWith('course1', 'review1', 'version1', expect.objectContaining({ bookingMessage: '' }));
     await screen.findByText('Cambios guardados.');
   });
   it('programa la fecha de Argentina y permite cancelar la programación', async () => {
@@ -58,7 +67,16 @@ describe('formularios de revisiones', () => {
     expect(screen.getByLabelText('Resultado')).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Devolución para el alumno'), { target: { value: 'Reprogramar.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar evaluación definitiva' }));
-    expect(mocks.evaluate).toHaveBeenCalledWith('course1', 'review1', 'booking1', { attendance: 'absent', status: 'not_passed', feedback: 'Reprogramar.' });
+    expect(mocks.evaluate).toHaveBeenCalledWith('course1', 'review1', 'booking1', { attendance: 'absent', status: 'not_passed', feedback: 'Reprogramar.', teacherNotes: '' });
+    await screen.findByText('Cambios guardados.');
+  });
+  it('guarda aprobado, devolución y notas privadas como campos separados', async () => {
+    render(<ReviewEvaluationForm courseId="course1" reviewId="review1" bookingId="booking1" />);
+    fireEvent.change(screen.getByLabelText('Resultado'), { target: { value: 'passed' } });
+    fireEvent.change(screen.getByLabelText('Devolución para el alumno'), { target: { value: 'Buen trabajo.' } });
+    fireEvent.change(screen.getByLabelText('Notas privadas para docentes'), { target: { value: 'Observación interna.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar evaluación definitiva' }));
+    expect(mocks.evaluate).toHaveBeenCalledWith('course1', 'review1', 'booking1', { attendance: 'present', status: 'passed', feedback: 'Buen trabajo.', teacherNotes: 'Observación interna.' });
     await screen.findByText('Cambios guardados.');
   });
 });
