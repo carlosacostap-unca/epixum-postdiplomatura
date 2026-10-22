@@ -14,6 +14,7 @@ describe('privacidad de las notas en la agenda', () => {
     mocks.collection.mockImplementation((name: string) => ({
       getOne: mocks.review,
       getFullList: async () => name === 'review_booking_notes' ? [{ booking: 'booking', notes: 'Nota interna confidencial' }]
+        : name === 'review_block_meetings' ? [{ block: 'block', url: 'https://meet.google.com/abc-defg-hij' }, { block: 'other-block', url: 'https://meet.google.com/xyz-abcd-efg' }]
         : name === 'review_bookings' ? [{ id: 'booking', slot: 'own-slot', status: 'passed', student: 'student', feedback: 'Buen trabajo' }]
         : name === 'review_blocks' ? [{ id: 'block', active: true, teacher: 'privateTeacherId', startsAt: '2099-01-01T12:00:00Z', endsAt: '2099-01-01T13:00:00Z' }]
         : [{ id: 'own-slot', block: 'block', active: true, teacher: 'privateTeacherId', startsAt: '2020-01-01T12:00:00Z' }, { id: 'unassigned-slot', block: 'block', active: true, teacher: 'privateTeacherId', startsAt: '2099-01-01T12:15:00Z' }],
@@ -23,6 +24,7 @@ describe('privacidad de las notas en la agenda', () => {
   it('entrega las notas solo a la vista docente', async () => {
     const data = await getReviewAgenda('course', 'review', 'teacher');
     expect(data.teacherNotes).toEqual({ booking: 'Nota interna confidencial' });
+    expect(data.blocks[0].meetUrl).toBe('https://meet.google.com/abc-defg-hij');
   });
   it('no consulta ni serializa notas para los alumnos', async () => {
     const data = await getReviewAgenda('course', 'review', 'student');
@@ -36,11 +38,23 @@ describe('privacidad de las notas en la agenda', () => {
     expect(data.names).toEqual({});
     expect(JSON.stringify(data)).not.toContain('privateTeacherId');
     expect(JSON.stringify(data)).not.toContain('unassigned-slot');
+    expect(data.meetingLinks).toEqual({});
+    expect(JSON.stringify(data)).not.toContain('meet.google.com');
   });
   it('rechaza borradores antes de consultar notas o usar el cliente de servicio', async () => {
     mocks.review.mockResolvedValue({ id: 'review', course: 'course', publicationStatus: 'draft' });
     await expect(getReviewAgenda('course', 'review', 'student')).rejects.toThrow('publicada');
     expect(mocks.collection).not.toHaveBeenCalledWith('review_booking_notes');
     expect(mocks.service).not.toHaveBeenCalled();
+  });
+  it('entrega solamente el enlace de la franja del turno reservado', async () => {
+    const base = mocks.collection.getMockImplementation()!;
+    mocks.collection.mockImplementation((name: string) => name === 'review_bookings' ? {
+      getFullList: async () => [{ id: 'booking', slot: 'own-slot', status: 'reserved', student: 'student' }],
+    } : base(name));
+    const data = await getReviewAgenda('course', 'review', 'student');
+    expect(data.meetingLinks).toEqual({ booking: 'https://meet.google.com/abc-defg-hij' });
+    expect(data.blocks[0].meetUrl).toBe('');
+    expect(JSON.stringify(data)).not.toContain('https://meet.google.com/xyz-abcd-efg');
   });
 });

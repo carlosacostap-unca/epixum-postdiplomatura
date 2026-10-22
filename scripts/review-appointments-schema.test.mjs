@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyReviewAppointmentsSchema as applySchema, applyReviewBookingMessageSchema, reviewRules, reviewBookingNotesRules, orderedReviewBookingRule } from './review-appointments-schema.mjs';
+import { applyReviewAppointmentsSchema as applySchema, applyReviewBookingMessageSchema, reviewRules, reviewBookingNotesRules, reviewBlockMeetingRules, orderedReviewBookingRule } from './review-appointments-schema.mjs';
 const applyReviewAppointmentsSchema = pb => applySchema(pb, 'a'.repeat(64));
 
 function fixture() {
@@ -34,6 +34,20 @@ test('conserva un límite de lotes superior ya configurado', async () => {
   await pb.settings.update({ batch: { enabled: true, maxRequests: 300, timeout: 10 } });
   await applyReviewAppointmentsSchema(pb);
   assert.equal((await pb.settings.getAll()).batch.maxRequests, 300);
+});
+
+test('cada franja tiene una sala y solamente la ven docentes o alumnos con reserva vigente', async () => {
+  const { pb, state } = fixture();
+  await applyReviewAppointmentsSchema(pb);
+  const meetings = state.get('review_block_meetings');
+  assert.equal(meetings.fields.find(f => f.name === 'block').collectionId, 'review_blocks');
+  assert.equal(meetings.fields.find(f => f.name === 'url').max, 2048);
+  assert.ok(meetings.indexes.some(index => index.includes('UNIQUE') && index.includes('(block)')));
+  assert.match(reviewBlockMeetingRules.viewRule, /@collection.review_bookings:meeting.student \?= @request.auth.id/);
+  assert.match(reviewBlockMeetingRules.viewRule, /@collection.review_bookings:meeting.status \?= "reserved"/);
+  assert.match(reviewBlockMeetingRules.viewRule, /@collection.review_bookings:meeting.slot.block \?= block/);
+  assert.doesNotMatch(reviewBlockMeetingRules.updateRule, /startsAt > @now/);
+  assert.equal(state.get('review_blocks').fields.some(f => f.name === 'meetUrl'), false);
 });
 
 test('el mensaje previo es opcional y solamente los docentes pueden modificarlo', async () => {

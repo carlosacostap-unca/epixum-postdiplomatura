@@ -30,13 +30,26 @@ describe('resultado y notas privadas del turno', () => {
     expect(screen.queryByText('Observación interna confidencial')).not.toBeInTheDocument();
     expect(screen.queryByText('Notas privadas · Solo docentes')).not.toBeInTheDocument();
   });
+  it('muestra el enlace de Meet de la reserva asignada', () => {
+    const agenda = { ...data, bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })), meetingLinks: { booking: 'https://meet.google.com/abc-defg-hij' } } as typeof data;
+    render(<ReviewAgenda data={agenda} mode="student" />);
+    const link = screen.getByRole('link', { name: 'Unirme a la revisión por Meet' });
+    expect(link).toHaveAttribute('href', 'https://meet.google.com/abc-defg-hij');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+  it('no muestra el enlace de una reserva cancelada', () => {
+    const agenda = { ...data, bookings: data.bookings.map(booking => ({ ...booking, status: 'cancelled' })), meetingLinks: { booking: 'https://meet.google.com/abc-defg-hij' } } as typeof data;
+    render(<ReviewAgenda data={agenda} mode="student" />);
+    expect(screen.queryByRole('link', { name: 'Unirme a la revisión por Meet' })).not.toBeInTheDocument();
+  });
   it('permite solicitar una franja sin mostrar docentes ni elegir horarios individuales', async () => {
     const agenda = { ...data, bookings: [], blocks: [{ id: 'block', active: true, teacher: 'teacher', startsAt: '2026-01-03T12:00:00Z', endsAt: '2026-01-03T13:00:00Z', duration: 15, availableSlots: 3 }],
       slots: [{ id: 'specific-slot', block: 'block', active: true, teacher: 'teacher', startsAt: '2026-01-03T12:15:00Z', endsAt: '2026-01-03T12:30:00Z' }],
       names: { teacher: 'Nombre privado del docente' }, teachers: [{ id: 'teacher', name: 'Nombre privado del docente' }, { id: 'peer', name: 'Otro docente' }],
     } as unknown as typeof data;
     render(<ReviewAgenda data={agenda} mode="student" />);
-    expect(screen.getByText('03/01/2026, 09:00–10:00')).toBeInTheDocument();
+    expect(screen.getByText('sábado, 03/01/2026, 09:00–10:00')).toBeInTheDocument();
     expect(screen.queryByText('09:15–09:30')).not.toBeInTheDocument();
     expect(screen.queryByText('Nombre privado del docente')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Filtrar por docente')).not.toBeInTheDocument();
@@ -57,7 +70,7 @@ describe('resultado y notas privadas del turno', () => {
     const dialog = screen.getByRole('dialog', { name: 'Antes de solicitar tu turno' });
     expect(dialog).toHaveTextContent('Traé tu proyecto.');
     expect(dialog).toHaveTextContent('Revisá los requisitos antes de reservar.');
-    expect(dialog).toHaveAccessibleDescription('Franja: 03/01/2026, 09:00–10:00. Horario de Argentina (UTC−3).');
+    expect(dialog).toHaveAccessibleDescription('Franja: sábado, 03/01/2026, 09:00–10:00. Horario de Argentina (UTC−3).');
     expect(mocks.reserve).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Volver sin reservar' }));
     expect(mocks.reserve).not.toHaveBeenCalled();

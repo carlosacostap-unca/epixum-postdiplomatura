@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { ReviewBlockEditor, ReviewEditor, ReviewEvaluationForm } from './ReviewForms';
+import { ReviewBlockEditor, ReviewEditor, ReviewMeetingEditor, ReviewEvaluationForm } from './ReviewForms';
 import type { Review } from '@/lib/review-appointments';
-const mocks = vi.hoisted(() => ({ saveReview: vi.fn(), saveBlock: vi.fn(), evaluate: vi.fn(), refresh: vi.fn() }));
+const mocks = vi.hoisted(() => ({ saveReview: vi.fn(), saveBlock: vi.fn(), saveMeeting: vi.fn(), evaluate: vi.fn(), refresh: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: mocks.refresh, push: vi.fn() }) }));
-vi.mock('@/lib/actions-review-appointments', () => ({ saveReviewAction: mocks.saveReview, saveReviewBlockAction: mocks.saveBlock, evaluateReviewAction: mocks.evaluate }));
+vi.mock('@/lib/actions-review-appointments', () => ({ saveReviewAction: mocks.saveReview, saveReviewBlockAction: mocks.saveBlock, saveReviewMeetingAction: mocks.saveMeeting, evaluateReviewAction: mocks.evaluate }));
 const review: Review = { id: 'review1', course: 'course1', number: 1, title: 'Avances', instructions: '', open: true, revision: 'version1' };
 describe('formularios de revisiones', () => {
-  beforeEach(() => { mocks.saveReview.mockReset().mockResolvedValue({ success: true }); mocks.saveBlock.mockReset().mockResolvedValue({ success: true }); mocks.evaluate.mockReset().mockResolvedValue({ success: true }); });
+  beforeEach(() => { mocks.saveReview.mockReset().mockResolvedValue({ success: true }); mocks.saveBlock.mockReset().mockResolvedValue({ success: true }); mocks.saveMeeting.mockReset().mockResolvedValue({ success: true }); mocks.evaluate.mockReset().mockResolvedValue({ success: true }); });
   it('crea en borrador aunque las reservas estén abiertas', async () => {
     render(<ReviewEditor courseId="course1" />);
     expect(screen.getByLabelText('Estado de publicación')).toHaveValue('draft');
@@ -44,12 +44,21 @@ describe('formularios de revisiones', () => {
     fireEvent.change(screen.getByLabelText('Hora de fin'), { target: { value: '19:00' } });
     fireEvent.change(screen.getByLabelText('Descanso cada N turnos'), { target: { value: '2' } });
     fireEvent.change(screen.getByLabelText('Minutos de descanso'), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Enlace de Google Meet'), { target: { value: 'https://meet.google.com/abc-defg-hij' } });
     fireEvent.click(screen.getByRole('button', { name: 'Previsualizar turnos' }));
     expect(screen.getByText('3 turnos disponibles para reservar')).toBeInTheDocument();
     expect(screen.getByText('18:30–18:40')).toBeInTheDocument();
     expect(mocks.saveBlock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Crear turnos libres' }));
-    expect(mocks.saveBlock).toHaveBeenCalledWith('course1', 'review1', 'version1', null, expect.objectContaining({ breakEvery: 2, breakMinutes: 10, teacher: 'teacher00000001' }));
+    expect(mocks.saveBlock).toHaveBeenCalledWith('course1', 'review1', 'version1', null, expect.objectContaining({ breakEvery: 2, breakMinutes: 10, teacher: 'teacher00000001', meetUrl: 'https://meet.google.com/abc-defg-hij' }));
+    await screen.findByText('Cambios guardados.');
+  });
+  it('actualiza únicamente el enlace sin modificar la franja ni sus reservas', async () => {
+    render(<ReviewMeetingEditor courseId="course1" review={review} block={{ id: 'block', meetUrl: 'https://meet.google.com/abc-defg-hij' } as Parameters<typeof ReviewMeetingEditor>[0]['block']} />);
+    fireEvent.change(screen.getByLabelText('Enlace de Google Meet'), { target: { value: 'https://meet.google.com/xyz-abcd-efg' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar enlace de Meet' }));
+    expect(mocks.saveMeeting).toHaveBeenCalledWith('course1', 'review1', 'version1', 'block', 'https://meet.google.com/xyz-abcd-efg');
+    expect(mocks.saveBlock).not.toHaveBeenCalled();
     await screen.findByText('Cambios guardados.');
   });
   it('invalida una vista previa si se cambia la duración', () => {

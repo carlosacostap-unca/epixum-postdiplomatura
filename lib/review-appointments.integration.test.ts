@@ -3,8 +3,8 @@ import { randomUUID } from 'node:crypto';
 import dotenv from 'dotenv';
 import PocketBase from 'pocketbase';
 import { describe, expect, it } from 'vitest';
-import { createReview, updateReview, saveReviewBlock, reserveReviewBlock, cancelReviewBooking, evaluateReviewBooking, removeReviewBlock, requireReviewCourse } from './review-appointments-service';
-import type { Review, ReviewSlot, ReviewBlock, ReviewBooking, ReviewBookingNote } from './review-appointments';
+import { createReview, updateReview, saveReviewBlock, saveReviewMeeting, reserveReviewBlock, cancelReviewBooking, evaluateReviewBooking, removeReviewBlock, requireReviewCourse } from './review-appointments-service';
+import type { Review, ReviewSlot, ReviewBlock, ReviewBooking, ReviewBookingNote, ReviewBlockMeeting } from './review-appointments';
 
 describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBase real', () => {
   it('agenda, permisos, carreras, cancelación, evaluación, reintento y aprobación', async () => {
@@ -194,6 +194,40 @@ describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBa
       expect((await messageFresh()).bookingMessage).toBe('Traé tu proyecto y su documentación.');
       await updateReview(peer.pb, course.id, messageReview.id, (await messageFresh()).revision, { ...messageInput, bookingMessage: '' });
       await reserveReviewBlock(other.pb, course.id, messageReview.id, messageSlot.block);
+      // A Meet room belongs to a range and is visible only while the student is booked.
+      const meetingReview = await createReview(teacher.pb, course.id, { ...input, number: 6, title: 'Revisión por Meet' });
+      const meetUrl = 'https://meet.google.com/abc-defg-hij';
+      const updatedMeetUrl = 'https://meet.google.com/xyz-abcd-efg';
+      await saveReviewBlock(peer.pb, course.id, meetingReview.id, meetingReview.revision, null, { ...blockInput, meetUrl });
+      const meetingFresh = () => teacher.pb.collection('course_reviews').getOne<Review>(meetingReview.id);
+      const meetingSlots = await teacher.pb.collection('review_slots').getFullList<ReviewSlot>({ filter: `review = "${meetingReview.id}"`, sort: 'startsAt' });
+      const meetingBlock = meetingSlots[0].block;
+      const meetingRecord = (await teacher.pb.collection('review_block_meetings').getFullList<ReviewBlockMeeting>({ filter: `block = "${meetingBlock}"` }))[0];
+      expect(meetingRecord.url).toBe(meetUrl);
+      for (const unauthorized of [student.pb, other.pb, outsider.pb]) {
+        expect((await unauthorized.collection('review_block_meetings').getList(1, 1, { filter: `block = "${meetingBlock}"` })).totalItems).toBe(0);
+        await expect(unauthorized.collection('review_block_meetings').getOne(meetingRecord.id)).rejects.toBeDefined();
+      }
+      expect(JSON.stringify(await student.pb.collection('review_blocks').getOne(meetingBlock, { expand: 'review_block_meetings_via_block' }))).not.toContain(meetUrl);
+      await reserveReviewBlock(student.pb, course.id, meetingReview.id, meetingBlock);
+      const meetingBooking = (await student.pb.collection('review_bookings').getFullList<ReviewBooking>({ filter: `review = "${meetingReview.id}"` }))[0];
+      expect((await student.pb.collection('review_block_meetings').getOne(meetingRecord.id)).url).toBe(meetUrl);
+      await expect(student.pb.collection('review_block_meetings').update(meetingRecord.id, { url: updatedMeetUrl })).rejects.toBeDefined();
+      await expect(student.pb.collection('review_block_meetings').delete(meetingRecord.id)).rejects.toBeDefined();
+      await expect(saveReviewMeeting(teacher.pb, otherCourse.id, meetingReview.id, (await meetingFresh()).revision, meetingBlock, updatedMeetUrl)).rejects.toThrow('pertenece');
+      await expect(saveReviewMeeting(peer.pb, course.id, meetingReview.id, (await meetingFresh()).revision, meetingBlock, 'javascript:alert(1)')).rejects.toThrow();
+      // Link updates remain available with pending reservations and preserve slot identity.
+      await saveReviewMeeting(peer.pb, course.id, meetingReview.id, (await meetingFresh()).revision, meetingBlock, updatedMeetUrl);
+      expect((await student.pb.collection('review_block_meetings').getOne(meetingRecord.id)).url).toBe(updatedMeetUrl);
+      expect((await student.pb.collection('review_bookings').getOne(meetingBooking.id)).slot).toBe(meetingBooking.slot);
+      await cancelReviewBooking(student.pb, course.id, meetingReview.id, meetingBooking.id, 'student');
+      await reserveReviewBlock(other.pb, course.id, meetingReview.id, meetingBlock);
+      await expect(student.pb.collection('review_block_meetings').getOne(meetingRecord.id)).rejects.toBeDefined();
+      expect((await other.pb.collection('review_block_meetings').getOne(meetingRecord.id)).url).toBe(updatedMeetUrl);
+      await saveReviewMeeting(peer.pb, course.id, meetingReview.id, (await meetingFresh()).revision, meetingBlock, '');
+      expect((await other.pb.collection('review_block_meetings').getList(1, 1, { filter: `block = "${meetingBlock}"` })).totalItems).toBe(0);
+      await saveReviewMeeting(teacher.pb, course.id, meetingReview.id, (await meetingFresh()).revision, meetingBlock, meetUrl);
+      expect((await other.pb.collection('review_block_meetings').getFullList<ReviewBlockMeeting>({ filter: `block = "${meetingBlock}"` }))[0].url).toBe(meetUrl);
       await admin.collection('course_enrollments').delete(enrollment.id);
       await expect(requireReviewCourse(student.pb, course.id, 'student')).rejects.toThrow();
       await admin.collection('courses').update(course.id, { reviewsEnabled: false });

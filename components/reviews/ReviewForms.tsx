@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ZodError } from 'zod';
 import { generateReviewSlots, reviewDate, reviewPublicationDate, type Review, type ReviewBlock, type ReviewBlockInput } from '@/lib/review-appointments';
 import { isPublicationVisible } from '@/lib/publication';
-import { saveReviewAction, saveReviewBlockAction, evaluateReviewAction } from '@/lib/actions-review-appointments';
+import { saveReviewAction, saveReviewBlockAction, saveReviewMeetingAction, evaluateReviewAction } from '@/lib/actions-review-appointments';
 
 export const reviewButton = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-2 text-sm font-bold text-[var(--color-on-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 export const reviewSecondary = 'inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--color-outline)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface-container-high)] disabled:opacity-50';
@@ -76,7 +76,7 @@ export function ReviewBlockEditor({ courseId, review, teachers, block, onDone }:
   return <form className="space-y-5" onChange={() => { setPreview(null); setError(''); }} onSubmit={e => {
     e.preventDefault(); const form = new FormData(e.currentTarget);
     try {
-      const input = { teacher: String(form.get('teacher')), date: String(form.get('date')), start: String(form.get('start')), end: String(form.get('end')), duration: Number(form.get('duration')), breakEvery: Number(form.get('breakEvery')), breakMinutes: Number(form.get('breakMinutes')) };
+      const input = { teacher: String(form.get('teacher')), date: String(form.get('date')), start: String(form.get('start')), end: String(form.get('end')), duration: Number(form.get('duration')), breakEvery: Number(form.get('breakEvery')), breakMinutes: Number(form.get('breakMinutes')), meetUrl: String(form.get('meetUrl') || '') };
       setPreview({ input, plan: generateReviewSlots(input) }); setError('');
     } catch (e) { setPreview(null); setError(e instanceof ZodError ? e.issues[0].message : e instanceof Error ? e.message : 'Revisá los horarios.'); }
   }}>
@@ -92,6 +92,8 @@ export function ReviewBlockEditor({ courseId, review, teachers, block, onDone }:
         <Field label="Descanso cada N turnos"><input type="number" name="breakEvery" className={reviewInput} required min={0} max={96} defaultValue={block?.breakEvery ?? 0} /></Field>
         <Field label="Minutos de descanso"><input type="number" name="breakMinutes" className={reviewInput} required min={0} max={120} defaultValue={block?.breakMinutes ?? 0} /></Field>
       </div>
+      <Field label="Enlace de Google Meet"><input type="url" name="meetUrl" className={reviewInput} maxLength={2048} defaultValue={block?.meetUrl} placeholder="https://meet.google.com/abc-defg-hij" /></Field>
+      <p className="text-sm text-[var(--color-text-muted)]">Pegá el enlace de la sala de esta franja. El alumno podrá abrirlo desde su reserva una vez que tenga turno asignado.</p>
       <p className="text-sm text-[var(--color-text-muted)]">Horarios de Argentina (UTC−3). Para omitir descansos, dejá ambos campos en cero. Cada turno admite un alumno.</p>
       <div className="flex flex-wrap gap-3"><button type="submit" className={reviewSecondary}>Previsualizar turnos</button><button type="button" className={reviewSecondary} onClick={onDone}>Cerrar</button></div>
       {preview && <div className="space-y-4 rounded-xl border border-[var(--color-primary)] bg-[var(--color-surface-container)] p-4">
@@ -102,6 +104,19 @@ export function ReviewBlockEditor({ courseId, review, teachers, block, onDone }:
     </fieldset>
     {error && <p role="alert" className="text-sm text-[var(--color-error)]">{error}</p>}{mutation.feedback}
   </form>;
+}
+
+export function ReviewMeetingEditor({ courseId, review, block }: { courseId: string; review: Review; block: ReviewBlock }) {
+  const mutation = useReviewMutation();
+  return <form className="mt-4 space-y-4" onSubmit={event => {
+    event.preventDefault();
+    const url = String(new FormData(event.currentTarget).get('meetUrl') || '');
+    mutation.run(() => saveReviewMeetingAction(courseId, review.id, review.revision, block.id, url));
+  }}><fieldset disabled={mutation.pending} className="space-y-3">
+    <Field label="Enlace de Google Meet"><input className={reviewInput} name="meetUrl" type="url" maxLength={2048} defaultValue={block.meetUrl} placeholder="https://meet.google.com/abc-defg-hij" /></Field>
+    <p className="text-xs text-[var(--color-text-muted)]">Podés actualizarlo aunque haya reservas. Los alumnos con turno reservado verán el enlace actualizado. Dejalo vacío para quitarlo.</p>
+    <button className={reviewButton} type="submit">{mutation.pending ? 'Guardando…' : 'Guardar enlace de Meet'}</button>
+  </fieldset>{mutation.feedback}</form>;
 }
 
 export function ReviewEvaluationForm({ courseId, reviewId, bookingId }: { courseId: string; reviewId: string; bookingId: string }) {

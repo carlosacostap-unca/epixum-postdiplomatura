@@ -26,6 +26,17 @@ export const reviewBookingNotesRules = {
   updateRule: null, deleteRule: null,
 };
 
+const meetingTeacher = 'block.review.course.teachers.id ?= @request.auth.id';
+const meetingScope = `${auth} && block.review.course.reviewsEnabled = true`;
+const meetingStudent = `block.active = true && block.review.course.course_enrollments_via_course.student.id ?= @request.auth.id && ${visiblePublicationRule('block.review.')} && @collection.review_bookings:meeting.student ?= @request.auth.id && @collection.review_bookings:meeting.status ?= "reserved" && @collection.review_bookings:meeting.slot.block ?= block`;
+export const reviewBlockMeetingRules = {
+  listRule: `${meetingScope} && (${meetingTeacher} || (${meetingStudent}))`,
+  viewRule: `${meetingScope} && (${meetingTeacher} || (${meetingStudent}))`,
+  createRule: `${meetingScope} && ${meetingTeacher} && block.active = true && ${dates}`,
+  updateRule: `${meetingScope} && ${meetingTeacher} && block.active = true && ${unchanged(['block'])} && ${dates}`,
+  deleteRule: `${meetingScope} && ${meetingTeacher} && block.active = true`,
+};
+
 export const reviewRules = {
   reviews: {
     listRule: member, viewRule: member,
@@ -97,6 +108,14 @@ export async function applyReviewBookingNotesSchema(pb) {
   ]);
 }
 
+export async function applyReviewBlockMeetingsSchema(pb) {
+  const block = await pb.collections.getOne('review_blocks');
+  return ensure(pb, 'review_block_meetings', [rel('block', block.id),
+    { ...text('url', 2048), pattern: '^https://meet[.]google[.]com/\\S+$' }, ...timestamps], reviewBlockMeetingRules, [
+    'CREATE UNIQUE INDEX idx_review_block_meeting ON review_block_meetings (block)',
+  ]);
+}
+
 export async function applyReviewAppointmentsSchema(pb, allocationKey = reviewAllocationKey()) {
   const courses = await pb.collections.getOne('courses');
   const users = await pb.collections.getOne('users');
@@ -121,6 +140,7 @@ export async function applyReviewAppointmentsSchema(pb, allocationKey = reviewAl
   ]);
   for (const [record, rules] of [[review, reviewRules.reviews], [block, reviewRules.blocks], [slot, reviewRules.slots], [booking, { ...reviewRules.bookings, createRule: orderedReviewBookingRule(allocationKey) }]]) await pb.collections.update(record.id, rules);
   await applyReviewBookingNotesSchema(pb);
+  await applyReviewBlockMeetingsSchema(pb);
   const settings = await pb.settings.getAll();
   if (!settings.batch?.enabled || settings.batch.maxRequests < 200) await pb.settings.update({ batch: { ...settings.batch, enabled: true, maxRequests: Math.max(settings.batch?.maxRequests || 0, 200) } });
 }

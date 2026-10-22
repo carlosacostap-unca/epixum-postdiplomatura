@@ -4,7 +4,7 @@ import type { Course } from '@/types';
 import { createServiceClient } from './pocketbase-service';
 import { reviewAllocationKey } from './review-allocation-key.mjs';
 import { isPublicationVisible } from './publication';
-import { generateReviewSlots, ReviewError, reviewSchema, reviewBlockSchema, reviewEvaluationSchema, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking } from './review-appointments';
+import { generateReviewSlots, ReviewError, reviewSchema, reviewBlockSchema, reviewEvaluationSchema, reviewMeetUrlSchema, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking, type ReviewBlockMeeting } from './review-appointments';
 
 const nonce = () => randomBytes(12).toString('hex');
 const recordId = () => randomBytes(8).toString('hex').slice(0, 15);
@@ -68,7 +68,7 @@ export async function updateReview(pb: PocketBase, courseId: string, reviewId: s
 export async function saveReviewBlock(pb: PocketBase, courseId: string, reviewId: string, expected: string, blockId: string | null, input: unknown) {
   const { course, review } = await scopedReview(pb, courseId, reviewId, 'teacher');
   checkVersion(review, expected);
-  const data = reviewBlockSchema.parse(input);
+  const { meetUrl, ...data } = reviewBlockSchema.parse(input);
   if (!course.teachers?.includes(data.teacher)) throw new ReviewError('Elegí un docente asignado al curso.');
   const plan = generateReviewSlots(data);
   if (Date.parse(plan.startsAt) <= Date.now()) throw new ReviewError('La franja debe comenzar en el futuro.');
@@ -86,6 +86,27 @@ export async function saveReviewBlock(pb: PocketBase, courseId: string, reviewId
     batch.collection('review_blocks').create({ ...data, id, review: review.id, startsAt: plan.startsAt, endsAt: plan.endsAt, active: true });
   }
   for (const slot of plan.slots) batch.collection('review_slots').create({ ...slot, review: review.id, block: id, teacher: data.teacher, active: true });
+  await queueReviewMeeting(pb, batch, id, meetUrl);
+  await commit(batch);
+}
+
+async function queueReviewMeeting(pb: PocketBase, batch: ReturnType<PocketBase['createBatch']>, blockId: string, meetUrl?: string) {
+  if (meetUrl === undefined) return;
+  const current = await pb.collection('review_block_meetings').getList<ReviewBlockMeeting>(1, 1, { filter: pb.filter('block = {:block}', { block: blockId }) });
+  const meeting = current.items[0];
+  if (!meetUrl) { if (meeting) batch.collection('review_block_meetings').delete(meeting.id); }
+  else if (meeting) batch.collection('review_block_meetings').update(meeting.id, { url: meetUrl });
+  else batch.collection('review_block_meetings').create({ block: blockId, url: meetUrl });
+}
+
+export async function saveReviewMeeting(pb: PocketBase, courseId: string, reviewId: string, expected: string, blockId: string, input: unknown) {
+  const { review } = await scopedReview(pb, courseId, reviewId, 'teacher');
+  checkVersion(review, expected);
+  const meetUrl = reviewMeetUrlSchema.parse(input);
+  const block = await pb.collection('review_blocks').getOne<ReviewBlock>(blockId);
+  if (block.review !== review.id || !block.active) throw new ReviewError('La franja no está disponible en esta revisión.');
+  const batch = guard(pb, review);
+  await queueReviewMeeting(pb, batch, block.id, meetUrl);
   await commit(batch);
 }
 
