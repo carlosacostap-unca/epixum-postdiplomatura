@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type PocketBase from 'pocketbase';
 import type { Course } from '@/types';
+import { isPublicationVisible } from './publication';
 import { generateReviewSlots, ReviewError, reviewSchema, reviewBlockSchema, reviewEvaluationSchema, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking } from './review-appointments';
 
 const nonce = () => randomBytes(12).toString('hex');
@@ -26,6 +27,7 @@ async function scopedReview(pb: PocketBase, courseId: string, reviewId: string, 
   const course = await requireReviewCourse(pb, courseId, mode);
   const review = await pb.collection('course_reviews').getOne<Review>(reviewId);
   if (review.course !== courseId) throw new ReviewError('La revisión no pertenece a este curso.');
+  if (mode === 'student' && !isPublicationVisible(review)) throw new ReviewError('Esta revisión todavía no está publicada.');
   return { course, review };
 }
 function guard(pb: PocketBase, review: Review) {
@@ -46,13 +48,15 @@ function checkVersion(review: Review, expected: string) {
 export async function createReview(pb: PocketBase, courseId: string, input: unknown) {
   await requireReviewCourse(pb, courseId, 'teacher');
   const data = reviewSchema.parse(input);
+  if (data.publicationStatus === 'scheduled' && Date.parse(data.publishAt) <= Date.now()) throw new ReviewError('La fecha de publicación debe estar en el futuro.');
   try { return await pb.collection('course_reviews').create<Review>({ ...data, course: courseId, revision: nonce() }); }
   catch { throw new ReviewError('No pudimos crear la revisión. Verificá que el número no esté usado en este curso.'); }
 }
 export async function updateReview(pb: PocketBase, courseId: string, reviewId: string, expected: string, input: unknown) {
   const { review } = await scopedReview(pb, courseId, reviewId, 'teacher');
   checkVersion(review, expected);
-  const data = reviewSchema.parse(input);
+  const data = reviewSchema.parse(input && typeof input === 'object' ? { publicationStatus: review.publicationStatus || 'published', publishAt: review.publishAt || '', ...input } : input);
+  if (data.publicationStatus === 'scheduled' && Date.parse(data.publishAt) <= Date.now() && (review.publicationStatus !== 'scheduled' || Date.parse(data.publishAt) !== Date.parse(review.publishAt || ''))) throw new ReviewError('La fecha de publicación debe estar en el futuro.');
   if (data.number !== review.number) throw new ReviewError('El número de una revisión existente no se puede cambiar.');
   const batch = pb.createBatch();
   batch.collection('course_reviews').update(review.id, { ...data, expectedRevision: review.revision, revision: nonce() });

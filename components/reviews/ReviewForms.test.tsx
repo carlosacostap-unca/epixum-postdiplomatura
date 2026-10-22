@@ -1,13 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { ReviewBlockEditor, ReviewEvaluationForm } from './ReviewForms';
+import { ReviewBlockEditor, ReviewEditor, ReviewEvaluationForm } from './ReviewForms';
 import type { Review } from '@/lib/review-appointments';
-const mocks = vi.hoisted(() => ({ saveBlock: vi.fn(), evaluate: vi.fn(), refresh: vi.fn() }));
+const mocks = vi.hoisted(() => ({ saveReview: vi.fn(), saveBlock: vi.fn(), evaluate: vi.fn(), refresh: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: mocks.refresh, push: vi.fn() }) }));
-vi.mock('@/lib/actions-review-appointments', () => ({ saveReviewBlockAction: mocks.saveBlock, evaluateReviewAction: mocks.evaluate }));
+vi.mock('@/lib/actions-review-appointments', () => ({ saveReviewAction: mocks.saveReview, saveReviewBlockAction: mocks.saveBlock, evaluateReviewAction: mocks.evaluate }));
 const review: Review = { id: 'review1', course: 'course1', number: 1, title: 'Avances', instructions: '', open: true, revision: 'version1' };
 describe('formularios de revisiones', () => {
-  beforeEach(() => { mocks.saveBlock.mockReset().mockResolvedValue({ success: true }); mocks.evaluate.mockReset().mockResolvedValue({ success: true }); });
+  beforeEach(() => { mocks.saveReview.mockReset().mockResolvedValue({ success: true }); mocks.saveBlock.mockReset().mockResolvedValue({ success: true }); mocks.evaluate.mockReset().mockResolvedValue({ success: true }); });
+  it('crea en borrador aunque las reservas estén abiertas', async () => {
+    render(<ReviewEditor courseId="course1" />);
+    expect(screen.getByLabelText('Estado de publicación')).toHaveValue('draft');
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Preparando revisión' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear revisión' }));
+    expect(mocks.saveReview).toHaveBeenCalledWith('course1', null, '', expect.objectContaining({ publicationStatus: 'draft', publishAt: '', open: true }));
+    await screen.findByText('Cambios guardados.');
+  });
+  it('programa la fecha de Argentina y permite cancelar la programación', async () => {
+    render(<ReviewEditor courseId="course1" review={review} />);
+    expect(screen.getByLabelText('Estado de publicación')).toHaveValue('published');
+    fireEvent.change(screen.getByLabelText('Estado de publicación'), { target: { value: 'scheduled' } });
+    fireEvent.change(screen.getByLabelText('Fecha y hora de publicación'), { target: { value: '2027-01-01T18:00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar revisión' }));
+    expect(mocks.saveReview).toHaveBeenLastCalledWith('course1', 'review1', 'version1', expect.objectContaining({ publicationStatus: 'scheduled', publishAt: '2027-01-01T21:00:00.000Z' }));
+    await screen.findByText('Cambios guardados.');
+    fireEvent.change(screen.getByLabelText('Estado de publicación'), { target: { value: 'draft' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar revisión' }));
+    expect(mocks.saveReview).toHaveBeenLastCalledWith('course1', 'review1', 'version1', expect.objectContaining({ publicationStatus: 'draft', publishAt: '' }));
+    await screen.findByText('Cambios guardados.');
+  });
   it('previsualiza descansos sin crear ni asignar alumnos y exige confirmar', async () => {
     render(<ReviewBlockEditor courseId="course1" review={review} teachers={[{ id: 'teacher00000001', name: 'Ana' }]} onDone={() => {}} />);
     fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2026-10-20' } });

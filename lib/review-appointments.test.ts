@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { generateReviewSlots, reviewEvaluationSchema, reviewDate, type ReviewBlockInput } from './review-appointments';
+import { generateReviewSlots, reviewEvaluationSchema, reviewDate, reviewSchema, reviewPublicationDate, type ReviewBlockInput } from './review-appointments';
 
 const input: ReviewBlockInput = { teacher: 'teacher00000001', date: '2026-10-20', start: '18:00', end: '19:00', duration: 15, breakEvery: 2, breakMinutes: 10 };
 describe('agenda de revisiones', () => {
+  it('crea borradores y borra programaciones al publicar u ocultar', () => {
+    const data = { number: 1, title: 'Revisión', instructions: '', open: true };
+    expect(reviewSchema.parse(data)).toMatchObject({ publicationStatus: 'draft', publishAt: '' });
+    expect(reviewSchema.parse({ ...data, publicationStatus: 'published', publishAt: '2027-01-01T00:00:00Z' }).publishAt).toBe('');
+    for (const publishAt of ['', 'invalid', '2027-01-01T18:00']) expect(reviewSchema.safeParse({ ...data, publicationStatus: 'scheduled', publishAt }).success).toBe(false);
+    expect(reviewSchema.parse({ ...data, publicationStatus: 'scheduled', publishAt: '2027-01-01T18:00:00-03:00' }).publishAt).toBe('2027-01-01T21:00:00.000Z');
+    expect(reviewPublicationDate('2027-01-01T21:00:00Z')).toBe('2027-01-01T18:00');
+  });
   it('genera horarios de Argentina, descansos intermedios y omite el resto parcial', () => {
     const result = generateReviewSlots(input);
     expect(result.slots.map(s => s.startsAt)).toEqual(['2026-10-20T21:00:00.000Z', '2026-10-20T21:15:00.000Z', '2026-10-20T21:40:00.000Z']);

@@ -1,26 +1,28 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
+import { visiblePublicationRule, withScheduledPublicationFields } from './publication-fields.mjs';
 
 const auth = '@request.auth.id != ""';
 const teacher = 'course.teachers.id ?= @request.auth.id';
 const enrolled = 'course.course_enrollments_via_course.student.id ?= @request.auth.id';
 const scope = `${auth} && course.reviewsEnabled = true`;
-const member = `${scope} && (${teacher} || ${enrolled})`;
+const member = `${scope} && (${teacher} || (${enrolled} && ${visiblePublicationRule()}))`;
 const relatedScope = `${auth} && review.course.reviewsEnabled = true`;
 const relatedTeacher = 'review.course.teachers.id ?= @request.auth.id';
 const assignedTeacher = '@collection.courses:assigned.id ?= review.course && @collection.courses:assigned.teachers.id ?= teacher';
 const relatedEnrolled = 'review.course.course_enrollments_via_course.student.id ?= @request.auth.id';
-const relatedMember = `${relatedScope} && (${relatedTeacher} || ${relatedEnrolled})`;
+const relatedMember = `${relatedScope} && (${relatedTeacher} || (${relatedEnrolled} && ${visiblePublicationRule('review.')}))`;
 const own = `student = @request.auth.id && ${relatedEnrolled}`;
 const unchanged = names => names.map(n => `@request.body.${n}:changed = false`).join(' && ');
 const dates = '@request.body.created:isset = false && @request.body.updated:isset = false';
 const version = '@request.body.expectedRevision = revision && @request.body.revision:isset = true && @request.body.revision != revision';
-const bookingRead = `${relatedScope} && (${relatedTeacher} || (${own}))`;
+const bookingRead = `${relatedScope} && (${relatedTeacher} || (${own} && ${visiblePublicationRule('review.')}))`;
+const validPublication = '(publicationStatus = "" || publicationStatus = "draft" || publicationStatus = "published" || (publicationStatus = "scheduled" && publishAt != ""))';
 
 export const reviewRules = {
   reviews: {
     listRule: member, viewRule: member,
-    createRule: `${scope} && ${teacher} && ${dates}`,
-    updateRule: `${member} && ${version} && ${unchanged(['course', 'number'])} && (${teacher} || (${unchanged(['title', 'instructions', 'open'])})) && ${dates}`,
+    createRule: `${scope} && ${teacher} && ${validPublication} && (publicationStatus != "scheduled" || publishAt > @now) && ${dates}`,
+    updateRule: `${member} && ${version} && ${validPublication} && ${unchanged(['course', 'number'])} && (${teacher} || (${unchanged(['title', 'instructions', 'open', 'publicationStatus', 'publishAt'])})) && ${dates}`,
     deleteRule: null,
   },
   blocks: {
@@ -37,8 +39,8 @@ export const reviewRules = {
   },
   bookings: {
     listRule: bookingRead, viewRule: bookingRead,
-    createRule: `${relatedScope} && ${own} && review.course.teachers.id != @request.auth.id && review.open = true && review = slot.review && slot.active = true && slot.block.active = true && review.course.teachers.id ?= slot.teacher && slot.startsAt > @now && status = "reserved" && attendance = "" && feedback = "" && evaluatedBy = "" && ${dates}`,
-    updateRule: `${relatedScope} && status = "reserved" && ${unchanged(['review', 'slot', 'student'])} && ${dates} && ((((${own}) || ${relatedTeacher}) && slot.startsAt > @now && @request.body.status = "cancelled" && ${unchanged(['attendance', 'feedback', 'evaluatedBy'])}) || (${relatedTeacher} && slot.endsAt <= @now && @request.body.evaluatedBy = @request.auth.id && ((@request.body.attendance = "present" && (@request.body.status = "passed" || @request.body.status = "not_passed")) || (@request.body.attendance = "absent" && @request.body.status = "not_passed"))))`,
+    createRule: `${relatedScope} && ${own} && ${visiblePublicationRule('review.')} && review.course.teachers.id != @request.auth.id && review.open = true && review = slot.review && slot.active = true && slot.block.active = true && review.course.teachers.id ?= slot.teacher && slot.startsAt > @now && status = "reserved" && attendance = "" && feedback = "" && evaluatedBy = "" && ${dates}`,
+    updateRule: `${relatedScope} && status = "reserved" && ${unchanged(['review', 'slot', 'student'])} && ${dates} && ((((${own} && ${visiblePublicationRule('review.')}) || ${relatedTeacher}) && slot.startsAt > @now && @request.body.status = "cancelled" && ${unchanged(['attendance', 'feedback', 'evaluatedBy'])}) || (${relatedTeacher} && slot.endsAt <= @now && @request.body.evaluatedBy = @request.auth.id && ((@request.body.attendance = "present" && (@request.body.status = "passed" || @request.body.status = "not_passed")) || (@request.body.attendance = "absent" && @request.body.status = "not_passed"))))`,
     deleteRule: null,
   },
 };
@@ -65,7 +67,7 @@ export async function applyReviewAppointmentsSchema(pb) {
   const users = await pb.collections.getOne('users');
   await ensure(pb, 'courses', [{ name: 'reviewsEnabled', type: 'bool' }], { updateRule: COURSE_UPDATE_RULE });
   // Create related collections locked, then install rules once every relation exists.
-  const review = await ensure(pb, 'course_reviews', [rel('course', courses.id), num('number', 1, 9999), text('title', 160), text('instructions', 4000, false), { name: 'open', type: 'bool' }, { ...text('revision', 24), min: 24, pattern: '^[a-f0-9]{24}$' }, ...timestamps], {}, [
+  const review = await ensure(pb, 'course_reviews', withScheduledPublicationFields([rel('course', courses.id), num('number', 1, 9999), text('title', 160), text('instructions', 4000, false), { name: 'open', type: 'bool' }, { ...text('revision', 24), min: 24, pattern: '^[a-f0-9]{24}$' }, ...timestamps]), {}, [
     'CREATE UNIQUE INDEX idx_course_review_number ON course_reviews (course, number)',
   ]);
   const block = await ensure(pb, 'review_blocks', [rel('review', review.id), rel('teacher', users.id), text('date', 10), text('start', 5), text('end', 5), num('duration', 5, 240), num('breakEvery', 0, 96), num('breakMinutes', 0, 120), date('startsAt'), date('endsAt'), { name: 'active', type: 'bool' }, ...timestamps], {}, [

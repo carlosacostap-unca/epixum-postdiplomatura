@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyReviewAppointmentsSchema } from './review-appointments-schema.mjs';
+import { applyReviewAppointmentsSchema, reviewRules } from './review-appointments-schema.mjs';
 
 function fixture() {
   const state = new Map([
@@ -33,6 +33,21 @@ test('conserva un límite de lotes superior ya configurado', async () => {
   await pb.settings.update({ batch: { enabled: true, maxRequests: 300, timeout: 10 } });
   await applyReviewAppointmentsSchema(pb);
   assert.equal((await pb.settings.getAll()).batch.maxRequests, 300);
+});
+
+test('incluye publicación programada y protege lecturas y reservas relacionadas', async () => {
+  const { pb, state } = fixture();
+  await applyReviewAppointmentsSchema(pb);
+  const fields = state.get('course_reviews').fields;
+  assert.deepEqual(fields.find(f => f.name === 'publicationStatus').values, ['draft', 'published', 'scheduled']);
+  assert.equal(fields.find(f => f.name === 'publishAt').type, 'date');
+  for (const rules of Object.values(reviewRules)) {
+    assert.match(rules.listRule, /publicationStatus/);
+    assert.match(rules.viewRule, /publishAt <= @now/);
+  }
+  assert.match(reviewRules.reviews.updateRule, /@request.body.publicationStatus:changed = false/);
+  assert.match(reviewRules.reviews.updateRule, /@request.body.publishAt:changed = false/);
+  assert.match(reviewRules.bookings.createRule, /review.publishAt <= @now/);
 });
 test('un error de lectura no crea colecciones de reemplazo', async () => {
   const { pb, state } = fixture(); const get = pb.collections.getOne;

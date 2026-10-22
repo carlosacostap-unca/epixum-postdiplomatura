@@ -15,13 +15,15 @@ export function QuizEditor({ courseId, quiz, basePath = `/docentes/cursos/${cour
   const [description, setDescription] = useState(quiz?.description || '');
   const [timed, setTimed] = useState(quiz ? !!quiz.durationMinutes : defaultTimed);
   const [duration, setDuration] = useState(quiz?.durationMinutes || 60);
+  const [shuffleQuestions, setShuffleQuestions] = useState(quiz?.shuffleQuestions || false);
+  const [shuffleOptions, setShuffleOptions] = useState(quiz?.shuffleOptions || false);
   const [questions, setQuestions] = useState<PracticeQuestion[]>(quiz?.questions || []);
   const [error, setError] = useState('');
   const [pending, startTransition] = useTransition();
   const update = (id: string, data: Partial<PracticeQuestion>) => setQuestions(items => items.map(q => q.id === id ? { ...q, ...data } : q));
   const move = (index: number, offset: number) => setQuestions(items => { const next = [...items]; [next[index], next[index + offset]] = [next[index + offset], next[index]]; return next; });
   const save = (status: PracticeQuizInput['status']) => {
-    const parsed = practiceQuizSchema.safeParse({ title, description, questions, status, durationMinutes: timed ? duration : 0 });
+    const parsed = practiceQuizSchema.safeParse({ title, description, questions, status, durationMinutes: timed ? duration : 0, shuffleQuestions, shuffleOptions });
     if (!parsed.success) { setError(parsed.error.issues[0].message); return; }
     if (status === 'archived' && !window.confirm('¿Archivar esta práctica? Se conservarán los intentos y dejará de admitir prácticas nuevas.')) return;
     setError(''); startTransition(async () => {
@@ -37,7 +39,10 @@ export function QuizEditor({ courseId, quiz, basePath = `/docentes/cursos/${cour
         <label className="block font-semibold">Instrucciones para el alumno<textarea className={field} rows={3} value={description} maxLength={2000} onChange={e => setDescription(e.target.value)} /></label>
         <label className="flex items-center gap-3 font-semibold"><input type="checkbox" checked={timed} onChange={e => setTimed(e.target.checked)} />Simulación de parcial o examen con tiempo límite</label>
         {timed && <label className="block font-semibold">Duración en minutos<input className={field} type="number" min={1} max={240} required value={duration} onChange={e => setDuration(Number(e.target.value))} /></label>}
-        <p className="text-sm text-[var(--color-text-muted)]">{timed ? 'El reloj comienza al iniciar y continúa aunque el alumno salga. Las respuestas se confirman una vez. La corrección y la nota de 0 a 10 se muestran al entregar o agotarse el tiempo. Las preguntas sin responder cuentan como incorrectas.' : 'Una respuesta correcta por pregunta. Intentos ilimitados, devolución después de cada respuesta y resumen al finalizar.'} El avance se guarda en la cuenta del alumno. Los resultados no modifican notas oficiales.</p>
+        <label className="flex items-center gap-3"><input type="checkbox" checked={shuffleQuestions} onChange={e => setShuffleQuestions(e.target.checked)} />Orden aleatorio de preguntas en cada intento</label>
+        <label className="flex items-center gap-3"><input type="checkbox" checked={shuffleOptions} onChange={e => setShuffleOptions(e.target.checked)} />Orden aleatorio de opciones en cada intento</label>
+        <p className="text-sm text-[var(--color-text-muted)]">Se conservan todas las mismas preguntas y respuestas correctas. El orden se guarda al iniciar y se mantiene al retomar ese intento.</p>
+        <p className="text-sm text-[var(--color-text-muted)]">{timed ? 'Cámara obligatoria durante el intento. Se guarda una única foto inicial, visible sólo para administradores y docentes del curso. Si se apaga, se bloquean las respuestas y el reloj continúa. Intentos ilimitados con historial. La corrección y la nota de 0 a 10 se muestran al entregar o agotarse el tiempo; las preguntas sin responder cuentan como incorrectas.' : 'Una respuesta correcta por pregunta. Intentos ilimitados, devolución después de cada respuesta y resumen al finalizar. Sin requisito de cámara.'} El avance se guarda en la cuenta del alumno. Los resultados no modifican notas oficiales.</p>
       </CardContent></Card>
       {questions.map((q, index) => <Card key={q.id}><CardContent className="space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Pregunta {index + 1}</h2><div className="flex flex-wrap gap-2">

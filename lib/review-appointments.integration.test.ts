@@ -27,7 +27,7 @@ describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBa
       const course = await create('courses', { title: 'Prueba temporal de revisiones', teachers: [teacher.id, peer.id], status: 'borrador', reviewsEnabled: true });
       const enrollment = await create('course_enrollments', { course: course.id, student: student.id });
       await create('course_enrollments', { course: course.id, student: other.id });
-      const input = { number: 1, title: 'Primera revisión', instructions: 'Presentar avances', open: true };
+      const input = { number: 1, title: 'Primera revisión', instructions: 'Presentar avances', open: true, publicationStatus: 'published' };
       const review = await createReview(teacher.pb, course.id, input);
       const otherCourse = await create('courses', { title: 'Otro curso temporal', teachers: [teacher.id], status: 'borrador', reviewsEnabled: true });
       await expect(updateReview(teacher.pb, otherCourse.id, review.id, review.revision, input)).rejects.toThrow('pertenece');
@@ -48,6 +48,38 @@ describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBa
       await expect(student.pb.collection('review_bookings').create({ review: foreignReview.id, slot: available[0].id, student: student.id, status: 'reserved' })).rejects.toBeDefined();
       await expect(student.pb.collection('review_bookings').create({ review: review.id, slot: available[0].id, student: other.id, status: 'reserved' })).rejects.toBeDefined();
       const block = await teacher.pb.collection('review_blocks').getOne<ReviewBlock>(available[0].block);
+      // Hidden reviews must protect all related records, including direct API access.
+      const hidden = await createReview(teacher.pb, course.id, { number: 3, title: 'En preparación', instructions: 'Privado', open: true });
+      expect(hidden.publicationStatus).toBe('draft');
+      await saveReviewBlock(teacher.pb, course.id, hidden.id, hidden.revision, null, blockInput);
+      const hiddenSlots = await teacher.pb.collection('review_slots').getFullList<ReviewSlot>({ filter: `review = "${hidden.id}"` });
+      const hiddenFresh = () => teacher.pb.collection('course_reviews').getOne<Review>(hidden.id);
+      const checkHidden = async () => {
+        for (const [collection, id] of [['course_reviews', hidden.id], ['review_blocks', hiddenSlots[0].block], ['review_slots', hiddenSlots[0].id]]) {
+          await expect(student.pb.collection(collection).getOne(id)).rejects.toBeDefined();
+          expect((await student.pb.collection(collection).getList(1, 1, { filter: `id = "${id}"` })).totalItems).toBe(0);
+        }
+        await expect(reserveReviewSlot(student.pb, course.id, hidden.id, hiddenSlots[0].id)).rejects.toBeDefined();
+        await expect(student.pb.collection('review_bookings').create({ review: hidden.id, slot: hiddenSlots[0].id, student: student.id, status: 'reserved' })).rejects.toBeDefined();
+      };
+      await checkHidden();
+      const hiddenInput = { ...input, number: 3, title: hidden.title };
+      const publishAt = new Date(Date.now() + 3600000).toISOString();
+      await updateReview(peer.pb, course.id, hidden.id, (await hiddenFresh()).revision, { ...hiddenInput, publicationStatus: 'scheduled', publishAt });
+      await checkHidden();
+      // Move only the temporary fixture's publication into the past.
+      await admin.collection('course_reviews').update(hidden.id, { publishAt: new Date(Date.now() - 60000).toISOString() });
+      expect((await student.pb.collection('course_reviews').getOne(hidden.id)).id).toBe(hidden.id);
+      await reserveReviewSlot(student.pb, course.id, hidden.id, hiddenSlots[0].id);
+      const hiddenBooking = (await student.pb.collection('review_bookings').getFullList<ReviewBooking>({ filter: `review = "${hidden.id}"` }))[0];
+      await expect(student.pb.collection('course_reviews').update(hidden.id, { publicationStatus: 'draft', expectedRevision: (await hiddenFresh()).revision, revision: 'a'.repeat(24) })).rejects.toBeDefined();
+      await updateReview(peer.pb, course.id, hidden.id, (await hiddenFresh()).revision, { ...hiddenInput, publicationStatus: 'draft' });
+      await expect(student.pb.collection('review_bookings').getOne(hiddenBooking.id)).rejects.toBeDefined();
+      await expect(student.pb.collection('review_bookings').update(hiddenBooking.id, { status: 'cancelled' })).rejects.toBeDefined();
+      expect((await peer.pb.collection('review_bookings').getOne(hiddenBooking.id)).status).toBe('reserved');
+      await updateReview(peer.pb, course.id, hidden.id, (await hiddenFresh()).revision, hiddenInput);
+      expect((await student.pb.collection('review_bookings').getOne(hiddenBooking.id)).status).toBe('reserved');
+      await cancelReviewBooking(student.pb, course.id, hidden.id, hiddenBooking.id, 'student');
       await expect(saveReviewBlock(peer.pb, course.id, review.id, (await fresh()).revision, null, blockInput)).rejects.toThrow('superpuesta');
       // Two students competing for one slot; exactly one persists.
       const race = await Promise.allSettled([reserveReviewSlot(student.pb, course.id, review.id, available[0].id), reserveReviewSlot(other.pb, course.id, review.id, available[0].id)]);

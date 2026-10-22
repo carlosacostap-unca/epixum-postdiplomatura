@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Publication } from './publication';
 
 export const REVIEW_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 export const REVIEW_MAX_SLOTS = 96;
@@ -7,7 +8,13 @@ export const reviewSchema = z.object({
   title: z.string().trim().min(1, 'Escribí un título.').max(160),
   instructions: z.string().trim().max(4000),
   open: z.boolean(),
-});
+  publicationStatus: z.enum(['draft', 'published', 'scheduled']).default('draft'),
+  publishAt: z.string().default(''),
+}).superRefine((value, context) => {
+  if (value.publicationStatus === 'scheduled' && (!/T.*(Z|[+-]\d{2}:\d{2})$/.test(value.publishAt) || !Number.isFinite(Date.parse(value.publishAt)))) {
+    context.addIssue({ code: 'custom', path: ['publishAt'], message: 'Indicá una fecha y hora de publicación válida.' });
+  }
+}).transform(value => ({ ...value, publishAt: value.publicationStatus === 'scheduled' ? new Date(value.publishAt).toISOString() : '' }));
 export const reviewBlockSchema = z.object({
   teacher: z.string().regex(/^[a-zA-Z0-9]{15}$/, 'Elegí un docente del curso.'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Elegí una fecha válida.'),
@@ -19,7 +26,13 @@ export const reviewBlockSchema = z.object({
 }).refine(v => (v.breakEvery === 0) === (v.breakMinutes === 0), { message: 'Para incluir descansos indicá cada cuántos turnos y su duración; para omitirlos dejá ambos en cero.' });
 export type ReviewBlockInput = z.infer<typeof reviewBlockSchema>;
 export type ReviewInput = z.infer<typeof reviewSchema>;
-export interface Review extends ReviewInput { id: string; course: string; revision: string }
+export interface Review extends Omit<ReviewInput, 'publicationStatus' | 'publishAt'>, Publication { id: string; course: string; revision: string }
+
+export function reviewPublicationDate(value?: string | null) {
+  if (!value || !Number.isFinite(Date.parse(value))) return '';
+  // Argentina uses UTC−3; keep the form independent of the device timezone.
+  return new Date(Date.parse(value) - 3 * 60 * 60 * 1000).toISOString().slice(0, 16);
+}
 export interface ReviewBlock extends ReviewBlockInput { id: string; review: string; active: boolean; startsAt: string; endsAt: string }
 export interface ReviewSlot { id: string; review: string; block: string; teacher: string; startsAt: string; endsAt: string; active: boolean }
 export type ReviewBookingStatus = 'reserved' | 'cancelled' | 'not_passed' | 'passed';

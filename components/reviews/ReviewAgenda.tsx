@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui';
+import { PublicationBadge } from '@/components/course/PublicationBadge';
 import { bookingLabels, reviewDate, type ReviewBlock } from '@/lib/review-appointments';
 import type { getReviewAgenda } from '@/lib/review-appointments-data';
 import { cancelReviewAction, removeReviewBlockAction, reserveReviewAction } from '@/lib/actions-review-appointments';
@@ -25,11 +26,12 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
   const base = `/${teacherMode ? 'docentes' : 'estudiantes'}/cursos/${course.id}/revisiones`;
   return <div className="space-y-8">
     <div className="flex flex-wrap items-center justify-between gap-3"><Link href={base} className="text-sm font-semibold text-[var(--color-primary)]">← Todas las revisiones</Link><button className={reviewSecondary} onClick={() => router.refresh()}>Actualizar disponibilidad</button></div>
+    {teacherMode && <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-semibold">Publicación de la revisión</span><PublicationBadge status={review.publicationStatus || undefined} publishAt={review.publishAt || undefined} /></div>}
     <div className="grid gap-4 sm:grid-cols-3">
       {[{ label: 'Turnos libres futuros', value: free.length }, { label: teacherMode ? 'Pendientes de evaluación' : 'Mis intentos', value: teacherMode ? waiting.length : bookings.filter(b => b.status !== 'cancelled').length }, { label: 'Estado de la revisión', value: passed ? 'Aprobada' : review.open ? 'Reservas abiertas' : 'Reservas cerradas' }].map(item => <div key={item.label} className={reviewPanel}><p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{item.label}</p><p className="mt-2 text-2xl font-bold">{item.value}</p></div>)}
     </div>
     {review.instructions && <div className={`${reviewPanel} whitespace-pre-wrap text-sm leading-relaxed`}><h2 className="mb-2 font-bold">Para esta revisión</h2>{review.instructions}</div>}
-    {teacherMode && <details className={reviewPanel}><summary className="cursor-pointer font-bold">Editar título, instrucciones y apertura de reservas</summary><div className="mt-5"><ReviewEditor key={review.revision} courseId={course.id} review={review} /></div></details>}
+    {teacherMode && <details className={reviewPanel} open><summary className="cursor-pointer font-bold">Editar revisión y publicación</summary><div className="mt-5"><ReviewEditor key={review.revision} courseId={course.id} review={review} /></div></details>}
     {!teacherMode && <p role="status" className="rounded-xl bg-[var(--color-surface-container)] p-4 text-sm">{passed ? 'Ya aprobaste esta revisión. Podés consultar tus devoluciones en el historial.' : pending ? 'Tenés un turno reservado o pendiente de evaluación. Podés cancelarlo antes del inicio; después, esperá la devolución docente para saber si necesitás otro intento.' : !review.open ? 'Las nuevas reservas están cerradas. Tus turnos e historial se conservan.' : 'Elegí un turno libre. Podés tener una reserva pendiente por revisión y cancelarla antes de su inicio.'}</p>}
     {mutation.feedback}
     <section className="space-y-4" aria-labelledby="review-schedule-title">

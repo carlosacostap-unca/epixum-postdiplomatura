@@ -17,11 +17,11 @@ export async function applyPreparationSchema(pb) {
   const courses = await pb.collections.getOne('courses'); const users = await pb.collections.getOne('users');
   await ensure(pb, 'courses', [{ name: 'preparationEnabled', type: 'bool', required: false }], { updateRule: COURSE_UPDATE_RULE });
   const scope = relation('course', courses.id);
-  const quiz = await ensure(pb, 'practice_quizzes', [scope, title, { name: 'description', type: 'text', max: 2000 }, { name: 'durationMinutes', type: 'number', min: 0, max: 240, onlyInt: true }, { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['draft', 'published', 'archived'] }, { ...json('questions'), required: false }, ...dates], {
+  const quiz = await ensure(pb, 'practice_quizzes', [scope, title, { name: 'description', type: 'text', max: 2000 }, { name: 'durationMinutes', type: 'number', min: 0, max: 240, onlyInt: true }, { name: 'shuffleQuestions', type: 'bool' }, { name: 'shuffleOptions', type: 'bool' }, { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['draft', 'published', 'archived'] }, { ...json('questions'), required: false }, ...dates], {
     listRule: preparationTeacherRule, viewRule: preparationTeacherRule, createRule: preparationTeacherRule,
     updateRule: `${preparationTeacherRule} && @request.body.course:changed = false`, deleteRule: null,
   }, ['CREATE INDEX idx_practice_quizzes_course ON practice_quizzes (course, updated)']);
-  const attempt = await ensure(pb, 'practice_attempts', [scope, relation('quiz', quiz.id, false), relation('student', users.id), title, json('snapshot'), ...dates], {
+  const attempt = await ensure(pb, 'practice_attempts', [scope, relation('quiz', quiz.id, false), relation('student', users.id), title, json('snapshot'), { name: 'cameraRequired', type: 'bool' }, { name: 'cameraActive', type: 'bool' }, { name: 'cameraLastSeen', type: 'date' }, { name: 'photoKey', type: 'text', max: 240, hidden: true }, ...dates], {
     listRule: preparationTeacherRule, viewRule: preparationTeacherRule, createRule: null, updateRule: null, deleteRule: null,
   }, ['CREATE INDEX idx_practice_attempts_student ON practice_attempts (course, student, created)']);
   await ensure(pb, 'practice_answers', [scope, relation('attempt', attempt.id), relation('student', users.id),
@@ -30,7 +30,7 @@ export async function applyPreparationSchema(pb) {
     listRule: null, viewRule: null, createRule: null, updateRule: null, deleteRule: null,
   }, ['CREATE UNIQUE INDEX idx_practice_answer_question ON practice_answers (attempt, questionId)']);
   await ensure(pb, 'practice_results', [scope, relation('attempt', attempt.id), relation('student', users.id), title,
-    ...['correct', 'total', 'percentage'].map(name => ({ name, type: 'number', min: 0, onlyInt: true })), json('review', 400000), ...dates], {
+    ...['correct', 'total', 'percentage'].map(name => ({ name, type: 'number', min: 0, onlyInt: true })), { name: 'finishedAt', type: 'date' }, { name: 'completionReason', type: 'select', values: ['submitted', 'time_expired'], maxSelect: 1 }, json('review', 400000), ...dates], {
     listRule: preparationResultRule, viewRule: preparationResultRule, createRule: null, updateRule: null, deleteRule: null,
   }, ['CREATE UNIQUE INDEX idx_practice_result_attempt ON practice_results (attempt)', 'CREATE INDEX idx_practice_results_course ON practice_results (course, created)']);
 }

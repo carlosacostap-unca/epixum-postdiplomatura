@@ -12,7 +12,7 @@ export function BeginPracticeButton({ courseId, quizId, durationMinutes = 0 }: {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState('');
   return <div><Button isPending={pending} onClick={() => {
-    if (durationMinutes && !window.confirm(`Esta simulación dura ${durationMinutes} minutos. El reloj continúa aunque salgas y la corrección se muestra al finalizar. ¿Comenzar o continuar?`)) return;
+    if (durationMinutes) { router.push(`/estudiantes/cursos/${courseId}/preparacion/iniciar/${quizId}`); return; }
     setError('');
     startTransition(async () => {
       const result = await beginPractice(courseId, quizId);

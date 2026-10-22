@@ -14,7 +14,35 @@ El alumno puede navegar y saltar preguntas. Cada respuesta se confirma una sola 
 
 La nota simulada es `aciertos / total × 10`, redondeada a un decimal. Todas las preguntas valen lo mismo. La corrección completa aparece sólo al cerrar el intento. El resultado es definitivo e idempotente. Para practicar de nuevo, se inicia otro intento desde el listado después de finalizar el anterior.
 
+## Cámara y foto inicial de las simulaciones
+
+El requisito se aplica a todas las simulaciones con duración positiva. Las prácticas sin límite de tiempo siguen sin cámara. Antes de crear un intento, el alumno activa su webcam, ve la vista previa y acepta el aviso de la foto inicial. Se solicita sólo video, sin micrófono. El botón de inicio toma una única foto JPEG de hasta 640 × 480 píxeles; se reutiliza esa misma foto si hay que reintentar su guardado. El reloj empieza cuando se registra el intento después de guardar la imagen.
+
+Durante el examen la vista de la cámara permanece exclusivamente en el dispositivo del alumno. No se transmite ni graba video o audio, no se comparte la pantalla y no se toman imágenes adicionales. La interfaz detecta `mute`, `ended`, pista deshabilitada o ausencia de datos de video; bloquea la confirmación de respuestas y permite reactivar la cámara sin reiniciar el reloj. También envía al servidor el estado de actividad cada ocho segundos, sin imágenes. El servidor exige una actividad reciente, con tolerancia de 25 segundos, y comprueba matrícula, propietario e imagen inicial en los intentos nuevos. La entrega anticipada y el cierre por vencimiento siguen disponibles aunque la cámara falle.
+
+El estado de actividad proviene del navegador: no constituye una certificación del hardware, de la identidad o de la presencia física del alumno. Los intentos históricos conservan sus datos originales; si un examen ya estaba iniciado antes de esta versión, exige activar la cámara al retomarlo, pero no se le añade una foto posterior al inicio. Los intentos nuevos requieren foto inicial.
+
+La foto se almacena en iDrive/S3 bajo `private/exam-photos/`, con una clave aleatoria y contenido cifrado con AES-256-GCM. Se conserva sólo la referencia oculta `practice_attempts.photoKey` en PocketBase; ninguna URL de storage ni clave de cifrado se entrega al alumno. Administración y docentes asignados pueden abrir **Ver foto inicial** en el detalle del intento. La ruta de lectura verifica el rol y el curso antes de recuperar y descifrar la imagen, y la entrega con `Cache-Control: private, no-store`. Los alumnos, incluso el dueño de la foto, no tienen acceso.
+
+La clave de cifrado se toma de `EXAM_PHOTO_ENCRYPTION_KEY` si existe o, en las instalaciones actuales, se deriva de `IDRIVE_SECRET_ACCESS_KEY` con separación del uso de las credenciales de storage. Mantener la clave estable e idéntica en todas las instancias. Cambiar el secreto empleado requiere migrar el cifrado de las fotos existentes. No cambiar entre la clave dedicada y la derivada después de haber guardado fotos sin realizar esa migración.
+
+Cada intento conserva su inicio, foto y resultado independiente. `practice_results.finishedAt` registra la hora efectiva de finalización y `completionReason` distingue entrega de vencimiento; un intento cerrado tardíamente conserva como finalización su plazo original. El historial de alumnos y del equipo docente muestra inicio, finalización, estado, respuestas y nota. Al terminar se ofrece **Iniciar otra simulación**; los intentos son ilimitados y no sustituyen resultados anteriores.
+
+Aplicar `npm run schema:preparation` antes de desplegar la aplicación. La migración añade campos a intentos y resultados sin modificar las prácticas, preguntas, fotografías ni resultados previos. Las fotos se conservan con el historial; no se define un borrado automático.
+
 `practice_quizzes.durationMinutes` es un número entero de 0 a 240: cero mantiene la práctica sin reloj; un valor positivo activa la simulación. No se requiere migrar los snapshots anteriores. La migración es aditiva y amplía las reglas de lectura y gestión para administradores, conservando las restricciones de matrícula, propiedad y escrituras de servicio.
+
+## Primer parcial de Fundamentos de Inteligencia Artificial
+
+**Primer parcial · Unidades 1, 2 y 3** está publicado en el curso `tceqb7atji66fmd`, como cuestionario `qozqi36bw5qepfw`. Tiene 20 preguntas de dificultad media: seis de la unidad 1, seis de la unidad 2 y ocho de la unidad 3. Cada pregunta presenta cuatro opciones y una única respuesta correcta. Los enunciados y opciones son de texto, con casos y ejercicios breves. La duración acordada es de 60 minutos.
+
+Cada acierto suma exactamente 0,5 puntos. Las incorrectas y omitidas suman cero y no restan. La nota va de 0 a 10. Se permite una cantidad ilimitada de intentos; las explicaciones quedan disponibles en la corrección al finalizar. Se conservan los requisitos de cámara y foto inicial.
+
+El banco incluye siempre las mismas 20 preguntas: no se extraen muestras ni se generan preguntas nuevas al comenzar. `shuffleQuestions` y `shuffleOptions` habilitan la mezcla por intento. El servidor usa Fisher–Yates con aleatoriedad criptográfica y guarda la presentación completa en el snapshot. Los identificadores de preguntas y opciones, junto con la clave correcta, se conservan; la corrección se hace por identificador y no por posición. Al recargar o retomar se recupera el orden guardado. Las prácticas anteriores mantienen ambos campos desactivados.
+
+En **Preparación**, el enlace **Ver seguimiento de esta evaluación** filtra los intentos del parcial. Los docentes y administradores ven alumnos, fechas, avance, nota, corrección y acceso a la foto inicial. El seguimiento se actualiza cada 15 segundos mientras la página está visible y permite actualización manual. Los alumnos sólo ven sus propios intentos. Las páginas del historial conservan el filtro seleccionado.
+
+El orden aleatorio y el filtro docente requieren desplegar la versión actual de la aplicación. La migración `schema:preparation` incorpora dos campos booleanos al cuestionario y conserva los datos existentes.
 
 ## Uso
 
@@ -44,6 +72,10 @@ PocketBase bloquea escrituras directas a intentos, respuestas y resultados. Las 
 La migración añade `practice_answers` sin alterar intentos ni resultados anteriores. Ejecutarla antes de desplegar la nueva aplicación. Los resultados históricos siguen mostrando la corrección original; los intentos antiguos abiertos empiezan sin respuestas confirmadas, ya que sus antiguas selecciones sólo existían en la pestaña del navegador.
 
 Para revertir el despliegue, desactivar la opción y conservar las colecciones; no borrar intentos ni resultados.
+
+Pruebas de cámara: `npx vitest run lib/exam-photo-crypto.test.ts lib/exam-camera-service.test.ts lib/exam-photo-route.test.ts components/preparation/useWebcam.test.tsx components/preparation/ExamStart.test.tsx components/preparation/ExamRunner.test.tsx`. La integración de storage requiere `EXAM_PHOTO_INTEGRATION=1` y ejecuta `lib/exam-photo-storage.integration.test.ts`; utiliza una imagen sintética de 4 × 4 píxeles y elimina exclusivamente ese objeto al finalizar.
+
+La cámara y el seguimiento se verificaron el 14 de octubre de 2026 con 34 pruebas automatizadas de interfaz y lógica, las integraciones reales de PocketBase y S3, TypeScript y lint. El esquema se actualizó de forma aditiva con respaldo. La compilación de producción se verificó mediante `npm run build -- --webpack`; Turbopack falló al iniciar su proceso de CSS en este entorno Windows. La función requiere desplegar la aplicación para aparecer en producción.
 
 ## Comprobaciones
 

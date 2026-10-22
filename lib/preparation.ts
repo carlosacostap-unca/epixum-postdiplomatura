@@ -17,6 +17,8 @@ export const practiceQuizSchema = z.object({
   description: z.string().trim().max(2000).default(''),
   status: z.enum(['draft', 'published', 'archived']),
   durationMinutes: z.number().int().min(0).max(240).default(0),
+  shuffleQuestions: z.boolean().default(false),
+  shuffleOptions: z.boolean().default(false),
   questions: z.array(practiceQuestionSchema).max(80),
 }).strict().superRefine((quiz, ctx) => {
   if (quiz.status === 'published' && !quiz.questions.length) ctx.addIssue({ code: 'custom', message: 'Agregá al menos una pregunta antes de publicar.' });
@@ -27,10 +29,10 @@ export type PracticeQuizInput = z.infer<typeof practiceQuizSchema>;
 export type PracticeQuestion = z.infer<typeof practiceQuestionSchema>;
 export type PracticeQuiz = PracticeQuizInput & { id: string; course: string; updated: string };
 export type PublicPracticeQuestion = Pick<PracticeQuestion, 'id' | 'prompt' | 'options'>;
-export interface PracticeAttempt { id: string; course: string; quiz: string; student: string; title: string; snapshot: PracticeQuizInput; created: string }
+export interface PracticeAttempt { id: string; course: string; quiz: string; student: string; title: string; snapshot: PracticeQuizInput; created: string; cameraRequired?: boolean; cameraActive?: boolean; cameraLastSeen?: string; photoKey?: string }
 export interface PracticeReview { question: PracticeQuestion; selectedOptionId: string | null; correct: boolean }
 export interface PracticeAnswer { id: string; attempt: string; questionId: string; selectedOptionId: string }
-export interface PracticeResult { id: string; attempt: string; course: string; student: string; title: string; correct: number; total: number; percentage: number; review: PracticeReview[]; created: string }
+export interface PracticeResult { id: string; attempt: string; course: string; student: string; title: string; correct: number; total: number; percentage: number; review: PracticeReview[]; created: string; finishedAt?: string; completionReason?: 'submitted' | 'time_expired' }
 export const practiceStatusLabels = { draft: 'Borrador', published: 'Publicado', archived: 'Archivado' };
 
 export function publicPracticeQuestions(questions: PracticeQuestion[]): PublicPracticeQuestion[] {
@@ -60,4 +62,20 @@ export function practiceDeadline(attempt: Pick<PracticeAttempt, 'created' | 'sna
 
 export function practiceGrade(correct: number, total: number) {
   return total > 0 ? Math.round(correct / total * 100) / 10 : 0;
+}
+
+/** Persist the presentation order once per attempt; answer keys use stable IDs. */
+export function orderPracticeQuestions(questions: PracticeQuestion[], shuffleQuestions: boolean, shuffleOptions: boolean, randomIndex: (limit: number) => number) {
+  function shuffle<T>(items: T[]) {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = randomIndex(i + 1);
+      if (!Number.isInteger(j) || j < 0 || j > i) throw new Error('Índice aleatorio inválido.');
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+  const cloned = questions.map(question => ({ ...question, options: question.options.map(option => ({ ...option })) }));
+  const ordered = shuffleQuestions ? shuffle(cloned) : cloned;
+  return ordered.map(question => ({ ...question, options: shuffleOptions ? shuffle(question.options) : question.options }));
 }

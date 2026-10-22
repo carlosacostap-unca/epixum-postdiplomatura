@@ -3,7 +3,8 @@
 import { useState, useTransition, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { ZodError } from 'zod';
-import { generateReviewSlots, reviewDate, type Review, type ReviewBlock, type ReviewBlockInput } from '@/lib/review-appointments';
+import { generateReviewSlots, reviewDate, reviewPublicationDate, type Review, type ReviewBlock, type ReviewBlockInput } from '@/lib/review-appointments';
+import { isPublicationVisible } from '@/lib/publication';
 import { saveReviewAction, saveReviewBlockAction, evaluateReviewAction } from '@/lib/actions-review-appointments';
 
 export const reviewButton = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-2 text-sm font-bold text-[var(--color-on-primary)] disabled:cursor-not-allowed disabled:opacity-50';
@@ -36,10 +37,14 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 export function ReviewEditor({ courseId, review, nextNumber = 1 }: { courseId: string; review?: Review; nextNumber?: number }) {
   const router = useRouter(); const mutation = useReviewMutation();
+  const [publicationStatus, setPublicationStatus] = useState(review ? review.publicationStatus || 'published' : 'draft');
+  const [publishAt, setPublishAt] = useState(reviewPublicationDate(review?.publishAt));
+  const alreadyPublished = review && isPublicationVisible(review);
   return <form className="space-y-4" onSubmit={e => {
     e.preventDefault(); const form = new FormData(e.currentTarget);
     mutation.run(() => saveReviewAction(courseId, review?.id || null, review?.revision || '', {
       number: review?.number ?? Number(form.get('number')), title: form.get('title'), instructions: form.get('instructions'), open: form.get('open') === 'on',
+      publicationStatus, publishAt: publicationStatus === 'scheduled' && publishAt ? new Date(`${publishAt}:00-03:00`).toISOString() : '',
     }), id => { if (!review && id) router.push(`/docentes/cursos/${courseId}/revisiones/${id}`); });
   }}>
     <fieldset disabled={mutation.pending} className="space-y-4">
@@ -48,6 +53,12 @@ export function ReviewEditor({ courseId, review, nextNumber = 1 }: { courseId: s
         <Field label="Título"><input className={reviewInput} name="title" maxLength={160} required defaultValue={review?.title} placeholder="Por ejemplo: Revisión de avances" /></Field>
       </div>
       <Field label="Instrucciones para los alumnos"><textarea className={reviewInput} name="instructions" rows={3} maxLength={4000} defaultValue={review?.instructions} placeholder="Qué preparar, dónde encontrarse o enlace de la reunión…" /></Field>
+      <Field label="Estado de publicación"><select className={reviewInput} name="publicationStatus" value={publicationStatus} onChange={e => setPublicationStatus(e.target.value)}>
+        <option value="draft">Borrador</option><option value="published">Publicado</option><option value="scheduled">Programado</option>
+      </select></Field>
+      {publicationStatus === 'scheduled' && <Field label="Fecha y hora de publicación"><input className={reviewInput} type="datetime-local" required value={publishAt} onChange={e => setPublishAt(e.target.value)} /></Field>}
+      <p className="text-sm text-[var(--color-text-muted)]">{publicationStatus === 'draft' ? 'Solo los docentes del curso pueden ver esta revisión y preparar sus turnos.' : publicationStatus === 'scheduled' ? 'Se hará visible automáticamente en la fecha y hora indicadas. Horario de Argentina (UTC−3).' : 'Los alumnos matriculados pueden ver esta revisión y sus turnos.'}</p>
+      {alreadyPublished && publicationStatus !== 'published' && !(publicationStatus === 'scheduled' && publishAt === reviewPublicationDate(review.publishAt)) && <p className="text-sm text-[var(--color-text-muted)]">Al guardar, la revisión y su historial se ocultarán a los alumnos hasta que vuelva a estar publicada. Las reservas se conservan.</p>}
       <label className="flex items-center gap-3 text-sm"><input className="size-5" type="checkbox" name="open" defaultChecked={review?.open ?? true} />Abierta para reservar turnos</label>
       <p className="text-xs text-[var(--color-text-muted)]">Cerrar las reservas conserva los turnos existentes y permite cancelarlos antes de su inicio.</p>
       <button className={reviewButton} type="submit">{mutation.pending ? 'Guardando…' : review ? 'Guardar revisión' : 'Crear revisión'}</button>

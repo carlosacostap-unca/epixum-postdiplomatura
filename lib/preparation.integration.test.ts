@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import dotenv from 'dotenv';
 import PocketBase from 'pocketbase';
 import { describe, it, expect, vi } from 'vitest';
-import { startPractice, readPracticeAttempt, finishPractice, practiceHistory, answerPractice, requirePreparationCourse } from './preparation-service';
+import { startPractice, readPracticeAttempt, finishPractice, practiceHistory, answerPractice, requirePreparationCourse, reportPracticeCamera, readPracticePhotoKey } from './preparation-service';
 
 describe.skipIf(process.env.PREPARATION_INTEGRATION !== '1')('preparación en PocketBase', () => {
   it('protege claves y propiedad, conserva snapshots y resuelve finalizaciones concurrentes', async () => {
@@ -85,10 +85,21 @@ describe.skipIf(process.env.PREPARATION_INTEGRATION !== '1')('preparación en Po
       expect((await practiceHistory(other.pb, admin, course.id, 'student')).items).toHaveLength(0);
       expect((await practiceHistory(teacher.pb, admin, course.id, 'teacher')).items[0].studentName).toBe('Alumno temporal');
       const exam = await teacher.pb.collection('practice_quizzes').create({ course: course.id, title: 'Parcial cronometrado', status: 'published', durationMinutes: 1, questions: [q, q2] });
-      const examId = await startPractice(student.pb, admin, course.id, exam.id);
+      const photo = vi.fn(async () => ({ photoKey: `private/exam-photos/${course.id}/${student.id}/${randomUUID()}.enc`, rollback: async () => {} }));
+      await expect(startPractice(student.pb, admin, course.id, exam.id)).rejects.toThrow('foto inicial');
+      const examId = await startPractice(student.pb, admin, course.id, exam.id, false, photo);
       const examView = await readPracticeAttempt(student.pb, admin, course.id, examId);
       expect(examView.deadline).not.toBeNull();
-      expect(await startPractice(student.pb, admin, course.id, exam.id, true)).toBe(examId);
+      expect(await startPractice(student.pb, admin, course.id, exam.id, true, photo)).toBe(examId);
+      expect(photo).toHaveBeenCalledOnce();
+      await expect(readPracticePhotoKey(student.pb, admin, course.id, examId)).rejects.toThrow();
+      expect((await readPracticeAttempt(teacher.pb, admin, course.id, examId, 'teacher')).hasInitialPhoto).toBe(true);
+      expect((await teacher.pb.collection('practice_attempts').getOne(examId)).photoKey).toBeUndefined();
+      expect(await readPracticePhotoKey(administrator.pb, admin, course.id, examId)).toMatch(/^private\/exam-photos\//);
+      await reportPracticeCamera(student.pb, admin, course.id, examId, false);
+      await expect(answerPractice(student.pb, admin, course.id, examId, 'q2', 'a')).rejects.toThrow('cámara');
+      await expect(reportPracticeCamera(other.pb, admin, course.id, examId, true)).rejects.toThrow();
+      await reportPracticeCamera(student.pb, admin, course.id, examId, true);
       const answered = await answerPractice(student.pb, admin, course.id, examId, 'q2', 'a');
       expect(answered.selected).toEqual({ q2: 'a' }); expect(answered.feedback).toEqual([]);
       expect(JSON.stringify(answered)).not.toContain('correctOptionId');
@@ -99,20 +110,43 @@ describe.skipIf(process.env.PREPARATION_INTEGRATION !== '1')('preparación en Po
       try {
         const expired = await answerPractice(student.pb, admin, course.id, examId, 'q1', 'a');
         expect(expired.result).toMatchObject({ correct: 1, total: 2, percentage: 50 });
+        expect(Date.parse(expired.result?.finishedAt || '')).toBe(Date.parse(examView.deadline!));
+        expect(expired.result?.completionReason).toBe('time_expired');
         expect(expired.selected).toEqual({ q2: 'a' });
         expect((await finishPractice(student.pb, admin, course.id, examId)).id).toBe(expired.result!.id);
         expect((await readPracticeAttempt(teacher.pb, admin, course.id, examId, 'teacher')).result?.id).toBe(expired.result!.id);
       } finally { clock.mockRestore(); }
-      const retryId = await startPractice(student.pb, admin, course.id, exam.id);
+      const retryId = await startPractice(student.pb, admin, course.id, exam.id, false, photo);
       expect(retryId).not.toBe(examId);
       const early = await finishPractice(student.pb, admin, course.id, retryId);
       expect(early).toMatchObject({ correct: 0, total: 2, percentage: 0 });
-      const idleId = await startPractice(student.pb, admin, course.id, exam.id);
+      expect(early.completionReason).toBe('submitted');
+      const idleId = await startPractice(student.pb, admin, course.id, exam.id, false, photo);
       const idle = await readPracticeAttempt(student.pb, admin, course.id, idleId);
       const later = vi.spyOn(Date, 'now').mockReturnValue(Date.parse(idle.deadline!) + 1);
       try {
         expect((await practiceHistory(student.pb, admin, course.id, 'student')).items.find(a => a.id === idleId)?.result).toMatchObject({ correct: 0, total: 2 });
       } finally { later.mockRestore(); }
+      const fixedBank = Array.from({ length: 20 }, (_, i) => ({ ...q, id: `fixed-${i}`, prompt: `Pregunta sintética ${i + 1}`, options: [...q.options, { id: 'c', label: 'Tercera' }, { id: 'd', label: 'Cuarta' }] }));
+      const shuffledQuiz = await teacher.pb.collection('practice_quizzes').create({ course: course.id, title: 'Parcial aleatorio temporal', status: 'published', durationMinutes: 40, shuffleQuestions: true, shuffleOptions: true, questions: fixedBank });
+      const shuffledId = await startPractice(student.pb, admin, course.id, shuffledQuiz.id, false, photo);
+      const savedOrder = await admin.collection('practice_attempts').getOne(shuffledId);
+      expect(savedOrder.snapshot.questions.map((item: { id: string }) => item.id).sort()).toEqual(fixedBank.map(item => item.id).sort());
+      const presentation = await readPracticeAttempt(student.pb, admin, course.id, shuffledId);
+      expect((await readPracticeAttempt(student.pb, admin, course.id, shuffledId)).questions).toEqual(presentation.questions);
+      expect(presentation.questions.map(item => item.id)).toEqual(savedOrder.snapshot.questions.map((item: { id: string }) => item.id));
+      await answerPractice(student.pb, admin, course.id, shuffledId, 'fixed-0', 'a');
+      expect((await finishPractice(student.pb, admin, course.id, shuffledId))).toMatchObject({ correct: 1, total: 20, percentage: 5 });
+      const repeatedId = await startPractice(student.pb, admin, course.id, shuffledQuiz.id, false, photo);
+      expect(repeatedId).not.toBe(shuffledId);
+      const repeatedView = await readPracticeAttempt(student.pb, admin, course.id, repeatedId);
+      expect(repeatedView.questions.map(item => item.id).sort()).toEqual(presentation.questions.map(item => item.id).sort());
+      expect(repeatedView.questions).not.toEqual(presentation.questions);
+      const otherAttempt = await startPractice(other.pb, admin, course.id, shuffledQuiz.id, false, async () => ({ photoKey: `private/exam-photos/${course.id}/${other.id}/${randomUUID()}.enc`, rollback: async () => {} }));
+      expect((await readPracticeAttempt(other.pb, admin, course.id, otherAttempt)).questions.map(item => item.id).sort()).toEqual(fixedBank.map(item => item.id).sort());
+      expect((await teacher.pb.collection('practice_quizzes').getOne(shuffledQuiz.id)).questions).toEqual(fixedBank);
+      expect((await practiceHistory(teacher.pb, admin, course.id, 'teacher', 1, shuffledQuiz.id)).totalItems).toBe(3);
+      expect((await practiceHistory(student.pb, admin, course.id, 'student', 1, shuffledQuiz.id)).totalItems).toBe(2);
       await admin.collection('courses').update(course.id, { preparationEnabled: false });
       await expect(readPracticeAttempt(student.pb, admin, course.id, attempt)).rejects.toBeDefined();
       await expect(teacher.pb.collection('practice_quizzes').getOne(quiz.id)).rejects.toBeDefined();

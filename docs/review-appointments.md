@@ -4,13 +4,19 @@ Desde **Administración → Curso → Editar**, activar **Habilitar revisiones p
 
 ## Uso docente
 
-1. Abrir el curso y la pestaña **Revisiones**. Crear una revisión con número único, título e instrucciones (por ejemplo, lugar o enlace del encuentro). La revisión es independiente de los trabajos prácticos.
+1. Abrir el curso y la pestaña **Revisiones**. Crear una revisión con número único, título e instrucciones (por ejemplo, lugar o enlace del encuentro). Las nuevas revisiones empiezan en **Borrador**: solo las ven los docentes asignados y pueden preparar sus franjas sin mostrarlas a los alumnos. La revisión es independiente de los trabajos prácticos.
 2. Agregar una franja: docente asignado al curso, fecha, inicio, fin, duración de cada turno y, opcionalmente, frecuencia y duración del descanso. Ambos campos de descanso en cero omiten los descansos.
 3. Revisar **Previsualizar turnos** y confirmar **Crear turnos libres**. Nunca se asignan alumnos automáticamente. Todos los horarios se interpretan en Argentina, UTC−3, y se guardan en UTC.
 4. Cualquier docente asignado al curso puede gestionar las franjas de los demás. Una franja futura puede editarse o retirarse mientras no tenga reservas pendientes. Los turnos reemplazados se desactivan y las cancelaciones históricas se conservan.
 5. Después de finalizar un turno reservado, registrar **Asistió / Ausente**, **Aprobó / Todavía no aprobó** y una devolución. La evaluación guardada es definitiva. Un ausente queda no aprobado. No afecta calificaciones ni entregas de trabajos prácticos.
 
 Cerrar las reservas de una revisión impide nuevas reservas, pero conserva su visibilidad, los turnos existentes, las cancelaciones antes del inicio y las evaluaciones pendientes. La validación de superposición docente se aplica dentro de cada revisión.
+
+### Publicación
+
+En **Editar revisión y publicación**, elegir **Borrador**, **Publicado** o **Programado** y guardar. Publicado permite que los alumnos matriculados accedan a la revisión; la apertura de reservas sigue siendo una opción independiente. Programado requiere una fecha y hora futura en Argentina (UTC−3) y habilita la visibilidad automáticamente al llegar ese instante, sin tareas programadas. Una programación ya cumplida se muestra como Publicado y permite editar los demás datos sin reprogramar.
+
+Volver a Borrador o programar una fecha futura oculta la revisión, los turnos y su historial a los alumnos, incluso mediante enlaces directos o la API. Se conservan las reservas y evaluaciones; los docentes siguen pudiendo gestionarlas. Al publicarla nuevamente, cada alumno recupera acceso a su historial. Las revisiones anteriores sin estado explícito conservan su visibilidad como publicadas; la migración no modifica sus registros.
 
 ## Uso estudiantil
 
@@ -21,7 +27,7 @@ Una evaluación no aprobada o ausente habilita un nuevo intento. La aprobación 
 ## Datos y consistencia
 
 - `courses.reviewsEnabled`: activación administrativa.
-- `course_reviews`: número único por curso, instrucciones, apertura de reservas y versión para control de concurrencia.
+- `course_reviews`: número único por curso, instrucciones, apertura de reservas, `publicationStatus` (`draft`, `published`, `scheduled`), `publishAt` (instante UTC opcional) y versión para control de concurrencia.
 - `review_blocks`: configuración de franjas asignadas a docentes.
 - `review_slots`: intervalos individuales, conservados aunque se retire o reemplace la franja.
 - `review_bookings`: reserva e intento, asistencia y evaluación.

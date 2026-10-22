@@ -1,13 +1,15 @@
 import 'server-only';
 import { createServerClient } from './pocketbase-server';
 import { createServiceClient } from './pocketbase-service';
+import { isPublicationVisible } from './publication';
 import { requireReviewCourse, type ReviewMode } from './review-appointments-service';
 import { ReviewError, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking } from './review-appointments';
 
 export async function getCourseReviews(courseId: string, mode: ReviewMode) {
   const pb = await createServerClient();
   const course = await requireReviewCourse(pb, courseId, mode);
-  const reviews = await pb.collection('course_reviews').getFullList<Review>({ filter: pb.filter('course = {:course}', { course: courseId }), sort: 'number' });
+  const allReviews = await pb.collection('course_reviews').getFullList<Review>({ filter: pb.filter('course = {:course}', { course: courseId }), sort: 'number' });
+  const reviews = mode === 'student' ? allReviews.filter(review => isPublicationVisible(review)) : allReviews;
   const bookings = mode === 'student' ? await pb.collection('review_bookings').getFullList<ReviewBooking>({ filter: pb.filter('review.course = {:course} && student = {:student}', { course: courseId, student: pb.authStore.record!.id }), fields: 'review,status' }) : [];
   return { course, reviews, progress: reviews.map(r => ({ id: r.id, status: bookings.some(b => b.review === r.id && b.status === 'passed') ? 'passed' : bookings.some(b => b.review === r.id && b.status === 'reserved') ? 'reserved' : 'available' })) };
 }
@@ -17,6 +19,7 @@ export async function getReviewAgenda(courseId: string, reviewId: string, mode: 
   const course = await requireReviewCourse(pb, courseId, mode);
   const review = await pb.collection('course_reviews').getOne<Review>(reviewId);
   if (review.course !== courseId) throw new ReviewError('La revisión no pertenece al curso.');
+  if (mode === 'student' && !isPublicationVisible(review)) throw new ReviewError('Esta revisión todavía no está publicada.');
   const filter = pb.filter('review = {:review}', { review: review.id });
   const [blocks, slots, bookings] = await Promise.all([
     pb.collection('review_blocks').getFullList<ReviewBlock>({ filter, sort: 'startsAt' }),
