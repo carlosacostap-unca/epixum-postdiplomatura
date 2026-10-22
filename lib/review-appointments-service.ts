@@ -4,7 +4,7 @@ import type { Course } from '@/types';
 import { createServiceClient } from './pocketbase-service';
 import { reviewAllocationKey } from './review-allocation-key.mjs';
 import { isPublicationVisible } from './publication';
-import { generateReviewSlots, ReviewError, reviewSchema, reviewBlockSchema, reviewEvaluationSchema, reviewMeetUrlSchema, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking, type ReviewBlockMeeting } from './review-appointments';
+import { generateReviewSlots, ReviewError, reviewSchema, reviewBlockSchema, reviewEvaluationSchema, reviewMeetingUrlSchema, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking, type ReviewBlockMeeting } from './review-appointments';
 
 const nonce = () => randomBytes(12).toString('hex');
 const recordId = () => randomBytes(8).toString('hex').slice(0, 15);
@@ -102,7 +102,7 @@ async function queueReviewMeeting(pb: PocketBase, batch: ReturnType<PocketBase['
 export async function saveReviewMeeting(pb: PocketBase, courseId: string, reviewId: string, expected: string, blockId: string, input: unknown) {
   const { review } = await scopedReview(pb, courseId, reviewId, 'teacher');
   checkVersion(review, expected);
-  const meetUrl = reviewMeetUrlSchema.parse(input);
+  const meetUrl = reviewMeetingUrlSchema.parse(input);
   const block = await pb.collection('review_blocks').getOne<ReviewBlock>(blockId);
   if (block.review !== review.id || !block.active) throw new ReviewError('La franja no está disponible en esta revisión.');
   const batch = guard(pb, review);

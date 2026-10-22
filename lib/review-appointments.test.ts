@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { generateReviewSlots, reviewEvaluationSchema, reviewDate, reviewSchema, reviewPublicationDate, reviewMeetUrlSchema, type ReviewBlockInput } from './review-appointments';
+import { generateReviewSlots, reviewEvaluationSchema, reviewDate, reviewSchema, reviewPublicationDate, reviewMeetingUrlSchema, type ReviewBlockInput } from './review-appointments';
 
 const input: ReviewBlockInput = { teacher: 'teacher00000001', date: '2026-10-20', start: '18:00', end: '19:00', duration: 15, breakEvery: 2, breakMinutes: 10 };
 describe('agenda de revisiones', () => {
-  it('acepta enlaces de Meet y rechaza protocolos y dominios ajenos', () => {
-    expect(reviewMeetUrlSchema.parse('  https://meet.google.com/abc-defg-hij  ')).toBe('https://meet.google.com/abc-defg-hij');
-    expect(reviewMeetUrlSchema.parse('')).toBe('');
-    for (const value of ['javascript:alert(1)', 'http://meet.google.com/abc-defg-hij', 'https://meet.google.com.evil.example/abc', 'https://meet.google.com@evil.example/abc', 'https://user@meet.google.com/abc', 'https://meet.google.com/', 'https://example.com/meeting']) expect(reviewMeetUrlSchema.safeParse(value).success).toBe(false);
+  it('acepta salas de distintas plataformas y rechaza protocolos inseguros o credenciales', () => {
+    expect(reviewMeetingUrlSchema.parse('  https://meet.google.com/abc-defg-hij  ')).toBe('https://meet.google.com/abc-defg-hij');
+    expect(reviewMeetingUrlSchema.parse('')).toBe('');
+    for (const value of ['https://zoom.us/j/123456789', 'https://teams.microsoft.com/l/meetup-join/example', 'https://example.com/sala']) expect(reviewMeetingUrlSchema.parse(value)).toBe(value);
+    for (const value of ['javascript:alert(1)', 'http://example.com/sala', 'https://user:secret@example.com/sala', 'https://user@meet.google.com/abc', 'no es un enlace']) expect(reviewMeetingUrlSchema.safeParse(value).success).toBe(false);
   });
   it('admite mensajes opcionales, conserva saltos de línea y limita su longitud', () => {
     const data = { number: 1, title: 'Revisión', instructions: '', open: true };

@@ -197,7 +197,7 @@ describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBa
       // A Meet room belongs to a range and is visible only while the student is booked.
       const meetingReview = await createReview(teacher.pb, course.id, { ...input, number: 6, title: 'Revisión por Meet' });
       const meetUrl = 'https://meet.google.com/abc-defg-hij';
-      const updatedMeetUrl = 'https://meet.google.com/xyz-abcd-efg';
+      const updatedMeetUrl = 'https://zoom.us/j/123456789';
       await saveReviewBlock(peer.pb, course.id, meetingReview.id, meetingReview.revision, null, { ...blockInput, meetUrl });
       const meetingFresh = () => teacher.pb.collection('course_reviews').getOne<Review>(meetingReview.id);
       const meetingSlots = await teacher.pb.collection('review_slots').getFullList<ReviewSlot>({ filter: `review = "${meetingReview.id}"`, sort: 'startsAt' });

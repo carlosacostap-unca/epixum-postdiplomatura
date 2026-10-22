@@ -44,7 +44,7 @@ describe('formularios de revisiones', () => {
     fireEvent.change(screen.getByLabelText('Hora de fin'), { target: { value: '19:00' } });
     fireEvent.change(screen.getByLabelText('Descanso cada N turnos'), { target: { value: '2' } });
     fireEvent.change(screen.getByLabelText('Minutos de descanso'), { target: { value: '10' } });
-    fireEvent.change(screen.getByLabelText('Enlace de Google Meet'), { target: { value: 'https://meet.google.com/abc-defg-hij' } });
+    fireEvent.change(screen.getByLabelText('Enlace de la sala de reunión'), { target: { value: 'https://meet.google.com/abc-defg-hij' } });
     fireEvent.click(screen.getByRole('button', { name: 'Previsualizar turnos' }));
     expect(screen.getByText('3 turnos disponibles para reservar')).toBeInTheDocument();
     expect(screen.getByText('18:30–18:40')).toBeInTheDocument();
@@ -55,8 +55,8 @@ describe('formularios de revisiones', () => {
   });
   it('actualiza únicamente el enlace sin modificar la franja ni sus reservas', async () => {
     render(<ReviewMeetingEditor courseId="course1" review={review} block={{ id: 'block', meetUrl: 'https://meet.google.com/abc-defg-hij' } as Parameters<typeof ReviewMeetingEditor>[0]['block']} />);
-    fireEvent.change(screen.getByLabelText('Enlace de Google Meet'), { target: { value: 'https://meet.google.com/xyz-abcd-efg' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar enlace de Meet' }));
+    fireEvent.change(screen.getByLabelText('Enlace de la sala de reunión'), { target: { value: 'https://meet.google.com/xyz-abcd-efg' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar enlace de la sala' }));
     expect(mocks.saveMeeting).toHaveBeenCalledWith('course1', 'review1', 'version1', 'block', 'https://meet.google.com/xyz-abcd-efg');
     expect(mocks.saveBlock).not.toHaveBeenCalled();
     await screen.findByText('Cambios guardados.');

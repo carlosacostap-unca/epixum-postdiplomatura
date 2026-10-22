@@ -16,13 +16,13 @@ export const reviewSchema = z.object({
     context.addIssue({ code: 'custom', path: ['publishAt'], message: 'Indicá una fecha y hora de publicación válida.' });
   }
 }).transform(value => ({ ...value, publishAt: value.publicationStatus === 'scheduled' ? new Date(value.publishAt).toISOString() : '' }));
-export const reviewMeetUrlSchema = z.string().trim().max(2048).refine(value => {
+export const reviewMeetingUrlSchema = z.string().trim().max(2048).refine(value => {
   if (!value) return true;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && url.hostname === 'meet.google.com' && !url.port && !url.username && !url.password && url.pathname !== '/';
+    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password;
   } catch { return false; }
-}, 'Ingresá un enlace válido de Google Meet (https://meet.google.com/…).').transform(value => value ? new URL(value).toString() : '');
+}, 'Ingresá un enlace HTTPS válido para la sala de reunión.').transform(value => value ? new URL(value).toString() : '');
 export const reviewBlockSchema = z.object({
   teacher: z.string().regex(/^[a-zA-Z0-9]{15}$/, 'Elegí un docente del curso.'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Elegí una fecha válida.'),
@@ -31,7 +31,7 @@ export const reviewBlockSchema = z.object({
   duration: z.number().int().min(5).max(240),
   breakEvery: z.number().int().min(0).max(96),
   breakMinutes: z.number().int().min(0).max(120),
-  meetUrl: reviewMeetUrlSchema.optional(),
+  meetUrl: reviewMeetingUrlSchema.optional(),
 }).refine(v => (v.breakEvery === 0) === (v.breakMinutes === 0), { message: 'Para incluir descansos indicá cada cuántos turnos y su duración; para omitirlos dejá ambos en cero.' });
 export type ReviewBlockInput = z.infer<typeof reviewBlockSchema>;
 export type ReviewInput = z.infer<typeof reviewSchema>;

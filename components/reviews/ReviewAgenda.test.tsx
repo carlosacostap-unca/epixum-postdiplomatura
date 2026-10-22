@@ -30,10 +30,10 @@ describe('resultado y notas privadas del turno', () => {
     expect(screen.queryByText('Observación interna confidencial')).not.toBeInTheDocument();
     expect(screen.queryByText('Notas privadas · Solo docentes')).not.toBeInTheDocument();
   });
-  it('muestra el enlace de Meet de la reserva asignada', () => {
+  it('muestra el enlace de la sala de la reserva asignada', () => {
     const agenda = { ...data, bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })), meetingLinks: { booking: 'https://meet.google.com/abc-defg-hij' } } as typeof data;
     render(<ReviewAgenda data={agenda} mode="student" />);
-    const link = screen.getByRole('link', { name: 'Unirme a la revisión por Meet' });
+    const link = screen.getByRole('link', { name: 'Unirme a la sala de reunión' });
     expect(link).toHaveAttribute('href', 'https://meet.google.com/abc-defg-hij');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
@@ -41,7 +41,7 @@ describe('resultado y notas privadas del turno', () => {
   it('no muestra el enlace de una reserva cancelada', () => {
     const agenda = { ...data, bookings: data.bookings.map(booking => ({ ...booking, status: 'cancelled' })), meetingLinks: { booking: 'https://meet.google.com/abc-defg-hij' } } as typeof data;
     render(<ReviewAgenda data={agenda} mode="student" />);
-    expect(screen.queryByRole('link', { name: 'Unirme a la revisión por Meet' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Unirme a la sala de reunión' })).not.toBeInTheDocument();
   });
   it('permite solicitar una franja sin mostrar docentes ni elegir horarios individuales', async () => {
     const agenda = { ...data, bookings: [], blocks: [{ id: 'block', active: true, teacher: 'teacher', startsAt: '2026-01-03T12:00:00Z', endsAt: '2026-01-03T13:00:00Z', duration: 15, availableSlots: 3 }],

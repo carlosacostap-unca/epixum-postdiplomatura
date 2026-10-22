@@ -10,11 +10,11 @@ Desde **Administración → Curso → Editar**, activar **Habilitar revisiones p
 4. Cualquier docente asignado al curso puede gestionar las franjas de los demás. Una franja futura puede editarse o retirarse mientras no tenga reservas pendientes. Los turnos reemplazados se desactivan y las cancelaciones históricas se conservan.
 5. Después de finalizar un turno reservado, abrir **Evaluar turno: resultado, devolución y notas privadas** y registrar **Asistió / Ausente**, **Aprobado / No aprobado**, una **Devolución para el alumno** y, opcionalmente, **Notas privadas para docentes**. El alumno ve únicamente su resultado y devolución; las notas solo pueden leerlas los docentes asignados al curso. La evaluación guardada es definitiva. Un ausente queda no aprobado. No afecta calificaciones ni entregas de trabajos prácticos.
 
-### Sala de Meet por franja
+### Sala de reunión por franja
 
-Al crear una franja, pegar la URL de su sala en **Enlace de Google Meet**. Después puede agregarse, corregirse o quitarse desde **Configurar enlace de Meet** en esa franja, incluso si ya tiene reservas o comenzó. Esto no cambia horarios, participantes ni evaluaciones. El sistema valida que sea un enlace HTTPS de `meet.google.com`; el docente proporciona una sala existente.
+Al crear una franja, pegar la URL de su sala en **Enlace de la sala de reunión**. Después puede agregarse, corregirse o quitarse desde **Configurar enlace de la sala** en esa franja, incluso si ya tiene reservas o comenzó. Esto no cambia horarios, participantes ni evaluaciones. El sistema admite enlaces HTTPS de distintas plataformas; el docente proporciona una sala existente.
 
-El alumno con un turno reservado encuentra **Unirme a la revisión por Meet** en **Mis reservas y devoluciones**, junto a su horario asignado. El enlace abre en otra pestaña y corresponde a la franja de ese turno. Si aún no se cargó, se informa allí. Antes de reservar, después de cancelar y para reservas de otros alumnos, no se entrega el enlace. Los docentes asignados pueden consultar y gestionar todas las salas del curso. Los enlaces corregidos se actualizan al recargar o usar **Actualizar disponibilidad**.
+El alumno con un turno reservado encuentra **Unirme a la sala de reunión** en **Mis reservas y devoluciones**, junto a su horario asignado. El enlace abre en otra pestaña y corresponde a la franja de ese turno. Si aún no se cargó, se informa allí. Antes de reservar, después de cancelar y para reservas de otros alumnos, no se entrega el enlace. Los docentes asignados pueden consultar y gestionar todas las salas del curso. Los enlaces corregidos se actualizan al recargar o usar **Actualizar disponibilidad**.
 
 Cerrar las reservas de una revisión impide nuevas reservas, pero conserva su visibilidad, los turnos existentes, las cancelaciones antes del inicio y las evaluaciones pendientes. La validación de superposición docente se aplica dentro de cada revisión.
 
@@ -48,7 +48,7 @@ Una evaluación no aprobada o ausente habilita un nuevo intento. La aprobación 
 - `review_slots`: intervalos individuales, conservados aunque se retire o reemplace la franja.
 - `review_bookings`: reserva e intento, asistencia y evaluación.
 - `review_booking_notes`: notas privadas por reserva, separadas de los datos visibles al alumno. Solo los docentes asignados pueden leerlas, incluso mediante la API o expansiones de relaciones. Se guardan junto con la evaluación en el mismo lote atómico, con una nota por reserva y sin modificaciones posteriores. Una evaluación sin notas no crea un registro privado.
-- `review_block_meetings`: sala de Meet de cada franja, en una colección separada para limitar su lectura a docentes y alumnos con reserva vigente en esa misma franja. La cancelación revoca el acceso aunque otro alumno tenga un turno en la franja.
+- `review_block_meetings`: sala de reunión de cada franja, en una colección separada para limitar su lectura a docentes y alumnos con reserva vigente en esa misma franja. La cancelación revoca el acceso aunque otro alumno tenga un turno en la franja.
 
 Los índices únicos parciales impiden más de una reserva no cancelada por turno y más de un estado reservado/aprobado por alumno y revisión. Los lotes autenticados comparan la versión de la revisión y hacen que los cambios de agenda y reserva sean atómicos. Un conflicto solicita actualizar, sin confirmar una operación incierta. Las reglas de PocketBase también impiden alteraciones directas de identidades, horarios reservados, estados finales y resultados por parte de alumnos.
 
@@ -56,7 +56,7 @@ Una franja admite hasta 96 turnos, de 5 a 240 minutos cada uno. Se omiten interv
 
 ## Migración y verificación
 
-Para agregar las salas de Meet, ejecutar `npm run schema:review-meetings` antes de desplegar. Respalda el esquema y crea `review_block_meetings`, sin modificar turnos ni reservas existentes. Las franjas anteriores siguen sin enlace hasta que el docente lo cargue. `schema:reviews` también incluye esta colección para instalaciones nuevas.
+Para agregar las salas de reunión o ampliar una instalación anterior que solo admitía Meet, ejecutar `npm run schema:review-meetings` antes de desplegar. Respalda el esquema y crea o actualiza `review_block_meetings` para admitir enlaces HTTPS de distintas plataformas, sin modificar turnos ni reservas existentes. Las franjas anteriores siguen sin enlace hasta que el docente lo cargue. `schema:reviews` también incluye esta colección para instalaciones nuevas.
 
 Para agregar el aviso previo a una instalación existente, ejecutar `npm run schema:review-message` antes de desplegar. Respalda el esquema, agrega `course_reviews.bookingMessage` como texto opcional y limita su modificación a docentes asignados. Conserva el resto de las reglas, las revisiones y las reservas anteriores. `schema:reviews` también incluye este campo para instalaciones nuevas.
 

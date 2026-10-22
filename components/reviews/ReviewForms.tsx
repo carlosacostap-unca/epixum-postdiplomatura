@@ -92,7 +92,7 @@ export function ReviewBlockEditor({ courseId, review, teachers, block, onDone }:
         <Field label="Descanso cada N turnos"><input type="number" name="breakEvery" className={reviewInput} required min={0} max={96} defaultValue={block?.breakEvery ?? 0} /></Field>
         <Field label="Minutos de descanso"><input type="number" name="breakMinutes" className={reviewInput} required min={0} max={120} defaultValue={block?.breakMinutes ?? 0} /></Field>
       </div>
-      <Field label="Enlace de Google Meet"><input type="url" name="meetUrl" className={reviewInput} maxLength={2048} defaultValue={block?.meetUrl} placeholder="https://meet.google.com/abc-defg-hij" /></Field>
+      <Field label="Enlace de la sala de reunión"><input type="url" name="meetUrl" className={reviewInput} maxLength={2048} defaultValue={block?.meetUrl} placeholder="https://plataforma.example/sala" /></Field>
       <p className="text-sm text-[var(--color-text-muted)]">Pegá el enlace de la sala de esta franja. El alumno podrá abrirlo desde su reserva una vez que tenga turno asignado.</p>
       <p className="text-sm text-[var(--color-text-muted)]">Horarios de Argentina (UTC−3). Para omitir descansos, dejá ambos campos en cero. Cada turno admite un alumno.</p>
       <div className="flex flex-wrap gap-3"><button type="submit" className={reviewSecondary}>Previsualizar turnos</button><button type="button" className={reviewSecondary} onClick={onDone}>Cerrar</button></div>
@@ -113,9 +113,9 @@ export function ReviewMeetingEditor({ courseId, review, block }: { courseId: str
     const url = String(new FormData(event.currentTarget).get('meetUrl') || '');
     mutation.run(() => saveReviewMeetingAction(courseId, review.id, review.revision, block.id, url));
   }}><fieldset disabled={mutation.pending} className="space-y-3">
-    <Field label="Enlace de Google Meet"><input className={reviewInput} name="meetUrl" type="url" maxLength={2048} defaultValue={block.meetUrl} placeholder="https://meet.google.com/abc-defg-hij" /></Field>
+    <Field label="Enlace de la sala de reunión"><input className={reviewInput} name="meetUrl" type="url" maxLength={2048} defaultValue={block.meetUrl} placeholder="https://plataforma.example/sala" /></Field>
     <p className="text-xs text-[var(--color-text-muted)]">Podés actualizarlo aunque haya reservas. Los alumnos con turno reservado verán el enlace actualizado. Dejalo vacío para quitarlo.</p>
-    <button className={reviewButton} type="submit">{mutation.pending ? 'Guardando…' : 'Guardar enlace de Meet'}</button>
+    <button className={reviewButton} type="submit">{mutation.pending ? 'Guardando…' : 'Guardar enlace de la sala'}</button>
   </fieldset>{mutation.feedback}</form>;
 }
 

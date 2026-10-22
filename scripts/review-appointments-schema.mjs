@@ -111,7 +111,7 @@ export async function applyReviewBookingNotesSchema(pb) {
 export async function applyReviewBlockMeetingsSchema(pb) {
   const block = await pb.collections.getOne('review_blocks');
   return ensure(pb, 'review_block_meetings', [rel('block', block.id),
-    { ...text('url', 2048), pattern: '^https://meet[.]google[.]com/\\S+$' }, ...timestamps], reviewBlockMeetingRules, [
+    { ...text('url', 2048), pattern: '^https://[^[:space:]]+$' }, ...timestamps], reviewBlockMeetingRules, [
     'CREATE UNIQUE INDEX idx_review_block_meeting ON review_block_meetings (block)',
   ]);
 }
