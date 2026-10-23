@@ -13,18 +13,24 @@ export function CourseExamStart({ courseId, exam }: { courseId: string; exam: { 
   const camera = useWebcam();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [accepted, setAccepted] = useState(false);
+  const photo = useRef<Blob | null>(null);
   return <div className="space-y-5"><h2 className="text-2xl font-bold">{exam.title}</h2><p className="whitespace-pre-wrap">{exam.description}</p><p>{examAvailability(exam)} · Desde {examDateLabel(exam.opensAt)} hasta {examDateLabel(exam.closesAt)} (Argentina)</p>
     <p>Un intento por alumno. Podés navegar sin responder y cambiar tus respuestas; cada selección se guarda en tu cuenta. El plazo sigue corriendo aunque salgas. Al cierre se entrega lo guardado. La nota y la devolución completa se habilitan después del cierre, aunque entregues antes.</p>
-    <WebcamPanel camera={camera} initialPhoto={false} />
-    <Button disabled={!camera.ready} isPending={pending} onClick={async () => {
-      if (!camera.isLive()) return;
+    <WebcamPanel camera={camera} />
+    <label className="flex items-start gap-3"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} className="mt-1 size-5 shrink-0" /><span>Entiendo que se guardará una foto inicial de mi cámara, visible sólo para administradores y docentes del curso, y que debo mantener la cámara activa mientras respondo.</span></label>
+    <Button disabled={!camera.ready || !accepted} isPending={pending} pendingLabel="Guardando foto e iniciando…" onClick={async () => {
+      if (!accepted || !camera.isLive()) return;
       setPending(true); setError('');
       try {
-        const result = await beginExam(courseId, exam.id, true);
+        photo.current ??= await camera.capture();
+        if (!camera.isLive()) throw new Error('La cámara se apagó. Reactivala antes de comenzar.');
+        const form = new FormData(); form.set('photo', photo.current, 'foto-inicial.jpg'); form.set('accepted', 'true');
+        const result = await beginExam(courseId, exam.id, true, form);
         if (!result.success) { setError(result.error); setPending(false); return; }
         router.push(`/estudiantes/cursos/${courseId}/parciales/intentos/${result.data}`);
-      } catch { setError('No pudimos iniciar el parcial. Volvé a intentar.'); setPending(false); }
-    }}>Comenzar o retomar parcial</Button>{error && <p role="alert">{error}</p>}
+      } catch { setError('No pudimos tomar la foto o iniciar el parcial. Revisá la cámara y volvé a intentar.'); setPending(false); }
+    }}>Tomar foto e iniciar parcial</Button>{error && <p role="alert">{error}</p>}
   </div>;
 }
 
@@ -90,7 +96,7 @@ export function CourseExamRunner({ courseId, initial }: { courseId: string; init
   const question = view.questions[index];
   return <div className="space-y-5">
     <Card><CardContent><p role="timer" aria-label="Tiempo restante" className="text-3xl font-bold">{Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}</p><p>Cierre: {examDateLabel(view.deadline)} (Argentina). El plazo continúa aunque salgas.</p><p>Pregunta {index + 1} de {view.questions.length} · {Object.keys(view.selected).length} respuestas guardadas</p><p role="status">{pending ? 'Guardando selección…' : unsaved ? 'Hay una selección sin guardar.' : 'Todas tus selecciones están guardadas.'}</p></CardContent></Card>
-    <WebcamPanel camera={camera} initialPhoto={false} />
+    <WebcamPanel camera={camera} />
     {camera.ready && !verified && <p role="status">Verificando la cámara…</p>}
     <nav aria-label="Preguntas del parcial" className="flex flex-wrap gap-2">{view.questions.map((q, i) => <Button disabled={pending || !!unsaved} key={q.id} variant={index === i ? 'primary' : 'secondary'} aria-current={index === i ? 'step' : undefined} aria-label={`Pregunta ${i + 1}${view.selected[q.id] ? ', respondida' : ', sin responder'}`} onClick={() => setIndex(i)}>{i + 1}{view.selected[q.id] ? ' ✓' : ''}</Button>)}</nav>
     {question && <Card><CardContent><fieldset disabled={pending || !!unsaved || !remaining || !ready || !verified} className="space-y-4"><legend className="mb-4 whitespace-pre-wrap text-lg font-bold">{question.prompt}</legend>{question.options.map(o => <label className="flex items-start gap-3 rounded-xl border border-[var(--color-outline-variant)] p-4" key={o.id}><input type="radio" name={question.id} checked={(unsaved?.questionId === question.id ? unsaved.optionId : view.selected[question.id]) === o.id} onChange={() => { void save({ questionId: question.id, optionId: o.id, mutationId: crypto.randomUUID() }); }} /><span>{o.label}</span></label>)}</fieldset></CardContent></Card>}

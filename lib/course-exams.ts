@@ -17,14 +17,14 @@ export const courseExamSchema = z.object({
 });
 export type CourseExamInput = z.infer<typeof courseExamSchema>;
 export type CourseExam = CourseExamInput & { id: string; course: string };
-export type ExamAttempt = { id: string; exam: string; course: string; student: string; title: string; snapshot: CourseExamInput; deadline: string; created: string; cameraActive: boolean; cameraLastSeen: string };
+export type ExamAttempt = { id: string; exam: string; course: string; student: string; title: string; snapshot: CourseExamInput; deadline: string; created: string; cameraActive: boolean; cameraLastSeen: string; photoKey?: string };
 export type ExamAnswerEvent = { id: string; attempt: string; questionId: string; optionId: string; mutationId: string; created: string };
 export type ExamResult = { id: string; attempt: string; finishedAt: string; reason: 'submitted' | 'expired'; correct: number; total: number; percentage: number; selected: Record<string, string> };
 type ExamReceipt = Pick<ExamResult, 'id' | 'attempt' | 'finishedAt' | 'reason'>;
 export type ExamResultSummary = (ExamReceipt & { feedbackAvailable: false }) | (ExamReceipt & { feedbackAvailable: true; correct: number; total: number; percentage: number });
 export type ExamVisibleResult = (ExamReceipt & { feedbackAvailable: false; selected: Record<string, string> }) | (ExamReceipt & { feedbackAvailable: true; selected: Record<string, string>; correct: number; total: number; percentage: number; review: PracticeReview[] });
 export type ExamStudent = { name: string; email?: string };
-export type ExamView = { id: string; examId: string; title: string; description: string; questions: PublicPracticeQuestion[]; selected: Record<string, string>; deadline: string; serverNow: number; result: ExamVisibleResult | null; student?: ExamStudent };
+export type ExamView = { id: string; examId: string; title: string; description: string; questions: PublicPracticeQuestion[]; selected: Record<string, string>; deadline: string; serverNow: number; result: ExamVisibleResult | null; student?: ExamStudent; initialPhotoUrl?: string };
 export function examFeedbackReleased(deadline: string, now = Date.now()) { return now >= Date.parse(deadline.replace(' ', 'T')); }
 /** Explicit projections keep scores out of serialized responses before the common closing time. */
 export function examResultSummary(result: Omit<ExamResult, 'selected'>, released: boolean): ExamResultSummary {

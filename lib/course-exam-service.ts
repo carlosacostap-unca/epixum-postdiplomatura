@@ -41,7 +41,8 @@ export async function saveCourseExam(pb: PocketBase, service: PocketBase, course
   }
   return id ? service.collection('course_exams').update(id, data) : service.collection('course_exams').create({ ...data, course: courseId });
 }
-export async function beginCourseExam(pb: PocketBase, service: PocketBase, courseId: string, examId: string, cameraActive: boolean) {
+export type CourseExamInitialPhoto = { photoKey: string; rollback: () => Promise<void> };
+export async function beginCourseExam(pb: PocketBase, service: PocketBase, courseId: string, examId: string, cameraActive: boolean, capturePhoto?: () => Promise<CourseExamInitialPhoto>) {
   await requireExamCourse(pb, courseId, 'student');
   const exam = await service.collection('course_exams').getOne<CourseExam>(examId);
   if (exam.course !== courseId || exam.status !== 'published') throw new CourseExamError('Este parcial no está disponible.');
@@ -50,12 +51,26 @@ export async function beginCourseExam(pb: PocketBase, service: PocketBase, cours
   if (examAvailability(exam) !== 'Activo') throw new CourseExamError('El parcial sólo se puede iniciar dentro del horario de activación.');
   if (cameraActive !== true) throw new CourseExamError('Activá la cámara antes de comenzar.');
   const snapshot = courseExamSchema.parse({ title: exam.title, description: exam.description, status: exam.status, opensAt: new Date(exam.opensAt.replace(' ', 'T')).toISOString(), closesAt: new Date(exam.closesAt.replace(' ', 'T')).toISOString(), questions: exam.questions });
+  if (!capturePhoto) throw new CourseExamError('Necesitás guardar una foto inicial de la cámara para comenzar.');
+  const photo = await capturePhoto();
+  let creating = false;
   try {
-    const attempt = await service.collection('course_exam_attempts').create({ course: courseId, exam: examId, student: pb.authStore.record!.id, title: exam.title, snapshot, deadline: snapshot.closesAt, cameraActive: true, cameraLastSeen: new Date().toISOString() });
+    await requireExamCourse(pb, courseId, 'student');
+    const currentExam = await service.collection('course_exams').getOne<CourseExam>(examId);
+    if (examAvailability(currentExam) !== 'Activo' || JSON.stringify(currentExam.questions) !== JSON.stringify(exam.questions) || currentExam.closesAt !== exam.closesAt || currentExam.opensAt !== exam.opensAt) throw new CourseExamError('Las condiciones del parcial cambiaron o ya se alcanzó el cierre. Actualizá la página.');
+    creating = true;
+    const attempt = await service.collection('course_exam_attempts').create({ course: courseId, exam: examId, student: pb.authStore.record!.id, title: exam.title, snapshot, deadline: snapshot.closesAt, cameraActive: true, cameraLastSeen: new Date().toISOString(), photoKey: photo.photoKey });
     return attempt.id;
   } catch (error) {
-    const concurrent = await service.collection('course_exam_attempts').getList(1, 1, { filter: service.filter('exam = {:exam} && student = {:student}', { exam: examId, student: pb.authStore.record!.id }), fields: 'id' });
-    if (concurrent.items[0]) return concurrent.items[0].id;
+    if (creating) {
+      // A failed response may follow a successful commit. Never delete its photo.
+      const concurrent = await service.collection('course_exam_attempts').getList<ExamAttempt>(1, 1, { filter: service.filter('course = {:course} && exam = {:exam} && student = {:student}', { course: courseId, exam: examId, student: pb.authStore.record!.id }) });
+      if (concurrent.items[0]) {
+        if (concurrent.items[0].photoKey !== photo.photoKey) await photo.rollback();
+        return concurrent.items[0].id;
+      }
+    }
+    await photo.rollback();
     throw error;
   }
 }
@@ -75,7 +90,12 @@ export async function readCourseExamAttempt(pb: PocketBase, service: PocketBase,
   let result = await resultFor(service, attempt.id);
   if (!result && Date.now() >= Date.parse(attempt.deadline.replace(' ', 'T'))) result = await finalizeCourseExam(service, attempt);
   const student = mode === 'manage' ? await service.collection('users').getOne<ExamStudent>(attempt.student, { fields: 'name,email' }) : null;
-  return { id: attempt.id, examId: attempt.exam, title: attempt.title, description: attempt.snapshot.description, questions: publicPracticeQuestions(attempt.snapshot.questions), selected: result?.selected ?? examSelections(await eventsFor(service, id), attempt.deadline), deadline: attempt.deadline, serverNow: Date.now(), result: result ? visibleExamResult(result, attempt, mode) : null, ...(student ? { student: { name: student.name, email: student.email } } : {}) };
+  return { id: attempt.id, examId: attempt.exam, title: attempt.title, description: attempt.snapshot.description, questions: publicPracticeQuestions(attempt.snapshot.questions), selected: result?.selected ?? examSelections(await eventsFor(service, id), attempt.deadline), deadline: attempt.deadline, serverNow: Date.now(), result: result ? visibleExamResult(result, attempt, mode) : null, ...(student ? { student: { name: student.name, email: student.email } } : {}), ...(mode === 'manage' && attempt.photoKey ? { initialPhotoUrl: `/api/parciales/${courseId}/intentos/${attempt.id}/foto` } : {}) };
+}
+export async function readCourseExamPhotoKey(pb: PocketBase, service: PocketBase, courseId: string, id: string) {
+  const attempt = await attemptFor(pb, service, courseId, id, 'manage');
+  if (!attempt.photoKey) throw new CourseExamError('Este intento no tiene foto inicial.');
+  return attempt.photoKey;
 }
 export async function reportCourseExamCamera(pb: PocketBase, service: PocketBase, courseId: string, id: string, active: boolean) {
   const attempt = await attemptFor(pb, service, courseId, id);

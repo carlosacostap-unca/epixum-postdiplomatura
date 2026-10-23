@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { createServerClient } from './pocketbase-server';
 import { createServiceClient } from './pocketbase-service';
 import { answerCourseExam, beginCourseExam, CourseExamError, readCourseExamAttempt, reportCourseExamCamera, requireExamCourse, saveCourseExam, submitCourseExam } from './course-exam-service';
+import { EXAM_PHOTO_MAX_BYTES } from './exam-photo-crypto';
+import { storeExamPhoto } from './exam-photo-storage';
 
 async function run<T>(course: string, operation: (pb: Awaited<ReturnType<typeof createServerClient>>, service: Awaited<ReturnType<typeof createServiceClient>>) => Promise<T>) {
   try {
@@ -24,7 +26,14 @@ export async function saveExam(course: string, id: string | null, input: unknown
   }
   return result;
 }
-export async function beginExam(course: string, exam: string, camera: boolean) { return run(course, (pb, service) => beginCourseExam(pb, service, course, exam, camera)); }
+export async function beginExam(course: string, exam: string, camera: boolean, form?: FormData) {
+  return run(course, (pb, service) => beginCourseExam(pb, service, course, exam, camera, async () => {
+    if (form?.get('accepted') !== 'true') throw new CourseExamError('Aceptá el aviso de la foto inicial antes de comenzar.');
+    const photo = form.get('photo');
+    if (!photo || typeof photo === 'string' || photo.type !== 'image/jpeg' || photo.size < 100 || photo.size > EXAM_PHOTO_MAX_BYTES) throw new CourseExamError('Necesitás una foto inicial de la cámara, en JPEG y de hasta 300 KB.');
+    return storeExamPhoto(course, pb.authStore.record!.id, new Uint8Array(await photo.arrayBuffer()));
+  }));
+}
 export async function saveExamAnswer(course: string, attempt: string, input: unknown) { return run(course, (pb, service) => answerCourseExam(pb, service, course, attempt, input)); }
 export async function readExam(course: string, attempt: string) { return run(course, (pb, service) => readCourseExamAttempt(pb, service, course, attempt)); }
 export async function sendExam(course: string, attempt: string) { return run(course, (pb, service) => submitCourseExam(pb, service, course, attempt)); }

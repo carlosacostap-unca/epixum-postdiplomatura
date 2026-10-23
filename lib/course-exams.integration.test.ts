@@ -3,15 +3,18 @@ import { describe, expect, it } from 'vitest';
 import PocketBase from 'pocketbase';
 import dotenv from 'dotenv';
 import { randomUUID } from 'node:crypto';
-import { answerCourseExam, beginCourseExam, closeExpiredCourseExams, readCourseExamAttempt, reportCourseExamCamera, requireExamCourse, saveCourseExam, submitCourseExam } from './course-exam-service';
+import { answerCourseExam, beginCourseExam, closeExpiredCourseExams, readCourseExamAttempt, readCourseExamPhotoKey, reportCourseExamCamera, requireExamCourse, saveCourseExam, submitCourseExam } from './course-exam-service';
 import type { CourseExamInput } from './course-exams';
+import { syntheticExamPhoto } from '../scripts/fixtures/synthetic-exam-photo.mjs';
 
 describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · PocketBase real', () => {
   it('protege borradores, guarda cambios, reanuda entre sesiones y cierra sin navegador', async () => {
     dotenv.config({ path: '.env.local', quiet: true });
+    const { storeExamPhoto, loadExamPhoto } = await import('./exam-photo-storage');
     const service = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL); service.autoCancellation(false);
     await service.collection('_superusers').authWithPassword(process.env.POCKETBASE_SUPERUSER_EMAIL || process.env.POCKETBASE_ADMIN_EMAIL!, process.env.POCKETBASE_SUPERUSER_PASSWORD || process.env.POCKETBASE_ADMIN_PASSWORD!);
     const created: { collection: string; id: string }[] = [];
+    const photos: { rollback: () => Promise<void> }[] = [];
     const create = async (collection: string, data: object) => { const record = await service.collection(collection).create(data); created.push({ collection, id: record.id }); return record; };
     const user = async (role: string) => {
       const password = `Exams-${randomUUID()}!`;
@@ -33,11 +36,20 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       const published = { ...input, status: 'published' as const, opensAt: new Date(Date.now() - 60_000).toISOString(), closesAt: new Date(Date.now() + 3600_000).toISOString() };
       await saveCourseExam(admin, service, course.id, exam.id, published);
       await expect(beginCourseExam(student, service, course.id, exam.id, false)).rejects.toThrow('cámara');
-      const ids = await Promise.all([beginCourseExam(student, service, course.id, exam.id, true), beginCourseExam(student, service, course.id, exam.id, true)]);
+      const capture = async () => { const stored = await storeExamPhoto(course.id, student.authStore.record!.id, syntheticExamPhoto); photos.push(stored); return stored; };
+      await expect(beginCourseExam(student, service, course.id, exam.id, true)).rejects.toThrow('foto inicial');
+      const ids = await Promise.all([beginCourseExam(student, service, course.id, exam.id, true, capture), beginCourseExam(student, service, course.id, exam.id, true, capture)]);
       expect(ids[0]).toBe(ids[1]); const id = ids[0]; created.push({ collection: 'course_exam_attempts', id });
+      const key = await readCourseExamPhotoKey(teacher, service, course.id, id);
+      expect(await loadExamPhoto(key)).toEqual(syntheticExamPhoto);
+      expect(await beginCourseExam(student, service, course.id, exam.id, true)).toBe(id);
+      await expect(readCourseExamPhotoKey(student, service, course.id, id)).rejects.toThrow('permiso');
+      await expect(readCourseExamPhotoKey(outsider, service, course.id, id)).rejects.toThrow('permiso');
+      expect((await readCourseExamAttempt(teacher, service, course.id, id, 'manage')).initialPhotoUrl).toContain(`/api/parciales/${course.id}/intentos/${id}/foto`);
       await expect(saveCourseExam(admin, service, course.id, exam.id, published)).rejects.toThrow('ya tiene intentos');
       let view = await readCourseExamAttempt(student, service, course.id, id);
       expect(view.student).toBeUndefined();
+      expect(view.initialPhotoUrl).toBeUndefined(); expect(JSON.stringify(view)).not.toContain(key);
       expect(JSON.stringify(view)).not.toMatch(/correctOptionId|explanation|Privado/);
       await expect(readCourseExamAttempt(outsider, service, course.id, id)).rejects.toThrow();
       await expect(student.collection('course_exam_attempts').update(id, { cameraActive: true })).rejects.toMatchObject({ status: 403 });
@@ -64,7 +76,7 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       expect(late.selected).toEqual({ q2: 'b' });
       const earlyExam = await saveCourseExam(admin, service, course.id, null, { ...published, title: 'Entrega anticipada' });
       created.push({ collection: 'course_exams', id: earlyExam.id });
-      const earlyId = await beginCourseExam(student, service, course.id, earlyExam.id, true);
+      const earlyId = await beginCourseExam(student, service, course.id, earlyExam.id, true, capture);
       created.push({ collection: 'course_exam_attempts', id: earlyId });
       const earlyResult = await submitCourseExam(student, service, course.id, earlyId);
       expect(earlyResult).toMatchObject({ reason: 'submitted', feedbackAvailable: false, selected: {} });
@@ -96,6 +108,7 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
         }
       }
       for (const record of [...created].reverse()) await service.collection(record.collection).delete(record.id);
+      for (const photo of photos) await photo.rollback();
     }
   }, 120_000);
 });

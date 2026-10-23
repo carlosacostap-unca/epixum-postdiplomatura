@@ -43,7 +43,8 @@ export async function getCourseExamStart(courseId: string, id: string) {
   const service = await createServiceClient();
   const exam = await service.collection('course_exams').getOne<CourseExam>(id, { fields: 'id,course,title,description,status,opensAt,closesAt' });
   if (exam.course !== courseId || exam.status !== 'published') throw new CourseExamError('El parcial no está disponible.');
-  return { course, exam };
+  const previous = await service.collection('course_exam_attempts').getList(1, 1, { filter: service.filter('course = {:course} && exam = {:exam} && student = {:student}', { course: courseId, exam: id, student: pb.authStore.record!.id }), fields: 'id' });
+  return { course, exam, existingAttemptId: previous.items[0]?.id || null };
 }
 // Explicit entrypoint for externally scheduled runs on hosts without a persistent Node process.
 export async function expireCourseExams() { await closeExpiredCourseExams(await createServiceClient()); }
