@@ -5,6 +5,7 @@ import { Button, Card, CardContent } from '@/components/ui';
 import { courseExamSchema, examDateInput, examLocalDate, examStatusLabels, type CourseExam, type CourseExamInput } from '@/lib/course-exams';
 import type { PracticeQuestion } from '@/lib/preparation';
 import { saveExam } from '@/lib/actions-course-exams';
+import { COURSE_EXAM_APPROVAL_RULES } from '@/lib/course-exam-grading';
 
 const field = 'mt-2 w-full rounded-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-3';
 export function CourseExamEditor({ courseId, exam, basePath }: { courseId: string; exam: CourseExam | null; basePath: string }) {
@@ -35,6 +36,7 @@ export function CourseExamEditor({ courseId, exam, basePath }: { courseId: strin
         <label className="block font-bold">Estado<select className={field} value={status} onChange={e => setStatus(e.target.value as CourseExamInput['status'])}>{Object.entries(examStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <p>El borrador y el parcial archivado están ocultos para los alumnos. Un parcial publicado se activa y cierra según su programación.</p>
         <p>Las preguntas y sus opciones se mezclan automáticamente para cada intento nuevo. Cada alumno conserva ese orden al retomar. Los intentos ya iniciados mantienen su orden original.</p>
+        <p>{COURSE_EXAM_APPROVAL_RULES}</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block font-bold">Activación<input type="datetime-local" className={field} value={opens} onChange={e => setOpens(e.target.value)} required={status === 'published'} /></label>
           <label className="block font-bold">Desactivación y entrega automática<input type="datetime-local" className={field} value={closes} onChange={e => setCloses(e.target.value)} required={status === 'published'} /></label>

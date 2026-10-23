@@ -7,6 +7,7 @@ import { examAvailability, examDateLabel, type ExamView } from '@/lib/course-exa
 import { useWebcam } from '@/components/preparation/useWebcam';
 import { WebcamPanel } from '@/components/preparation/WebcamPanel';
 import { CourseExamFeedback } from './CourseExamFeedback';
+import { COURSE_EXAM_APPROVAL_RULES } from '@/lib/course-exam-grading';
 
 export function CourseExamStart({ courseId, exam }: { courseId: string; exam: { id: string; title: string; description: string; status: 'draft' | 'published' | 'archived'; opensAt: string; closesAt: string } }) {
   const router = useRouter();
@@ -18,6 +19,7 @@ export function CourseExamStart({ courseId, exam }: { courseId: string; exam: { 
   return <div className="space-y-5"><h2 className="text-2xl font-bold">{exam.title}</h2><p className="whitespace-pre-wrap">{exam.description}</p><p>{examAvailability(exam)} · Desde {examDateLabel(exam.opensAt)} hasta {examDateLabel(exam.closesAt)} (Argentina)</p>
     <p>Un intento por alumno. Podés navegar sin responder y cambiar tus respuestas; cada selección se guarda en tu cuenta. El plazo sigue corriendo aunque salgas. Al cierre se entrega lo guardado. La nota y la devolución completa se habilitan después del cierre, aunque entregues antes.</p>
     <p>El orden de las preguntas y sus opciones se mezcla al iniciar el intento y se conserva cuando lo retomás.</p>
+    <p>{COURSE_EXAM_APPROVAL_RULES}</p>
     <WebcamPanel camera={camera} />
     <label className="flex items-start gap-3"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} className="mt-1 size-5 shrink-0" /><span>Entiendo que se guardará una foto inicial de mi cámara, visible sólo para administradores y docentes del curso, y que debo mantener la cámara activa mientras respondo.</span></label>
     <Button disabled={!camera.ready || !accepted} isPending={pending} pendingLabel="Guardando foto e iniciando…" onClick={async () => {

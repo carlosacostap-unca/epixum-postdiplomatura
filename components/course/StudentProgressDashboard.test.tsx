@@ -25,3 +25,13 @@ it('ofrece historial de preparación y devolución completa, con regreso al list
   expect(screen.getAllByRole('link', { name: 'Ver devolución completa' })[0]).toHaveAttribute('href', '/docentes/cursos/course/parciales/intentos/attempt');
   expect(screen.getByRole('link', { name: 'Volver al listado con mis filtros' })).toHaveAttribute('href', '/docentes/cursos/course/estudiantes?q=Ana&p=2');
 });
+it('muestra la condición del último parcial entregado, sin tomar la nota más alta ni un intento pendiente', () => {
+  const current = { ...student, latestExamGrade: 4, submittedExams: 2, exams: [
+    { ...exam, id: 'old', grade: 7, correct: 14, total: 20, finishedAt: '2026-10-22T12:00:00Z' },
+    { ...exam, id: 'latest', grade: 4, correct: 8, total: 20 },
+    { ...exam, id: 'pending', state: 'in_progress' as const, grade: null, correct: null, total: null, finishedAt: null },
+  ] };
+  render(<StudentProgressDashboard data={{ ...data, rows: [current] }} filters={parseProgressFilters({})} />);
+  expect(screen.getAllByText('En condiciones de regularizar')).toHaveLength(2);
+  expect(screen.queryByText('En condiciones de promocionar')).not.toBeInTheDocument();
+});

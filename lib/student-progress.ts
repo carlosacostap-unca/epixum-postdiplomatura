@@ -20,6 +20,9 @@ export const examProgressLabels = { not_started: 'Sin iniciar', in_progress: 'En
 export function progressTimestamp(value?: string | null) { const n = value ? Date.parse(value.replace(' ', 'T')) : NaN; return Number.isFinite(n) ? n : 0; }
 export function progressGrade(correct: number, total: number) { return total > 0 ? Math.round(correct / total * 1000) / 100 : null; }
 export function progressGradeLabel(grade: number | null) { return grade === null ? 'Sin nota' : `${grade.toLocaleString('es-AR', { maximumFractionDigits: 2 })} / 10`; }
+export function latestSubmittedStudentExam(exams: StudentExamProgress[]) {
+  return exams.filter(e => e.state === 'submitted').reduce<StudentExamProgress | undefined>((latest, exam) => !latest || progressTimestamp(exam.finishedAt) > progressTimestamp(latest.finishedAt) ? exam : latest, undefined);
+}
 function grouped<T extends { student: string }>(items: T[]) {
   const groups = new Map<string, T[]>();
   for (const item of items) { const group = groups.get(item.student) || []; group.push(item); groups.set(item.student, group); }

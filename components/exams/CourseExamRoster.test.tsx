@@ -19,6 +19,7 @@ it.each(['/admin/courses/course/parciales', '/docentes/cursos/course/parciales']
   // The shared table renders desktop rows and mobile cards.
   expect(screen.getAllByText('Ana Pérez')).toHaveLength(2);
   expect(screen.getAllByText('5 / 10')).toHaveLength(2);
+  expect(screen.getAllByText('En condiciones de regularizar')).toHaveLength(2);
   expect(screen.getAllByRole('link', { name: 'Ver devolución completa de Ana Pérez' })[0]).toHaveAttribute('href', `${base}/intentos/done`);
   expect(screen.getByRole('heading', { name: 'En curso' })).toBeVisible();
   expect(screen.getAllByText('Pendiente de entrega')).toHaveLength(2);

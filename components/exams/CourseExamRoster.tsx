@@ -3,6 +3,7 @@ import { DataTable } from '@/components/ui';
 import { examDateLabel } from '@/lib/course-exams';
 import type { getCourseExamRoster } from '@/lib/course-exam-data';
 import { ExamListRefresh } from './ExamListRefresh';
+import { CourseExamStanding } from './CourseExamStanding';
 
 export function CourseExamRoster({ data, base }: { data: Awaited<ReturnType<typeof getCourseExamRoster>>; base: string }) {
   const exam = data.exams[0];
@@ -14,6 +15,7 @@ export function CourseExamRoster({ data, base }: { data: Awaited<ReturnType<type
     { id: 'student', header: 'Alumno', render: (row: typeof rows[number]) => <div className="space-y-1"><p className="font-bold">{name(row)}</p>{row.student?.email && <p className="break-all text-[var(--color-text-muted)]">{row.student.email}</p>}</div> },
     { id: 'grade', header: 'Nota', render: (row: typeof rows[number]) => row.result?.feedbackAvailable ? <span className="font-bold">{(row.result.total ? row.result.correct / row.result.total * 10 : 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })} / 10</span> : 'Pendiente de entrega' },
     { id: 'correct', header: 'Aciertos', render: (row: typeof rows[number]) => row.result?.feedbackAvailable ? `${row.result.correct} de ${row.result.total}` : '—' },
+    { id: 'condition', header: 'Condición del parcial', render: (row: typeof rows[number]) => row.result?.feedbackAvailable ? <CourseExamStanding correct={row.result.correct} total={row.result.total} /> : '—' },
     { id: 'finished', header: 'Entrega', render: (row: typeof rows[number]) => row.result ? <div><p>{examDateLabel(row.result.finishedAt)}</p><p className="text-[var(--color-text-muted)]">{row.result.reason === 'expired' ? 'Automática por cierre' : 'Manual'}</p></div> : 'En curso' },
     { id: 'feedback', header: 'Devolución', render: (row: typeof rows[number]) => <Link className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]" aria-label={`${row.result ? 'Ver devolución completa' : 'Ver avance'} de ${name(row)}`} href={`${base}/intentos/${row.attempt.id}`}>{row.result ? 'Ver devolución completa' : 'Ver avance'}</Link> },
   ];

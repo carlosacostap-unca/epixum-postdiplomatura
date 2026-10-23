@@ -1,5 +1,7 @@
 import { Card, CardContent } from '@/components/ui';
 import { examDateLabel, type ExamVisibleResult } from '@/lib/course-exams';
+import { COURSE_EXAM_APPROVAL_RULES } from '@/lib/course-exam-grading';
+import { CourseExamStanding } from './CourseExamStanding';
 
 export function CourseExamFeedback({ result, audience = 'student' }: { result: Extract<ExamVisibleResult, { feedbackAvailable: true }>; audience?: 'student' | 'teacher' }) {
   const omitted = result.review.filter(r => r.selectedOptionId === null).length;
@@ -8,6 +10,8 @@ export function CourseExamFeedback({ result, audience = 'student' }: { result: E
     <Card><CardContent className="space-y-3">
       <h2 className="text-2xl font-bold">Resultado y devolución completa</h2>
       <p className="text-2xl font-bold">Nota: {(result.total ? result.correct / result.total * 10 : 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })} / 10</p>
+      <CourseExamStanding correct={result.correct} total={result.total} />
+      <p className="text-sm text-[var(--color-text-muted)]">{COURSE_EXAM_APPROVAL_RULES}</p>
       <p>{result.correct} correctas · {incorrect} incorrectas · {omitted} sin responder</p>
       <p>{result.percentage}% de aciertos. Todas las preguntas valen lo mismo; las incorrectas y omitidas suman cero.</p>
       <p>Entrega: {examDateLabel(result.finishedAt)} (Argentina)</p>

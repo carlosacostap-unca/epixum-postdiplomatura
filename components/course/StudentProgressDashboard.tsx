@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { DataTable } from '@/components/ui';
 import { examDateLabel } from '@/lib/course-exams';
-import { examProgressLabels, filterStudentProgress, progressFilterQuery, progressGradeLabel, type ProgressFilters, type StudentProgressRow } from '@/lib/student-progress';
+import { examProgressLabels, filterStudentProgress, latestSubmittedStudentExam, progressFilterQuery, progressGradeLabel, type ProgressFilters, type StudentProgressRow } from '@/lib/student-progress';
 import type { getStudentProgress } from '@/lib/student-progress-data';
 import { StudentProgressSummary } from './StudentProgressSummary';
 import { ExamListRefresh } from '@/components/exams/ExamListRefresh';
+import { CourseExamStanding } from '@/components/exams/CourseExamStanding';
 
 const field = 'mt-2 min-h-11 w-full min-w-0 rounded-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-3 py-2 text-sm';
 export function StudentProgressDashboard({ data, filters }: { data: Awaited<ReturnType<typeof getStudentProgress>>; filters: ProgressFilters }) {
@@ -17,8 +18,9 @@ export function StudentProgressDashboard({ data, filters }: { data: Awaited<Retu
     { id: 'preparation', header: 'Preparación', render: (row: StudentProgressRow) => !data.preparationEnabled ? 'No habilitada' : <div className="space-y-1"><p>{row.preparation.attempts ? `${row.preparation.attempts} intentos · ${row.preparation.completedAttempts} finalizados` : 'Sin prácticas iniciadas'}</p>{row.preparation.publishedTotal > 0 && <p>{row.preparation.publishedCompleted} de {row.preparation.publishedTotal} prácticas publicadas finalizadas</p>}<p className="text-[var(--color-text-muted)]">Última nota: {progressGradeLabel(row.preparation.latestGrade)}</p></div> },
     { id: 'exams', header: 'Parciales', render: (row: StudentProgressRow) => {
       if (!data.examsEnabled) return 'No habilitados';
-      if (filters.exam) { const exam = row.exams.find(e => e.id === filters.exam); return exam ? <div className="space-y-1"><p>{examProgressLabels[exam.state]}</p><p className="font-bold">{progressGradeLabel(exam.grade)}</p></div> : 'Sin datos del parcial'; }
-      return <div className="space-y-1"><p>{row.submittedExams} de {row.exams.length} parciales entregados</p><p className="font-bold">Última nota: {progressGradeLabel(row.latestExamGrade)}</p>{row.exams.some(e => e.state === 'in_progress') && <p>Con un parcial en curso</p>}</div>;
+      if (filters.exam) { const exam = row.exams.find(e => e.id === filters.exam); return exam ? <div className="space-y-1"><p>{examProgressLabels[exam.state]}</p><p className="font-bold">{progressGradeLabel(exam.grade)}</p>{exam.state === 'submitted' && <CourseExamStanding correct={exam.correct} total={exam.total} />}</div> : 'Sin datos del parcial'; }
+      const latest = latestSubmittedStudentExam(row.exams);
+      return <div className="space-y-1"><p>{row.submittedExams} de {row.exams.length} parciales entregados</p><p className="font-bold">Última nota: {progressGradeLabel(row.latestExamGrade)}</p><CourseExamStanding correct={latest?.correct} total={latest?.total} />{row.exams.some(e => e.state === 'in_progress') && <p>Con un parcial en curso</p>}</div>;
     } },
     { id: 'activity', header: 'Última actividad', render: (row: StudentProgressRow) => row.lastActivity ? <span>{examDateLabel(row.lastActivity)}</span> : 'Sin actividad registrada' },
     { id: 'detail', header: 'Detalle', render: (row: StudentProgressRow) => <Link className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]" aria-label={`Ver detalle de ${row.name}`} href={`${base}/${row.id}${query ? `?${query}` : ''}`}>Ver detalle</Link> },
