@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ save: vi.fn(), send: vi.fn(), read: vi.fn(), r
 vi.mock('@/lib/actions-course-exams', () => ({ saveExamAnswer: mocks.save, sendExam: mocks.send, readExam: mocks.read, examCamera: mocks.report }));
 vi.mock('@/components/preparation/useWebcam', () => ({ useWebcam: () => mocks.camera }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-const initial: ExamView = { id: 'attempt', title: 'Parcial', description: '', selected: {}, deadline: '2026-10-23T13:00:00Z', serverNow: Date.parse('2026-10-23T12:30:00Z'), result: null, questions: [1, 2].map(i => ({ id: `q${i}`, prompt: `Enunciado ${i}`, options: [{ id: 'a', label: `Opción A${i}` }, { id: 'b', label: `Opción B${i}` }] })) };
+const initial: ExamView = { id: 'attempt', examId: 'exam', title: 'Parcial', description: '', selected: {}, deadline: '2026-10-23T13:00:00Z', serverNow: Date.parse('2026-10-23T12:30:00Z'), result: null, questions: [1, 2].map(i => ({ id: `q${i}`, prompt: `Enunciado ${i}`, options: [{ id: 'a', label: `Opción A${i}` }, { id: 'b', label: `Opción B${i}` }] })) };
 beforeEach(() => { vi.clearAllMocks(); mocks.camera.ready = true; mocks.camera.isLive.mockReturnValue(true); mocks.report.mockResolvedValue({ success: true, data: true }); });
 afterEach(() => { vi.useRealTimers(); });
 const receipt = { id: 'result', attempt: 'attempt', finishedAt: '2026-10-23T12:40:00Z', reason: 'submitted' as const, feedbackAvailable: false as const, selected: { q1: 'a' } };

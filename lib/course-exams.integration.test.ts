@@ -19,8 +19,8 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       const pb = new PocketBase(service.baseURL); pb.autoCancellation(false); await pb.collection('users').authWithPassword(record.email, password); return pb;
     };
     try {
-      const admin = await user('admin'); const student = await user('estudiante'); const outsider = await user('estudiante');
-      const course = await create('courses', { title: `Prueba parciales ${randomUUID()}`, status: 'borrador', examsEnabled: true });
+      const admin = await user('admin'); const student = await user('estudiante'); const outsider = await user('estudiante'); const teacher = await user('estudiante');
+      const course = await create('courses', { title: `Prueba parciales ${randomUUID()}`, status: 'borrador', examsEnabled: true, teachers: [teacher.authStore.record!.id] });
       await create('course_enrollments', { course: course.id, student: student.authStore.record!.id });
       const question = { id: 'q1', prompt: 'Pregunta de prueba', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOptionId: 'b', explanation: 'Privado' };
       const input: CourseExamInput = { title: 'Parcial de prueba', description: '', status: 'draft', opensAt: '', closesAt: '', questions: [question, { ...question, id: 'q2' }] };
@@ -37,6 +37,7 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       expect(ids[0]).toBe(ids[1]); const id = ids[0]; created.push({ collection: 'course_exam_attempts', id });
       await expect(saveCourseExam(admin, service, course.id, exam.id, published)).rejects.toThrow('ya tiene intentos');
       let view = await readCourseExamAttempt(student, service, course.id, id);
+      expect(view.student).toBeUndefined();
       expect(JSON.stringify(view)).not.toMatch(/correctOptionId|explanation|Privado/);
       await expect(readCourseExamAttempt(outsider, service, course.id, id)).rejects.toThrow();
       await expect(student.collection('course_exam_attempts').update(id, { cameraActive: true })).rejects.toMatchObject({ status: 403 });
@@ -76,6 +77,11 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       expect(JSON.stringify(repeatedAnswer)).not.toMatch(/correct|percentage|total|review|Privado/);
       const teacherView = await readCourseExamAttempt(admin, service, course.id, earlyId, 'manage');
       expect(teacherView.result).toMatchObject({ feedbackAvailable: true, correct: 0, total: 2 });
+      expect(teacherView.student).toMatchObject({ name: student.authStore.record!.name, email: student.authStore.record!.email });
+      const assignedTeacherView = await readCourseExamAttempt(teacher, service, course.id, earlyId, 'manage');
+      expect(assignedTeacherView.student).toEqual(teacherView.student);
+      expect(assignedTeacherView.result?.feedbackAvailable).toBe(true);
+      await expect(readCourseExamAttempt(outsider, service, course.id, earlyId, 'manage')).rejects.toThrow('permiso');
       await service.collection('course_exam_attempts').update(earlyId, { deadline: new Date(Date.now() - 1).toISOString() });
       const released = await readCourseExamAttempt(student, service, course.id, earlyId);
       expect(released.result).toMatchObject({ id: earlyResult.id, feedbackAvailable: true, correct: 0, total: 2, review: [{ selectedOptionId: null }, { selectedOptionId: null }] });

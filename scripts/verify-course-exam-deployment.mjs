@@ -25,14 +25,14 @@ if (mode === 'begin') {
   const create = async (collection, data) => { const record = await service.collection(collection).create(data); fixture.created.push({ collection, id: record.id }); return record; };
   try {
     const people = {};
-    for (const role of ['admin', 'student']) {
+    for (const role of ['admin', 'student', 'teacher']) {
       const password = `ExamQA-${randomUUID()}!`;
       const record = await create('users', { email: `exam-deploy-${randomUUID()}@example.invalid`, name: `Verificación temporal de parciales ${role}`, role: role === 'admin' ? 'admin' : 'estudiante', password, passwordConfirm: password, verified: true });
       const client = new PocketBase(service.baseURL);
       await client.collection('users').authWithPassword(record.email, password);
       people[role] = record.id; fixture.tokens[role] = client.authStore.token;
     }
-    const course = await create('courses', { title: `Verificación de despliegue ${randomUUID()}`, status: 'en curso', examsEnabled: true }); fixture.course = course.id;
+    const course = await create('courses', { title: `Verificación de despliegue ${randomUUID()}`, status: 'en curso', examsEnabled: true, teachers: [people.teacher] }); fixture.course = course.id;
     await create('course_enrollments', { course: course.id, student: people.student });
     const questions = [1, 2].map(n => ({ id: `q${n}`, prompt: `Pregunta sintética ${n}`, options: [{ id: 'a', label: 'Opción A' }, { id: 'b', label: 'Opción B' }], correctOptionId: 'b', explanation: 'Explicación sintética privada.' }));
     const data = { course: course.id, title: `Parcial público temporal ${randomUUID()}`, description: 'Comprobación de despliegue.', status: 'published', opensAt: new Date(Date.now() - 60000).toISOString(), closesAt: new Date(Date.now() + 3600000).toISOString(), questions };
@@ -41,7 +41,7 @@ if (mode === 'begin') {
     const snapshot = Object.fromEntries(Object.entries(data).filter(([key]) => key !== 'course'));
     const attempt = await create('course_exam_attempts', { course: course.id, exam: published.id, student: people.student, title: data.title, snapshot, deadline: data.closesAt, cameraActive: false }); fixture.attempt = attempt.id;
     await create('course_exam_answers', { course: course.id, student: people.student, attempt: attempt.id, questionId: 'q1', optionId: 'b', mutationId: randomUUID() });
-    const earlyExam = await create('course_exams', { ...data, title: `Entrega anticipada temporal ${randomUUID()}` });
+    const earlyExam = await create('course_exams', { ...data, title: `Entrega anticipada temporal ${randomUUID()}` }); fixture.earlyExam = earlyExam.id;
     const earlyAttempt = await create('course_exam_attempts', { course: course.id, exam: earlyExam.id, student: people.student, title: earlyExam.title, snapshot: { ...snapshot, title: earlyExam.title }, deadline: data.closesAt, cameraActive: false }); fixture.earlyAttempt = earlyAttempt.id;
     await create('course_exam_results', { course: course.id, exam: earlyExam.id, student: people.student, attempt: earlyAttempt.id, finishedAt: new Date().toISOString(), reason: 'submitted', correct: 1, total: 2, percentage: 50, selected: { q1: 'b' } });
     await mkdir('tmp/assessments', { recursive: true });
@@ -57,6 +57,18 @@ if (mode === 'begin') {
   if (mode === 'check') {
     const admin = await request('/admin/courses/6taf9vkwwi8oxlz/parciales', fixture.tokens.admin);
     if (admin.status !== 200 || !admin.html.includes('dspfirstexam001')) { console.log(JSON.stringify({ ready: false, status: admin.status })); process.exitCode = 2; return; }
+    const actualRoster = await request('/admin/courses/6taf9vkwwi8oxlz/parciales/dspfirstexam001/resultados', fixture.tokens.admin);
+    if (actualRoster.status !== 200 || !actualRoster.html.includes('Alumnos que rindieron')) { console.log(JSON.stringify({ ready: false, reason: 'roster-version-pending' })); process.exitCode = 2; return; }
+    for (const [base, token] of [[`/admin/courses/${fixture.course}/parciales`, fixture.tokens.admin], [`/docentes/cursos/${fixture.course}/parciales`, fixture.tokens.teacher]]) {
+      const roster = await request(`${base}/${fixture.earlyExam}/resultados`, token);
+      assert.equal(roster.status, 200); assert.ok(roster.html.includes('Verificación temporal de parciales student')); assert.ok(roster.html.includes('Ver devolución completa')); assert.ok(roster.html.includes(fixture.earlyAttempt));
+      const otherRoster = await request(`${base}/${fixture.published}/resultados`, token);
+      assert.equal(otherRoster.status, 200); assert.ok(!otherRoster.html.includes(fixture.earlyAttempt));
+      const inspection = await request(`${base}/intentos/${fixture.earlyAttempt}`, token);
+      assert.equal(inspection.status, 200); assert.ok(inspection.html.includes('Resultado y devolución completa')); assert.ok(inspection.html.includes('Nota:')); assert.ok(inspection.html.includes('Respuesta del alumno')); assert.ok(inspection.html.includes('Explicación sintética privada.')); assert.ok(inspection.html.includes('Verificación temporal de parciales student'));
+      const denied = await request(`${base}/${fixture.earlyExam}/resultados`, fixture.tokens.student);
+      assert.ok(!denied.html.includes('Ver devolución completa')); assert.ok(!denied.html.includes('Explicación sintética privada.'));
+    }
     const student = await request(`/estudiantes/cursos/${fixture.course}/parciales`, fixture.tokens.student);
     assert.equal(student.status, 200); assert.ok(student.html.includes(fixture.published)); assert.ok(!student.html.includes(fixture.draft));
     assert.ok(!student.html.includes('correctOptionId'));
@@ -71,7 +83,7 @@ if (mode === 'begin') {
       await service.collection('course_exam_attempts').update(fixture.attempt, { deadline: fixture.workerDeadline });
       await service.collection('course_exam_attempts').update(fixture.earlyAttempt, { deadline: fixture.workerDeadline });
       await writeFile(path, JSON.stringify(fixture));
-      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realExamUnchanged: true, earlyFeedbackHidden: true, worker: 'armed' }));
+      console.log(JSON.stringify({ ready: true, adminRoster: true, teacherRoster: true, perExamIsolation: true, teacherFeedback: true, studentRosterDenied: true, realExamUnchanged: true, earlyFeedbackHidden: true, worker: 'armed' }));
     } else {
       const result = (await service.collection('course_exam_results').getList(1, 1, { filter: service.filter('attempt = {:id}', { id: fixture.attempt }) })).items[0];
       if (!result) { console.log(JSON.stringify({ ready: true, worker: 'pending' })); process.exitCode = 2; return; }

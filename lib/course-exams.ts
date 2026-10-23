@@ -23,7 +23,8 @@ export type ExamResult = { id: string; attempt: string; finishedAt: string; reas
 type ExamReceipt = Pick<ExamResult, 'id' | 'attempt' | 'finishedAt' | 'reason'>;
 export type ExamResultSummary = (ExamReceipt & { feedbackAvailable: false }) | (ExamReceipt & { feedbackAvailable: true; correct: number; total: number; percentage: number });
 export type ExamVisibleResult = (ExamReceipt & { feedbackAvailable: false; selected: Record<string, string> }) | (ExamReceipt & { feedbackAvailable: true; selected: Record<string, string>; correct: number; total: number; percentage: number; review: PracticeReview[] });
-export type ExamView = { id: string; title: string; description: string; questions: PublicPracticeQuestion[]; selected: Record<string, string>; deadline: string; serverNow: number; result: ExamVisibleResult | null };
+export type ExamStudent = { name: string; email?: string };
+export type ExamView = { id: string; examId: string; title: string; description: string; questions: PublicPracticeQuestion[]; selected: Record<string, string>; deadline: string; serverNow: number; result: ExamVisibleResult | null; student?: ExamStudent };
 export function examFeedbackReleased(deadline: string, now = Date.now()) { return now >= Date.parse(deadline.replace(' ', 'T')); }
 /** Explicit projections keep scores out of serialized responses before the common closing time. */
 export function examResultSummary(result: Omit<ExamResult, 'selected'>, released: boolean): ExamResultSummary {

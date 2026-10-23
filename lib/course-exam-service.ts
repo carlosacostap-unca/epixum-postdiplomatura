@@ -2,7 +2,7 @@ import type PocketBase from 'pocketbase';
 import { z } from 'zod';
 import type { Course } from '@/types';
 import { publicPracticeQuestions } from './preparation';
-import { courseExamSchema, examAvailability, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView } from './course-exams';
+import { courseExamSchema, examAvailability, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView, type ExamStudent } from './course-exams';
 
 export class CourseExamError extends Error {}
 export async function requireExamCourse(pb: PocketBase, courseId: string, mode: 'manage' | 'student') {
@@ -74,7 +74,8 @@ export async function readCourseExamAttempt(pb: PocketBase, service: PocketBase,
   const attempt = await attemptFor(pb, service, courseId, id, mode);
   let result = await resultFor(service, attempt.id);
   if (!result && Date.now() >= Date.parse(attempt.deadline.replace(' ', 'T'))) result = await finalizeCourseExam(service, attempt);
-  return { id: attempt.id, title: attempt.title, description: attempt.snapshot.description, questions: publicPracticeQuestions(attempt.snapshot.questions), selected: result?.selected ?? examSelections(await eventsFor(service, id), attempt.deadline), deadline: attempt.deadline, serverNow: Date.now(), result: result ? visibleExamResult(result, attempt, mode) : null };
+  const student = mode === 'manage' ? await service.collection('users').getOne<ExamStudent>(attempt.student, { fields: 'name,email' }) : null;
+  return { id: attempt.id, examId: attempt.exam, title: attempt.title, description: attempt.snapshot.description, questions: publicPracticeQuestions(attempt.snapshot.questions), selected: result?.selected ?? examSelections(await eventsFor(service, id), attempt.deadline), deadline: attempt.deadline, serverNow: Date.now(), result: result ? visibleExamResult(result, attempt, mode) : null, ...(student ? { student: { name: student.name, email: student.email } } : {}) };
 }
 export async function reportCourseExamCamera(pb: PocketBase, service: PocketBase, courseId: string, id: string, active: boolean) {
   const attempt = await attemptFor(pb, service, courseId, id);
