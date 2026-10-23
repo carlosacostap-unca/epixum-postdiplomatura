@@ -50,6 +50,7 @@ export async function createCourse(formData: FormData) {
   const enrollmentMode = parseEnrollmentMode(formData.get('enrollmentMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
+  const examsEnabled = parseContentsEnabled(formData.get('examsEnabled'));
   const preparationEnabled = parseContentsEnabled(formData.get('preparationEnabled'));
   const reviewsEnabled = parseContentsEnabled(formData.get('reviewsEnabled'));
   const onboardingEnabled = parseContentsEnabled(formData.get('onboardingEnabled'));
@@ -78,6 +79,7 @@ export async function createCourse(formData: FormData) {
     contentsEnabled,
     interactiveClassesEnabled,
     preparationEnabled,
+    examsEnabled,
     reviewsEnabled,
     onboardingEnabled,
     aiPreevaluationEnabled,
@@ -109,6 +111,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
+  const examsEnabled = parseContentsEnabled(formData.get('examsEnabled'));
   const preparationEnabled = parseContentsEnabled(formData.get('preparationEnabled'));
   const reviewsEnabled = parseContentsEnabled(formData.get('reviewsEnabled'));
   const onboardingEnabled = parseContentsEnabled(formData.get('onboardingEnabled'));
@@ -136,6 +139,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
     contentsEnabled,
     interactiveClassesEnabled,
     preparationEnabled,
+    examsEnabled,
     reviewsEnabled,
     onboardingEnabled,
     aiPreevaluationEnabled,

@@ -11,6 +11,7 @@ export type TeacherCourseSection =
   | "trabajos"
   | "contenidos"
   | "interactivas"
+  | "parciales"
   | "preparacion"
   | "revisiones"
   | "consultas"
@@ -26,6 +27,7 @@ const sectionLabels: Record<TeacherCourseSection, string> = {
   contenidos: "Contenidos",
   interactivas: "Clases interactivas",
   preparacion: "Preparación",
+  parciales: "Parciales",
   revisiones: "Revisiones",
   consultas: "Consultas",
   estudiantes: "Estudiantes",
@@ -42,6 +44,7 @@ function tabs(course: Course, current: TeacherCourseSection): TabItem[] {
   if (course.onboardingEnabled) items.push({ href: `${base}/onboarding`, label: "Onboarding", icon: "checklist", isActive: current === "onboarding" });
   if (course.interactiveClassesEnabled) items.push({ href: `${base}/interactivas`, label: "Interactivas", icon: "interactive_space", isActive: current === "interactivas" });
   if (course.interactiveClassesEnabled) items.push({ href: `${base}/asistencia`, label: "Asistencia", icon: "fact_check", isActive: current === "asistencia" });
+  if (course.examsEnabled) items.push({ href: `${base}/parciales`, label: "Parciales", icon: "assignment", isActive: current === "parciales" });
   if (course.preparationEnabled) items.push({ href: `${base}/preparacion`, label: "Preparación", icon: "quiz", isActive: current === "preparacion" });
   if (course.reviewsEnabled) items.push({ href: `${base}/revisiones`, label: "Revisiones", icon: "event_available", isActive: current === "revisiones" });
   items.push(

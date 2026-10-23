@@ -1,0 +1,39 @@
+import 'server-only';
+import { createServerClient } from './pocketbase-server';
+import { createServiceClient } from './pocketbase-service';
+import { CourseExamError, closeExpiredCourseExams, readCourseExamAttempt, requireExamCourse } from './course-exam-service';
+import type { CourseExam, ExamAttempt, ExamResult } from './course-exams';
+
+export async function getCourseExams(courseId: string, mode: 'manage' | 'student') {
+  const pb = await createServerClient();
+  const course = await requireExamCourse(pb, courseId, mode);
+  const service = await createServiceClient();
+  const filter = service.filter('course = {:course}', { course: courseId });
+  const exams = await service.collection('course_exams').getFullList<Omit<CourseExam, 'questions'>>({ filter: filter + (mode === 'student' ? ' && status = "published"' : ''), fields: 'id,course,title,description,status,opensAt,closesAt', sort: '-created,id' });
+  const attempts = await service.collection('course_exam_attempts').getFullList<Pick<ExamAttempt, 'id' | 'exam' | 'student' | 'created' | 'deadline'> & { expand?: { student?: { name?: string } } }>({ filter: filter + (mode === 'student' ? service.filter(' && student = {:student}', { student: pb.authStore.record!.id }) : ''), fields: 'id,exam,student,created,deadline,expand.student.name', expand: mode === 'manage' ? 'student' : undefined, sort: '-created,id' });
+  const results = await service.collection('course_exam_results').getFullList<ExamResult>({ filter: filter + (mode === 'student' ? service.filter(' && student = {:student}', { student: pb.authStore.record!.id }) : ''), fields: 'id,attempt,finishedAt,reason,correct,total,percentage' });
+  return { course, exams, attempts, results };
+}
+export async function getCourseExamEditor(courseId: string, examId?: string) {
+  const pb = await createServerClient();
+  const course = await requireExamCourse(pb, courseId, 'manage');
+  const service = await createServiceClient();
+  const exam = examId ? await service.collection('course_exams').getOne<CourseExam>(examId) : null;
+  if (exam && exam.course !== courseId) throw new CourseExamError('El parcial no pertenece al curso.');
+  return { course, exam };
+}
+export async function getCourseExamAttempt(courseId: string, id: string, mode: 'manage' | 'student' = 'student') {
+  const pb = await createServerClient();
+  const course = await requireExamCourse(pb, courseId, mode);
+  return { course, attempt: await readCourseExamAttempt(pb, await createServiceClient(), courseId, id, mode) };
+}
+export async function getCourseExamStart(courseId: string, id: string) {
+  const pb = await createServerClient();
+  const course = await requireExamCourse(pb, courseId, 'student');
+  const service = await createServiceClient();
+  const exam = await service.collection('course_exams').getOne<CourseExam>(id, { fields: 'id,course,title,description,status,opensAt,closesAt' });
+  if (exam.course !== courseId || exam.status !== 'published') throw new CourseExamError('El parcial no está disponible.');
+  return { course, exam };
+}
+// Explicit entrypoint for externally scheduled runs on hosts without a persistent Node process.
+export async function expireCourseExams() { await closeExpiredCourseExams(await createServiceClient()); }

@@ -1,0 +1,42 @@
+# Parciales de cursos
+
+La sección **Parciales** es independiente de Preparación. Administración habilita `examsEnabled` al editar cada curso. Administradores y docentes asignados pueden crear evaluaciones y consultar intentos; los alumnos necesitan matrícula vigente. Deshabilitar la sección conserva los datos y bloquea su acceso, sin impedir el cierre automático de intentos vencidos.
+
+## Configuración y uso
+
+- Estados: **Borrador**, **Publicado** y **Archivado**. Borradores y archivados no aparecen en la lista del alumno. Los publicados muestran su disponibilidad como Programado, Activo o Cerrado.
+- La publicación exige preguntas y fechas de activación y desactivación, con cierre posterior al inicio. El editor interpreta siempre horarios de Buenos Aires, UTC−03:00; la base guarda UTC. Un borrador puede quedar sin ambas fechas.
+- La apertura es inclusiva y el cierre exclusivo. Un alumno que empieza más tarde dispone solamente del tiempo restante hasta el cierre común. No hay un plazo adicional de 60 minutos por alumno.
+- Una respuesta correcta por pregunta y un intento por alumno. Los intentos conservan una copia del contenido y la hora límite. Tras el primer inicio se bloquea la edición del parcial, incluyendo su programación.
+- El navegador exige cámara activa antes de comenzar o responder. Envía su estado al servidor cada ocho segundos; una señal con más de 25 segundos no permite guardar. El video sólo se muestra localmente; estos parciales no graban video, audio ni fotos. La señal del navegador no constituye una verificación de identidad ni vigilancia remota.
+- Se presenta una pregunta por vez con navegación directa, anterior y siguiente. Cada selección se guarda inmediatamente; se permite cambiarla antes de entregar. La interfaz bloquea temporalmente otras selecciones, navegación y entrega mientras guarda. Si falla, conserva la selección pendiente y ofrece reintentar con el mismo identificador de operación; no la presenta como guardada. Al recargar se recuperan las respuestas confirmadas por el servidor.
+- La entrega anticipada es definitiva y admite preguntas omitidas. Al cierre se entrega el último estado persistido anterior al límite, aunque el alumno haya salido o tenga la cámara apagada. Respuestas incorrectas u omitidas suman cero; todas valen lo mismo y la nota se muestra sobre diez. No se incorporan automáticamente a las calificaciones de trabajos prácticos.
+- El equipo docente consulta el alumno, las fechas, las respuestas guardadas y la nota. La lista se actualiza cada quince segundos mientras está visible y dispone de actualización manual. No se revelan claves correctas ni explicaciones de preguntas al alumno, tampoco mediante las acciones de lectura.
+
+## Persistencia y cierre
+
+Las cuatro colecciones `course_exams`, `course_exam_attempts`, `course_exam_answers` y `course_exam_results` bloquean lecturas y escrituras directas de usuarios. Las acciones del servidor comprueban sesión, curso habilitado, alcance docente o matrícula y propiedad del intento. Sólo el servicio del servidor tiene acceso a snapshots y claves.
+
+Los cambios de respuesta son eventos inmutables. Se reconstruye el borrador usando la última selección persistida antes del corte; los eventos tardíos quedan fuera del resultado. Un índice único `(attempt, mutationId)` evita duplicar un reintento de guardado. Un índice único `(exam, student)` impide abrir intentos adicionales incluso con solicitudes concurrentes. Un resultado único por intento hace que cierres y envíos repetidos devuelvan la misma entrega. Las relaciones conservan el historial y bloquean el borrado accidental de padres con datos vinculados.
+
+`instrumentation.ts` inicia el cierre automático en cada proceso Node de Next.js. Cada cinco segundos consulta intentos vencidos sin resultado y los finaliza. El cierre efectivo guardado es la hora límite original; el resultado puede materializarse hasta cinco segundos después, más latencia de base de datos. El proceso vuelve a intentarlo tras un error y recupera intentos vencidos después de un reinicio. No depende de una pestaña ni de que el alumno vuelva al curso. La lectura de un intento vencido también lo finaliza.
+
+El despliegue actual con `next start` requiere un proceso Node persistente. En un alojamiento que suspenda procesos entre peticiones debe configurarse un programador externo que invoque `POST /api/internal/exams/expire` con `Authorization: Bearer <EXAM_CRON_SECRET>`. No hay acceso a ese endpoint sin el secreto. Si aplicación y base están fuera de servicio, el cierre se materializa al restablecerlos, manteniendo el límite original y excluyendo respuestas posteriores.
+
+## Despliegue y primer parcial
+
+1. Ejecutar `npm run schema:exams` con las credenciales de servicio del proyecto. La migración respalda el esquema y añade campos, colecciones e índices. No habilita otros cursos ni modifica prácticas existentes. La regla de cursos reserva `examsEnabled` a administración.
+2. Desplegar esta versión de la aplicación para activar las pantallas y el proceso de cierre. La creación del esquema y del contenido en PocketBase no despliega el código.
+3. Configurar la programación del parcial y cambiarlo a Publicado cuando corresponda.
+
+El 23 de octubre de 2026 se habilitaron parciales exclusivamente en **Diseño de Software y Patrones**, curso `6taf9vkwwi8oxlz`. Se creó `dspfirstexam001`, **Primer parcial · Unidades 1 a 4**, en **Borrador**, sin fechas inventadas. Contiene veinte preguntas nuevas de dificultad fácil, cinco por unidad, cuatro opciones y una correcta por pregunta. Conserva la distribución y puntuación del parcial de preparación `yosn18rr9o0ej2h`: cada acierto suma 0,5 puntos. Las preguntas y soluciones del parcial real se guardan en PocketBase y en el JSON privado de carga, fuera del repositorio público. `scripts/seed-software-first-exam.mjs <archivo-privado.json>` permite cargarlo de forma idempotente sin sobrescribir un parcial diferente.
+
+## Verificación
+
+- `npx vitest run lib/course-exams.test.ts components/exams/CourseExamRunner.test.tsx lib/actions-courses.test.ts components/CourseForm.test.tsx components/CourseAdminNavigation.test.tsx components/preparation/PreparationNavigation.test.tsx`.
+- `COURSE_EXAMS_INTEGRATION=1 npx vitest run lib/course-exams.integration.test.ts`: usa cuentas y un curso temporales; comprueba permisos, borradores, cámara, navegación sin orden obligatorio, cambio de selección, idempotencia, reanudación desde otra sesión, intento único, cierre independiente del navegador, omitidas y entrega anticipada. Elimina exclusivamente sus registros al terminar.
+- `node --test scripts/course-exam-schema.test.mjs`: migración aditiva e idempotente y colecciones privadas.
+- TypeScript, ESLint y compilación de producción con `npm run build -- --webpack`.
+- Despliegue: publicar el commit en `main` activa el despliegue automático del campus. `node scripts/verify-course-exam-deployment.mjs begin https://epixum.com` prepara usuarios y un curso aislados; `check` verifica las rutas, el ocultamiento de borradores y que el primer parcial real permanezca intacto. Cuando la versión está disponible arma un vencimiento temporal; otra ejecución de `check` comprueba el cierre autónomo del servidor. `cleanup` elimina todos los registros y credenciales del ensayo. Ninguna de estas operaciones publica el primer parcial real.
+
+Verificado el 23 de octubre de 2026: pruebas unitarias y de interfaz, integración real con limpieza de fixtures, los 60 tests de esquema del proyecto, TypeScript, lint y compilación de producción. El recorrido con la skill Playwright comprobó ocultamiento de borradores, inicio con cámara sintética, cambio de respuesta, navegación, recuperación de dos selecciones tras recargar y vista móvil de 390 px sin desbordamiento horizontal. Con el alumno fuera de la pantalla del intento, el proceso real de `next start` cerró automáticamente el intento temporal con ambas respuestas y la hora límite original. Se confirmó desde administración el parcial real en Borrador y sin programación.

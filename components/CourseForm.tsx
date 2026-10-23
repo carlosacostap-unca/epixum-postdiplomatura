@@ -188,6 +188,13 @@ export default function CourseForm({
         </label>
       </div>
 
+      <div className="rounded-xl border border-[var(--color-outline-variant)] p-5">
+        <label className="flex items-start gap-3" htmlFor="examsEnabled">
+          <input type="checkbox" id="examsEnabled" name="examsEnabled" value="true" defaultChecked={course?.examsEnabled ?? false} className="mt-1 size-5" />
+          <span><span className="block font-bold">Habilitar parciales</span><span className="mt-1 block text-sm text-[var(--color-text-muted)]">Evaluaciones con cámara obligatoria, guardado automático y fechas de activación y cierre. Administradores y docentes del curso pueden gestionarlas. Deshabilitar conserva los intentos.</span></span>
+        </label>
+      </div>
+
       <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-labelledby="course-links-title">
         <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
           <label className="flex cursor-pointer items-start gap-3" htmlFor="onboardingEnabled">
