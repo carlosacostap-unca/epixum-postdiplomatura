@@ -6,7 +6,7 @@ import { ExamListRefresh } from './ExamListRefresh';
 
 export const examLink = 'inline-flex min-h-11 items-center rounded-xl bg-[var(--color-primary)] px-5 py-2 font-bold text-[var(--color-on-primary)]';
 export function CourseExamOverview({ data, base, manage }: { data: Awaited<ReturnType<typeof getCourseExams>>; base: string; manage: boolean }) {
-  return <div className="space-y-6"><ExamListRefresh /><p>Horarios de Argentina (Buenos Aires). La cámara es obligatoria durante cada parcial.</p>
+  return <div className="space-y-6"><ExamListRefresh /><p>Horarios de Argentina{manage ? ' (Buenos Aires)' : ''}. La cámara es obligatoria durante cada parcial.</p>
     {manage && <Link href={`${base}/nuevo`} className={examLink}>Nuevo parcial</Link>}
     {!data.exams.length && <p>Todavía no hay parciales {manage ? 'creados' : 'publicados'}.</p>}
     {data.exams.map(exam => {
