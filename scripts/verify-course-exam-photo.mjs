@@ -33,6 +33,7 @@ if (mode === 'begin') {
     for (const person of ['student', 'other']) await create('course_enrollments', { course: course.id, student: fixture.people[person] });
     const input = { title: 'Parcial temporal con foto', description: '', status: 'published', opensAt: new Date(Date.now() - 60000).toISOString(), closesAt: new Date(Date.now() + 86400000).toISOString(), questions: [{ id: 'q', prompt: 'Pregunta temporal', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOptionId: 'b', explanation: 'Explicación temporal.' }] };
     fixture.exam = (await create('course_exams', { ...input, course: course.id })).id;
+    fixture.startExam = (await create('course_exams', { ...input, title: 'Parcial temporal sin iniciar', course: course.id })).id;
     fixture.photoKey = `private/exam-photos/${course.id}/${fixture.people.student}/${randomUUID()}.enc`;
     const encrypted = encryptExamPhoto(syntheticExamPhoto, process.env.EXAM_PHOTO_ENCRYPTION_KEY || process.env.IDRIVE_SECRET_ACCESS_KEY);
     await storage.send(new PutObjectCommand({ Bucket: bucket, Key: fixture.photoKey, Body: encrypted, ContentType: 'application/octet-stream', CacheControl: 'no-store', ACL: 'private' }));
@@ -47,7 +48,9 @@ if (mode === 'begin') {
   } else if (mode === 'check') {
     const photoPath = `/api/parciales/${fixture.course}/intentos/${fixture.attempt}/foto`;
     const ready = await request(photoPath, fixture.tokens.teacher);
-    if (ready.status !== 200) { console.log(JSON.stringify({ ready: false, status: ready.status })); process.exitCode = 2; }
+    const start = await request(`/estudiantes/cursos/${fixture.course}/parciales/iniciar/${fixture.startExam}`, fixture.tokens.student);
+    const startHtml = await start.text();
+    if (ready.status !== 200 || start.status !== 200 || !startHtml.includes('El orden de las preguntas y sus opciones se mezcla al iniciar el intento')) { console.log(JSON.stringify({ ready: false, photoStatus: ready.status, startStatus: start.status, shuffleNotice: startHtml.includes('El orden de las preguntas y sus opciones se mezcla al iniciar el intento') })); process.exitCode = 2; }
     else {
       assert.deepEqual(Buffer.from(await ready.arrayBuffer()), syntheticExamPhoto); assert.ok(ready.headers.get('cache-control').includes('private, no-store'));
       for (const person of ['teacher', 'admin']) {

@@ -34,6 +34,7 @@ export function CourseExamEditor({ courseId, exam, basePath }: { courseId: strin
         <label className="block font-bold">Instrucciones<textarea maxLength={2000} className={field} value={description} onChange={e => setDescription(e.target.value)} /></label>
         <label className="block font-bold">Estado<select className={field} value={status} onChange={e => setStatus(e.target.value as CourseExamInput['status'])}>{Object.entries(examStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <p>El borrador y el parcial archivado están ocultos para los alumnos. Un parcial publicado se activa y cierra según su programación.</p>
+        <p>Las preguntas y sus opciones se mezclan automáticamente para cada intento nuevo. Cada alumno conserva ese orden al retomar. Los intentos ya iniciados mantienen su orden original.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block font-bold">Activación<input type="datetime-local" className={field} value={opens} onChange={e => setOpens(e.target.value)} required={status === 'published'} /></label>
           <label className="block font-bold">Desactivación y entrega automática<input type="datetime-local" className={field} value={closes} onChange={e => setCloses(e.target.value)} required={status === 'published'} /></label>

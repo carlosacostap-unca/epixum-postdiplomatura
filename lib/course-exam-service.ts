@@ -1,7 +1,8 @@
 import type PocketBase from 'pocketbase';
+import { randomInt } from 'node:crypto';
 import { z } from 'zod';
 import type { Course } from '@/types';
-import { publicPracticeQuestions } from './preparation';
+import { orderPracticeQuestions, publicPracticeQuestions } from './preparation';
 import { courseExamSchema, examAvailability, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView, type ExamStudent } from './course-exams';
 
 export class CourseExamError extends Error {}
@@ -52,6 +53,7 @@ export async function beginCourseExam(pb: PocketBase, service: PocketBase, cours
   if (cameraActive !== true) throw new CourseExamError('Activá la cámara antes de comenzar.');
   const snapshot = courseExamSchema.parse({ title: exam.title, description: exam.description, status: exam.status, opensAt: new Date(exam.opensAt.replace(' ', 'T')).toISOString(), closesAt: new Date(exam.closesAt.replace(' ', 'T')).toISOString(), questions: exam.questions });
   if (!capturePhoto) throw new CourseExamError('Necesitás guardar una foto inicial de la cámara para comenzar.');
+  snapshot.questions = orderPracticeQuestions(snapshot.questions, true, true, randomInt);
   const photo = await capturePhoto();
   let creating = false;
   try {

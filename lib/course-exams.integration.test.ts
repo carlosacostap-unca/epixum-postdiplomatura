@@ -51,6 +51,7 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       expect(view.student).toBeUndefined();
       expect(view.initialPhotoUrl).toBeUndefined(); expect(JSON.stringify(view)).not.toContain(key);
       expect(JSON.stringify(view)).not.toMatch(/correctOptionId|explanation|Privado/);
+      const presentation = structuredClone(view.questions);
       await expect(readCourseExamAttempt(outsider, service, course.id, id)).rejects.toThrow();
       await expect(student.collection('course_exam_attempts').update(id, { cameraActive: true })).rejects.toMatchObject({ status: 403 });
       const mutation = randomUUID();
@@ -61,7 +62,8 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       view = await answerCourseExam(student, service, course.id, id, { questionId: 'q2', optionId: 'b', mutationId: randomUUID() });
       expect(view.selected.q2).toBe('b');
       const secondSession = new PocketBase(service.baseURL); secondSession.authStore.save(student.authStore.token, student.authStore.record);
-      expect((await readCourseExamAttempt(secondSession, service, course.id, id)).selected).toEqual({ q2: 'b' });
+      const resumed = await readCourseExamAttempt(secondSession, service, course.id, id);
+      expect(resumed.selected).toEqual({ q2: 'b' }); expect(resumed.questions).toEqual(presentation);
       await reportCourseExamCamera(student, service, course.id, id, false);
       await expect(answerCourseExam(student, service, course.id, id, { questionId: 'q1', optionId: 'b', mutationId: randomUUID() })).rejects.toThrow('cámara');
       // Move this isolated fixture's deadline into the past, then run the same worker as production.
@@ -70,6 +72,7 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       await closeExpiredCourseExams(service); await closeExpiredCourseExams(service);
       view = await readCourseExamAttempt(student, service, course.id, id);
       expect(view.result).toMatchObject({ reason: 'expired', correct: 1, total: 2, selected: { q2: 'b' } });
+      if (view.result?.feedbackAvailable) expect(view.result.review.map(r => r.question.id)).toEqual(presentation.map(q => q.id));
       expect(Date.parse(view.result!.finishedAt)).toBe(Date.parse(deadline));
       expect((await submitCourseExam(student, service, course.id, id)).id).toBe(view.result!.id);
       const late = await answerCourseExam(student, service, course.id, id, { questionId: 'q1', optionId: 'b', mutationId: randomUUID() });
