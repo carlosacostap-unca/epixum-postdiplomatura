@@ -42,6 +42,9 @@ if (mode === 'begin') {
     const snapshot = Object.fromEntries(Object.entries(data).filter(([key]) => key !== 'course'));
     const attempt = await create('course_exam_attempts', { course: course.id, exam: published.id, student: people.student, title: data.title, snapshot, deadline: data.closesAt, cameraActive: false }); fixture.attempt = attempt.id;
     await create('course_exam_answers', { course: course.id, student: people.student, attempt: attempt.id, questionId: 'q1', optionId: 'b', mutationId: randomUUID() });
+    const earlyExam = await create('course_exams', { ...data, title: `Entrega anticipada temporal ${randomUUID()}` });
+    const earlyAttempt = await create('course_exam_attempts', { course: course.id, exam: earlyExam.id, student: people.student, title: earlyExam.title, snapshot: { ...snapshot, title: earlyExam.title }, deadline: data.closesAt, cameraActive: false }); fixture.earlyAttempt = earlyAttempt.id;
+    await create('course_exam_results', { course: course.id, exam: earlyExam.id, student: people.student, attempt: earlyAttempt.id, finishedAt: new Date().toISOString(), reason: 'submitted', correct: 1, total: 2, percentage: 50, selected: { q1: 'b' } });
     await mkdir('tmp/assessments', { recursive: true });
     await writeFile(path, JSON.stringify(fixture), { flag: 'wx' });
     console.log('Fixture aislado preparado; primer parcial real confirmado en borrador.');
@@ -63,16 +66,22 @@ if (mode === 'begin') {
     assert.equal(config.status, 200); assert.ok(config.html.includes('examsEnabled'));
     assert.equal(hash(await target()), fixture.targetHash, 'El parcial real debe permanecer intacto.');
     if (!fixture.workerDeadline) {
+      const early = await request(`/estudiantes/cursos/${fixture.course}/parciales/intentos/${fixture.earlyAttempt}`, fixture.tokens.student);
+      if (early.status !== 200 || !early.html.includes('La nota y la devolución completa estarán disponibles a partir del cierre')) { console.log(JSON.stringify({ ready: false, reason: 'feedback-version-pending' })); process.exitCode = 2; return; }
+      assert.ok(!early.html.includes('Explicación sintética privada.')); assert.ok(!early.html.includes('correctOptionId')); assert.ok(!early.html.includes('Nota:'));
       fixture.workerDeadline = new Date(Date.now() + 2000).toISOString();
       await service.collection('course_exam_attempts').update(fixture.attempt, { deadline: fixture.workerDeadline });
+      await service.collection('course_exam_attempts').update(fixture.earlyAttempt, { deadline: fixture.workerDeadline });
       await writeFile(path, JSON.stringify(fixture));
-      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realDraftUnchanged: true, worker: 'armed' }));
+      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realDraftUnchanged: true, earlyFeedbackHidden: true, worker: 'armed' }));
     } else {
       const result = (await service.collection('course_exam_results').getList(1, 1, { filter: service.filter('attempt = {:id}', { id: fixture.attempt }) })).items[0];
       if (!result) { console.log(JSON.stringify({ ready: true, worker: 'pending' })); process.exitCode = 2; return; }
       assert.equal(result.reason, 'expired'); assert.equal(result.correct, 1); assert.equal(result.total, 2);
       assert.equal(Date.parse(result.finishedAt), Date.parse(fixture.workerDeadline));
-      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realDraftUnchanged: true, autonomousWorker: true, realExamStatus: 'draft' }));
+      const feedback = await request(`/estudiantes/cursos/${fixture.course}/parciales/intentos/${fixture.earlyAttempt}`, fixture.tokens.student);
+      assert.equal(feedback.status, 200); assert.ok(feedback.html.includes('Resultado y devolución completa')); assert.ok(feedback.html.includes('Explicación sintética privada.')); assert.ok(feedback.html.includes('Respuesta correcta')); assert.ok(feedback.html.includes('Sin responder')); assert.ok(feedback.html.includes('Nota:'));
+      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realDraftUnchanged: true, autonomousWorker: true, feedbackAfterClose: true, realExamStatus: 'draft' }));
     }
   } else if (mode === 'cleanup') {
     for (const result of await service.collection('course_exam_results').getFullList({ filter: service.filter('attempt = {:id}', { id: fixture.attempt }) })) await service.collection('course_exam_results').delete(result.id);

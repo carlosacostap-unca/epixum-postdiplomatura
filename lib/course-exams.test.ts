@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { courseExamSchema, examAvailability, examDateInput, examLocalDate, examScore, examSelections, type ExamAnswerEvent } from './course-exams';
+import { courseExamSchema, examAvailability, examDateInput, examLocalDate, examScore, examSelections, visibleExamResult, type ExamAnswerEvent } from './course-exams';
 const question = { id: 'q1', prompt: 'Pregunta', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOptionId: 'b', explanation: '' };
 const draft = { title: 'Parcial', description: '', status: 'draft', opensAt: '', closesAt: '', questions: [question] };
 describe('parciales programados', () => {
@@ -25,5 +25,17 @@ describe('parciales programados', () => {
   it('interpreta y muestra horarios de Buenos Aires aunque el servidor use otra zona', () => {
     expect(examDateInput('2026-10-23T19:30')).toBe('2026-10-23T22:30:00.000Z');
     expect(examLocalDate('2026-10-23 22:30:00.000Z')).toBe('2026-10-23T19:30');
+  });
+  it('libera nota y corrección completa exactamente al cierre y no incluye claves ni puntajes antes', () => {
+    const deadline = '2026-10-23 13:00:00.000Z';
+    const attempt = { deadline, snapshot: courseExamSchema.parse({ ...draft, questions: [{ ...question, explanation: 'Explicación reservada' }, { ...question, id: 'q2' }] }) };
+    const result = { id: 'result', attempt: 'attempt', finishedAt: '2026-10-23 12:30:00.000Z', reason: 'submitted' as const, correct: 1, total: 2, percentage: 50, selected: { q1: 'b' } };
+    const before = visibleExamResult(result, attempt, 'student', Date.parse(deadline) - 1);
+    expect(before).toEqual({ id: 'result', attempt: 'attempt', finishedAt: result.finishedAt, reason: 'submitted', selected: { q1: 'b' }, feedbackAvailable: false });
+    expect(JSON.stringify(before)).not.toMatch(/correct|percentage|total|review|Explicación reservada/);
+    const after = visibleExamResult(result, attempt, 'student', Date.parse(deadline));
+    expect(after).toMatchObject({ feedbackAvailable: true, correct: 1, total: 2, review: [{ selectedOptionId: 'b', correct: true }, { selectedOptionId: null, correct: false }] });
+    expect(JSON.stringify(after)).toContain('Explicación reservada');
+    expect(visibleExamResult(result, attempt, 'manage', Date.parse(deadline) - 1).feedbackAvailable).toBe(true);
   });
 });

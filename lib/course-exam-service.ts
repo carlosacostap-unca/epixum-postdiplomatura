@@ -2,7 +2,7 @@ import type PocketBase from 'pocketbase';
 import { z } from 'zod';
 import type { Course } from '@/types';
 import { publicPracticeQuestions } from './preparation';
-import { courseExamSchema, examAvailability, examScore, examSelections, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView } from './course-exams';
+import { courseExamSchema, examAvailability, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView } from './course-exams';
 
 export class CourseExamError extends Error {}
 export async function requireExamCourse(pb: PocketBase, courseId: string, mode: 'manage' | 'student') {
@@ -74,7 +74,7 @@ export async function readCourseExamAttempt(pb: PocketBase, service: PocketBase,
   const attempt = await attemptFor(pb, service, courseId, id, mode);
   let result = await resultFor(service, attempt.id);
   if (!result && Date.now() >= Date.parse(attempt.deadline.replace(' ', 'T'))) result = await finalizeCourseExam(service, attempt);
-  return { id: attempt.id, title: attempt.title, description: attempt.snapshot.description, questions: publicPracticeQuestions(attempt.snapshot.questions), selected: result?.selected ?? examSelections(await eventsFor(service, id), attempt.deadline), deadline: attempt.deadline, serverNow: Date.now(), result };
+  return { id: attempt.id, title: attempt.title, description: attempt.snapshot.description, questions: publicPracticeQuestions(attempt.snapshot.questions), selected: result?.selected ?? examSelections(await eventsFor(service, id), attempt.deadline), deadline: attempt.deadline, serverNow: Date.now(), result: result ? visibleExamResult(result, attempt, mode) : null };
 }
 export async function reportCourseExamCamera(pb: PocketBase, service: PocketBase, courseId: string, id: string, active: boolean) {
   const attempt = await attemptFor(pb, service, courseId, id);
@@ -100,7 +100,8 @@ export async function answerCourseExam(pb: PocketBase, service: PocketBase, cour
   return readCourseExamAttempt(pb, service, courseId, id);
 }
 export async function submitCourseExam(pb: PocketBase, service: PocketBase, courseId: string, id: string) {
-  return finalizeCourseExam(service, await attemptFor(pb, service, courseId, id));
+  const attempt = await attemptFor(pb, service, courseId, id);
+  return visibleExamResult(await finalizeCourseExam(service, attempt), attempt, 'student');
 }
 /** Runs independently of browser sessions, including catch-up after a restart. */
 export async function closeExpiredCourseExams(service: PocketBase) {

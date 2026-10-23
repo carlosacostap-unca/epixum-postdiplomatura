@@ -66,8 +66,20 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       const earlyId = await beginCourseExam(student, service, course.id, earlyExam.id, true);
       created.push({ collection: 'course_exam_attempts', id: earlyId });
       const earlyResult = await submitCourseExam(student, service, course.id, earlyId);
-      expect(earlyResult).toMatchObject({ reason: 'submitted', total: 2, correct: 0, selected: {} });
+      expect(earlyResult).toMatchObject({ reason: 'submitted', feedbackAvailable: false, selected: {} });
+      expect(JSON.stringify(earlyResult)).not.toMatch(/correct|percentage|total|review|Privado/);
       expect((await submitCourseExam(student, service, course.id, earlyId)).id).toBe(earlyResult.id);
+      const earlyView = await readCourseExamAttempt(student, service, course.id, earlyId);
+      expect(JSON.stringify(earlyView)).not.toMatch(/correct|percentage|total|review|Privado/);
+      const repeatedAnswer = await answerCourseExam(student, service, course.id, earlyId, { questionId: 'q1', optionId: 'b', mutationId: randomUUID() });
+      expect(repeatedAnswer.result?.feedbackAvailable).toBe(false);
+      expect(JSON.stringify(repeatedAnswer)).not.toMatch(/correct|percentage|total|review|Privado/);
+      const teacherView = await readCourseExamAttempt(admin, service, course.id, earlyId, 'manage');
+      expect(teacherView.result).toMatchObject({ feedbackAvailable: true, correct: 0, total: 2 });
+      await service.collection('course_exam_attempts').update(earlyId, { deadline: new Date(Date.now() - 1).toISOString() });
+      const released = await readCourseExamAttempt(student, service, course.id, earlyId);
+      expect(released.result).toMatchObject({ id: earlyResult.id, feedbackAvailable: true, correct: 0, total: 2, review: [{ selectedOptionId: null }, { selectedOptionId: null }] });
+      expect(JSON.stringify(released.result)).toContain('Privado');
       await service.collection('courses').update(course.id, { examsEnabled: false });
       await expect(readCourseExamAttempt(student, service, course.id, id)).rejects.toThrow('no están habilitados');
     } finally {

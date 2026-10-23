@@ -2,7 +2,7 @@ import 'server-only';
 import { createServerClient } from './pocketbase-server';
 import { createServiceClient } from './pocketbase-service';
 import { CourseExamError, closeExpiredCourseExams, readCourseExamAttempt, requireExamCourse } from './course-exam-service';
-import type { CourseExam, ExamAttempt, ExamResult } from './course-exams';
+import { examFeedbackReleased, examResultSummary, type CourseExam, type ExamAttempt, type ExamResult } from './course-exams';
 
 export async function getCourseExams(courseId: string, mode: 'manage' | 'student') {
   const pb = await createServerClient();
@@ -11,7 +11,11 @@ export async function getCourseExams(courseId: string, mode: 'manage' | 'student
   const filter = service.filter('course = {:course}', { course: courseId });
   const exams = await service.collection('course_exams').getFullList<Omit<CourseExam, 'questions'>>({ filter: filter + (mode === 'student' ? ' && status = "published"' : ''), fields: 'id,course,title,description,status,opensAt,closesAt', sort: '-created,id' });
   const attempts = await service.collection('course_exam_attempts').getFullList<Pick<ExamAttempt, 'id' | 'exam' | 'student' | 'created' | 'deadline'> & { expand?: { student?: { name?: string } } }>({ filter: filter + (mode === 'student' ? service.filter(' && student = {:student}', { student: pb.authStore.record!.id }) : ''), fields: 'id,exam,student,created,deadline,expand.student.name', expand: mode === 'manage' ? 'student' : undefined, sort: '-created,id' });
-  const results = await service.collection('course_exam_results').getFullList<ExamResult>({ filter: filter + (mode === 'student' ? service.filter(' && student = {:student}', { student: pb.authStore.record!.id }) : ''), fields: 'id,attempt,finishedAt,reason,correct,total,percentage' });
+  const storedResults = await service.collection('course_exam_results').getFullList<ExamResult>({ filter: filter + (mode === 'student' ? service.filter(' && student = {:student}', { student: pb.authStore.record!.id }) : ''), fields: 'id,attempt,finishedAt,reason,correct,total,percentage' });
+  const results = storedResults.map(result => {
+    const attempt = attempts.find(a => a.id === result.attempt);
+    return examResultSummary(result, mode === 'manage' || (!!attempt && examFeedbackReleased(attempt.deadline)));
+  });
   return { course, exams, attempts, results };
 }
 export async function getCourseExamEditor(courseId: string, examId?: string) {

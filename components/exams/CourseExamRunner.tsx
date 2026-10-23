@@ -6,6 +6,7 @@ import { beginExam, examCamera, readExam, saveExamAnswer, sendExam } from '@/lib
 import { examAvailability, examDateLabel, type ExamView } from '@/lib/course-exams';
 import { useWebcam } from '@/components/preparation/useWebcam';
 import { WebcamPanel } from '@/components/preparation/WebcamPanel';
+import { CourseExamFeedback } from './CourseExamFeedback';
 
 export function CourseExamStart({ courseId, exam }: { courseId: string; exam: { id: string; title: string; description: string; status: 'draft' | 'published' | 'archived'; opensAt: string; closesAt: string } }) {
   const router = useRouter();
@@ -13,7 +14,7 @@ export function CourseExamStart({ courseId, exam }: { courseId: string; exam: { 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   return <div className="space-y-5"><h2 className="text-2xl font-bold">{exam.title}</h2><p className="whitespace-pre-wrap">{exam.description}</p><p>{examAvailability(exam)} · Desde {examDateLabel(exam.opensAt)} hasta {examDateLabel(exam.closesAt)} (Argentina)</p>
-    <p>Un intento por alumno. Podés navegar y cambiar tus respuestas; cada selección se guarda en tu cuenta. El plazo sigue corriendo aunque salgas. Al cierre se entrega lo guardado.</p>
+    <p>Un intento por alumno. Podés navegar sin responder y cambiar tus respuestas; cada selección se guarda en tu cuenta. El plazo sigue corriendo aunque salgas. Al cierre se entrega lo guardado. La nota y la devolución completa se habilitan después del cierre, aunque entregues antes.</p>
     <WebcamPanel camera={camera} initialPhoto={false} />
     <Button disabled={!camera.ready} isPending={pending} onClick={async () => {
       if (!camera.isLive()) return;
@@ -53,7 +54,7 @@ export function CourseExamRunner({ courseId, initial }: { courseId: string; init
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [ready, isLive, courseId, initial.id, view.result]);
   useEffect(() => {
-    if (view.result) return;
+    if (view.result?.feedbackAvailable) return;
     mountedAt.current ??= performance.now();
     const tick = () => setRemaining(Math.max(0, Math.ceil((Date.parse(initial.deadline.replace(' ', 'T')) - initial.serverNow - (performance.now() - mountedAt.current!)) / 1000)));
     const timer = window.setInterval(tick, 1000); window.addEventListener('focus', tick);
@@ -66,15 +67,15 @@ export function CourseExamRunner({ courseId, initial }: { courseId: string; init
     return () => window.removeEventListener('beforeunload', warn);
   }, [unsaved, view.result]);
   useEffect(() => {
-    if (remaining || view.result) return;
+    if (remaining || view.result?.feedbackAvailable) return;
     let cancelled = false;
     const refresh = async () => {
-      try { const result = await readExam(courseId, initial.id); if (!cancelled && result.success) { setView(result.data); if (result.data.result) { setUnsaved(null); setError(''); } } }
+      try { const result = await readExam(courseId, initial.id); if (!cancelled) { if (result.success) { setView(result.data); if (result.data.result) { setUnsaved(null); setError(''); } } else setError(result.error); } }
       catch { if (!cancelled) setError('Se alcanzó el cierre. Estamos recuperando la entrega con las respuestas guardadas.'); }
     };
     void refresh(); const timer = window.setInterval(() => { void refresh(); }, 5000);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [remaining, view.result, courseId, initial.id]);
+  }, [remaining, view.result?.feedbackAvailable, courseId, initial.id]);
   async function save(input: NonNullable<typeof unsaved>) {
     if (busy.current || !camera.isLive() || !verified || !remaining) return;
     busy.current = true; setPending(true); setError(''); setUnsaved(input);
@@ -85,7 +86,7 @@ export function CourseExamRunner({ courseId, initial }: { courseId: string; init
     } catch { setError('No se guardó esta selección. Revisá la conexión y usá Reintentar guardado.'); }
     finally { busy.current = false; setPending(false); }
   }
-  if (view.result) return <Card><CardContent><h2 className="text-2xl font-bold">Parcial entregado</h2><p>{view.result.reason === 'expired' ? 'Entrega automática por cierre del horario.' : 'La entrega se guardó correctamente.'}</p><p>Finalización: {examDateLabel(view.result.finishedAt)} (Argentina)</p><p>Nota: {(view.result.total ? view.result.correct / view.result.total * 10 : 0).toLocaleString('es-AR', { maximumFractionDigits: 2 })} / 10 · {view.result.correct} de {view.result.total} correctas</p></CardContent></Card>;
+  if (view.result) return <div className="space-y-5"><Card><CardContent className="space-y-3"><h2 className="text-2xl font-bold">Parcial entregado</h2><p>{view.result.reason === 'expired' ? 'Entrega automática por cierre del horario.' : 'La entrega se guardó correctamente.'}</p><p>Finalización: {examDateLabel(view.result.finishedAt)} (Argentina)</p>{!view.result.feedbackAvailable && <><p>La nota y la devolución completa estarán disponibles a partir del cierre: {examDateLabel(view.deadline)} (Argentina).</p><p>Podés volver más tarde. Esta pantalla se actualizará automáticamente al llegar el horario de cierre.</p></>}{error && <p role="alert">{error}</p>}</CardContent></Card>{view.result.feedbackAvailable && <CourseExamFeedback result={view.result} />}</div>;
   const question = view.questions[index];
   return <div className="space-y-5">
     <Card><CardContent><p role="timer" aria-label="Tiempo restante" className="text-3xl font-bold">{Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}</p><p>Cierre: {examDateLabel(view.deadline)} (Argentina). El plazo continúa aunque salgas.</p><p>Pregunta {index + 1} de {view.questions.length} · {Object.keys(view.selected).length} respuestas guardadas</p><p role="status">{pending ? 'Guardando selección…' : unsaved ? 'Hay una selección sin guardar.' : 'Todas tus selecciones están guardadas.'}</p></CardContent></Card>
@@ -93,7 +94,7 @@ export function CourseExamRunner({ courseId, initial }: { courseId: string; init
     {camera.ready && !verified && <p role="status">Verificando la cámara…</p>}
     <nav aria-label="Preguntas del parcial" className="flex flex-wrap gap-2">{view.questions.map((q, i) => <Button disabled={pending || !!unsaved} key={q.id} variant={index === i ? 'primary' : 'secondary'} aria-current={index === i ? 'step' : undefined} aria-label={`Pregunta ${i + 1}${view.selected[q.id] ? ', respondida' : ', sin responder'}`} onClick={() => setIndex(i)}>{i + 1}{view.selected[q.id] ? ' ✓' : ''}</Button>)}</nav>
     {question && <Card><CardContent><fieldset disabled={pending || !!unsaved || !remaining || !ready || !verified} className="space-y-4"><legend className="mb-4 whitespace-pre-wrap text-lg font-bold">{question.prompt}</legend>{question.options.map(o => <label className="flex items-start gap-3 rounded-xl border border-[var(--color-outline-variant)] p-4" key={o.id}><input type="radio" name={question.id} checked={(unsaved?.questionId === question.id ? unsaved.optionId : view.selected[question.id]) === o.id} onChange={() => { void save({ questionId: question.id, optionId: o.id, mutationId: crypto.randomUUID() }); }} /><span>{o.label}</span></label>)}</fieldset></CardContent></Card>}
-    <p>Cada opción se guarda al seleccionarla. Podés cambiarla hasta entregar. Las incorrectas y omitidas suman cero.</p>
+    <p>Podés pasar a otra pregunta sin responder. Cada opción se guarda al seleccionarla y puede cambiarse hasta entregar. Las incorrectas y omitidas suman cero. La nota y la devolución se habilitan después del cierre.</p>
     {error && <p role="alert" className="text-[var(--color-error)]">{error}</p>}
     {unsaved && <Button disabled={pending || !ready || !verified || !remaining} onClick={() => { void save(unsaved); }}>Reintentar guardado</Button>}
     <div className="flex flex-wrap gap-3"><Button variant="secondary" disabled={index === 0 || pending || !!unsaved} onClick={() => setIndex(i => i - 1)}>Pregunta anterior</Button><Button variant="secondary" disabled={index === view.questions.length - 1 || pending || !!unsaved} onClick={() => setIndex(i => i + 1)}>Siguiente pregunta</Button>

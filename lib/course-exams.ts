@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { practiceQuestionSchema, type PracticeQuestion, type PublicPracticeQuestion } from './preparation';
+import { practiceQuestionSchema, type PracticeQuestion, type PublicPracticeQuestion, type PracticeReview } from './preparation';
 
 const date = z.string().refine(v => !v || (/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v))), 'Ingresá una fecha y hora válidas.');
 export const courseExamSchema = z.object({
@@ -20,7 +20,22 @@ export type CourseExam = CourseExamInput & { id: string; course: string };
 export type ExamAttempt = { id: string; exam: string; course: string; student: string; title: string; snapshot: CourseExamInput; deadline: string; created: string; cameraActive: boolean; cameraLastSeen: string };
 export type ExamAnswerEvent = { id: string; attempt: string; questionId: string; optionId: string; mutationId: string; created: string };
 export type ExamResult = { id: string; attempt: string; finishedAt: string; reason: 'submitted' | 'expired'; correct: number; total: number; percentage: number; selected: Record<string, string> };
-export type ExamView = { id: string; title: string; description: string; questions: PublicPracticeQuestion[]; selected: Record<string, string>; deadline: string; serverNow: number; result: ExamResult | null };
+type ExamReceipt = Pick<ExamResult, 'id' | 'attempt' | 'finishedAt' | 'reason'>;
+export type ExamResultSummary = (ExamReceipt & { feedbackAvailable: false }) | (ExamReceipt & { feedbackAvailable: true; correct: number; total: number; percentage: number });
+export type ExamVisibleResult = (ExamReceipt & { feedbackAvailable: false; selected: Record<string, string> }) | (ExamReceipt & { feedbackAvailable: true; selected: Record<string, string>; correct: number; total: number; percentage: number; review: PracticeReview[] });
+export type ExamView = { id: string; title: string; description: string; questions: PublicPracticeQuestion[]; selected: Record<string, string>; deadline: string; serverNow: number; result: ExamVisibleResult | null };
+export function examFeedbackReleased(deadline: string, now = Date.now()) { return now >= Date.parse(deadline.replace(' ', 'T')); }
+/** Explicit projections keep scores out of serialized responses before the common closing time. */
+export function examResultSummary(result: Omit<ExamResult, 'selected'>, released: boolean): ExamResultSummary {
+  const receipt = { id: result.id, attempt: result.attempt, finishedAt: result.finishedAt, reason: result.reason };
+  return released ? { ...receipt, feedbackAvailable: true, correct: result.correct, total: result.total, percentage: result.percentage } : { ...receipt, feedbackAvailable: false };
+}
+export function visibleExamResult(result: ExamResult, attempt: Pick<ExamAttempt, 'deadline' | 'snapshot'>, mode: 'manage' | 'student', now = Date.now()): ExamVisibleResult {
+  const summary = examResultSummary(result, mode === 'manage' || examFeedbackReleased(attempt.deadline, now));
+  if (!summary.feedbackAvailable) return { ...summary, selected: result.selected };
+  const review = attempt.snapshot.questions.map(question => ({ question, selectedOptionId: result.selected[question.id] ?? null, correct: result.selected[question.id] === question.correctOptionId }));
+  return { ...summary, selected: result.selected, review };
+}
 export const examStatusLabels = { draft: 'Borrador', published: 'Publicado', archived: 'Archivado' };
 export function examAvailability(exam: Pick<CourseExam, 'status' | 'opensAt' | 'closesAt'>, now = Date.now()) {
   if (exam.status !== 'published') return exam.status === 'draft' ? 'Borrador' : 'Archivado';

@@ -47,7 +47,7 @@ export function CourseExamEditor({ courseId, exam, basePath }: { courseId: strin
           <input type="radio" name={`correct-${q.id}`} checked={q.correctOptionId === o.id} aria-label={`Opción ${j + 1} correcta en pregunta ${i + 1}`} onChange={() => update(q.id, { correctOptionId: o.id })} />
           <input required maxLength={500} aria-label={`Opción ${j + 1} de pregunta ${i + 1}`} className={field} value={o.label} onChange={e => update(q.id, { options: q.options.map(item => item.id === o.id ? { ...item, label: e.target.value } : item) })} />
         </div>)}</fieldset>
-        <label className="block">Explicación para el equipo docente<textarea className={field} maxLength={4000} value={q.explanation} onChange={e => update(q.id, { explanation: e.target.value })} /></label>
+        <label className="block">Explicación para la devolución<textarea className={field} maxLength={4000} value={q.explanation} onChange={e => update(q.id, { explanation: e.target.value })} /><span className="text-sm text-[var(--color-text-muted)]">El alumno podrá leerla después de la fecha y hora de cierre del parcial.</span></label>
       </CardContent></Card>)}
       <Button variant="secondary" disabled={questions.length >= 80} onClick={() => {
         const options = Array.from({ length: 4 }, () => ({ id: crypto.randomUUID(), label: '' }));
