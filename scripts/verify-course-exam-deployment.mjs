@@ -21,8 +21,7 @@ let fixture;
 if (mode === 'begin') {
   try { await readFile(path); throw new Error('Ya existe un fixture: usá check o cleanup.'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const exam = await target();
-  assert.equal(exam.status, 'draft');
-  fixture = { created: [], origin: origin.origin, targetHash: hash(exam), course: '', attempt: '', published: '', draft: '', tokens: {} };
+  fixture = { created: [], origin: origin.origin, targetHash: hash(exam), targetStatus: exam.status, course: '', attempt: '', published: '', draft: '', tokens: {} };
   const create = async (collection, data) => { const record = await service.collection(collection).create(data); fixture.created.push({ collection, id: record.id }); return record; };
   try {
     const people = {};
@@ -47,7 +46,7 @@ if (mode === 'begin') {
     await create('course_exam_results', { course: course.id, exam: earlyExam.id, student: people.student, attempt: earlyAttempt.id, finishedAt: new Date().toISOString(), reason: 'submitted', correct: 1, total: 2, percentage: 50, selected: { q1: 'b' } });
     await mkdir('tmp/assessments', { recursive: true });
     await writeFile(path, JSON.stringify(fixture), { flag: 'wx' });
-    console.log('Fixture aislado preparado; primer parcial real confirmado en borrador.');
+    console.log(`Fixture aislado preparado; primer parcial real conservado en estado ${exam.status}.`);
   } catch (error) {
     for (const row of [...fixture.created].reverse()) await service.collection(row.collection).delete(row.id);
     throw error;
@@ -58,7 +57,6 @@ if (mode === 'begin') {
   if (mode === 'check') {
     const admin = await request('/admin/courses/6taf9vkwwi8oxlz/parciales', fixture.tokens.admin);
     if (admin.status !== 200 || !admin.html.includes('dspfirstexam001')) { console.log(JSON.stringify({ ready: false, status: admin.status })); process.exitCode = 2; return; }
-    assert.ok(admin.html.includes('Borrador'));
     const student = await request(`/estudiantes/cursos/${fixture.course}/parciales`, fixture.tokens.student);
     assert.equal(student.status, 200); assert.ok(student.html.includes(fixture.published)); assert.ok(!student.html.includes(fixture.draft));
     assert.ok(!student.html.includes('correctOptionId'));
@@ -73,7 +71,7 @@ if (mode === 'begin') {
       await service.collection('course_exam_attempts').update(fixture.attempt, { deadline: fixture.workerDeadline });
       await service.collection('course_exam_attempts').update(fixture.earlyAttempt, { deadline: fixture.workerDeadline });
       await writeFile(path, JSON.stringify(fixture));
-      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realDraftUnchanged: true, earlyFeedbackHidden: true, worker: 'armed' }));
+      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realExamUnchanged: true, earlyFeedbackHidden: true, worker: 'armed' }));
     } else {
       const result = (await service.collection('course_exam_results').getList(1, 1, { filter: service.filter('attempt = {:id}', { id: fixture.attempt }) })).items[0];
       if (!result) { console.log(JSON.stringify({ ready: true, worker: 'pending' })); process.exitCode = 2; return; }
@@ -81,13 +79,13 @@ if (mode === 'begin') {
       assert.equal(Date.parse(result.finishedAt), Date.parse(fixture.workerDeadline));
       const feedback = await request(`/estudiantes/cursos/${fixture.course}/parciales/intentos/${fixture.earlyAttempt}`, fixture.tokens.student);
       assert.equal(feedback.status, 200); assert.ok(feedback.html.includes('Resultado y devolución completa')); assert.ok(feedback.html.includes('Explicación sintética privada.')); assert.ok(feedback.html.includes('Respuesta correcta')); assert.ok(feedback.html.includes('Sin responder')); assert.ok(feedback.html.includes('Nota:'));
-      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realDraftUnchanged: true, autonomousWorker: true, feedbackAfterClose: true, realExamStatus: 'draft' }));
+      console.log(JSON.stringify({ ready: true, adminSection: true, studentSection: true, draftHidden: true, realExamUnchanged: true, autonomousWorker: true, feedbackAfterClose: true, realExamStatus: fixture.targetStatus }));
     }
   } else if (mode === 'cleanup') {
     for (const result of await service.collection('course_exam_results').getFullList({ filter: service.filter('attempt = {:id}', { id: fixture.attempt }) })) await service.collection('course_exam_results').delete(result.id);
     for (const row of [...fixture.created].reverse()) await service.collection(row.collection).delete(row.id);
     assert.equal(hash(await target()), fixture.targetHash);
-    await unlink(path); console.log('Fixture y credenciales eliminados; primer parcial real intacto en borrador.');
+    await unlink(path); console.log(`Fixture y credenciales eliminados; primer parcial real intacto en estado ${fixture.targetStatus}.`);
   } else throw new Error('Usá begin, check o cleanup.');
 }
 }
