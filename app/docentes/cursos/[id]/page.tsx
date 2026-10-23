@@ -12,13 +12,14 @@ import {
   getClassesByCourse,
   getCourse,
   getCourseOrganizationData,
-  getCourseStudents,
   getDeliveries,
 } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { isDeliveryPendingReview, normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
 import { redirect } from "next/navigation";
+import { getStudentProgress } from '@/lib/student-progress-data';
+import { StudentProgressSummary } from '@/components/course/StudentProgressSummary';
 
 const primaryLink = "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]";
 
@@ -35,9 +36,9 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
   if (!course?.teachers?.includes(user.id)) redirect("/docentes");
 
   const weekly = course.organizationMode === "semanal";
-  const [organization, students] = await Promise.all([
+  const [organization, studentProgress] = await Promise.all([
     weekly ? getCourseOrganizationData(course) : null,
-    getCourseStudents(course.id),
+    getStudentProgress(course.id),
   ]);
   const [classes, assignments, inquiries] = organization
     ? [organization.allClasses, organization.allAssignments, organization.allInquiries]
@@ -62,7 +63,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
         <StatCard label="Entregas por revisar" value={pendingDeliveries.length} icon="rate_review" tone={pendingDeliveries.length ? "warning" : "neutral"} href={pendingDeliveries.length ? "#course-pending-title" : weekly ? "#semanas" : "#trabajos"} />
         <StatCard label="Consultas pendientes" value={pendingInquiries.length} icon="forum" tone={pendingInquiries.length ? "warning" : "neutral"} href={`/docentes/cursos/${course.id}/consultas?estado=Pendiente`} />
         <StatCard label="Clases" value={classes.length} icon="menu_book" href={weekly ? "#semanas" : "#clases"} />
-        <StatCard label="Estudiantes" value={students.length} icon="group" href="#estudiantes" />
+        <StatCard label="Estudiantes" value={studentProgress.rows.length} icon="group" href={`/docentes/cursos/${course.id}/estudiantes`} />
       </section>
 
       {(pendingDeliveries.length > 0 || pendingInquiries.length > 0) && (
@@ -152,18 +153,9 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
       <div className="grid gap-8 xl:grid-cols-2">
         <section id="estudiantes" aria-labelledby="students-title" className="scroll-mt-6 space-y-5">
           <div><h2 id="students-title" className="font-headline text-2xl font-bold">Estudiantes</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Matrículas vigentes del curso.</p></div>
-          {students.length === 0 ? (
-            <EmptyState icon="group_off" title="Sin estudiantes matriculados" description="Compartí una clave de acceso para habilitar la matrícula inmediata." />
-          ) : (
-            <Card><CardContent className="divide-y divide-[var(--color-outline-variant)] py-2">
-              {students.map((student) => (
-                <div key={student.id} className="flex items-center gap-4 py-4">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{(student.firstName || student.name || "E").charAt(0).toUpperCase()}</span>
-                  <div className="min-w-0"><p className="truncate font-bold">{[student.firstName || student.name, student.lastName].filter(Boolean).join(" ")}</p><p className="truncate text-sm text-[var(--color-on-surface-variant)]">{student.email || "Correo no visible"}</p></div>
-                </div>
-              ))}
-            </CardContent></Card>
-          )}
+          <StudentProgressSummary rows={studentProgress.rows} preparationEnabled={studentProgress.preparationEnabled} examsEnabled={studentProgress.examsEnabled} compact />
+          <Link className={primaryLink} href={`/docentes/cursos/${course.id}/estudiantes`}>Ver seguimiento y filtrar estudiantes</Link>
+
         </section>
 
         <section id="acceso" aria-labelledby="access-title" className="scroll-mt-6 space-y-5">

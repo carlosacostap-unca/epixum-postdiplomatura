@@ -49,7 +49,7 @@ function tabs(course: Course, current: TeacherCourseSection): TabItem[] {
   if (course.reviewsEnabled) items.push({ href: `${base}/revisiones`, label: "Revisiones", icon: "event_available", isActive: current === "revisiones" });
   items.push(
     { href: `${base}/consultas`, label: "Consultas", icon: "forum", isActive: current === "consultas" },
-    { href: `${base}#estudiantes`, label: "Estudiantes", icon: "group", isActive: current === "estudiantes" },
+    { href: `${base}/estudiantes`, label: "Estudiantes", icon: "group", isActive: current === "estudiantes" },
     { href: `${base}#acceso`, label: "Acceso", icon: "key", isActive: current === "acceso" },
   );
   return items;
