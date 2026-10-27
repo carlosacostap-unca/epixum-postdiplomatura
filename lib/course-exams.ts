@@ -44,7 +44,7 @@ export type CourseExamInput = z.infer<typeof courseExamSchema>;
 export type CourseExam = CourseExamInput & { id: string; course: string };
 export type CourseExamSummary = Omit<CourseExam, 'questions' | 'sessions'> & { sessions?: ExamSessionSchedule[] };
 export function examSchedule(exam: Pick<CourseExamSummary, 'opensAt' | 'closesAt' | 'sessions'>): ExamSessionSchedule[] {
-  return [{ id: 'primary', label: 'Turno 1', opensAt: exam.opensAt, closesAt: exam.closesAt }, ...(exam.sessions || []).map(({ id, label, opensAt, closesAt }) => ({ id, label, opensAt, closesAt }))];
+  return [{ id: 'primary', label: 'Turno mañana', opensAt: exam.opensAt, closesAt: exam.closesAt }, ...(exam.sessions || []).map(({ id, label, opensAt, closesAt }) => ({ id, label, opensAt, closesAt }))];
 }
 /** Explicit projection: no question bank or answer key crosses into a student page. */
 export function examSummary(exam: CourseExam): CourseExamSummary {
