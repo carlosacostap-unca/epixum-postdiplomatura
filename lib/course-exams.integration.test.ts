@@ -101,16 +101,45 @@ describe.skipIf(process.env.COURSE_EXAMS_INTEGRATION !== '1')('parciales · Pock
       const released = await readCourseExamAttempt(student, service, course.id, earlyId);
       expect(released.result).toMatchObject({ id: earlyResult.id, feedbackAvailable: true, correct: 0, total: 2, review: [{ selectedOptionId: null }, { selectedOptionId: null }] });
       expect(JSON.stringify(released.result)).toContain('Privado');
+      // Two versions share the same exam ID and therefore the database's unique attempt constraint.
+      const nightQuestion = { ...question, id: 'night-q', prompt: 'Pregunta exclusiva de la noche', explanation: 'Clave de la noche' };
+      const twoSessions: CourseExamInput = { ...input, title: 'Parcial de dos turnos', status: 'published', questions: [question], opensAt: new Date(Date.now() - 7200_000).toISOString(), closesAt: new Date(Date.now() - 3600_000).toISOString(), sessions: [{ id: 'night', label: 'Turno noche', opensAt: new Date(Date.now() - 60_000).toISOString(), closesAt: new Date(Date.now() + 3600_000).toISOString(), questions: [nightQuestion] }] };
+      const multi = await saveCourseExam(admin, service, course.id, null, twoSessions); created.push({ collection: 'course_exams', id: multi.id });
+      const nightId = await beginCourseExam(student, service, course.id, multi.id, true, capture); created.push({ collection: 'course_exam_attempts', id: nightId });
+      const nightStored = await service.collection('course_exam_attempts').getOne(nightId);
+      expect(nightStored.snapshot.questions.map((q: { id: string }) => q.id)).toEqual(['night-q']);
+      expect(nightStored.snapshot.sessions).toBeUndefined();
+      expect(Date.parse(nightStored.deadline)).toBe(Date.parse(twoSessions.sessions![0].closesAt));
+      expect((await readCourseExamAttempt(student, service, course.id, nightId)).questions.map(q => q.id)).toEqual(['night-q']);
+      await expect(answerCourseExam(student, service, course.id, nightId, { questionId: 'q1', optionId: 'b', mutationId: randomUUID() })).rejects.toThrow('no pertenece');
+      await expect(saveCourseExam(admin, service, course.id, multi.id, twoSessions)).rejects.toThrow('ya tiene intentos');
+      // Simulate an already completed morning attempt using only this isolated fixture.
+      await create('course_enrollments', { course: course.id, student: outsider.authStore.record!.id });
+      const morning = await create('course_exam_attempts', { course: course.id, exam: multi.id, student: outsider.authStore.record!.id, title: 'Turno 1', snapshot: { ...input, questions: [question] }, deadline: twoSessions.closesAt });
+      expect(await beginCourseExam(outsider, service, course.id, multi.id, true, capture)).toBe(morning.id);
+      await expect(service.collection('course_exam_attempts').create({ ...nightStored, id: undefined, student: outsider.authStore.record!.id })).rejects.toMatchObject({ status: 400 });
       await service.collection('courses').update(course.id, { examsEnabled: false });
       await expect(readCourseExamAttempt(student, service, course.id, id)).rejects.toThrow('no están habilitados');
+    } catch (error) {
+      console.error('Fallo de integración antes de la limpieza:', error instanceof Error ? error.message : 'Error desconocido');
+      throw error;
     } finally {
       // Delete only descendants of this test's attempts; never touch live course data.
+      // Keep the live expiry worker from recreating a result while cleanup removes its attempt.
+      for (const attempt of created.filter(r => r.collection === 'course_exam_attempts')) {
+        await service.collection('course_exam_attempts').update(attempt.id, { deadline: new Date(Date.now() + 86400_000).toISOString() });
+      }
       for (const attempt of created.filter(r => r.collection === 'course_exam_attempts')) {
         for (const collection of ['course_exam_results', 'course_exam_answers']) {
           for (const row of await service.collection(collection).getFullList({ filter: service.filter('attempt = {:id}', { id: attempt.id }) })) await service.collection(collection).delete(row.id);
         }
       }
-      for (const record of [...created].reverse()) await service.collection(record.collection).delete(record.id);
+      for (const record of [...created].reverse()) {
+        if (record.collection === 'course_exam_attempts') {
+          for (const row of await service.collection('course_exam_results').getFullList({ filter: service.filter('attempt = {:id}', { id: record.id }) })) await service.collection('course_exam_results').delete(row.id);
+        }
+        await service.collection(record.collection).delete(record.id);
+      }
       for (const photo of photos) await photo.rollback();
     }
   }, 120_000);

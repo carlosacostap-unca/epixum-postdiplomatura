@@ -3,7 +3,7 @@ import { randomInt } from 'node:crypto';
 import { z } from 'zod';
 import type { Course } from '@/types';
 import { orderPracticeQuestions, publicPracticeQuestions } from './preparation';
-import { courseExamSchema, examAvailability, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView, type ExamStudent } from './course-exams';
+import { activeExamSession, courseExamSchema, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView, type ExamStudent } from './course-exams';
 
 export class CourseExamError extends Error {}
 export async function requireExamCourse(pb: PocketBase, courseId: string, mode: 'manage' | 'student') {
@@ -49,9 +49,10 @@ export async function beginCourseExam(pb: PocketBase, service: PocketBase, cours
   if (exam.course !== courseId || exam.status !== 'published') throw new CourseExamError('Este parcial no está disponible.');
   const previous = await service.collection('course_exam_attempts').getList<ExamAttempt>(1, 1, { filter: service.filter('exam = {:exam} && student = {:student}', { exam: examId, student: pb.authStore.record!.id }) });
   if (previous.items[0]) return previous.items[0].id;
-  if (examAvailability(exam) !== 'Activo') throw new CourseExamError('El parcial sólo se puede iniciar dentro del horario de activación.');
+  const session = activeExamSession(exam);
+  if (!session) throw new CourseExamError('El parcial sólo se puede iniciar dentro del horario de activación de un turno.');
   if (cameraActive !== true) throw new CourseExamError('Activá la cámara antes de comenzar.');
-  const snapshot = courseExamSchema.parse({ title: exam.title, description: exam.description, status: exam.status, opensAt: new Date(exam.opensAt.replace(' ', 'T')).toISOString(), closesAt: new Date(exam.closesAt.replace(' ', 'T')).toISOString(), questions: exam.questions });
+  const snapshot = courseExamSchema.parse({ title: exam.sessions?.length ? `${exam.title.slice(0, 77)} · ${session.label}` : exam.title, description: exam.description, status: exam.status, opensAt: new Date(session.opensAt.replace(' ', 'T')).toISOString(), closesAt: new Date(session.closesAt.replace(' ', 'T')).toISOString(), questions: session.questions });
   if (!capturePhoto) throw new CourseExamError('Necesitás guardar una foto inicial de la cámara para comenzar.');
   snapshot.questions = orderPracticeQuestions(snapshot.questions, true, true, randomInt);
   const photo = await capturePhoto();
@@ -59,9 +60,10 @@ export async function beginCourseExam(pb: PocketBase, service: PocketBase, cours
   try {
     await requireExamCourse(pb, courseId, 'student');
     const currentExam = await service.collection('course_exams').getOne<CourseExam>(examId);
-    if (examAvailability(currentExam) !== 'Activo' || JSON.stringify(currentExam.questions) !== JSON.stringify(exam.questions) || currentExam.closesAt !== exam.closesAt || currentExam.opensAt !== exam.opensAt) throw new CourseExamError('Las condiciones del parcial cambiaron o ya se alcanzó el cierre. Actualizá la página.');
+    const currentSession = activeExamSession(currentExam);
+    if (currentExam.status !== 'published' || currentExam.course !== courseId || !currentSession || currentSession.id !== session.id || JSON.stringify(currentSession) !== JSON.stringify(session)) throw new CourseExamError('Las condiciones del parcial cambiaron o ya se alcanzó el cierre. Actualizá la página.');
     creating = true;
-    const attempt = await service.collection('course_exam_attempts').create({ course: courseId, exam: examId, student: pb.authStore.record!.id, title: exam.title, snapshot, deadline: snapshot.closesAt, cameraActive: true, cameraLastSeen: new Date().toISOString(), photoKey: photo.photoKey });
+    const attempt = await service.collection('course_exam_attempts').create({ course: courseId, exam: examId, student: pb.authStore.record!.id, title: snapshot.title, snapshot, deadline: snapshot.closesAt, cameraActive: true, cameraLastSeen: new Date().toISOString(), photoKey: photo.photoKey });
     return attempt.id;
   } catch (error) {
     if (creating) {

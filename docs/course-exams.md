@@ -17,6 +17,16 @@ La sección **Parciales** es independiente de Preparación. Administración habi
 
 ## Persistencia y cierre
 
+### Turnos alternativos
+
+Un mismo parcial puede tener hasta cuatro turnos, con ventanas que no se superponen y la misma cantidad de preguntas por turno. El primer turno conserva los campos originales; los adicionales se guardan en el JSON privado `course_exams.sessions`. Cada versión debe tener enunciados diferentes. El editor permite alternar entre turnos para cambiar su horario y sus preguntas; el estado Borrador/Publicado/Archivado se aplica al parcial completo.
+
+Los alumnos ven todos los horarios y comienzan la versión que esté activa. Entre turnos el parcial vuelve a figurar como Programado. Se mantiene el mismo ID de parcial y el índice único `(exam, student)`: comenzar en un horario consume el único intento disponible, incluso si se entrega antes o se abandona. En otro horario se recupera ese intento original, sin habilitar una segunda oportunidad. Las notas de todos los turnos aparecen en el mismo listado docente.
+
+El snapshot guarda únicamente la versión elegida y su fecha de cierre, que determina la entrega automática y la liberación de su devolución. Los bancos de los otros turnos no se incluyen en el intento ni en los datos enviados a las pantallas de alumnos. La edición de todos los turnos queda bloqueada desde el primer inicio. Los parciales y snapshots anteriores conservan su comportamiento.
+
+El primer parcial de Fundamentos de Inteligencia Artificial (`fiafirstexam001`) se preparó en Borrador con dos turnos para el 28 de octubre de 2026: 08:00–09:00 y 20:00–21:00 de Buenos Aires. Cada versión contiene veinte preguntas de dificultad fácil a media, distribuidas 6/6/8 entre las unidades 1/2/3. Los enunciados y las claves se conservan exclusivamente en la base y en archivos privados ignorados por Git.
+
 Las cuatro colecciones `course_exams`, `course_exam_attempts`, `course_exam_answers` y `course_exam_results` bloquean lecturas y escrituras directas de usuarios. Las acciones del servidor comprueban sesión, curso habilitado, alcance docente o matrícula y propiedad del intento. Sólo el servicio del servidor tiene acceso a snapshots y claves.
 
 Los cambios de respuesta son eventos inmutables. Se reconstruye el borrador usando la última selección persistida antes del corte; los eventos tardíos quedan fuera del resultado. Un índice único `(attempt, mutationId)` evita duplicar un reintento de guardado. Un índice único `(exam, student)` impide abrir intentos adicionales incluso con solicitudes concurrentes. Un resultado único por intento hace que cierres y envíos repetidos devuelvan la misma entrega. Las relaciones conservan el historial y bloquean el borrado accidental de padres con datos vinculados.

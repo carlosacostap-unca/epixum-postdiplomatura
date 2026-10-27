@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { courseExamSchema, examAvailability, examDateInput, examLocalDate, examScore, examSelections, visibleExamResult, type ExamAnswerEvent } from './course-exams';
+import { activeExamSession, courseExamSchema, examAvailability, examDateInput, examLocalDate, examScore, examSelections, examSummary, visibleExamResult, type ExamAnswerEvent } from './course-exams';
 const question = { id: 'q1', prompt: 'Pregunta', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOptionId: 'b', explanation: '' };
 const draft = { title: 'Parcial', description: '', status: 'draft', opensAt: '', closesAt: '', questions: [question] };
 describe('parciales programados', () => {
@@ -37,5 +37,31 @@ describe('parciales programados', () => {
     expect(after).toMatchObject({ feedbackAvailable: true, correct: 1, total: 2, review: [{ selectedOptionId: 'b', correct: true }, { selectedOptionId: null, correct: false }] });
     expect(JSON.stringify(after)).toContain('Explicación reservada');
     expect(visibleExamResult(result, attempt, 'manage', Date.parse(deadline) - 1).feedbackAvailable).toBe(true);
+  });
+});
+
+describe('turnos de un mismo parcial', () => {
+  const exam = { ...draft, id: 'exam', course: 'course', status: 'published' as const, opensAt: '2026-10-28T11:00:00Z', closesAt: '2026-10-28T12:00:00Z', sessions: [{ id: 'night', label: 'Turno noche', opensAt: '2026-10-28T23:00:00Z', closesAt: '2026-10-29T00:00:00Z', questions: [{ ...question, id: 'night-q', prompt: 'Pregunta nocturna privada' }] }] };
+  it('abre cada versión en su ventana y permanece programado entre turnos', () => {
+    expect(activeExamSession(exam, Date.parse(exam.opensAt))?.questions[0].id).toBe('q1');
+    expect(activeExamSession(exam, Date.parse(exam.closesAt))).toBeNull();
+    expect(examAvailability(exam, Date.parse(exam.closesAt))).toBe('Programado');
+    expect(activeExamSession(exam, Date.parse(exam.sessions[0].opensAt))?.questions[0].id).toBe('night-q');
+    expect(examAvailability(exam, Date.parse(exam.sessions[0].closesAt))).toBe('Cerrado');
+    expect(examAvailability({ ...exam, status: 'draft' }, Date.parse(exam.sessions[0].opensAt))).toBe('Borrador');
+  });
+  it('rechaza turnos solapados, incompletos, repetidos o con distinta cantidad de preguntas', () => {
+    const input = { ...draft, status: exam.status, opensAt: exam.opensAt, closesAt: exam.closesAt, sessions: exam.sessions };
+    expect(courseExamSchema.safeParse(input).success).toBe(true);
+    expect(courseExamSchema.safeParse({ ...input, sessions: [{ ...exam.sessions[0], opensAt: '2026-10-28T11:30:00Z' }] }).success).toBe(false);
+    expect(courseExamSchema.safeParse({ ...input, sessions: [{ ...exam.sessions[0], closesAt: '' }] }).success).toBe(false);
+    expect(courseExamSchema.safeParse({ ...input, sessions: [{ ...exam.sessions[0], questions: [] }] }).success).toBe(false);
+    expect(courseExamSchema.safeParse({ ...input, sessions: [{ ...exam.sessions[0], questions: [question] }] }).success).toBe(false);
+    expect(courseExamSchema.safeParse({ ...input, sessions: [exam.sessions[0], exam.sessions[0]] }).success).toBe(false);
+  });
+  it('expone los horarios sin serializar preguntas ni claves de ningún turno', () => {
+    const summary = examSummary(exam);
+    expect(summary.sessions).toEqual([{ id: 'night', label: 'Turno noche', opensAt: exam.sessions[0].opensAt, closesAt: exam.sessions[0].closesAt }]);
+    expect(JSON.stringify(summary)).not.toMatch(/questions|correctOptionId|explanation|Pregunta nocturna/);
   });
 });

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import type PocketBase from 'pocketbase';
 import { randomInt } from 'node:crypto';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { beginCourseExam, readCourseExamAttempt } from './course-exam-service';
 import { examScore, visibleExamResult, type CourseExam, type ExamAttempt } from './course-exams';
 
@@ -23,6 +23,39 @@ function clients(student: string) {
 beforeEach(() => {
   vi.clearAllMocks(); attempts.clear(); random.mockReturnValue(0);
   exam = { id: 'exam', course: 'course', title: 'Parcial', description: '', status: 'published', opensAt: new Date(Date.now() - 60000).toISOString(), closesAt: new Date(Date.now() + 3600000).toISOString(), questions: Array.from({ length: 20 }, (_, i) => ({ id: `q${i}`, prompt: `Pregunta ${i}`, options: ['a', 'b', 'c', 'd'].map(id => ({ id, label: `Opción ${id}` })), correctOptionId: 'b', explanation: `Explicación ${i}` })) };
+});
+afterEach(() => { vi.restoreAllMocks(); });
+it('elige la versión vigente, guarda sólo sus preguntas y conserva un intento total entre turnos', async () => {
+  const now = Date.now();
+  exam.opensAt = new Date(now - 1000).toISOString(); exam.closesAt = new Date(now + 1000).toISOString();
+  exam.sessions = [{ id: 'night', label: 'Turno noche', opensAt: new Date(now + 2000).toISOString(), closesAt: new Date(now + 3600000).toISOString(), questions: exam.questions.map(q => ({ ...q, id: `night-${q.id}`, prompt: `Noche ${q.prompt}` })) }];
+  const ana = clients('ana');
+  const firstId = await beginCourseExam(ana.pb, ana.service, 'course', 'exam', true, capture);
+  expect(attempts.get(firstId)!.snapshot.sessions).toBeUndefined();
+  expect(attempts.get(firstId)!.deadline).toBe(exam.closesAt);
+  vi.spyOn(Date, 'now').mockReturnValue(now + 1500);
+  const bruno = clients('bruno');
+  await expect(beginCourseExam(bruno.pb, bruno.service, 'course', 'exam', true, capture)).rejects.toThrow('horario');
+  vi.spyOn(Date, 'now').mockReturnValue(now + 2000);
+  expect(await beginCourseExam(ana.pb, ana.service, 'course', 'exam', true, capture)).toBe(firstId);
+  const secondId = await beginCourseExam(bruno.pb, bruno.service, 'course', 'exam', true, capture);
+  const second = attempts.get(secondId)!;
+  expect(second.snapshot.questions.every(q => q.id.startsWith('night-'))).toBe(true);
+  expect(second.snapshot.sessions).toBeUndefined();
+  expect(second.deadline).toBe(exam.sessions[0].closesAt);
+  expect(second.title).toContain('Turno noche');
+  expect(capture).toHaveBeenCalledTimes(2);
+  expect(attempts.size).toBe(2);
+});
+it('cancela el inicio y retira la foto si el turno cambia durante la captura', async () => {
+  const now = Date.now();
+  exam.closesAt = new Date(now + 1000).toISOString();
+  exam.sessions = [{ id: 'night', label: 'Noche', opensAt: new Date(now + 1000).toISOString(), closesAt: new Date(now + 3600000).toISOString(), questions: exam.questions.map(q => ({ ...q, id: `night-${q.id}`, prompt: `Noche ${q.prompt}` })) }];
+  const rollback = vi.fn();
+  const photo = async () => { vi.spyOn(Date, 'now').mockReturnValue(now + 1000); return { photoKey: 'temp', rollback }; };
+  const { pb, service } = clients('ana');
+  await expect(beginCourseExam(pb, service, 'course', 'exam', true, photo)).rejects.toThrow('cambiaron');
+  expect(rollback).toHaveBeenCalledOnce(); expect(attempts.size).toBe(0);
 });
 it('genera presentaciones por alumno sin alterar el parcial ni perder preguntas, opciones o claves', async () => {
   const original = structuredClone(exam);

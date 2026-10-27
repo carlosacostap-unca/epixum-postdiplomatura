@@ -28,6 +28,7 @@ test('protege claves y snapshots y garantiza intento, guardado y resultado únic
     assert.ok(collection.fields.filter(f => f.type === 'relation').every(f => f.cascadeDelete === false));
   }
   assert.ok(collections.get('course_exam_attempts').indexes.some(i => i.includes('UNIQUE') && i.includes('(exam, student)')));
+  assert.ok(collections.get('course_exams').fields.some(f => f.name === 'sessions' && f.type === 'json' && f.maxSize === 200000));
   assert.ok(collections.get('course_exam_attempts').fields.some(f => f.name === 'photoKey' && f.hidden === true && !f.required));
   assert.ok(collections.get('course_exam_answers').indexes.some(i => i.includes('UNIQUE') && i.includes('(attempt, mutationId)')));
   assert.ok(collections.get('course_exam_results').indexes.some(i => i.includes('UNIQUE') && i.includes('(attempt)')));

@@ -38,3 +38,10 @@ it('mantiene el seguimiento de notas del equipo docente antes del cierre', async
   const { results } = await getCourseExams('course', 'manage');
   expect(results.every(r => r.feedbackAvailable)).toBe(true);
 });
+it('no filtra los bancos privados de los turnos a la lista del alumno', async () => {
+  mocks.lists.course_exams = [{ id: 'exam', title: 'Parcial', status: 'published', questions: [{ prompt: 'Privada mañana', correctOptionId: 'a' }], sessions: [{ id: 'night', label: 'Noche', opensAt: '2026-10-28T23:00:00Z', closesAt: '2026-10-29T00:00:00Z', questions: [{ prompt: 'Privada noche', correctOptionId: 'b', explanation: 'Clave privada' }] }] }];
+  const data = await getCourseExams('course', 'student');
+  expect(data.exams[0].sessions).toHaveLength(1);
+  expect(JSON.stringify(data.exams)).not.toMatch(/Privada|privada|correctOptionId|questions|explanation/);
+  expect(mocks.queries.course_exams.filter).toContain('status = "published"');
+});

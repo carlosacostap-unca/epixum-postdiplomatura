@@ -3,20 +3,21 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, CardContent } from '@/components/ui';
 import { beginExam, examCamera, readExam, saveExamAnswer, sendExam } from '@/lib/actions-course-exams';
-import { examAvailability, examDateLabel, type ExamView } from '@/lib/course-exams';
+import { examAvailability, examDateLabel, examSchedule, type CourseExamSummary, type ExamView } from '@/lib/course-exams';
 import { useWebcam } from '@/components/preparation/useWebcam';
 import { WebcamPanel } from '@/components/preparation/WebcamPanel';
 import { CourseExamFeedback } from './CourseExamFeedback';
 import { COURSE_EXAM_APPROVAL_RULES } from '@/lib/course-exam-grading';
 
-export function CourseExamStart({ courseId, exam }: { courseId: string; exam: { id: string; title: string; description: string; status: 'draft' | 'published' | 'archived'; opensAt: string; closesAt: string } }) {
+export function CourseExamStart({ courseId, exam }: { courseId: string; exam: Omit<CourseExamSummary, 'course'> }) {
   const router = useRouter();
   const camera = useWebcam();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [accepted, setAccepted] = useState(false);
   const photo = useRef<Blob | null>(null);
-  return <div className="space-y-5"><h2 className="text-2xl font-bold">{exam.title}</h2><p className="whitespace-pre-wrap">{exam.description}</p><p>{examAvailability(exam)} · Desde {examDateLabel(exam.opensAt)} hasta {examDateLabel(exam.closesAt)} (Argentina)</p>
+  return <div className="space-y-5"><h2 className="text-2xl font-bold">{exam.title}</h2><p className="whitespace-pre-wrap">{exam.description}</p><p>{examAvailability(exam)}</p>{examSchedule(exam).map(s => <p key={s.id}>{exam.sessions?.length ? `${s.label} · ` : ''}Desde {examDateLabel(s.opensAt)} hasta {examDateLabel(s.closesAt)} (Argentina)</p>)}
+    {exam.sessions?.length ? <p>Al comenzar, rendís la versión del turno que esté activo. Tenés un único intento entre todos los turnos; no podés volver a rendir en otro horario.</p> : null}
     <p>Un intento por alumno. Podés navegar sin responder y cambiar tus respuestas; cada selección se guarda en tu cuenta. El plazo sigue corriendo aunque salgas. Al cierre se entrega lo guardado. La nota y la devolución completa se habilitan después del cierre, aunque entregues antes.</p>
     <p>El orden de las preguntas y sus opciones se mezcla al iniciar el intento y se conserva cuando lo retomás.</p>
     <p>{COURSE_EXAM_APPROVAL_RULES}</p>
