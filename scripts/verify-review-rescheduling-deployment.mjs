@@ -65,7 +65,7 @@ if (mode === 'begin') {
         const url = new URL(src, origin); if (url.origin !== origin.origin || !url.pathname.startsWith('/_next/')) continue;
         const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
         const source = await response.text();
-        action = source.match(/"([a-f0-9]{40})"[^"\n]{0,200}"rescheduleReviewBlockAction"/)?.[1];
+        action = source.match(/"([a-f0-9]{40,64})"[^"\n]{0,200}"rescheduleReviewBlockAction"/)?.[1];
         if (action) { assert.ok(source.includes('Confirmar cambio de fecha')); break; }
       }
       assert.ok(action, 'No se encontró la acción publicada de cambio de fecha.');

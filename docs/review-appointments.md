@@ -83,6 +83,8 @@ La integración utiliza cuentas y un curso temporales y limpia los registros al 
 
 Para verificar la reprogramación después de publicar, `node scripts/verify-review-rescheduling-deployment.mjs begin https://epixum.com <id-franja-a-preservar>` prepara otro curso y una reserva sintéticos, y toma una huella de solo lectura de la franja indicada. `check` verifica la página publicada, llama a la acción real con la cuenta docente temporal y comprueba que la reserva y sus turnos se conservan, la agenda estudiantil refleja la nueva fecha y la franja real permanece intacta. `cleanup` elimina los datos y credenciales del ensayo. El ensayo se guarda en `tmp/reviews/`, ignorado por Git.
 
+Verificado en `https://epixum.com` el 28/10/2026: reglas aplicadas con respaldo, 64 pruebas locales, dos pruebas de integración con PocketBase, lint y compilación correctos. La acción publicada reprogramó únicamente una reserva sintética, conservando sus turnos y reflejando la nueva fecha en la agenda estudiantil. El ensayo se eliminó y se confirmó que la fecha y los turnos de la franja real permanecieron intactos.
+
 ## Reversión
 
 Deshabilitar revisiones en los cursos y revertir el código de la función, conservando las colecciones y su historial. No eliminar colecciones para revertir una publicación. La configuración anterior de lotes está en el respaldo, pero debe restaurarse sólo si ninguna otra función depende de ella.
