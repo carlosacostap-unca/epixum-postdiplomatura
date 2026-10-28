@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ReviewAgenda } from './ReviewAgenda';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
-const mocks = vi.hoisted(() => ({ reserve: vi.fn().mockResolvedValue({ success: true }) }));
-vi.mock('@/lib/actions-review-appointments', () => ({ reserveReviewAction: mocks.reserve }));
+const mocks = vi.hoisted(() => ({ reserve: vi.fn().mockResolvedValue({ success: true }), reschedule: vi.fn().mockResolvedValue({ success: true }) }));
+vi.mock('@/lib/actions-review-appointments', () => ({ reserveReviewAction: mocks.reserve, rescheduleReviewBlockAction: mocks.reschedule }));
 
 const data = {
   course: { id: 'course', teachers: ['teacher'] },
@@ -16,7 +16,74 @@ const data = {
 } as unknown as Parameters<typeof ReviewAgenda>[0]['data'];
 
 describe('resultado y notas privadas del turno', () => {
-  beforeEach(() => mocks.reserve.mockReset().mockResolvedValue({ success: true }));
+  beforeEach(() => { mocks.reserve.mockReset().mockResolvedValue({ success: true }); mocks.reschedule.mockReset().mockResolvedValue({ success: true }); });
+  const futureBlock = { id: 'block', review: 'review', active: true, teacher: 'teacher00000001', date: '2026-10-29', start: '15:00', end: '17:00', startsAt: '2026-10-29T18:00:00Z', endsAt: '2026-10-29T20:00:00Z', duration: 15, breakEvery: 0, breakMinutes: 0, availableSlots: 7 };
+  function editableAgenda(reserved: boolean) {
+    return { ...data, course: { ...data.course, teachers: [futureBlock.teacher] }, teachers: [{ id: futureBlock.teacher, name: 'Docente' }], blocks: [futureBlock],
+      slots: [{ id: 'slot', block: futureBlock.id, teacher: futureBlock.teacher, active: true, occupied: reserved, startsAt: futureBlock.startsAt, endsAt: '2026-10-29T18:15:00Z' }],
+      bookings: reserved ? [{ ...data.bookings[0], status: 'reserved' }] : [],
+    } as typeof data;
+  }
+  it('abre la edición completa en un diálogo con los datos de la franja y permite cerrar', () => {
+    render(<ReviewAgenda data={editableAgenda(false)} mode="teacher" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar franja' });
+    expect(within(dialog).getByLabelText('Fecha')).toHaveValue('2026-10-29');
+    expect(within(dialog).getByLabelText('Hora de inicio')).toHaveValue('15:00');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cerrar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+  it('permite cambiar jueves por viernes con reservas, únicamente después de previsualizar y confirmar', async () => {
+    render(<ReviewAgenda data={editableAgenda(true)} mode="teacher" />);
+    expect(screen.getByRole('button', { name: 'Editar' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Retirar' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar franja' });
+    expect(within(dialog).getByText(/Esta franja tiene reservas pendientes/)).toBeInTheDocument();
+    expect(within(dialog).queryByLabelText('Hora de inicio')).not.toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText('Nueva fecha'), { target: { value: '2026-10-30' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Previsualizar cambio de fecha' }));
+    expect(within(dialog).getByText(/viernes, 30\/10\/2026, 15:00–17:00/)).toBeInTheDocument();
+    expect(mocks.reschedule).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar cambio de fecha' }));
+    expect(mocks.reschedule).toHaveBeenCalledWith('course', 'review', '1', 'block', '2026-10-30');
+    await screen.findByText('La franja tiene reservas pendientes. Desde Editar podés cambiar la fecha conservando los turnos; no se puede retirar ni cambiar los horarios.');
+    await vi.waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+  it('descarta la confirmación anterior si se cambia la fecha y muestra errores sin cerrar', async () => {
+    mocks.reschedule.mockResolvedValue({ success: false, error: 'Este docente ya tiene una franja superpuesta.' });
+    render(<ReviewAgenda data={editableAgenda(true)} mode="teacher" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar franja' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Previsualizar cambio de fecha' }));
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Elegí una fecha diferente');
+    fireEvent.change(within(dialog).getByLabelText('Nueva fecha'), { target: { value: '2026-10-30' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Previsualizar cambio de fecha' }));
+    fireEvent.change(within(dialog).getByLabelText('Nueva fecha'), { target: { value: '2026-10-31' } });
+    expect(within(dialog).queryByRole('button', { name: 'Confirmar cambio de fecha' })).not.toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Previsualizar cambio de fecha' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Confirmar cambio de fecha' }));
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('superpuesta');
+    expect(dialog).toBeInTheDocument();
+  });
+  it('abre también la creación en un diálogo sin reutilizar los datos editados', () => {
+    render(<ReviewAgenda data={editableAgenda(false)} mode="teacher" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cerrar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar franja' }));
+    expect(within(screen.getByRole('dialog', { name: 'Nueva franja docente' })).getByLabelText('Fecha')).toHaveValue('');
+  });
+  it('actualiza los datos del editor y descarta una previsualización al cambiar la revisión del servidor', () => {
+    const agenda = editableAgenda(true);
+    const { rerender } = render(<ReviewAgenda data={agenda} mode="teacher" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const dialog = screen.getByRole('dialog', { name: 'Editar franja' });
+    fireEvent.change(within(dialog).getByLabelText('Nueva fecha'), { target: { value: '2026-10-30' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Previsualizar cambio de fecha' }));
+    rerender(<ReviewAgenda data={{ ...agenda, review: { ...agenda.review, revision: '2' }, blocks: agenda.blocks.map(block => ({ ...block, date: '2026-10-31', startsAt: '2026-10-31T18:00:00Z', endsAt: '2026-10-31T20:00:00Z' })) }} mode="teacher" />);
+    expect(within(dialog).getByLabelText('Nueva fecha')).toHaveValue('2026-10-31');
+    expect(within(dialog).queryByRole('button', { name: 'Confirmar cambio de fecha' })).not.toBeInTheDocument();
+  });
   it('muestra resultado, devolución y notas a los docentes', () => {
     render(<ReviewAgenda data={data} mode="teacher" />);
     expect(screen.getByText('Aprobado')).toBeInTheDocument();

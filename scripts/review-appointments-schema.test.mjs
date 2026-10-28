@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyReviewAppointmentsSchema as applySchema, applyReviewBookingMessageSchema, reviewRules, reviewBookingNotesRules, reviewBlockMeetingRules, orderedReviewBookingRule } from './review-appointments-schema.mjs';
-const applyReviewAppointmentsSchema = pb => applySchema(pb, 'a'.repeat(64));
+import { applyReviewAppointmentsSchema as applySchema, applyReviewBookingMessageSchema, applyReviewReschedulingSchema, reviewReschedulingRules, reviewRules, reviewBookingNotesRules, reviewBlockMeetingRules, orderedReviewBookingRule } from './review-appointments-schema.mjs';
+const applyReviewAppointmentsSchema = pb => applySchema(pb, 'a'.repeat(64), 'b'.repeat(64));
 
 function fixture() {
   const state = new Map([
@@ -34,6 +34,25 @@ test('conserva un límite de lotes superior ya configurado', async () => {
   await pb.settings.update({ batch: { enabled: true, maxRequests: 300, timeout: 10 } });
   await applyReviewAppointmentsSchema(pb);
   assert.equal((await pb.settings.getAll()).batch.maxRequests, 300);
+});
+
+test('la reprogramación exige docente y capacidad del servidor sin habilitar cambios de identidad', async () => {
+  const { pb, state } = fixture();
+  await applyReviewAppointmentsSchema(pb);
+  const rules = reviewReschedulingRules('b'.repeat(64));
+  assert.match(rules.slots, /@request.body.startsAt >= block.startsAt/);
+  assert.match(rules.slots, /@request.body.endsAt <= block.endsAt/);
+  for (const name of ['blocks', 'slots']) {
+    assert.equal(state.get(`review_${name}`).updateRule, rules[name]);
+    assert.match(rules[name], /review.course.teachers.id \?= @request.auth.id/);
+    assert.match(rules[name], /@request.body.rescheduleKey = "b{64}"/);
+    assert.match(rules[name], /@request.body.teacher:changed = false/);
+    assert.match(rules[name], /@request.body.review:changed = false/);
+  }
+  const snapshot = structuredClone(state);
+  await applyReviewReschedulingSchema(pb, 'b'.repeat(64));
+  assert.deepEqual(state, snapshot);
+  assert.throws(() => reviewReschedulingRules('invalid'));
 });
 
 test('cada franja tiene una sala y solamente la ven docentes o alumnos con reserva vigente', async () => {

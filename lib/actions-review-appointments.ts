@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { ZodError } from 'zod';
 import { createServerClient } from './pocketbase-server';
 import { ReviewError } from './review-appointments';
-import { createReview, updateReview, saveReviewBlock, saveReviewMeeting, removeReviewBlock, reserveReviewBlock, cancelReviewBooking, evaluateReviewBooking } from './review-appointments-service';
+import { createReview, updateReview, saveReviewBlock, saveReviewMeeting, rescheduleReviewBlock, removeReviewBlock, reserveReviewBlock, cancelReviewBooking, evaluateReviewBooking } from './review-appointments-service';
 
 async function execute(course: string, operation: (pb: Awaited<ReturnType<typeof createServerClient>>) => Promise<string | void>) {
   try {
@@ -31,6 +31,9 @@ export async function removeReviewBlockAction(course: string, review: string, re
 }
 export async function saveReviewMeetingAction(course: string, review: string, revision: string, block: string, url: string) {
   return execute(course, pb => saveReviewMeeting(pb, course, review, revision, block, url));
+}
+export async function rescheduleReviewBlockAction(course: string, review: string, revision: string, block: string, date: string) {
+  return execute(course, pb => rescheduleReviewBlock(pb, course, review, revision, block, date));
 }
 export async function reserveReviewAction(course: string, review: string, block: string, acknowledgedMessage = '') {
   return execute(course, pb => reserveReviewBlock(pb, course, review, block, acknowledgedMessage));

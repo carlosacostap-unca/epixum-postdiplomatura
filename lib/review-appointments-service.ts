@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import type PocketBase from 'pocketbase';
 import type { Course } from '@/types';
 import { createServiceClient } from './pocketbase-service';
-import { reviewAllocationKey } from './review-allocation-key.mjs';
+import { reviewAllocationKey, reviewRescheduleKey } from './review-allocation-key.mjs';
 import { isPublicationVisible } from './publication';
 import { generateReviewSlots, ReviewError, reviewSchema, reviewBlockSchema, reviewEvaluationSchema, reviewMeetingUrlSchema, type Review, type ReviewBlock, type ReviewSlot, type ReviewBooking, type ReviewBlockMeeting } from './review-appointments';
 
@@ -107,6 +107,33 @@ export async function saveReviewMeeting(pb: PocketBase, courseId: string, review
   if (block.review !== review.id || !block.active) throw new ReviewError('La franja no está disponible en esta revisión.');
   const batch = guard(pb, review);
   await queueReviewMeeting(pb, batch, block.id, meetUrl);
+  await commit(batch);
+}
+
+export async function rescheduleReviewBlock(pb: PocketBase, courseId: string, reviewId: string, expected: string, blockId: string, date: string) {
+  const { course, review } = await scopedReview(pb, courseId, reviewId, 'teacher');
+  checkVersion(review, expected);
+  const block = await pb.collection('review_blocks').getOne<ReviewBlock>(blockId);
+  if (block.review !== review.id || !block.active) throw new ReviewError('La franja no está disponible en esta revisión.');
+  if (Date.parse(block.startsAt) <= Date.now()) throw new ReviewError('No se puede modificar una franja que ya comenzó.');
+  if (!course.teachers?.includes(block.teacher)) throw new ReviewError('El docente de la franja ya no está asignado al curso.');
+  const plan = generateReviewSlots({ ...block, date });
+  if (Date.parse(plan.startsAt) <= Date.now()) throw new ReviewError('La franja debe comenzar en el futuro.');
+  if (date === block.date) throw new ReviewError('Elegí una fecha diferente de la actual.');
+  const overlap = await pb.collection('review_blocks').getList(1, 1, { filter: pb.filter('review = {:review} && active = true && id != {:block} && teacher = {:teacher} && startsAt < {:end} && endsAt > {:start}', { review: review.id, block: block.id, teacher: block.teacher, start: plan.startsAt, end: plan.endsAt }), fields: 'id' });
+  if (overlap.totalItems) throw new ReviewError('Este docente ya tiene una franja superpuesta en esta revisión.');
+  const slots = await pb.collection('review_slots').getFullList<ReviewSlot>({ filter: pb.filter('review = {:review} && block = {:block} && active = true', { review: review.id, block: block.id }), sort: 'startsAt,id' });
+  const original = generateReviewSlots(block);
+  if (slots.length !== original.slots.length || slots.some((slot, index) => slot.teacher !== block.teacher || Date.parse(slot.startsAt) !== Date.parse(original.slots[index].startsAt) || Date.parse(slot.endsAt) !== Date.parse(original.slots[index].endsAt))) throw new ReviewError('Los turnos de esta franja cambiaron. Actualizá la página antes de reprogramar.');
+  const evaluated = await pb.collection('review_bookings').getList(1, 1, { filter: pb.filter('review = {:review} && slot.block = {:block} && (status = "passed" || status = "not_passed")', { review: review.id, block: block.id }), fields: 'id' });
+  if (evaluated.totalItems) throw new ReviewError('No se puede reprogramar una franja con evaluaciones registradas.');
+  // Keep the authenticated revision guard in the same transaction as every slot.
+  // The server capability permits this narrow operation without exposing it to clients.
+  const rescheduleKey = reviewRescheduleKey();
+  const batch = guard(pb, review);
+  batch.collection('review_blocks').update(block.id, { date, startsAt: plan.startsAt, endsAt: plan.endsAt, rescheduleKey });
+  // Rules compare request dates with PocketBase's canonical stored date format.
+  slots.forEach((slot, index) => batch.collection('review_slots').update(slot.id, { startsAt: plan.slots[index].startsAt.replace('T', ' '), endsAt: plan.slots[index].endsAt.replace('T', ' '), rescheduleKey }));
   await commit(batch);
 }
 

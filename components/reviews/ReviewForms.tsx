@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ZodError } from 'zod';
 import { generateReviewSlots, reviewDate, reviewPublicationDate, type Review, type ReviewBlock, type ReviewBlockInput } from '@/lib/review-appointments';
 import { isPublicationVisible } from '@/lib/publication';
-import { saveReviewAction, saveReviewBlockAction, saveReviewMeetingAction, evaluateReviewAction } from '@/lib/actions-review-appointments';
+import { saveReviewAction, saveReviewBlockAction, saveReviewMeetingAction, rescheduleReviewBlockAction, evaluateReviewAction } from '@/lib/actions-review-appointments';
 
 export const reviewButton = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-5 py-2 text-sm font-bold text-[var(--color-on-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 export const reviewSecondary = 'inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--color-outline)] px-4 py-2 text-sm font-semibold hover:bg-[var(--color-surface-container-high)] disabled:opacity-50';
@@ -117,6 +117,33 @@ export function ReviewMeetingEditor({ courseId, review, block }: { courseId: str
     <p className="text-xs text-[var(--color-text-muted)]">Podés actualizarlo aunque haya reservas. Los alumnos con turno reservado verán el enlace actualizado. Dejalo vacío para quitarlo.</p>
     <button className={reviewButton} type="submit">{mutation.pending ? 'Guardando…' : 'Guardar enlace de la sala'}</button>
   </fieldset>{mutation.feedback}</form>;
+}
+
+export function ReviewBlockRescheduler({ courseId, review, block, onDone }: { courseId: string; review: Review; block: ReviewBlock; onDone: () => void }) {
+  const mutation = useReviewMutation();
+  const [preview, setPreview] = useState<{ date: string; startsAt: string; endsAt: string } | null>(null);
+  const [error, setError] = useState('');
+  return <form className="space-y-5 pb-4" onChange={() => { setPreview(null); setError(''); }} onSubmit={event => {
+    event.preventDefault();
+    const date = String(new FormData(event.currentTarget).get('date'));
+    try {
+      if (date === block.date) throw new Error('Elegí una fecha diferente de la actual.');
+      const plan = generateReviewSlots({ ...block, date });
+      setPreview({ date, startsAt: plan.startsAt, endsAt: plan.endsAt }); setError('');
+    } catch (error) { setError(error instanceof Error ? error.message : 'Revisá la fecha.'); }
+  }}>
+    <p className="text-sm">Esta franja tiene reservas pendientes. Podés cambiar la fecha conservando los alumnos, sus horarios asignados, la duración de los turnos y los descansos.</p>
+    <p className="text-sm">Fecha actual: {reviewDate(block.startsAt)}–{reviewDate(block.endsAt, true)}. Horario de Argentina (UTC−3).</p>
+    <fieldset disabled={mutation.pending} className="space-y-4">
+      <Field label="Nueva fecha"><input className={reviewInput} name="date" type="date" required defaultValue={block.date} /></Field>
+      <div className="flex flex-wrap gap-3"><button className={reviewSecondary} type="submit">Previsualizar cambio de fecha</button><button className={reviewSecondary} type="button" onClick={onDone}>Cerrar</button></div>
+      {preview && <div className="space-y-4 rounded-xl border border-[var(--color-primary)] p-4">
+        <p className="text-sm">Nueva franja: {reviewDate(preview.startsAt)}–{reviewDate(preview.endsAt, true)}. Las reservas se conservan y los alumnos verán la nueva fecha en su agenda.</p>
+        <button className={reviewButton} type="button" onClick={() => mutation.run(() => rescheduleReviewBlockAction(courseId, review.id, review.revision, block.id, preview.date), onDone)}>{mutation.pending ? 'Guardando…' : 'Confirmar cambio de fecha'}</button>
+      </div>}
+    </fieldset>
+    {error && <p role="alert" className="text-sm text-[var(--color-error)]">{error}</p>}{mutation.feedback}
+  </form>;
 }
 
 export function ReviewEvaluationForm({ courseId, reviewId, bookingId }: { courseId: string; reviewId: string; bookingId: string }) {

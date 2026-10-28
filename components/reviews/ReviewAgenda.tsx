@@ -8,7 +8,7 @@ import { PublicationBadge } from '@/components/course/PublicationBadge';
 import { bookingLabels, reviewDate, type ReviewBlock } from '@/lib/review-appointments';
 import type { getReviewAgenda } from '@/lib/review-appointments-data';
 import { cancelReviewAction, removeReviewBlockAction, reserveReviewAction } from '@/lib/actions-review-appointments';
-import { ReviewBlockEditor, ReviewEditor, ReviewMeetingEditor, ReviewEvaluationForm, reviewButton, reviewSecondary, reviewInput, reviewPanel, useReviewMutation } from './ReviewForms';
+import { ReviewBlockEditor, ReviewBlockRescheduler, ReviewEditor, ReviewMeetingEditor, ReviewEvaluationForm, reviewButton, reviewSecondary, reviewInput, reviewPanel, useReviewMutation } from './ReviewForms';
 
 type Data = Awaited<ReturnType<typeof getReviewAgenda>>;
 export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'student' }) {
@@ -26,6 +26,8 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
   const waiting = bookings.filter(b => b.status === 'reserved' && slots.some(s => s.id === b.slot && Date.parse(s.endsAt) <= now));
   const canReserve = !passed && !pending && review.open;
   const base = `/${teacherMode ? 'docentes' : 'estudiantes'}/cursos/${course.id}/revisiones`;
+  const editingBlock = editing && editing !== 'new' ? blocks.find(block => block.id === editing.id) ?? editing : undefined;
+  const editingHasPending = editingBlock && bookings.some(booking => booking.status === 'reserved' && slots.some(slot => slot.block === editingBlock.id && slot.id === booking.slot));
   return <div className="space-y-8">
     <div className="flex flex-wrap items-center justify-between gap-3"><Link href={base} className="text-sm font-semibold text-[var(--color-primary)]">← Todas las revisiones</Link><button className={reviewSecondary} onClick={() => router.refresh()}>Actualizar disponibilidad</button></div>
     {teacherMode && <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-semibold">Publicación de la revisión</span><PublicationBadge status={review.publicationStatus || undefined} publishAt={review.publishAt || undefined} /></div>}
@@ -39,7 +41,11 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
     {!confirmation && reservation.feedback}
     <section className="space-y-4" aria-labelledby="review-schedule-title">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 id="review-schedule-title" className="text-2xl font-bold">{teacherMode ? 'Franjas y turnos' : 'Elegí una franja'}</h2><p className="mt-1 text-sm text-[var(--color-text-muted)]">Horarios de Argentina (UTC−3).</p></div>{teacherMode && <button className={reviewButton} onClick={() => setEditing('new')}>Agregar franja</button>}</div>
-      {editing && <div className={reviewPanel}><h3 className="mb-5 text-lg font-bold">{editing === 'new' ? 'Nueva franja docente' : 'Editar franja'}</h3><ReviewBlockEditor key={editing === 'new' ? 'new' : editing.id} courseId={course.id} review={review} teachers={teachers} block={editing === 'new' ? undefined : editing} onDone={() => setEditing(null)} /></div>}
+      {teacherMode && <Dialog open={Boolean(editing)} onOpenChange={open => { if (!open) setEditing(null); }} title={editing === 'new' ? 'Nueva franja docente' : 'Editar franja'} className="sm:w-[min(calc(100%_-_2rem),48rem)]">
+        {editing && (editingBlock && editingHasPending
+          ? <ReviewBlockRescheduler key={`${editingBlock.id}-${review.revision}`} courseId={course.id} review={review} block={editingBlock} onDone={() => setEditing(null)} />
+          : <ReviewBlockEditor key={`${editingBlock?.id ?? 'new'}-${review.revision}`} courseId={course.id} review={review} teachers={teachers} block={editingBlock} onDone={() => setEditing(null)} />)}
+      </Dialog>}
       {teacherMode && teachers.length > 1 && <label className="block max-w-sm text-sm font-semibold">Filtrar por docente<select className={reviewInput} value={teacherFilter} onChange={e => setTeacherFilter(e.target.value)}><option value="">Todos los docentes</option>{teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
       {!blocks.some(b => (!teacherFilter || b.teacher === teacherFilter) && (teacherMode || Date.parse(b.endsAt) > now)) && <div className={`${reviewPanel} text-sm text-[var(--color-text-muted)]`}>{teacherMode ? 'Todavía no hay franjas. Agregá una para ofrecer turnos a los alumnos.' : 'Todavía no hay horarios próximos para esta selección. Volvé a consultar cuando el docente agregue disponibilidad.'}</div>}
       <div className="space-y-4">{blocks.filter(b => (!teacherFilter || b.teacher === teacherFilter) && (teacherMode || Date.parse(b.endsAt) > now)).map(block => {
@@ -47,9 +53,9 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
         const hasPending = bookings.some(b => b.status === 'reserved' && blockSlots.some(s => s.id === b.slot));
         return <article className={reviewPanel} key={block.id}>
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-bold">{teacherMode ? names[block.teacher] || 'Docente' : 'Franja de atención'}</h3><p className="mt-1 text-sm">{reviewDate(block.startsAt)}–{reviewDate(block.endsAt, true)}</p><p className="mt-1 text-xs text-[var(--color-text-muted)]">Turnos de {block.duration} min{teacherMode && (block.breakEvery ? ` · Descanso de ${block.breakMinutes} min cada ${block.breakEvery} turnos` : ' · Sin descansos')}</p></div>
-            {teacherMode && Date.parse(block.startsAt) > now && <div className="flex gap-2"><button className={reviewSecondary} disabled={hasPending || mutation.pending} onClick={() => setEditing(block)}>Editar</button><button className={reviewSecondary} disabled={hasPending || mutation.pending} onClick={() => { if (window.confirm('¿Retirar esta franja de la disponibilidad? El historial se conserva.')) mutation.run(() => removeReviewBlockAction(course.id, review.id, review.revision, block.id)); }}>Retirar</button></div>}
+            {teacherMode && Date.parse(block.startsAt) > now && <div className="flex gap-2"><button className={reviewSecondary} disabled={mutation.pending} onClick={() => setEditing(block)}>Editar</button><button className={reviewSecondary} disabled={hasPending || mutation.pending} onClick={() => { if (window.confirm('¿Retirar esta franja de la disponibilidad? El historial se conserva.')) mutation.run(() => removeReviewBlockAction(course.id, review.id, review.revision, block.id)); }}>Retirar</button></div>}
           </div>
-          {teacherMode && hasPending && <p className="mt-3 text-xs text-[var(--color-text-muted)]">La franja tiene reservas pendientes y no permite cambios de horario.</p>}
+          {teacherMode && hasPending && <p className="mt-3 text-xs text-[var(--color-text-muted)]">La franja tiene reservas pendientes. Desde Editar podés cambiar la fecha conservando los turnos; no se puede retirar ni cambiar los horarios.</p>}
           {teacherMode && <div className="mt-4 space-y-3">{block.meetUrl && <a className={reviewSecondary} href={block.meetUrl} target="_blank" rel="noopener noreferrer">Abrir sala de reunión</a>}<details><summary className="cursor-pointer text-sm font-semibold text-[var(--color-primary)]">Configurar enlace de la sala</summary><ReviewMeetingEditor key={`${block.id}-${review.revision}`} courseId={course.id} review={review} block={block} /></details></div>}
           {!teacherMode && <div className="mt-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm">{block.availableSlots > 0 ? 'Hay turnos disponibles. Te asignaremos el primero libre.' : 'Sin turnos disponibles en esta franja.'}</p><button className={reviewButton} disabled={!canReserve || block.availableSlots === 0 || mutation.pending || reservation.pending} onClick={() => { if (review.bookingMessage) setConfirmation(block); else reservation.run(() => reserveReviewAction(course.id, review.id, block.id)); }}>{reservation.pending ? 'Asignando…' : 'Solicitar turno en esta franja'}</button></div>}
           {teacherMode && <ul className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{blockSlots.map(slot => {

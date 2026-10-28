@@ -7,7 +7,7 @@ Desde **Administración → Curso → Editar**, activar **Habilitar revisiones p
 1. Abrir el curso y la pestaña **Revisiones**. Crear una revisión con número único, título e instrucciones (por ejemplo, lugar o enlace del encuentro). Las nuevas revisiones empiezan en **Borrador**: solo las ven los docentes asignados y pueden preparar sus franjas sin mostrarlas a los alumnos. La revisión es independiente de los trabajos prácticos.
 2. Agregar una franja: docente asignado al curso, fecha, inicio, fin, duración de cada turno y, opcionalmente, frecuencia y duración del descanso. Ambos campos de descanso en cero omiten los descansos.
 3. Revisar **Previsualizar turnos** y confirmar **Crear turnos libres**. Al crear la franja todavía no se asignan alumnos: cada solicitud recibe el primer turno libre de esa franja. Todos los horarios se interpretan en Argentina, UTC−3, y se guardan en UTC.
-4. Cualquier docente asignado al curso puede gestionar las franjas de los demás. Una franja futura puede editarse o retirarse mientras no tenga reservas pendientes. Los turnos reemplazados se desactivan y las cancelaciones históricas se conservan.
+4. Cualquier docente asignado al curso puede gestionar las franjas de los demás. **Editar** abre un diálogo visible con los datos de la franja. Una franja futura sin reservas pendientes puede editarse completamente o retirarse. Si tiene reservas pendientes, permite cambiar únicamente la fecha: **Previsualizar cambio de fecha** y luego **Confirmar cambio de fecha**. Conserva el docente, los horarios, los descansos y las reservas; los alumnos ven la nueva fecha en su agenda. No permite reprogramar franjas que ya comenzaron, tienen evaluaciones registradas o se superponen con otra franja del mismo docente. Los turnos reemplazados mediante la edición completa se desactivan y las cancelaciones históricas se conservan.
 5. Después de finalizar un turno reservado, abrir **Evaluar turno: resultado, devolución y notas privadas** y registrar **Asistió / Ausente**, **Aprobado / No aprobado**, una **Devolución para el alumno** y, opcionalmente, **Notas privadas para docentes**. El alumno ve únicamente su resultado y devolución; las notas solo pueden leerlas los docentes asignados al curso. La evaluación guardada es definitiva. Un ausente queda no aprobado. No afecta calificaciones ni entregas de trabajos prácticos.
 
 ### Sala de reunión por franja
@@ -15,6 +15,10 @@ Desde **Administración → Curso → Editar**, activar **Habilitar revisiones p
 Al crear una franja, pegar la URL de su sala en **Enlace de la sala de reunión**. Después puede agregarse, corregirse o quitarse desde **Configurar enlace de la sala** en esa franja, incluso si ya tiene reservas o comenzó. Esto no cambia horarios, participantes ni evaluaciones. El sistema admite enlaces HTTPS de distintas plataformas; el docente proporciona una sala existente.
 
 El alumno con un turno reservado encuentra **Unirme a la sala de reunión** en **Mis reservas y devoluciones**, junto a su horario asignado. El enlace abre en otra pestaña y corresponde a la franja de ese turno. Si aún no se cargó, se informa allí. Antes de reservar, después de cancelar y para reservas de otros alumnos, no se entrega el enlace. Los docentes asignados pueden consultar y gestionar todas las salas del curso. Los enlaces corregidos se actualizan al recargar o usar **Actualizar disponibilidad**.
+
+### Instalación de la reprogramación
+
+Antes de desplegar el cambio de fecha con reservas, ejecutar `npm run schema:review-rescheduling`. Respalda las reglas y actualiza únicamente los permisos de escritura de `review_blocks` y `review_slots`, sin modificar registros. La operación exige un docente asignado y una capacidad calculada en el servidor que nunca se guarda en registros ni se entrega al navegador. Usa un solo lote autenticado con control de revisión para cambiar la fecha de la franja y sus turnos activos, conservando sus identificadores, reservas y sala. Los turnos inactivos permanecen intactos. Si cambian la contraseña de servicio o la URL de PocketBase, repetir esta migración. Las instalaciones nuevas también la incluyen en `schema:reviews`.
 
 Cerrar las reservas de una revisión impide nuevas reservas, pero conserva su visibilidad, los turnos existentes, las cancelaciones antes del inicio y las evaluaciones pendientes. La validación de superposición docente se aplica dentro de cada revisión.
 
@@ -70,11 +74,14 @@ npm run schema:reviews:test
 npm run test:ui -- lib/review-appointments.test.ts lib/review-appointments-data.test.ts lib/actions-courses.test.ts components/reviews/ReviewForms.test.tsx components/reviews/ReviewAgenda.test.tsx
 $env:REVIEWS_INTEGRATION='1'
 npm run test:ui -- lib/review-appointments.integration.test.ts
+npm run test:ui -- lib/review-rescheduling.integration.test.ts
 ```
 
 La migración respalda esquema y configuración de lotes en `backups/pocketbase/review-appointments-<fecha>.json`; agrega campos y colecciones sin modificar registros existentes. Requiere las credenciales de servicio ya configuradas para PocketBase. No incluir respaldos ni credenciales en Git.
 
 La integración utiliza cuentas y un curso temporales y limpia los registros al finalizar. Comprueba gestión compartida, matrícula, acceso entre cursos, privacidad, edición con reservas, carreras por turno y por alumno, cancelación, vencimiento, ausencia, reintento y aprobación. Para inspección en navegador, `node scripts/review-appointments-fixtures.mjs create` genera estados de sesión de cuentas temporales en `tmp/reviews/`; `advance` adelanta únicamente sus reservas para probar evaluación; `cleanup` elimina registros y credenciales temporales. Ese directorio está ignorado por Git.
+
+Para verificar la reprogramación después de publicar, `node scripts/verify-review-rescheduling-deployment.mjs begin https://epixum.com <id-franja-a-preservar>` prepara otro curso y una reserva sintéticos, y toma una huella de solo lectura de la franja indicada. `check` verifica la página publicada, llama a la acción real con la cuenta docente temporal y comprueba que la reserva y sus turnos se conservan, la agenda estudiantil refleja la nueva fecha y la franja real permanece intacta. `cleanup` elimina los datos y credenciales del ensayo. El ensayo se guarda en `tmp/reviews/`, ignorado por Git.
 
 ## Reversión
 

@@ -1,6 +1,6 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
 import { visiblePublicationRule, withScheduledPublicationFields } from './publication-fields.mjs';
-import { reviewAllocationKey } from '../lib/review-allocation-key.mjs';
+import { reviewAllocationKey, reviewRescheduleKey } from '../lib/review-allocation-key.mjs';
 
 const auth = '@request.auth.id != ""';
 const teacher = 'course.teachers.id ?= @request.auth.id';
@@ -64,6 +64,23 @@ export const reviewRules = {
   },
 };
 
+export function reviewReschedulingRules(key) {
+  if (!/^[a-f0-9]{64}$/.test(key)) throw new Error('Clave de reprogramación inválida.');
+  const permitted = `${relatedScope} && ${relatedTeacher} && @request.body.rescheduleKey = "${key}" && startsAt > @now && endsAt > startsAt && active = true && ${dates}`;
+  return {
+    blocks: `(${reviewRules.blocks.updateRule}) || (${permitted} && ${assignedTeacher} && ${unchanged(['review', 'teacher', 'active', 'start', 'end', 'duration', 'breakEvery', 'breakMinutes'])})`,
+    slots: `(${reviewRules.slots.updateRule}) || (${permitted} && block.active = true && block.review = review && block.teacher = teacher && @request.body.startsAt >= block.startsAt && @request.body.endsAt <= block.endsAt && @request.body.startsAt > @now && @request.body.endsAt > @request.body.startsAt && ${unchanged(['review', 'block', 'teacher', 'active'])})`,
+  };
+}
+
+export async function applyReviewReschedulingSchema(pb, key = reviewRescheduleKey()) {
+  const rules = reviewReschedulingRules(key);
+  for (const name of ['blocks', 'slots']) {
+    const current = await pb.collections.getOne(`review_${name}`);
+    await pb.collections.update(current.id, { updateRule: rules[name] });
+  }
+}
+
 const timestamps = [{ name: 'created', type: 'autodate', onCreate: true, onUpdate: false }, { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true }];
 const rel = (name, collectionId) => ({ name, type: 'relation', collectionId, required: true, maxSelect: 1, cascadeDelete: true });
 const text = (name, max, required = true) => ({ name, type: 'text', required, max });
@@ -116,7 +133,7 @@ export async function applyReviewBlockMeetingsSchema(pb) {
   ]);
 }
 
-export async function applyReviewAppointmentsSchema(pb, allocationKey = reviewAllocationKey()) {
+export async function applyReviewAppointmentsSchema(pb, allocationKey = reviewAllocationKey(), rescheduleKey = reviewRescheduleKey()) {
   const courses = await pb.collections.getOne('courses');
   const users = await pb.collections.getOne('users');
   await ensure(pb, 'courses', [{ name: 'reviewsEnabled', type: 'bool' }], { updateRule: COURSE_UPDATE_RULE });
@@ -139,6 +156,7 @@ export async function applyReviewAppointmentsSchema(pb, allocationKey = reviewAl
     'CREATE INDEX idx_review_booking_history ON review_bookings (review, student, created)',
   ]);
   for (const [record, rules] of [[review, reviewRules.reviews], [block, reviewRules.blocks], [slot, reviewRules.slots], [booking, { ...reviewRules.bookings, createRule: orderedReviewBookingRule(allocationKey) }]]) await pb.collections.update(record.id, rules);
+  await applyReviewReschedulingSchema(pb, rescheduleKey);
   await applyReviewBookingNotesSchema(pb);
   await applyReviewBlockMeetingsSchema(pb);
   const settings = await pb.settings.getAll();
