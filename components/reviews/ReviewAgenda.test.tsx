@@ -24,6 +24,56 @@ describe('resultado y notas privadas del turno', () => {
       bookings: reserved ? [{ ...data.bookings[0], status: 'reserved' }] : [],
     } as typeof data;
   }
+  function contactAgenda(contact = { email: 'alumna@example.invalid', phone: '+54 9 383 400-0000' }) {
+    return { ...editableAgenda(true), studentContacts: { student: contact } };
+  }
+  it('abre el alumno y sus contactos desde la tarjeta del turno reservado y permite cerrar', () => {
+    render(<ReviewAgenda data={contactAgenda()} mode="teacher" />);
+    const button = screen.getByRole('button', { name: 'Ver detalle del turno de Alumno' });
+    expect(button).toHaveTextContent('Alumno');
+    fireEvent.click(button);
+    const dialog = screen.getByRole('dialog', { name: 'Detalle del turno reservado' });
+    expect(dialog).toHaveAccessibleDescription('jueves, 29/10/2026, 15:00–15:15. Horario de Argentina (UTC−3).');
+    expect(within(dialog).getByText('Alumno', { selector: 'dd' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: 'alumna@example.invalid' })).toHaveAttribute('href', 'mailto:alumna%40example.invalid');
+    expect(within(dialog).getByText('+54 9 383 400-0000')).toBeInTheDocument();
+    const whatsapp = within(dialog).getByRole('link', { name: 'Escribir por WhatsApp' });
+    expect(whatsapp).toHaveAttribute('href', 'https://wa.me/5493834000000');
+    expect(whatsapp).toHaveAttribute('target', '_blank');
+    expect(whatsapp).toHaveAttribute('rel', 'noopener noreferrer');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cerrar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+  it('permite abrir el mismo detalle desde la lista de reservas y avisa si faltan contactos', () => {
+    render(<ReviewAgenda data={contactAgenda({ email: '', phone: '' })} mode="teacher" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle y contacto' }));
+    const dialog = screen.getByRole('dialog', { name: 'Detalle del turno reservado' });
+    expect(within(dialog).getByText('Email no registrado')).toBeInTheDocument();
+    expect(within(dialog).getByText('Teléfono no registrado')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('link')).not.toBeInTheDocument();
+  });
+  it('muestra un teléfono incompleto sin crear un enlace de WhatsApp erróneo', () => {
+    render(<ReviewAgenda data={contactAgenda({ email: '', phone: '4000000' })} mode="teacher" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle del turno de Alumno' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText('4000000')).toBeInTheDocument();
+    expect(within(dialog).queryByRole('link', { name: 'Escribir por WhatsApp' })).not.toBeInTheDocument();
+  });
+  it('no muestra contactos ni permite abrir detalles docentes en la vista estudiantil', () => {
+    render(<ReviewAgenda data={contactAgenda()} mode="student" />);
+    expect(screen.queryByRole('button', { name: /Ver detalle/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('alumna@example.invalid')).not.toBeInTheDocument();
+    expect(screen.queryByText('+54 9 383 400-0000')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Escribir por WhatsApp' })).not.toBeInTheDocument();
+  });
+  it('cierra el detalle al dejar de estar vigente la reserva y no ofrece contacto en turnos libres', () => {
+    const agenda = contactAgenda();
+    const { rerender } = render(<ReviewAgenda data={agenda} mode="teacher" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle del turno de Alumno' }));
+    rerender(<ReviewAgenda data={{ ...agenda, bookings: agenda.bookings.map(booking => ({ ...booking, status: 'cancelled' })) }} mode="teacher" />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ver detalle/ })).not.toBeInTheDocument();
+  });
   it('abre la edición completa en un diálogo con los datos de la franja y permite cerrar', () => {
     render(<ReviewAgenda data={editableAgenda(false)} mode="teacher" />);
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));

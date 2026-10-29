@@ -37,8 +37,10 @@ export async function getReviewAgenda(courseId: string, reviewId: string, mode: 
   // Read only after authorizing the course; never expose other students or feedback.
   const occupied = mode === 'teacher' ? bookings.filter(b => b.status !== 'cancelled') : await service.collection('review_bookings').getFullList<{ slot: string }>({ filter: `${filter} && status != "cancelled"`, fields: 'slot' });
   const peopleIds = mode === 'teacher' ? [...new Set([...(course.teachers || []), ...slots.map(s => s.teacher), ...bookings.map(b => b.student)])] : [];
-  const people = peopleIds.length ? await service.collection('users').getFullList<{ id: string; name: string; firstName?: string; lastName?: string }>({ filter: peopleIds.map(id => service.filter('id = {:id}', { id })).join(' || '), fields: 'id,name,firstName,lastName' }) : [];
+  const people = peopleIds.length ? await service.collection('users').getFullList<{ id: string; name: string; firstName?: string; lastName?: string; email?: string; phone?: string }>({ filter: peopleIds.map(id => service.filter('id = {:id}', { id })).join(' || '), fields: 'id,name,firstName,lastName,email,phone' }) : [];
   const names = Object.fromEntries(people.map(p => [p.id, [p.firstName, p.lastName].filter(Boolean).join(' ') || p.name || 'Participante']));
+  const reservedStudents = new Set(bookings.filter(booking => booking.status === 'reserved').map(booking => booking.student));
+  const studentContacts = Object.fromEntries(people.filter(person => reservedStudents.has(person.id)).map(person => [person.id, { email: person.email || '', phone: person.phone || '' }]));
   const now = Date.now();
   const availability = slots.map(slot => ({ ...slot, occupied: occupied.some(booking => booking.slot === slot.id) }));
   const ownSlots = new Set(bookings.map(booking => booking.slot));
@@ -55,7 +57,7 @@ export async function getReviewAgenda(courseId: string, reviewId: string, mode: 
       availableSlots: availability.filter(slot => slot.block === block.id && slot.active && !slot.occupied && Date.parse(slot.startsAt) > now && course.teachers?.includes(slot.teacher)).length,
     })),
     slots: mode === 'teacher' ? availability : availability.filter(slot => ownSlots.has(slot.id)).map(slot => ({ ...slot, teacher: '' })),
-    bookings, meetingLinks, ...(mode === 'teacher' ? { teacherNotes } : {}), names, now,
+    bookings, meetingLinks, ...(mode === 'teacher' ? { teacherNotes, studentContacts } : {}), names, now,
     teachers: mode === 'teacher' ? (course.teachers || []).map(id => ({ id, name: names[id] || 'Docente' })) : [],
   };
 }
