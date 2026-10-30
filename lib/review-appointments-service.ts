@@ -215,7 +215,7 @@ export async function evaluateReviewBooking(pb: PocketBase, courseId: string, re
   const booking = await pb.collection('review_bookings').getOne<ReviewBooking>(bookingId);
   if (booking.review !== review.id || booking.status !== 'reserved') throw new ReviewError('La reserva no está pendiente de evaluación en esta revisión.');
   const slot = await pb.collection('review_slots').getOne<ReviewSlot>(booking.slot);
-  if (Date.parse(slot.endsAt) > Date.now()) throw new ReviewError('La evaluación se registra después de finalizar el turno.');
+  if (!(Date.parse(slot.startsAt) <= Date.now())) throw new ReviewError('La evaluación se registra a partir del inicio del turno.');
   const batch = guard(pb, review);
   batch.collection('review_bookings').update(booking.id, { ...data, evaluatedBy: pb.authStore.record!.id });
   if (teacherNotes) batch.collection('review_booking_notes').create({ booking: booking.id, notes: teacherNotes, author: pb.authStore.record!.id });

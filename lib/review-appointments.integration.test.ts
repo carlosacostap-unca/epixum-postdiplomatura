@@ -107,7 +107,7 @@ describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBa
       await expect(reserveReviewBlock(loser.pb, course.id, review.id, available[0].id)).rejects.toBeDefined();
       await expect(loser.pb.collection('review_bookings').getOne(winning.id)).rejects.toBeDefined();
       await expect(outsider.pb.collection('review_slots').getOne(available[0].id)).rejects.toBeDefined();
-      await expect(evaluateReviewBooking(peer.pb, course.id, review.id, winning.id, { attendance: 'present', status: 'passed', feedback: '' })).rejects.toThrow('después');
+      await expect(evaluateReviewBooking(peer.pb, course.id, review.id, winning.id, { attendance: 'present', status: 'passed', feedback: '' })).rejects.toThrow('inicio');
       await expect(saveReviewBlock(peer.pb, course.id, review.id, (await fresh()).revision, block.id, { ...blockInput, end: '20:00' })).rejects.toThrow('reservas');
       await expect(peer.pb.collection('review_slots').update(available[0].id, { active: false })).rejects.toBeDefined();
       await expect(peer.pb.collection('review_blocks').update(block.id, { active: false })).rejects.toBeDefined();
@@ -122,8 +122,9 @@ describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBa
       const ownRace = await Promise.allSettled([reserveReviewBlock(winner.pb, course.id, review.id, available[0].block), reserveReviewBlock(winner.pb, course.id, review.id, available[1].block)]);
       expect(ownRace.filter(r => r.status === 'fulfilled')).toHaveLength(1);
       const attempt = (await bookings(winner.pb)).find(b => b.status === 'reserved')!;
+      const inProgress = { startsAt: new Date(Date.now() - 60000).toISOString(), endsAt: new Date(Date.now() + 900000).toISOString() };
       const past = { startsAt: new Date(Date.now() - 3600000).toISOString(), endsAt: new Date(Date.now() - 1800000).toISOString() };
-      await admin.collection('review_slots').update(attempt.slot, past);
+      await admin.collection('review_slots').update(attempt.slot, inProgress);
       await expect(cancelReviewBooking(winner.pb, course.id, review.id, attempt.id, 'student')).rejects.toThrow('antes');
       await expect(winner.pb.collection('review_bookings').update(attempt.id, { status: 'cancelled' })).rejects.toBeDefined();
       await expect(reserveReviewBlock(winner.pb, course.id, review.id, available[2].block)).rejects.toThrow('pendiente');

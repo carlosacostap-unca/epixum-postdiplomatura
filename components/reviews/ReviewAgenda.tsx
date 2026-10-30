@@ -25,7 +25,7 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
   const passed = !teacherMode && bookings.some(b => b.status === 'passed');
   const pending = !teacherMode && bookings.some(b => b.status === 'reserved');
   const free = slots.filter(s => s.active && !s.occupied && Date.parse(s.startsAt) > now && course.teachers?.includes(s.teacher));
-  const waiting = bookings.filter(b => b.status === 'reserved' && slots.some(s => s.id === b.slot && Date.parse(s.endsAt) <= now));
+  const waiting = bookings.filter(b => b.status === 'reserved' && slots.some(s => s.id === b.slot && Date.parse(s.startsAt) <= now));
   const canReserve = !passed && !pending && review.open;
   const base = `/${teacherMode ? 'docentes' : 'estudiantes'}/cursos/${course.id}/revisiones`;
   const editingBlock = editing && editing !== 'new' ? blocks.find(block => block.id === editing.id) ?? editing : undefined;
@@ -109,7 +109,8 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
           {booking.status === 'reserved' && (data.meetingLinks?.[booking.id] ? <a className={`${reviewButton} mt-4`} href={data.meetingLinks[booking.id]} target="_blank" rel="noopener noreferrer">Unirme a la sala de reunión</a> : <p className="mt-4 text-sm text-[var(--color-text-muted)]">El docente todavía no cargó el enlace de la sala de reunión para esta franja.</p>)}
           {teacherMode && data.teacherNotes?.[booking.id] && <div className="mt-4 rounded-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] p-4 text-sm"><p className="mb-2 font-bold">Notas privadas · Solo docentes</p><p className="whitespace-pre-wrap leading-relaxed">{data.teacherNotes[booking.id]}</p></div>}
           {booking.status === 'reserved' && Date.parse(slot.startsAt) > now && <button className={`${reviewSecondary} mt-4`} disabled={mutation.pending} onClick={() => { if (window.confirm('¿Cancelar este turno y dejarlo libre?')) mutation.run(() => cancelReviewAction(course.id, review.id, booking.id, mode)); }}>Cancelar reserva</button>}
-          {teacherMode && booking.status === 'reserved' && Date.parse(slot.endsAt) <= now && <details className="mt-4 border-t border-[var(--color-outline-variant)] pt-4"><summary className="cursor-pointer font-semibold text-[var(--color-primary)]">Evaluar turno: resultado, devolución y notas privadas</summary><ReviewEvaluationForm courseId={course.id} reviewId={review.id} bookingId={booking.id} /></details>}
+          {teacherMode && booking.status === 'reserved' && Date.parse(slot.startsAt) > now && <p className="mt-4 text-sm text-[var(--color-text-muted)]">La evaluación se habilita al comenzar el turno.</p>}
+          {teacherMode && booking.status === 'reserved' && Date.parse(slot.startsAt) <= now && <details className="mt-4 border-t border-[var(--color-outline-variant)] pt-4"><summary className="cursor-pointer font-semibold text-[var(--color-primary)]">Evaluar turno: resultado, devolución y notas privadas</summary><ReviewEvaluationForm courseId={course.id} reviewId={review.id} bookingId={booking.id} /></details>}
         </article>;
       })}</div>
     </section>

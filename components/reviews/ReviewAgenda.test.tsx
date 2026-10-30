@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { ReviewAgenda } from './ReviewAgenda';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
@@ -17,6 +17,44 @@ const data = {
 
 describe('resultado y notas privadas del turno', () => {
   beforeEach(() => { mocks.reserve.mockReset().mockResolvedValue({ success: true }); mocks.reschedule.mockReset().mockResolvedValue({ success: true }); });
+  afterEach(() => vi.useRealTimers());
+  it.each([
+    ['2026-01-01T11:59:59.999Z', false],
+    ['2026-01-01T12:00:00Z', true],
+    ['2026-01-01T12:07:00Z', true],
+    ['2026-01-01T12:15:00Z', true],
+    ['2026-01-01T13:00:00Z', true],
+  ])('habilita la evaluación docente desde el inicio, a las %s: %s', (now, enabled) => {
+    const agenda = { ...data, now: Date.parse(now), bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })) } as typeof data;
+    render(<ReviewAgenda data={agenda} mode="teacher" />);
+    const summary = screen.queryByText('Evaluar turno: resultado, devolución y notas privadas');
+    if (enabled) {
+      expect(summary).toBeInTheDocument();
+      expect(screen.queryByText('La evaluación se habilita al comenzar el turno.')).not.toBeInTheDocument();
+      expect(screen.getByText('Pendientes de evaluación').parentElement).toHaveTextContent('1');
+    } else {
+      expect(summary).not.toBeInTheDocument();
+      expect(screen.getByText('La evaluación se habilita al comenzar el turno.')).toBeInTheDocument();
+    }
+  });
+  it('habilita el formulario al llegar al inicio sin recargar la página', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-01-01T11:59:45Z'));
+    const agenda = { ...data, now: Date.now(), bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })) } as typeof data;
+    render(<ReviewAgenda data={agenda} mode="teacher" />);
+    expect(screen.queryByText('Evaluar turno: resultado, devolución y notas privadas')).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(15000));
+    expect(screen.getByText('Evaluar turno: resultado, devolución y notas privadas')).toBeInTheDocument();
+  });
+  it.each(['passed', 'not_passed', 'cancelled'])('no ofrece evaluar reservas %s', status => {
+    const agenda = { ...data, bookings: data.bookings.map(booking => ({ ...booking, status })) } as typeof data;
+    render(<ReviewAgenda data={agenda} mode="teacher" />);
+    expect(screen.queryByText('Evaluar turno: resultado, devolución y notas privadas')).not.toBeInTheDocument();
+  });
+  it('no ofrece evaluar al alumno durante su turno', () => {
+    const agenda = { ...data, now: Date.parse('2026-01-01T12:07:00Z'), bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })) } as typeof data;
+    render(<ReviewAgenda data={agenda} mode="student" />);
+    expect(screen.queryByText('Evaluar turno: resultado, devolución y notas privadas')).not.toBeInTheDocument();
+  });
   const futureBlock = { id: 'block', review: 'review', active: true, teacher: 'teacher00000001', date: '2026-10-29', start: '15:00', end: '17:00', startsAt: '2026-10-29T18:00:00Z', endsAt: '2026-10-29T20:00:00Z', duration: 15, breakEvery: 0, breakMinutes: 0, availableSlots: 7 };
   function editableAgenda(reserved: boolean) {
     return { ...data, course: { ...data.course, teachers: [futureBlock.teacher] }, teachers: [{ id: futureBlock.teacher, name: 'Docente' }], blocks: [futureBlock],

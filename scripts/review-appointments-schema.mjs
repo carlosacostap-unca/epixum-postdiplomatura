@@ -22,7 +22,7 @@ const noteTeacher = `${auth} && booking.review.course.reviewsEnabled = true && b
 
 export const reviewBookingNotesRules = {
   listRule: noteTeacher, viewRule: noteTeacher,
-  createRule: `${noteTeacher} && author = @request.auth.id && booking.evaluatedBy = @request.auth.id && booking.slot.endsAt <= @now && (booking.status = "passed" || booking.status = "not_passed") && ${dates}`,
+  createRule: `${noteTeacher} && author = @request.auth.id && booking.evaluatedBy = @request.auth.id && booking.slot.startsAt <= @now && (booking.status = "passed" || booking.status = "not_passed") && ${dates}`,
   updateRule: null, deleteRule: null,
 };
 
@@ -59,7 +59,7 @@ export const reviewRules = {
   bookings: {
     listRule: bookingRead, viewRule: bookingRead,
     createRule: `${relatedScope} && ${own} && ${visiblePublicationRule('review.')} && review.course.teachers.id != @request.auth.id && review.open = true && review = slot.review && slot.active = true && slot.block.active = true && review.course.teachers.id ?= slot.teacher && slot.startsAt > @now && status = "reserved" && attendance = "" && feedback = "" && evaluatedBy = "" && ${dates}`,
-    updateRule: `${relatedScope} && status = "reserved" && ${unchanged(['review', 'slot', 'student'])} && ${dates} && ((((${own} && ${visiblePublicationRule('review.')}) || ${relatedTeacher}) && slot.startsAt > @now && @request.body.status = "cancelled" && ${unchanged(['attendance', 'feedback', 'evaluatedBy'])}) || (${relatedTeacher} && slot.endsAt <= @now && @request.body.evaluatedBy = @request.auth.id && ((@request.body.attendance = "present" && (@request.body.status = "passed" || @request.body.status = "not_passed")) || (@request.body.attendance = "absent" && @request.body.status = "not_passed"))))`,
+    updateRule: `${relatedScope} && status = "reserved" && ${unchanged(['review', 'slot', 'student'])} && ${dates} && ((((${own} && ${visiblePublicationRule('review.')}) || ${relatedTeacher}) && slot.startsAt > @now && @request.body.status = "cancelled" && ${unchanged(['attendance', 'feedback', 'evaluatedBy'])}) || (${relatedTeacher} && slot.startsAt <= @now && @request.body.evaluatedBy = @request.auth.id && ((@request.body.attendance = "present" && (@request.body.status = "passed" || @request.body.status = "not_passed")) || (@request.body.attendance = "absent" && @request.body.status = "not_passed"))))`,
     deleteRule: null,
   },
 };
