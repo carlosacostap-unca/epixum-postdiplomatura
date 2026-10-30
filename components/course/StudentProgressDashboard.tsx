@@ -26,6 +26,7 @@ export function StudentProgressDashboard({ data, filters }: { data: Awaited<Retu
     { id: 'detail', header: 'Detalle', render: (row: StudentProgressRow) => <Link className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]" aria-label={`Ver detalle de ${row.name}`} href={`${base}/${row.id}${query ? `?${query}` : ''}`}>Ver detalle</Link> },
   ];
   return <div className="min-w-0 space-y-6">
+    {data.course.outcomesEnabled && <Link className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]" href={`/docentes/cursos/${data.course.id}/resultados`}>Gestionar resultados de cursada →</Link>}
     <StudentProgressSummary rows={data.rows} preparationEnabled={data.preparationEnabled} examsEnabled={data.examsEnabled} />
     <p>El seguimiento resume la preparación y los parciales. La última actividad corresponde a esas evaluaciones; no mide asistencia ni lectura de materiales. Todas las notas se muestran sobre 10.</p>
     {!data.preparationEnabled && !data.examsEnabled && <p>Este curso no tiene preparación ni parciales habilitados. Por ahora se muestran las matrículas vigentes.</p>}

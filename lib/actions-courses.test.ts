@@ -47,6 +47,13 @@ function courseForm(mode?: 'tradicional' | 'semanal', enrollmentMode?: 'clave' |
 }
 
 describe('modalidad administrativa del curso', () => {
+  it('habilita resultados de cursada por curso y conserva deshabilitado el valor por defecto', async () => {
+    const enabled = courseForm(); enabled.set('outcomesEnabled', 'true');
+    await createCourse(enabled);
+    expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ outcomesEnabled: true }));
+    await updateCourse('course-1', courseForm());
+    expect(mocks.update).toHaveBeenCalledWith('course-1', expect.objectContaining({ outcomesEnabled: false }));
+  });
   it('habilita encuestas por curso y las deja deshabilitadas por defecto', async () => {
     const enabled = courseForm(); enabled.set('surveysEnabled', 'true');
     await createCourse(enabled);

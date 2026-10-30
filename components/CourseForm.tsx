@@ -197,6 +197,12 @@ export default function CourseForm({
 
       <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-labelledby="course-links-title">
         <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
+          <label className="flex cursor-pointer items-start gap-3" htmlFor="outcomesEnabled">
+            <input type="checkbox" id="outcomesEnabled" name="outcomesEnabled" value="true" defaultChecked={course?.outcomesEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)]" />
+            <span><span className="block text-sm font-bold">Habilitar resultados de cursada</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Los docentes podrán preparar y publicar el resultado final de cada alumno, con nota y devolución opcionales. Cada alumno verá solamente su resultado publicado. Deshabilitar conserva los datos y el historial.</span></span>
+          </label>
+        </div>
+        <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
           <label className="flex cursor-pointer items-start gap-3" htmlFor="surveysEnabled">
             <input type="checkbox" id="surveysEnabled" name="surveysEnabled" value="true" defaultChecked={course?.surveysEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)]" />
             <span><span className="block text-sm font-bold">Habilitar encuestas</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Los docentes del curso podrán diseñar encuestas anónimas o identificadas para sus alumnos y consultar resultados. Deshabilitar conserva las encuestas y respuestas.</span></span>

@@ -50,6 +50,7 @@ export async function createCourse(formData: FormData) {
   const enrollmentMode = parseEnrollmentMode(formData.get('enrollmentMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   const surveysEnabled = parseContentsEnabled(formData.get('surveysEnabled'));
+  const outcomesEnabled = parseContentsEnabled(formData.get('outcomesEnabled'));
   const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
   const examsEnabled = parseContentsEnabled(formData.get('examsEnabled'));
   const preparationEnabled = parseContentsEnabled(formData.get('preparationEnabled'));
@@ -79,6 +80,7 @@ export async function createCourse(formData: FormData) {
     enrollmentMode,
     contentsEnabled,
     surveysEnabled,
+    outcomesEnabled,
     interactiveClassesEnabled,
     preparationEnabled,
     examsEnabled,
@@ -113,6 +115,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
   const organizationMode = parseOrganizationMode(formData.get('organizationMode'));
   const contentsEnabled = parseContentsEnabled(formData.get('contentsEnabled'));
   const surveysEnabled = parseContentsEnabled(formData.get('surveysEnabled'));
+  const outcomesEnabled = parseContentsEnabled(formData.get('outcomesEnabled'));
   const interactiveClassesEnabled = parseContentsEnabled(formData.get('interactiveClassesEnabled'));
   const examsEnabled = parseContentsEnabled(formData.get('examsEnabled'));
   const preparationEnabled = parseContentsEnabled(formData.get('preparationEnabled'));
@@ -141,6 +144,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
     organizationMode,
     contentsEnabled,
     surveysEnabled,
+    outcomesEnabled,
     interactiveClassesEnabled,
     preparationEnabled,
     examsEnabled,

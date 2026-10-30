@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Tabs } from "@/components/ui";
 
-export default function CourseAdminNavigation({ courseId, surveysEnabled = false, onboardingEnabled = false, interactiveClassesEnabled = false, preparationEnabled = false, examsEnabled = false }: { courseId: string; surveysEnabled?: boolean; onboardingEnabled?: boolean; interactiveClassesEnabled?: boolean; preparationEnabled?: boolean; examsEnabled?: boolean }) {
+export default function CourseAdminNavigation({ courseId, outcomesEnabled = false, surveysEnabled = false, onboardingEnabled = false, interactiveClassesEnabled = false, preparationEnabled = false, examsEnabled = false }: { courseId: string; outcomesEnabled?: boolean; surveysEnabled?: boolean; onboardingEnabled?: boolean; interactiveClassesEnabled?: boolean; preparationEnabled?: boolean; examsEnabled?: boolean }) {
   const pathname = usePathname();
   const base = `/admin/courses/${courseId}`;
   return <Tabs label="Administrar curso" items={[
@@ -12,6 +12,7 @@ export default function CourseAdminNavigation({ courseId, surveysEnabled = false
     { href: `${base}/bedels`, label: "Bedeles", icon: "visibility", isActive: pathname.startsWith(`${base}/bedels`) },
     { href: `${base}/access`, label: "Acceso", icon: "key", isActive: pathname.startsWith(`${base}/access`) },
     ...(surveysEnabled ? [{ href: `${base}/encuestas`, label: "Encuestas", icon: "poll", isActive: pathname.startsWith(`${base}/encuestas`) }] : []),
+    ...(outcomesEnabled ? [{ href: `${base}/resultados`, label: "Resultados de cursada", icon: "school", isActive: pathname.startsWith(`${base}/resultados`) }] : []),
     ...(examsEnabled ? [{ href: `${base}/parciales`, label: "Parciales", icon: "assignment", isActive: pathname.startsWith(`${base}/parciales`) }] : []),
     ...(preparationEnabled ? [{ href: `${base}/preparacion`, label: "Simulaciones de examen", icon: "quiz", isActive: pathname.startsWith(`${base}/preparacion`) }] : []),
     ...(onboardingEnabled ? [{ href: `${base}/onboarding`, label: "Onboarding", icon: "checklist", isActive: pathname.startsWith(`${base}/onboarding`) }] : []),
