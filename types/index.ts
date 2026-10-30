@@ -225,6 +225,7 @@ export interface Course extends BaseModel {
   organizationMode?: CourseOrganizationMode;
   enrollmentMode?: CourseEnrollmentMode;
   contentsEnabled?: boolean;
+  surveysEnabled?: boolean;
   interactiveClassesEnabled?: boolean;
   attendanceEnabled?: boolean;
   preparationEnabled?: boolean;

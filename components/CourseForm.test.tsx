@@ -57,6 +57,7 @@ describe("CourseForm", () => {
   it("muestra contenidos deshabilitados por defecto y explica que conserva los datos", () => {
     render(<ToastProvider><CourseForm availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
     expect(screen.getByRole("checkbox", { name: /habilitar contenidos/i })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /habilitar encuestas/i })).not.toBeChecked();
     expect(screen.getByText(/contenidos y sus recursos se conservan ocultos/i)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /habilitar preevaluación asistida por ia/i })).not.toBeChecked();
   });

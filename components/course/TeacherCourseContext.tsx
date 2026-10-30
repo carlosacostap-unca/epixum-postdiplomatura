@@ -5,6 +5,7 @@ import { courseLearningNavigation } from "@/lib/course-navigation";
 
 export type TeacherCourseSection =
   | "resumen"
+  | "encuestas"
   | "onboarding"
   | "asistencia"
   | "clases"
@@ -20,6 +21,7 @@ export type TeacherCourseSection =
 
 const sectionLabels: Record<TeacherCourseSection, string> = {
   resumen: "Resumen",
+  encuestas: "Encuestas",
   onboarding: "Onboarding",
   asistencia: "Asistencia",
   clases: "Clases",
@@ -41,6 +43,7 @@ function tabs(course: Course, current: TeacherCourseSection): TabItem[] {
     ...courseLearningNavigation(course, base, current),
   ];
   if (course.contentsEnabled) items.push({ href: `${base}/contenidos`, label: "Contenidos", icon: "library_books", isActive: current === "contenidos" });
+  if (course.surveysEnabled) items.push({ href: `${base}/encuestas`, label: "Encuestas", icon: "poll", isActive: current === "encuestas" });
   if (course.onboardingEnabled) items.push({ href: `${base}/onboarding`, label: "Onboarding", icon: "checklist", isActive: current === "onboarding" });
   if (course.interactiveClassesEnabled) items.push({ href: `${base}/interactivas`, label: "Interactivas", icon: "interactive_space", isActive: current === "interactivas" });
   if (course.interactiveClassesEnabled) items.push({ href: `${base}/asistencia`, label: "Asistencia", icon: "fact_check", isActive: current === "asistencia" });

@@ -197,6 +197,12 @@ export default function CourseForm({
 
       <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-labelledby="course-links-title">
         <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
+          <label className="flex cursor-pointer items-start gap-3" htmlFor="surveysEnabled">
+            <input type="checkbox" id="surveysEnabled" name="surveysEnabled" value="true" defaultChecked={course?.surveysEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)]" />
+            <span><span className="block text-sm font-bold">Habilitar encuestas</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Los docentes del curso podrán diseñar encuestas anónimas o identificadas para sus alumnos y consultar resultados. Deshabilitar conserva las encuestas y respuestas.</span></span>
+          </label>
+        </div>
+        <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
           <label className="flex cursor-pointer items-start gap-3" htmlFor="onboardingEnabled">
             <input type="checkbox" id="onboardingEnabled" name="onboardingEnabled" value="true" defaultChecked={course?.onboardingEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)]" />
             <span><span className="block text-sm font-bold">Habilitar onboarding de IA</span><span className="mt-1 block text-sm text-[var(--color-on-surface-variant)]">Verificación de datos, encuesta inicial y requisitos para prácticas en vivo con IA. Requiere conocimientos previos. Deshabilitar conserva las respuestas.</span></span>
