@@ -26,7 +26,7 @@ export function DataTable<T>({ ariaLabel, columns, empty, getKey, items, rowClas
 
   return (
     <>
-      <div className="hidden max-w-full overflow-x-auto rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] md:block" role="region" aria-label={ariaLabel} tabIndex={0}>
+      <div data-ui="data-table" className="hidden max-w-full overflow-x-auto rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] md:block" role="region" aria-label={ariaLabel} tabIndex={0}>
         <table className="w-full border-collapse text-left text-sm">
           <caption className="sr-only">{ariaLabel}</caption>
           <thead className="bg-[var(--color-surface-container)] text-xs uppercase tracking-[0.12em] text-[var(--color-on-surface-variant)]">
@@ -50,7 +50,7 @@ export function DataTable<T>({ ariaLabel, columns, empty, getKey, items, rowClas
         </table>
       </div>
 
-      <ul className="flex min-w-0 flex-col gap-3 md:hidden" aria-label={ariaLabel}>
+      <ul data-ui="data-list" className="flex min-w-0 flex-col gap-3 md:hidden" aria-label={ariaLabel}>
         {items.map((item) => (
           <li key={getKey(item)} className={cx("min-w-0 rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-4", rowClassName?.(item))}>
             <dl className="grid gap-4">

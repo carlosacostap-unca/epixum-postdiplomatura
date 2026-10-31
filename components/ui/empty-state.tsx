@@ -12,6 +12,7 @@ export interface EmptyStateProps {
 export function EmptyState({ action, className, description, icon = "inbox", title }: EmptyStateProps) {
   return (
     <section
+      data-ui="empty-state"
       className={cx(
         "flex min-w-0 flex-col items-center rounded-[var(--epixum-radius-xl)] border border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-5 py-8 text-center md:px-8 md:py-10",
         className,

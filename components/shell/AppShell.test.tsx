@@ -45,6 +45,13 @@ function buildUser(role: UserRole): User {
 }
 
 describe("AppShell", () => {
+  it("lleva el foco al contenido administrativo al activar el enlace de salto", async () => {
+    const user = userEvent.setup();
+    currentPathname = "/admin";
+    render(<AppShell user={buildUser("admin")} workspaceAccess={workspaceAccess.admin} pocketbaseUrl="https://pb.example.com"><div className="page-container"><h1>Inicio administrativo</h1></div></AppShell>);
+    await user.click(screen.getByRole("link", { name: "Saltar al contenido" }));
+    expect(screen.getByRole("heading", { name: "Inicio administrativo" }).parentElement).toHaveFocus();
+  });
   it("abre el menú por teclado, conserva los destinos del rol y devuelve el foco al cerrar", async () => {
     const user = userEvent.setup();
     currentPathname = "/admin/users";
@@ -81,6 +88,7 @@ describe("AppShell", () => {
     expect(screen.getAllByRole("link", { name: "Cursos" })[0]).toHaveAttribute("aria-current", "page");
     expect(screen.getAllByRole("link", { name: "Clases" })).not.toHaveLength(0);
     expect(screen.queryByRole("link", { name: "Usuarios" })).not.toBeInTheDocument();
+    expect(document.querySelector(".admin-workspace")).not.toBeInTheDocument();
   });
 
   it("limita la navegación estudiante a sus cursos", () => {

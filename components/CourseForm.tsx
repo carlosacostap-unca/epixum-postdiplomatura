@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Button, useToast } from '@/components/ui';
 
 interface CourseFormProps {
+  compact?: boolean;
   course?: Course;
   availableClasses: Class[];
   availableAssignments: Assignment[];
@@ -24,6 +25,7 @@ function ContentSelection({ label, name, items, selected = [] }: { label: string
 }
 
 export default function CourseForm({ 
+  compact = false,
   course, 
   availableClasses, 
   availableAssignments, 
@@ -33,6 +35,7 @@ export default function CourseForm({
   const { notify } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [section, setSection] = useState('information');
   const feedbackRef = useRef<HTMLDivElement>(null);
   
   // Usar estado para la descripción del RichTextEditor
@@ -73,7 +76,28 @@ export default function CourseForm({
   const labelClass = "mb-1 block text-sm font-bold text-[var(--color-on-surface)]";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6 md:p-8">
+    <form onSubmit={handleSubmit} className={compact ? "admin-course-form" : "space-y-6 p-6 md:p-8"} onInvalidCapture={event => {
+      if (!compact) return;
+      const target = event.target as HTMLElement;
+      const invalidSection = target.closest<HTMLElement>('[data-course-form-section]')?.dataset.courseFormSection;
+      if (invalidSection) {
+        if (invalidSection !== section) event.preventDefault();
+        setSection(invalidSection);
+        requestAnimationFrame(() => target.focus());
+      }
+    }}>
+      {compact && <div className="admin-form-tabs" role="tablist" aria-label="Configuración del curso">{[
+        ['information', 'Información'], ['tools', 'Herramientas'], ['content', 'Contenido vinculado'],
+      ].map(([value, label]) => <button key={value} id={`course-form-tab-${value}`} type="button" role="tab" tabIndex={section === value ? 0 : -1} aria-selected={section === value} aria-controls={`course-form-panel-${value}`} onClick={() => setSection(value)} onKeyDown={event => {
+        const tabs = ['information', 'tools', 'content'];
+        const offset = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (!offset && event.key !== 'Home' && event.key !== 'End') return;
+        event.preventDefault();
+        const next = event.key === 'Home' ? tabs[0] : event.key === 'End' ? tabs[2] : tabs[(tabs.indexOf(value) + offset + tabs.length) % tabs.length];
+        setSection(next);
+        event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`#course-form-tab-${next}`)?.focus();
+      }}>{label}</button>)}</div>}
+      <div className={compact ? 'admin-course-form-section' : 'space-y-6'} data-course-form-section="information" id={compact ? 'course-form-panel-information' : undefined} role={compact ? 'tabpanel' : undefined} aria-labelledby={compact ? 'course-form-tab-information' : undefined} hidden={compact && section !== 'information'}>
       <div>
         <label htmlFor="title" className={labelClass}>Título del Curso *</label>
         <input
@@ -150,6 +174,8 @@ export default function CourseForm({
         </p>
       </div>
 
+      </div>
+      <div className={compact ? 'admin-course-tools admin-course-form-section' : 'space-y-6'} data-course-form-section="tools" id={compact ? 'course-form-panel-tools' : undefined} role={compact ? 'tabpanel' : undefined} aria-labelledby={compact ? 'course-form-tab-tools' : undefined} hidden={compact && section !== 'tools'}>
       <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
         <label className="flex cursor-pointer items-start gap-3" htmlFor="aiPreevaluationEnabled">
           <input
@@ -195,7 +221,7 @@ export default function CourseForm({
         </label>
       </div>
 
-      <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-labelledby="course-links-title">
+      <section className="space-y-5 border-t border-[var(--color-outline-variant)] pt-5" aria-label="Herramientas adicionales">
         <div className="rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5">
           <label className="flex cursor-pointer items-start gap-3" htmlFor="outcomesEnabled">
             <input type="checkbox" id="outcomesEnabled" name="outcomesEnabled" value="true" defaultChecked={course?.outcomesEnabled ?? false} className="mt-1 size-5 rounded border-[var(--color-outline)]" />
@@ -236,6 +262,9 @@ export default function CourseForm({
           </label>
         </div>
 
+      </section>
+      </div>
+      <section className={compact ? 'admin-course-form-section' : 'space-y-5'} data-course-form-section="content" id={compact ? 'course-form-panel-content' : undefined} role={compact ? 'tabpanel' : undefined} aria-labelledby={compact ? 'course-form-tab-content' : 'course-links-title'} hidden={compact && section !== 'content'}>
         <div><h2 id="course-links-title" className="font-headline text-lg font-bold">Contenido vinculado</h2><p className="mt-1 text-sm text-[var(--color-text-muted)]">Seleccioná las clases, trabajos y consultas que pertenecen al curso.</p></div>
         <div className="grid gap-5 xl:grid-cols-2">
           <ContentSelection label="Clases" name="classes" items={availableClasses} selected={course?.classes} />
@@ -244,7 +273,7 @@ export default function CourseForm({
         </div>
       </section>
 
-      <div className="flex flex-col-reverse justify-end gap-3 pt-6 sm:flex-row">
+      <div className="admin-form-footer flex flex-col-reverse justify-end gap-3 pt-6 sm:flex-row">
         {error && (
           <div
             ref={feedbackRef}

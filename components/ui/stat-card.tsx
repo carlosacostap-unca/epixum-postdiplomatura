@@ -23,6 +23,7 @@ const toneClasses: Record<NonNullable<StatCardProps["tone"]>, string> = {
 export function StatCard({ className, description, href, icon, label, tone = "neutral", value }: StatCardProps) {
   const content = (
     <div
+      data-ui="stat-card"
       className={cx(
         "flex h-full min-w-0 items-start justify-between gap-3 rounded-[var(--epixum-radius-lg)] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-5 transition-colors",
         href && "hover:bg-[var(--color-surface-container)]",

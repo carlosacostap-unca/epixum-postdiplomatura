@@ -11,9 +11,10 @@ export default async function NewCoursePage() {
   return (
     <div className="mx-auto max-w-5xl page-container">
       <Breadcrumbs items={[{ href: '/admin/courses', label: 'Cursos' }, { label: 'Nuevo curso' }]} />
-      <PageHeader className="mt-6" eyebrow="Administración" title="Crear curso" description="Definí la información, docentes y acceso inicial." />
+      <PageHeader className="mt-6" eyebrow="Administración" title="Crear curso" description="Definí la información y las herramientas del curso." />
       <Card className="mt-8 overflow-hidden">
         <CourseForm 
+          compact
           availableClasses={classes} 
           availableAssignments={assignments} 
           availableInquiries={inquiries}

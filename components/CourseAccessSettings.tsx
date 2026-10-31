@@ -25,7 +25,7 @@ export default function CourseAccessSettings({ courseId, initialMode }: { course
   }
 
   return (
-    <section aria-labelledby="access-mode-title" className="rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-6 md:p-8">
+    <section data-ui="card" aria-labelledby="access-mode-title" className="rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-6 md:p-8">
       <h2 id="access-mode-title" className="font-headline text-2xl font-bold">Modalidad de acceso</h2>
       <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">Cambiarla no elimina matrículas, invitaciones ni actividad existente.</p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">

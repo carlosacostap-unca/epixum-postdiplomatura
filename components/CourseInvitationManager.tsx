@@ -66,7 +66,7 @@ export default function CourseInvitationManager({ basePath, courseId, enabled, i
   const filterHref = (next?: CourseInvitationStatus) => `${basePath || `/admin/courses/${courseId}`}${next ? `?invitaciones=${next}` : ""}`;
 
   return (
-    <section aria-labelledby="invitation-manager-title" className="mt-8 space-y-6 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-6 md:p-8">
+    <section data-ui="card" aria-labelledby="invitation-manager-title" className="mt-8 space-y-6 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-6 md:p-8">
       <div>
         <h2 id="invitation-manager-title" className="font-headline text-2xl font-bold">Emails autorizados</h2>
         <p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Epixum no envía emails. Comunicá la invitación y la contraseña por fuera de la plataforma.</p>

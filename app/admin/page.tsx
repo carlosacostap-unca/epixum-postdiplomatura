@@ -1,33 +1,41 @@
 import Link from "next/link";
 import { getAllCourses, getUserParticipationSummaries, getUsers } from "@/lib/data";
-import { Badge, Card, CardContent, EmptyState, PageHeader, StatCard } from "@/components/ui";
+import { Badge, Card, CardContent, DataTable, EmptyState, PageHeader, type DataColumn } from "@/components/ui";
+import FormattedDate from "@/components/FormattedDate";
+import type { Course } from "@/types";
 
 export default async function AdminDashboardPage() {
   const [courses, users, summaries] = await Promise.all([getAllCourses(), getUsers(), getUserParticipationSummaries()]);
-  const activeCourses = courses.filter((course) => course.status === "en curso").length;
-  const draftCourses = courses.filter((course) => course.status === "borrador").length;
-  const teachers = users.filter((user) => summaries[user.id]?.teaching.length).length;
-  const students = users.filter((user) => summaries[user.id]?.studying.length).length;
+  const activeCourses = courses.filter(course => course.status === "en curso");
+  const drafts = courses.filter(course => course.status === "borrador");
+  const stats = [
+    { label: "En curso", value: activeCourses.length, href: "/admin/courses?status=en%20curso" },
+    { label: "Borradores", value: drafts.length, href: "/admin/courses?status=borrador" },
+    { label: "Docentes", value: users.filter(user => summaries[user.id]?.teaching.length).length, href: "/admin/users?role=docente" },
+    { label: "Estudiantes", value: users.filter(user => summaries[user.id]?.studying.length).length, href: "/admin/users?role=estudiante" },
+  ];
+  const columns: DataColumn<Course>[] = [
+    { id: "course", header: "Curso", render: course => <div><p className="font-semibold">{course.title}</p><p className="mt-1 text-xs text-[var(--color-text-muted)]">{course.expand?.teachers?.map(teacher => teacher.name || teacher.username).join(", ") || "Sin docente asignado"}</p></div> },
+    { id: "status", header: "Estado", render: course => <Badge tone="success">{course.status}</Badge> },
+    { id: "start", header: "Inicio", render: course => course.startDate ? <FormattedDate date={course.startDate} /> : "Sin fecha" },
+    { id: "end", header: "Fin", render: course => course.endDate ? <FormattedDate date={course.endDate} /> : "Sin fecha" },
+    { id: "actions", header: "Acciones", render: course => <Link href={`/admin/courses/${course.id}`} className="font-semibold text-[var(--color-primary)] hover:underline">Administrar</Link> },
+  ];
 
-  return (
-    <div className="page-container space-y-8">
-      <PageHeader eyebrow="Administración" title="Estado de la plataforma" description="Accedé rápidamente a las áreas que requieren gestión." actions={<Link href="/admin/courses/new" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]"><span className="material-symbols-outlined" aria-hidden="true">add</span>Nuevo curso</Link>} />
-      <section aria-label="Resumen operativo" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard href="/admin/courses?status=en%20curso" label="Cursos activos" value={activeCourses} icon="play_circle" tone="primary" description={`${courses.length} cursos totales`} />
-        <StatCard href="/admin/courses?status=borrador" label="Borradores" value={draftCourses} icon="draft" tone={draftCourses ? "warning" : "neutral"} description="Pendientes de publicación" />
-        <StatCard href="/admin/users?role=docente" label="Docentes" value={teachers} icon="co_present" tone="info" description="Asignados al menos a un curso" />
-        <StatCard href="/admin/users?role=estudiante" label="Estudiantes" value={students} icon="school" description={`${users.length} usuarios totales`} />
-      </section>
-      <section aria-labelledby="admin-tasks-title" className="space-y-4">
-        <h2 id="admin-tasks-title" className="font-headline text-xl font-bold">Gestión del campus</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {[{ href: "/admin/courses", icon: "school", title: "Cursos y participantes", description: "Organizá el catálogo, asigná docentes y administrá matrículas e invitaciones." }, { href: "/admin/users", icon: "group", title: "Usuarios y permisos", description: "Encontrá personas, consultá sus cursos y gestioná el acceso administrativo." }].map((item) => <Link key={item.href} href={item.href} className="group rounded-[var(--epixum-radius-xl)]"><Card className="h-full transition-colors group-hover:bg-[var(--color-surface-container)]"><CardContent className="flex items-start gap-4"><span className="material-symbols-outlined flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)]" aria-hidden="true">{item.icon}</span><div className="min-w-0 flex-1"><h3 className="font-semibold">{item.title}</h3><p className="mt-2 text-sm leading-relaxed text-[var(--color-on-surface-variant)]">{item.description}</p></div><span className="material-symbols-outlined text-xl text-[var(--color-text-muted)]" aria-hidden="true">arrow_forward</span></CardContent></Card></Link>)}
-        </div>
-      </section>
-      <section aria-labelledby="admin-courses-title" className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="admin-courses-title" className="font-headline text-xl font-bold">Cursos en preparación</h2><Link href="/admin/courses?status=borrador" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">Ver borradores<span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></Link></div>
-        {draftCourses ? <div className="grid gap-3 md:grid-cols-2">{courses.filter((course) => course.status === "borrador").slice(0, 4).map((course) => <Link key={course.id} href={`/admin/courses/${course.id}`} className="rounded-[var(--epixum-radius-xl)]"><Card className="transition-colors hover:bg-[var(--color-surface-container)]"><CardContent className="flex items-center justify-between gap-3"><div className="min-w-0"><h3 className="font-semibold">{course.title}</h3><p className="mt-1 text-sm text-[var(--color-text-muted)]">Completar configuración</p></div><Badge tone="warning">Borrador</Badge></CardContent></Card></Link>)}</div> : <EmptyState icon="task_alt" title="Sin cursos en preparación" description="Los cursos que crees como borrador aparecerán acá para continuar su configuración." />}
-      </section>
-    </div>
-  );
+  return <div className="page-container space-y-6">
+    <PageHeader title="Inicio" actions={<Link href="/admin/courses/new" className="inline-flex items-center gap-2 rounded-md bg-[var(--color-primary)] px-3 py-2 font-semibold text-[var(--color-on-primary)]"><span className="material-symbols-outlined text-base" aria-hidden="true">add</span>Nuevo curso</Link>} />
+    <section className="admin-overview-stats" aria-label="Resumen operativo">
+      {stats.map(stat => <Link key={stat.label} href={stat.href} className="admin-overview-stat"><strong>{stat.value}</strong><span>{stat.label}</span></Link>)}
+    </section>
+    <section aria-labelledby="admin-drafts-title">
+      <Card><CardContent>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2"><h2 id="admin-drafts-title" className="font-semibold">Por completar</h2><Link href="/admin/courses?status=borrador" aria-label="Ver todos los borradores"><Badge tone={drafts.length ? "warning" : "neutral"}>{drafts.length} borradores</Badge></Link></div>
+        {drafts.length ? <ul className="admin-draft-list">{drafts.slice(0, 4).map(course => <li key={course.id}><div><h3>{course.title}</h3><p>{course.teachers?.length ? "Revisar configuración." : "Asignar docentes y revisar configuración."}</p></div><Link href={`/admin/courses/${course.id}`}>Continuar<span className="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span></Link></li>)}</ul> : <p className="py-2 text-xs text-[var(--color-text-muted)]">No hay cursos pendientes de configuración.</p>}
+      </CardContent></Card>
+    </section>
+    <section aria-labelledby="admin-active-title" className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2"><h2 id="admin-active-title" className="font-semibold">Cursos en curso</h2><Link href="/admin/courses" className="inline-flex items-center gap-2 text-[var(--color-primary)]">Ver todos<span className="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span></Link></div>
+      <DataTable ariaLabel="Cursos en curso" items={activeCourses} columns={columns} getKey={course => course.id} empty={<EmptyState title="Sin cursos en curso" description="Los cursos activos aparecerán acá. Podés comenzar creando un borrador." action={<Link href="/admin/courses/new" className="inline-flex items-center text-[var(--color-primary)]">Crear curso</Link>} />} />
+    </section>
+  </div>;
 }

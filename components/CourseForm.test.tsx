@@ -30,6 +30,33 @@ const course: Course = {
 };
 
 describe("CourseForm", () => {
+  it("conserva los valores de las secciones ocultas al guardar la configuración compacta", async () => {
+    const user = userEvent.setup();
+    vi.mocked(updateCourse).mockResolvedValue({ success: true, courseId: course.id });
+    render(<ToastProvider><CourseForm compact course={{ ...course, contentsEnabled: true }} availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    await user.clear(screen.getByLabelText(/Título del Curso/));
+    await user.type(screen.getByLabelText(/Título del Curso/), "Título actualizado");
+    screen.getByRole("tab", { name: "Información" }).focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: "Herramientas" })).toHaveFocus();
+    await user.click(screen.getByRole("checkbox", { name: /habilitar encuestas/i }));
+    await user.click(screen.getByRole("tab", { name: "Contenido vinculado" }));
+    await user.click(screen.getByRole("button", { name: "Actualizar curso" }));
+    const sent = vi.mocked(updateCourse).mock.calls.at(-1)?.[1];
+    expect(sent?.get("title")).toBe("Título actualizado");
+    expect(sent?.get("contentsEnabled")).toBe("true");
+    expect(sent?.get("surveysEnabled")).toBe("true");
+    expect(sent?.get("organizationMode")).toBe("tradicional");
+  });
+
+  it("abre la sección del campo obligatorio si se intenta guardar desde otra sección", async () => {
+    const user = userEvent.setup();
+    render(<ToastProvider><CourseForm compact availableClasses={[]} availableAssignments={[]} availableInquiries={[]} /></ToastProvider>);
+    await user.click(screen.getByRole("tab", { name: "Herramientas" }));
+    await user.click(screen.getByRole("button", { name: "Crear curso" }));
+    expect(screen.getByRole("tab", { name: "Información" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText(/Título del Curso/)).toBeVisible();
+  });
   it("permite vincular varios contenidos con casillas y conserva el contrato de guardado", async () => {
     const user = userEvent.setup();
     vi.mocked(updateCourse).mockResolvedValue({ success: true, courseId: course.id });

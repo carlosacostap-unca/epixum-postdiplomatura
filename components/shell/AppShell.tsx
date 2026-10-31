@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileModalButton from "@/components/ProfileModalButton";
 import { Dialog, IconButton } from "@/components/ui";
@@ -48,6 +48,7 @@ export default function AppShell({ activeWorkspace, children, pocketbaseUrl, use
   const workspace = activeWorkspace ?? getNavigationForPath(pathname).workspace;
   const navigation = roleNavigation[workspace];
   const [menuOpen, setMenuOpen] = useState(false);
+  const adminMainRef = useRef<HTMLElement>(null);
   const activeItem = navigation.items.find((item) => isNavigationItemActive(pathname, item));
   const closeMenu = () => setMenuOpen(false);
 
@@ -58,6 +59,46 @@ export default function AppShell({ activeWorkspace, children, pocketbaseUrl, use
         return <li key={item.href}><Link href={item.href} onClick={mobile ? closeMenu : undefined} aria-current={active ? "page" : undefined} className={cx("flex min-h-12 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm font-semibold transition-colors", active ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)]")}><span className="material-symbols-outlined text-xl" aria-hidden="true">{item.icon}</span><span>{item.label}</span>{active && <span className="ml-auto size-1.5 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />}</Link></li>;
       })}</ul>
     </nav>;
+  }
+
+  if (workspace === "admin") {
+    return <div className="admin-workspace">
+      <a href="#main-content" className="admin-skip-link" onClick={event => {
+        const main = adminMainRef.current;
+        const target = main?.querySelector<HTMLElement>(".admin-course-content, .page-container") ?? main?.firstElementChild;
+        if (!(target instanceof HTMLElement)) return;
+        event.preventDefault();
+        target.tabIndex = -1;
+        target.focus();
+        target.scrollIntoView?.({ block: "start" });
+      }}>Saltar al contenido</a>
+      <header className="admin-shell-header">
+        <Link href={navigation.homeHref} className="admin-brand" aria-label="Ir al inicio de Administración">
+          <Image src="/epixum-logo.png" alt="" width={26} height={26} style={{ height: "auto" }} />
+          <span>epixum<span className="text-[var(--color-primary)]">.</span></span>
+          <span className="admin-brand-caption">Campus</span>
+        </Link>
+        <div className="admin-shell-actions">
+          <IconButton label="Abrir menú de navegación" icon={<span className="material-symbols-outlined">menu</span>} variant="ghost" onClick={() => setMenuOpen(true)} aria-expanded={menuOpen} aria-haspopup="dialog" />
+          <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl} compact><UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} /><span className="sr-only">Abrir mi perfil</span></ProfileModalButton>
+          <LogoutButton iconOnly className="admin-logout" />
+        </div>
+      </header>
+      <div className="admin-shell-body">
+        <aside className="admin-primary-navigation" aria-label="Navegación principal">
+          <p className="admin-navigation-caption">Administración</p>
+          {navigationLinks()}
+        </aside>
+        <main ref={adminMainRef} id="main-content" tabIndex={-1} className="admin-main">{children}</main>
+      </div>
+      <Dialog open={menuOpen} onOpenChange={setMenuOpen} title="Navegación" description={navigation.workspaceLabel}>
+        <div className="space-y-6 pb-6">
+          {navigationLinks(true)}
+          <WorkspaceSwitcher access={workspaceAccess} active={workspace} onNavigate={closeMenu} />
+          <LogoutButton className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-error)]" />
+        </div>
+      </Dialog>
+    </div>;
   }
 
   return <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-on-surface)]">
@@ -85,7 +126,7 @@ export default function AppShell({ activeWorkspace, children, pocketbaseUrl, use
             <div className="min-w-0"><p className="truncate text-xs text-[var(--color-text-muted)]">{navigation.workspaceLabel}</p><p className="truncate text-sm font-semibold">{activeItem?.label || "Inicio"}</p></div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:block">{workspace === "admin" ? "Gestión del campus" : workspace === "docente" ? "Tu espacio de docencia" : workspace === "bedel" ? "Cursos de solo lectura" : "Tu espacio de aprendizaje"}</span>
+            <span className="hidden whitespace-nowrap text-xs text-[var(--color-text-muted)] sm:block">{workspace === "docente" ? "Tu espacio de docencia" : workspace === "bedel" ? "Cursos de solo lectura" : "Tu espacio de aprendizaje"}</span>
             <ProfileModalButton user={user} pocketbaseUrl={pocketbaseUrl} compact><UserAvatar user={user} pocketbaseUrl={pocketbaseUrl} /><span className="sr-only">Abrir mi perfil</span></ProfileModalButton>
           </div>
         </header>

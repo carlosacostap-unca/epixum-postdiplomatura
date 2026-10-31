@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { getWorkspaceAccess } from "@/lib/course-role-access";
 import { isAdmin } from "@/lib/course-roles";
+import "./admin.css";
 
 export default async function AdminLayout({
   children,

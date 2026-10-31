@@ -18,6 +18,7 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 export function Badge({ children, className, tone = "neutral", ...props }: BadgeProps) {
   return (
     <span
+      data-ui="badge"
       className={cx(
         "inline-flex min-h-7 items-center rounded-[var(--epixum-radius-pill)] px-3 py-1 text-xs font-bold leading-none tracking-wide",
         toneClasses[tone],
