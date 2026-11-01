@@ -6,6 +6,7 @@ import { Button, ConfirmDialog } from '@/components/ui';
 import { manageSurvey } from '@/lib/actions-course-surveys';
 import { surveyIsOpen, type CourseSurvey } from '@/lib/course-surveys';
 import type { SurveyCommand } from '@/lib/course-survey-service';
+import { normalizedSurveyAudience, surveyAudienceLabels } from '@/lib/survey-audience';
 
 export function SurveyActions({ survey, base, dirty = false }: { survey: CourseSurvey; base: string; dirty?: boolean }) {
   const router = useRouter();
@@ -33,6 +34,6 @@ export function SurveyActions({ survey, base, dirty = false }: { survey: CourseS
       <Button variant="secondary" disabled={pending || dirty} onClick={() => run('duplicate')}>Duplicar encuesta</Button>
       {survey.status === 'draft' && <Button variant="ghost" disabled={pending} onClick={() => setConfirm('delete')}>Eliminar borrador</Button>}
     </div>
-    <ConfirmDialog open={Boolean(confirm)} onOpenChange={open => { if (!open) setConfirm(null); }} isPending={pending} onConfirm={() => { if (confirm) run(confirm); }} title={confirm === 'publish' ? 'Publicar encuesta' : confirm === 'close' ? 'Cerrar encuesta' : 'Eliminar borrador'} confirmLabel={confirm === 'publish' ? 'Publicar' : confirm === 'close' ? 'Cerrar encuesta' : 'Eliminar'} tone={confirm === 'delete' ? 'danger' : 'default'} description={confirm === 'publish' ? 'Se publicará la última versión guardada. Las preguntas y la privacidad quedarán fijas. Guardá antes cualquier cambio pendiente en el editor.' : confirm === 'close' ? 'Los alumnos ya no podrán enviar respuestas. Los resultados se conservarán.' : 'Se eliminará este borrador. Esta acción no se puede deshacer.'} />
+    <ConfirmDialog open={Boolean(confirm)} onOpenChange={open => { if (!open) setConfirm(null); }} isPending={pending} onConfirm={() => { if (confirm) run(confirm); }} title={confirm === 'publish' ? 'Publicar encuesta' : confirm === 'close' ? 'Cerrar encuesta' : 'Eliminar borrador'} confirmLabel={confirm === 'publish' ? 'Publicar' : confirm === 'close' ? 'Cerrar encuesta' : 'Eliminar'} tone={confirm === 'delete' ? 'danger' : 'default'} description={confirm === 'publish' ? `Se publicará la última versión guardada. Las preguntas y la privacidad quedarán fijas, al igual que los destinatarios: ${surveyAudienceLabels[normalizedSurveyAudience(survey.audience)]}. Guardá antes cualquier cambio pendiente en el editor.` : confirm === 'close' ? 'Los alumnos ya no podrán enviar respuestas. Los resultados se conservarán.' : 'Se eliminará este borrador. Esta acción no se puede deshacer.'} />
   </div>;
 }

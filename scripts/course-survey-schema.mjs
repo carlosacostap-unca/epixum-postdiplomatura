@@ -1,4 +1,5 @@
 import { COURSE_UPDATE_RULE } from './course-schema-rules.mjs';
+import { surveyAudienceField } from './survey-targeting-schema.mjs';
 
 export const surveyRules = { listRule: null, viewRule: null, createRule: null, updateRule: null, deleteRule: null };
 async function ensure(pb, name, fields, rules, indexes = []) {
@@ -23,6 +24,7 @@ export async function applyCourseSurveySchema(pb) {
     { name: 'title', type: 'text', required: true, max: 160 },
     { name: 'description', type: 'text', max: 3000 },
     { name: 'anonymous', type: 'bool' },
+    surveyAudienceField,
     { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['draft', 'published', 'closed'] },
     { name: 'closesAt', type: 'date' },
     { name: 'questions', type: 'json', required: true, maxSize: 200000 },

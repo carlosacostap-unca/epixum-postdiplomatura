@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizedSurveyAudience, surveyAudienceSchema, type SurveyAudience } from './survey-audience';
 
 const key = z.string().regex(/^[a-zA-Z0-9_-]{1,64}$/).refine(value => !['__proto__', 'constructor', 'prototype'].includes(value), 'Identificador no válido.');
 const option = z.object({ id: key, label: z.string().trim().min(1, 'Completá las opciones.').max(300) }).strict();
@@ -21,6 +22,7 @@ export const surveyDesignSchema = z.object({
   title: z.string().trim().min(1, 'Completá el título.').max(160),
   description: z.string().trim().max(3000),
   anonymous: z.boolean(),
+  audience: surveyAudienceSchema.default('all'),
   closesAt: z.union([z.literal(''), z.iso.datetime({ offset: true })]),
   questions: z.array(question).min(1, 'Agregá al menos una pregunta.').max(40, 'Se admiten hasta 40 preguntas.'),
 }).strict().superRefine((data, ctx) => {
@@ -29,7 +31,7 @@ export const surveyDesignSchema = z.object({
 });
 
 export type SurveyQuestion = z.infer<typeof question>;
-export type SurveyDesign = z.infer<typeof surveyDesignSchema>;
+export type SurveyDesign = Omit<z.infer<typeof surveyDesignSchema>, 'audience'> & { audience?: SurveyAudience };
 export type CourseSurvey = SurveyDesign & { id: string; course: string; status: 'draft' | 'published' | 'closed'; revision: string };
 export type SurveyAnswers = Record<string, string | string[] | number>;
 export type SurveyResponse = { answers: SurveyAnswers; student?: string };
@@ -61,12 +63,13 @@ export function parseSurveyAnswers(questions: SurveyQuestion[], input: unknown):
     if (!valid) throw new SurveyError(`Revisá la respuesta a «${q.title}».`);
     answers[q.id] = typeof value === 'string' ? value.trim() : value;
   }
+  if (!Object.keys(answers).length) throw new SurveyError('Respondé al menos una pregunta antes de enviar.');
   if (new TextEncoder().encode(JSON.stringify(answers)).length > 180_000) throw new SurveyError('Las respuestas son demasiado extensas. Acortá los textos antes de enviar.');
   return answers;
 }
 
 export function surveyPublicDto(record: CourseSurvey): CourseSurvey {
-  return { id: record.id, course: record.course, status: record.status, revision: record.revision, title: record.title, description: record.description, anonymous: record.anonymous, closesAt: record.closesAt ? new Date(record.closesAt).toISOString() : '', questions: record.questions };
+  return { id: record.id, course: record.course, status: record.status, revision: record.revision, title: record.title, description: record.description, anonymous: record.anonymous, audience: normalizedSurveyAudience(record.audience), closesAt: record.closesAt ? new Date(record.closesAt).toISOString() : '', questions: record.questions };
 }
 
 // No response-level rows, IDs, timestamps or submission order in anonymous results.

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type PocketBase from 'pocketbase';
 import { commandCourseSurvey, listCourseSurveys, readCourseSurvey, readSurveyResults, requireSurveyAccess, saveCourseSurvey, submitCourseSurvey } from './course-survey-service';
 import type { CourseSurvey } from './course-surveys';
@@ -17,6 +17,7 @@ function fixture() {
     course_surveys: [{ ...design, id: surveyId, course: courseId, status: 'published', revision: 'v1', opening: 'opening1' }],
     course_survey_openings: [{ id: 'opening1', survey: surveyId }],
     course_survey_participations: [], course_survey_responses: [], course_survey_revisions: [],
+    course_outcomes: [],
   };
   let seq = 0;
   let failNext = false;
@@ -80,6 +81,76 @@ function fixture() {
 describe('servicio de encuestas', () => {
   let f: ReturnType<typeof fixture>;
   beforeEach(() => { f = fixture(); });
+  it.each([
+    ['aprobado', ['all', 'approved']],
+    ['no_aprobado', ['all', 'not_approved_or_incomplete']],
+    ['no_completo', ['all', 'not_approved_or_incomplete']],
+    [null, ['all']],
+    ['unknown', ['all']],
+  ])('filtra listado, acceso directo y envío según publicado %j', async (status, expected) => {
+    f.rows('courses')[0].outcomesEnabled = true;
+    f.rows('course_outcomes').push({ id: 'outcome', course: courseId, student: 'student', draft: { status: 'aprobado', grade: 10 }, published: status ? { status, grade: 0 } : null });
+    for (const audience of ['all', 'approved', 'not_approved_or_incomplete']) f.rows('course_surveys').push({ ...f.rows('course_surveys')[0], id: audience, audience });
+    const data = await listCourseSurveys(f.actor('student'), f.service, courseId, 'student');
+    expect(data.surveys.map(s => s.id)).toEqual([surveyId, ...expected]);
+    expect(JSON.stringify(data.surveys)).not.toContain('grade');
+    for (const audience of ['all', 'approved', 'not_approved_or_incomplete']) {
+      if (expected.includes(audience)) {
+        await expect(readCourseSurvey(f.actor('student'), f.service, courseId, audience, 'student')).resolves.toBeTruthy();
+        await expect(submitCourseSurvey(f.actor('student'), f.service, courseId, audience, { q: 'Opinión' })).resolves.toBeUndefined();
+      } else {
+        await expect(readCourseSurvey(f.actor('student'), f.service, courseId, audience, 'student')).rejects.toThrow('disponible');
+        await expect(submitCourseSurvey(f.actor('student'), f.service, courseId, audience, { q: 'Opinión' })).rejects.toThrow('disponible');
+      }
+    }
+    expect(f.rows('course_survey_responses')).toHaveLength(expected.length);
+  });
+  it('usa solamente el publicado del mismo alumno y curso; no considera el borrador', async () => {
+    f.rows('courses')[0].outcomesEnabled = true; f.survey().audience = 'approved';
+    f.rows('course_outcomes').push({ id: 'other', course: courseId, student: 'other', published: { status: 'aprobado' } }, { id: 'other-course', course: 'other', student: 'student', published: { status: 'aprobado' } });
+    expect((await listCourseSurveys(f.actor('student'), f.service, courseId, 'student')).surveys).toEqual([]);
+    const own = { id: 'own', course: courseId, student: 'student', draft: { status: 'no_aprobado' }, published: { status: 'aprobado' } as { status: string } | null };
+    f.rows('course_outcomes').push(own);
+    await expect(readCourseSurvey(f.actor('student'), f.service, courseId, surveyId, 'student')).resolves.toBeTruthy();
+    own.published = null;
+    await expect(submitCourseSurvey(f.actor('student'), f.service, courseId, surveyId, { q: 'Respuesta' })).rejects.toThrow('disponible');
+    expect(f.rows('course_survey_responses')).toHaveLength(0);
+  });
+  it('preserva respuestas al cambiar el resultado y revoca también reintentos de quien ya respondió', async () => {
+    f.rows('courses')[0].outcomesEnabled = true; f.survey().audience = 'approved';
+    const outcome = { id: 'own', course: courseId, student: 'student', published: { status: 'aprobado' } };
+    f.rows('course_outcomes').push(outcome);
+    await submitCourseSurvey(f.actor('student'), f.service, courseId, surveyId, { q: 'Respuesta' });
+    f.rows('course_outcomes')[0].published = { status: 'no_completo' };
+    await expect(submitCourseSurvey(f.actor('student'), f.service, courseId, surveyId, { q: 'Reintento' })).rejects.toThrow('disponible');
+    expect((await listCourseSurveys(f.actor('student'), f.service, courseId, 'student')).surveys).toHaveLength(0);
+    expect(f.rows('course_survey_responses')).toHaveLength(1);
+    expect(f.rows('course_survey_responses')[0].student).toBeUndefined();
+  });
+  it('revalida elegibilidad antes del lote si se retira el resultado durante el envío', async () => {
+    f.rows('courses')[0].outcomesEnabled = true; f.survey().audience = 'approved';
+    const outcome = { id: 'own', course: courseId, student: 'student', published: { status: 'aprobado' } as { status: string } | null };
+    f.rows('course_outcomes').push(outcome);
+    const original = f.service.collection.bind(f.service); let reads = 0;
+    vi.spyOn(f.service, 'collection').mockImplementation(name => {
+      if (name === 'course_outcomes' && ++reads === 2) outcome.published = null;
+      return original(name);
+    });
+    await expect(submitCourseSurvey(f.actor('student'), f.service, courseId, surveyId, { q: 'Respuesta' })).rejects.toThrow('disponible');
+    expect(f.rows('course_survey_participations')).toHaveLength(0);
+    expect(f.rows('course_survey_responses')).toHaveLength(0);
+  });
+  it('no permite segmentadas con resultados deshabilitados y sí permite gestionar sus borradores', async () => {
+    f.survey().audience = 'approved'; f.survey().status = 'draft';
+    await expect(readCourseSurvey(f.actor('teacher'), f.service, courseId, surveyId, 'manager')).resolves.toBeTruthy();
+    await expect(commandCourseSurvey(f.actor('teacher'), f.service, courseId, surveyId, 'publish', 'v1')).rejects.toThrow('habilitar los resultados');
+    const copy = await commandCourseSurvey(f.actor('teacher'), f.service, courseId, surveyId, 'duplicate', 'v1');
+    expect(f.rows('course_surveys').find(s => s.id === copy)?.audience).toBe('approved');
+    f.survey().status = 'published';
+    expect((await listCourseSurveys(f.actor('student'), f.service, courseId, 'student')).surveys).toHaveLength(0);
+    await expect(readCourseSurvey(f.actor('student'), f.service, courseId, surveyId, 'student')).rejects.toThrow('disponible');
+    await expect(submitCourseSurvey(f.actor('student'), f.service, courseId, surveyId, { q: 'Respuesta' })).rejects.toThrow('disponible');
+  });
   it('autoriza docentes por asignación contextual y administradores', async () => {
     await expect(requireSurveyAccess(f.actor('teacher'), courseId, 'manager')).resolves.toBeTruthy();
     await expect(requireSurveyAccess(f.actor('admin', 'admin'), courseId, 'manager')).resolves.toBeTruthy();

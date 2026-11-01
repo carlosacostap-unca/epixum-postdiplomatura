@@ -7,6 +7,7 @@ import { Button, Card, CardContent, Field } from '@/components/ui';
 import { saveSurvey } from '@/lib/actions-course-surveys';
 import { surveyDesignSchema, surveyQuestionLabels, type CourseSurvey, type SurveyDesign, type SurveyQuestion } from '@/lib/course-surveys';
 import { surveyControl } from './styles';
+import { surveyAudienceLabels, type SurveyAudience } from '@/lib/survey-audience';
 
 const newId = () => crypto.randomUUID().replaceAll('-', '');
 function newQuestion(): SurveyQuestion { return { id: newId(), title: '', type: 'single', required: true, options: [{ id: newId(), label: '' }, { id: newId(), label: '' }] }; }
@@ -18,7 +19,7 @@ function localDate(iso: string) {
 
 export function SurveyEditor({ courseId, base, survey, onDirtyChange }: { courseId: string; base: string; survey?: CourseSurvey; onDirtyChange?: (dirty: boolean) => void }) {
   const router = useRouter();
-  const [design, setDesignState] = useState<SurveyDesign>(() => survey ? { title: survey.title, description: survey.description, anonymous: survey.anonymous, closesAt: survey.closesAt, questions: survey.questions } : { title: '', description: '', anonymous: false, closesAt: '', questions: [] });
+  const [design, setDesignState] = useState<SurveyDesign>(() => survey ? { title: survey.title, description: survey.description, anonymous: survey.anonymous, audience: survey.audience || 'all', closesAt: survey.closesAt, questions: survey.questions } : { title: '', description: '', anonymous: false, audience: 'all', closesAt: '', questions: [] });
   const [date, setDate] = useState(() => localDate(survey?.closesAt || ''));
   const [error, setError] = useState('');
   const [pending, startTransition] = useTransition();
@@ -55,6 +56,7 @@ export function SurveyEditor({ courseId, base, survey, onDirtyChange }: { course
         <Field label="Título de la encuesta" required><input className={surveyControl} maxLength={160} value={design.title} onChange={e => setDesign({ ...design, title: e.target.value })} /></Field>
         <Field label="Descripción" hint="Explicá para qué se usarán las respuestas."><textarea className={surveyControl} rows={3} maxLength={3000} value={design.description} onChange={e => setDesign({ ...design, description: e.target.value })} /></Field>
         <Field label="Privacidad de las respuestas" hint="La modalidad queda fija al publicar."><select className={surveyControl} value={design.anonymous ? 'anonymous' : 'identified'} onChange={e => setDesign({ ...design, anonymous: e.target.value === 'anonymous' })}><option value="identified">Identificadas: se muestra el nombre del alumno</option><option value="anonymous">Anónimas: resultados sin nombres ni respuestas vinculadas</option></select></Field>
+        <Field label="Destinatarios de la encuesta" hint="La selección queda fija al publicar. Los grupos usan el resultado de cursada publicado. Para publicarlos, la administración debe habilitar resultados de cursada en el curso."><select className={surveyControl} value={design.audience || 'all'} onChange={e => setDesign({ ...design, audience: e.target.value as SurveyAudience })}>{Object.entries(surveyAudienceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
         <Field label="Fecha de cierre (opcional)" hint="Se usa la zona horaria de tu dispositivo. Si la dejás vacía, podrás cerrar la encuesta manualmente."><input type="datetime-local" className={surveyControl} value={date} onChange={e => { onDirtyChange?.(true); setDate(e.target.value); }} /></Field>
       </CardContent></Card>
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-bold">Preguntas ({design.questions.length}/40)</h2><Button variant="secondary" disabled={design.questions.length >= 40} onClick={() => setDesign(d => ({ ...d, questions: [...d.questions, newQuestion()] }))}>Agregar pregunta</Button></div>

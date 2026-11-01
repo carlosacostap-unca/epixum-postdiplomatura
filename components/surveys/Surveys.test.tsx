@@ -38,10 +38,20 @@ describe('encuestas: interfaz', () => {
     await user.selectOptions(screen.getByLabelText('Tipo de la pregunta 2'), 'text');
     await user.click(screen.getByRole('button', { name: 'Subir pregunta 2' }));
     await user.selectOptions(screen.getByLabelText('Privacidad de las respuestas'), 'anonymous');
+    await user.selectOptions(screen.getByLabelText('Destinatarios de la encuesta'), 'not_approved_or_incomplete');
     await user.click(screen.getByRole('button', { name: 'Guardar borrador' }));
-    await waitFor(() => expect(actions.save).toHaveBeenCalledWith(courseId, null, '', expect.objectContaining({ title: 'Diagnóstico', anonymous: true, questions: [expect.objectContaining({ title: 'Expectativas', type: 'text', options: [] }), expect.objectContaining({ title: 'Experiencia', type: 'single' })] })));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith(courseId, null, '', expect.objectContaining({ title: 'Diagnóstico', anonymous: true, audience: 'not_approved_or_incomplete', questions: [expect.objectContaining({ title: 'Expectativas', type: 'text', options: [] }), expect.objectContaining({ title: 'Experiencia', type: 'single' })] })));
     expect(actions.push).toHaveBeenCalledWith(`${base}/${survey.id}`);
   }, 15000);
+  it('conserva el destinatario del borrador al editarlo y exige guardar un cambio de grupo', async () => {
+    const user = userEvent.setup();
+    render(<SurveyDraft survey={{ ...survey, status: 'draft', audience: 'approved' }} base={base} />);
+    expect(screen.getByLabelText('Destinatarios de la encuesta')).toHaveValue('approved');
+    await user.selectOptions(screen.getByLabelText('Destinatarios de la encuesta'), 'not_approved_or_incomplete');
+    expect(screen.getByRole('button', { name: 'Publicar encuesta guardada' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Guardar borrador' }));
+    await waitFor(() => expect(actions.save).toHaveBeenCalledWith(courseId, survey.id, 'v1', expect.objectContaining({ audience: 'not_approved_or_incomplete' })));
+  });
   it('impide publicar una versión con cambios pendientes de guardar', async () => {
     const user = userEvent.setup();
     render(<SurveyDraft survey={{ ...survey, status: 'draft' }} base={base} />);
@@ -83,6 +93,13 @@ describe('encuestas: interfaz', () => {
     expect(screen.getByLabelText('¿Qué esperás del curso?')).toHaveValue('Aprender');
     await user.click(screen.getByRole('button', { name: 'Enviar respuestas' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Tu respuesta fue enviada');
+  });
+  it('explica el envío vacío cuando todas las preguntas son opcionales', async () => {
+    const user = userEvent.setup();
+    render(<SurveyResponseForm survey={{ ...survey, questions: survey.questions.map(question => ({ ...question, required: false })) }} submitted={false} />);
+    await user.click(screen.getByRole('button', { name: 'Enviar respuestas' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Respondé al menos una pregunta');
+    expect(actions.respond).not.toHaveBeenCalled();
   });
   it('muestra confirmación de participación previa y bloquea una encuesta vencida', () => {
     const { rerender } = render(<SurveyResponseForm key="submitted" survey={survey} submitted />);

@@ -15,6 +15,7 @@ import { SurveyDraft } from './SurveyDraft';
 import { SurveyActions } from './SurveyActions';
 import { SurveyResponseForm } from './SurveyResponseForm';
 import { SurveyResults } from './SurveyResults';
+import { normalizedSurveyAudience, surveyAudienceLabels } from '@/lib/survey-audience';
 
 export type SurveyWorkspace = 'admin' | 'teacher' | 'student';
 type Props = { courseId: string; workspace: SurveyWorkspace };
@@ -53,9 +54,9 @@ export async function SurveyListPage({ courseId, workspace }: Props) {
   const manager = workspace !== 'student';
   return <Frame workspace={workspace} course={course}>
     {manager && <div className="flex flex-wrap items-center justify-between gap-4"><p className="text-sm text-[var(--color-on-surface-variant)]">{surveys.length} encuestas en este curso</p><Link className="inline-flex min-h-11 items-center rounded-xl bg-[var(--color-primary)] px-5 py-3 font-bold text-[var(--color-on-primary)]" href={`${base}/nueva`}>Crear encuesta</Link></div>}
-    {!surveys.length ? <EmptyState icon="poll" title={manager ? 'Creá la primera encuesta' : 'Todavía no hay encuestas publicadas'} description={manager ? 'Empezá con un diagnóstico inicial, una consulta sobre dificultades o una evaluación del curso.' : 'Las encuestas aparecerán acá cuando el equipo docente las publique.'} />
+    {!surveys.length ? <EmptyState icon="poll" title={manager ? 'Creá la primera encuesta' : 'Todavía no hay encuestas disponibles para vos'} description={manager ? 'Empezá con un diagnóstico inicial, una consulta sobre dificultades o una evaluación del curso.' : 'Las encuestas aparecerán acá cuando estén publicadas y se cumplan sus condiciones de participación.'} />
       : <div className="grid gap-5 md:grid-cols-2">{surveys.map(survey => <Card key={survey.id}><CardContent className="flex h-full flex-col items-start gap-4">
-        <div className="flex flex-wrap gap-2"><Status survey={survey} /><Badge>{survey.anonymous ? 'Anónima' : 'Identificada'}</Badge>{survey.submitted && <Badge tone="success">Respondida</Badge>}</div>
+        <div className="flex flex-wrap gap-2"><Status survey={survey} /><Badge>{survey.anonymous ? 'Anónima' : 'Identificada'}</Badge>{manager && <Badge>{surveyAudienceLabels[normalizedSurveyAudience(survey.audience)]}</Badge>}{survey.submitted && <Badge tone="success">Respondida</Badge>}</div>
         <h2 className="break-words text-xl font-bold"><Link href={`${base}/${survey.id}`} className="hover:underline">{survey.title}</Link></h2>
         {survey.description && <p className="line-clamp-3 whitespace-pre-wrap break-words text-sm text-[var(--color-on-surface-variant)]">{survey.description}</p>}
         <p className="text-sm text-[var(--color-on-surface-variant)]">{survey.questions.length} preguntas{manager ? ` · ${survey.responseCount} respuestas` : ''}</p>
@@ -80,7 +81,7 @@ export async function SurveyDetailPage({ courseId, surveyId, workspace }: Props 
   const results = manager && survey.status !== 'draft' ? await readSurveyResults(pb, service, courseId, surveyId).catch(unavailable) : null;
   return <Frame workspace={workspace} course={course}>
     <Link href={base} className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]">← Todas las encuestas</Link>
-    <div className="space-y-3"><div className="flex flex-wrap gap-2"><Status survey={survey} /><Badge>{survey.anonymous ? 'Anónima' : 'Identificada'}</Badge></div><h2 className="break-words text-2xl font-bold">{survey.title}</h2>{survey.description && <p className="whitespace-pre-wrap break-words text-[var(--color-on-surface-variant)]">{survey.description}</p>}{survey.closesAt && <p className="text-sm">Cierre: <FormattedDate date={survey.closesAt} showTime /></p>}</div>
+    <div className="space-y-3"><div className="flex flex-wrap gap-2"><Status survey={survey} /><Badge>{survey.anonymous ? 'Anónima' : 'Identificada'}</Badge>{manager && <Badge>{surveyAudienceLabels[normalizedSurveyAudience(survey.audience)]}</Badge>}</div><h2 className="break-words text-2xl font-bold">{survey.title}</h2>{survey.description && <p className="whitespace-pre-wrap break-words text-[var(--color-on-surface-variant)]">{survey.description}</p>}{survey.closesAt && <p className="text-sm">Cierre: <FormattedDate date={survey.closesAt} showTime /></p>}</div>
     {manager ? <>
       {survey.status === 'draft' ? <SurveyDraft key={survey.revision} survey={survey} base={base} /> : <>
         <SurveyActions survey={survey} base={base} />

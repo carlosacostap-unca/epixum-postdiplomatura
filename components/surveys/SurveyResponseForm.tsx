@@ -52,7 +52,7 @@ export function SurveyResponseForm({ survey, submitted }: { survey: CourseSurvey
           }} /><span className="break-words">{o.label}</span></label>)}
         {!q.required && (q.type === 'single' || q.type === 'scale') && <Button variant="ghost" onClick={() => setAnswers(current => { const next = { ...current }; delete next[q.id]; return next; })}>Limpiar respuesta</Button>}
       </fieldset></CardContent></Card>)}
-      <p className="text-sm text-[var(--color-on-surface-variant)]">Revisá tus respuestas antes de enviar. Después del envío no podrás modificarlas.</p>
+      <p className="text-sm text-[var(--color-on-surface-variant)]">Respondé al menos una pregunta y revisá tus respuestas antes de enviar. Después del envío no podrás modificarlas.</p>
       <Button type="submit" isPending={pending} pendingLabel="Enviando…">Enviar respuestas</Button>
     </fieldset>
   </form>;
