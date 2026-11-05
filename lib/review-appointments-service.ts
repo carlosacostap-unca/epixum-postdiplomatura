@@ -177,7 +177,9 @@ export async function reserveReviewBlock(pb: PocketBase, courseId: string, revie
     if (existing.items.length) throw new ReviewError('Ya tenés un turno reservado o pendiente de evaluación para esta revisión.');
     service ??= await createServiceClient();
     const allocationKey = await ensureReviewAllocationKey(service, review.id);
-    const slots = await pb.collection('review_slots').getFullList<ReviewSlot>({ filter: pb.filter('review = {:review} && block = {:block} && active = true && startsAt > {:now}', { review: review.id, block: block.id, now: new Date().toISOString() }), sort: 'startsAt,id' });
+    // Let the SDK format the date for PocketBase; ISO strings with "T" would
+    // exclude every slot on the same day, including newly cancelled bookings.
+    const slots = await pb.collection('review_slots').getFullList<ReviewSlot>({ filter: pb.filter('review = {:review} && block = {:block} && active = true && startsAt > {:now}', { review: review.id, block: block.id, now: new Date() }), sort: 'startsAt,id' });
     const occupied = await service.collection('review_bookings').getFullList<{ slot: string }>({ filter: pb.filter('review = {:review} && slot.block = {:block} && status != "cancelled"', { review: review.id, block: block.id }), fields: 'slot' });
     const taken = new Set(occupied.map(booking => booking.slot));
     const slot = slots.find(candidate => !taken.has(candidate.id));

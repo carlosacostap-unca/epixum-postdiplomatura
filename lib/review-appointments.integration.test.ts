@@ -2,7 +2,7 @@
 import { randomUUID } from 'node:crypto';
 import dotenv from 'dotenv';
 import PocketBase from 'pocketbase';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createReview, updateReview, saveReviewBlock, saveReviewMeeting, reserveReviewBlock, cancelReviewBooking, evaluateReviewBooking, removeReviewBlock, requireReviewCourse } from './review-appointments-service';
 import type { Review, ReviewSlot, ReviewBlock, ReviewBooking, ReviewBookingNote, ReviewBlockMeeting } from './review-appointments';
 
@@ -89,7 +89,21 @@ describe.skipIf(process.env.REVIEWS_INTEGRATION !== '1')('revisiones en PocketBa
       // Cancelling the first allocation makes precisely that gap available next.
       const earliest = filled.find(booking => booking.slot === hiddenSlots.sort((a, b) => a.startsAt.localeCompare(b.startsAt))[0].id)!;
       await cancelReviewBooking(earliest.student === student.id ? student.pb : other.pb, course.id, hidden.id, earliest.id, 'student');
-      expect(await reserveReviewBlock(third.pb, course.id, hidden.id, hiddenSlots[0].block)).toBe(earliest.slot);
+      // Rebooking on the appointment day must use PocketBase's date format.
+      const rebookingTime = new Date(Date.parse(hiddenSlots[0].startsAt) - 60000);
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(rebookingTime);
+      try {
+        expect(await reserveReviewBlock(third.pb, course.id, hidden.id, hiddenSlots[0].block)).toBe(earliest.slot);
+        expect((await teacher.pb.collection('review_bookings').getOne(earliest.id)).status).toBe('cancelled');
+        const reassigned = await teacher.pb.collection('review_bookings').getFullList<ReviewBooking>({ filter: `review = "${hidden.id}" && status = "reserved"` });
+        expect(reassigned).toHaveLength(2);
+        expect(reassigned.find(booking => booking.student === third.id)?.slot).toBe(earliest.slot);
+        const preserved = filled.find(booking => booking.id !== earliest.id)!;
+        expect(reassigned.find(booking => booking.id === preserved.id)?.slot).toBe(preserved.slot);
+      } finally {
+        vi.useRealTimers();
+      }
       await expect(saveReviewBlock(peer.pb, course.id, review.id, (await fresh()).revision, null, blockInput)).rejects.toThrow('superpuesta');
       // Concurrent requests for one range fill the first two slots in order.
       const race = await Promise.allSettled([reserveReviewBlock(student.pb, course.id, review.id, available[0].block), reserveReviewBlock(other.pb, course.id, review.id, available[0].block)]);
