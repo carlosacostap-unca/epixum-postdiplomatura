@@ -9,7 +9,8 @@ export const NODO_STAIRS_WIDTH=Math.ceil(116*NODO_SCALE);
 export const NODO_FOOTPRINT={x:360,y:588,w:205,h:83};
 export const ROADS=[
  {x:0,y:210,w:960,h:30,name:'AV. GÜEMES',tx:430,ty:220},
- {x:308,y:240,w:24,h:720,name:'AV. COLÓN',tx:310,ty:680},
+ // Colón continues north of Güemes through the visible neighborhood.
+ {x:308,y:0,w:24,h:960,name:'AV. COLÓN',tx:310,ty:680},
  {x:490,y:0,w:24,h:210,name:'VIRGEN DEL VALLE',tx:490,ty:100},
  {x:646,y:0,w:22,h:960,name:'CASEROS',tx:648,ty:650},
  {x:820,y:0,w:20,h:960,name:'ENTRE RÍOS',tx:822,ty:650},

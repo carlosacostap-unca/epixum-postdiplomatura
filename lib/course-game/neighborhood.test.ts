@@ -3,6 +3,15 @@ import {ROADS,NEIGHBORHOOD_BUILDINGS,WORLD_WIDTH,WORLD_HEIGHT,NODO_ENTRANCE,NODO
 import {canStand,SPAWN,insideNodo,nearNodo,walk,emptyWalkInput} from './movement';
 import {findWalkPath,clearSegment} from './navigation';
 describe('barrio ampliado del Nodo',()=>{
+ it('continúa Colón al norte de Güemes hasta el límite del mapa, sin obstáculos',()=>{
+  const colon=ROADS.find(r=>r.name==='AV. COLÓN')!,guemes=ROADS.find(r=>r.name==='AV. GÜEMES')!;
+  expect(colon.y).toBe(0);
+  expect(colon.y+colon.h).toBe(WORLD_HEIGHT);
+  const x=colon.x+colon.w/2;
+  const south={x,y:guemes.y-15},north={x,y:WORLD_HEIGHT-12};
+  expect(clearSegment(south,north,canStand)).toBe(true);
+  for(let y=guemes.y+guemes.h;y<WORLD_HEIGHT-12;y+=4) expect(canStand({x,y})).toBe(true);
+ });
  it('orienta el frente hacia Güemes y Virgen del Valle, con la plaza detrás',()=>{
   const guemes=ROADS.find(r=>r.name==='AV. GÜEMES')!,virgen=ROADS.find(r=>r.name==='VIRGEN DEL VALLE')!;
   expect(virgen.y).toBeGreaterThan(guemes.y);
