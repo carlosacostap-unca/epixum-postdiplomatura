@@ -46,6 +46,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
     create() {
       if (disposed) return;
       scene = { drawWorld: () => { this.drawWorld(); this.drawCharacter(); }, drawSelection: () => this.drawSelection() };
+      if(!state.interior && !state.classroom) this.cameras.main.setScroll(-40,-40);
       this.ground = this.add.graphics();
       this.environment = this.add.graphics();
       this.selection = this.add.graphics();
@@ -128,7 +129,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       const intent = manual ? {x:Number(input.right)-Number(input.left),y:Number(input.down)-Number(input.up)} : destination ? {x:destination.x-this.position.x,y:destination.y-this.position.y} : {x:0,y:0};
       if (state.movementLocked || manual || !destination) this.route = [];
       else if (destination !== this.lastDestination || (!this.route.length && this.routeRetry>=250 && Math.hypot(destination.x-this.position.x,destination.y-this.position.y)>1)) {
-        this.route = findWalkPath(this.position, destination, playerAllowed);
+        this.route = findWalkPath(this.position, destination, allowed);
         this.routeRetry = 0;
       }
       this.lastDestination = destination;
@@ -137,6 +138,9 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       if (goal) {
         for (const [x,y,w,h] of [[-5,-1,3,2],[3,-1,3,2],[-1,-5,2,3],[-1,3,2,3]]) this.rect(this.destinationMarker, 0xffecac, goal.x+x, goal.y+y, w, h);
       }
+      const waypoint=this.route[0];
+      const travelIntent=manual ? intent : waypoint ? {x:waypoint.x-this.position.x,y:waypoint.y-this.position.y} : intent;
+      updateRobotCompanion(this.companion,this.position,delta,allowed,Boolean(state.movementLocked),travelIntent);
       let moved = false;
       if (!state.movementLocked && input && state.character) {
         const next = manual ? walk(this.position, input, delta, playerAllowed) : followWalkPath(this.position, this.route, delta, playerAllowed);
@@ -165,7 +169,6 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
         this.stride = 0;
         this.drawCharacter();
       }
-      updateRobotCompanion(this.companion,this.position,delta,allowed,Boolean(state.movementLocked),intent);
       this.drawCompanion();
       if (state.paused) return;
       this.elapsed += delta;
@@ -177,7 +180,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
   }
 
   const game = new Phaser.Game({
-    type: Phaser.AUTO, parent, width: state.interior || state.classroom ? VILLAGE_WIDTH : WORLD_WIDTH, height: state.interior || state.classroom ? VILLAGE_HEIGHT : WORLD_HEIGHT,
+    type: Phaser.AUTO, parent, width: state.interior || state.classroom ? VILLAGE_WIDTH : WORLD_WIDTH+80, height: state.interior || state.classroom ? VILLAGE_HEIGHT : WORLD_HEIGHT+80,
     backgroundColor: '#88ad58', pixelArt: true, roundPixels: true,
     banner: false, audio: { noAudio: true }, fps: { target: 30 },
     callbacks: { postBoot: instance => instance.canvas.setAttribute('aria-hidden', 'true') },

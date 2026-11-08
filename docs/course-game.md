@@ -202,3 +202,11 @@ Se contrastó la red con la [vista satelital de Google Maps](https://www.google.
 - Las pruebas recorren el eje de cada tramo, comprueban su conexión desde el punto inicial, los cambios de nombre en Güemes y la ausencia de veredas sobre los cruces.
 
 Es una recreación rectificada para el juego: se conservan calles y conexiones observadas, pero pendientes, distancias, curvas y fachadas no tienen precisión catastral. No se modelan sentidos de tránsito ni todos los pasajes menores de la ciudad.
+
+### Cámara, mascota y foco del zoom
+
+El zoom con rueda conserva el punto bajo el cursor; el pellizco conserva el punto inicial entre los dedos y sigue su punto medio. Los botones usan el centro visible. Esto reemplaza el centrado en el personaje al cambiar zoom; caminar vuelve a activar su seguimiento.
+
+El exterior reserva 40 unidades de dibujo a cada lado del lienzo, con márgenes equivalentes en la cámara. Así, el personaje sigue completo al llegar al borde sur (arriba), incluso sobre Florida. La cámara incluye los márgenes al calcular ambos ejes.
+
+El perro recibe la dirección del próximo tramo del recorrido antes de avanzar el personaje. Si vuelve a bloquear el paso durante su descanso o una maniobra queda bloqueada, vuelve a planificar sin exigir otro clic. La ruta del alumno se calcula contra el entorno estático y conserva la colisión con la mascota durante cada paso.

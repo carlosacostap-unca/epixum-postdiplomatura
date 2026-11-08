@@ -9,6 +9,17 @@ const state = vi.hoisted(() => ({ current: null as VillageState | null }));
 vi.mock('./PhaserVillage', () => ({ default: (props: VillageState) => { state.current = props; return <div />; } }));
 const game = { courseId:'pilot',title:'Valle',courseTitle:'Cohorte 2',introduction:'',places:[{id:'a',name:'Nodo',title:'Clase A',date:'',href:'/class-a'}],missions:[],completed:0 };
 describe('controles del personaje', () => {
+  it('incluye los márgenes del lienzo al seguir al personaje hasta el borde sur',()=>{
+    render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
+    const viewport=screen.getByLabelText('Mapa del valle'),map=viewport.firstElementChild!;
+    Object.defineProperties(viewport,{clientWidth:{value:480},clientHeight:{value:600}});
+    Object.defineProperties(map,{offsetWidth:{value:1920},offsetHeight:{value:1920},offsetTop:{value:80},offsetLeft:{value:80}});
+    act(()=>state.current?.onPosition?.({x:640,y:200}));
+    expect(viewport.scrollLeft).toBe(1120);expect(viewport.scrollTop).toBe(180);
+    act(()=>state.current?.onPosition?.({x:640,y:9}));
+    expect(viewport.scrollTop).toBe(0);
+    expect(80+(9-34)*2-viewport.scrollTop).toBeGreaterThanOrEqual(0);
+  });
   it('conserva el lado de entrada y salida del Nodo',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
     act(()=>state.current?.onEnter?.('rear'));

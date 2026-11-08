@@ -104,10 +104,10 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     const viewport = mapViewport.current;
     const map = viewport?.firstElementChild as HTMLElement | null;
     if (!viewport || !map) return;
-    const x = position.x / mapWidth * map.offsetWidth, y = position.y / mapHeight * map.offsetHeight + map.offsetTop;
+    const x = position.x / mapWidth * map.offsetWidth + map.offsetLeft, y = position.y / mapHeight * map.offsetHeight + map.offsetTop;
     // A centered viewport is the camera; HTML hit targets share the canvas world coordinates.
-    viewport.scrollLeft = Math.max(0, Math.min(map.offsetWidth-viewport.clientWidth,x-viewport.clientWidth/2));
-    viewport.scrollTop = Math.max(0, Math.min(map.offsetHeight-viewport.clientHeight,y-viewport.clientHeight/2));
+    viewport.scrollLeft = Math.max(0, Math.min(map.offsetWidth+map.offsetLeft*2-viewport.clientWidth,x-viewport.clientWidth/2));
+    viewport.scrollTop = Math.max(0, Math.min(map.offsetHeight+map.offsetTop*2-viewport.clientHeight,y-viewport.clientHeight/2));
   }, [inside, inClass, roomCount, mapWidth, mapHeight]);
   useEffect(() => {
     const viewport = mapViewport.current;
@@ -120,7 +120,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
   }, [onPosition]);
   useLayoutEffect(() => {
     if (cameraPosition.current) onPosition(cameraPosition.current);
-  }, [zoom, onPosition]);
+  }, [onPosition]);
   const enterNodo = useCallback((side:NodoAccess='front') => { setSpawn(side==='rear' ? INTERIOR_REAR_SPAWN : INTERIOR_FRONT_SPAWN); clearWalking(); setInside(true); setWing(0); setAtEntrance(false); mapViewport.current?.focus(); }, [clearWalking]);
   const exitNodo = useCallback((side:NodoAccess='front') => { setSpawn(side==='rear' ? {x:NODO_REAR_ENTRANCE.x,y:NODO_REAR_ENTRANCE.y-30} : SPAWN); clearWalking(); setInside(false); setNearRoom(null); setAtExit(false); mapViewport.current?.focus(); }, [clearWalking]);
   const openRoom = (index: number) => { if (index !== -1 && (index < 0 || index >= roomCount || !isOpen(game.places[wing*ROOMS_PER_WING+index].id))) return; clearWalking(); setClassIndex(index === -1 ? -1 : wing*ROOMS_PER_WING+index); setInClass(true); setAtBoard(false); setAtExit(false); setNearRoom(null); mapViewport.current?.focus(); };
@@ -162,7 +162,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     }} onKeyUp={event => { const direction = keyDirection(event.key); if (direction) { event.preventDefault(); walking.current[direction] = false; } }}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) clearWalking(); }}>
     <div ref={mapViewport} {...zoomHandlers} className={styles.viewport} aria-label={inClass ? 'Interior del aula' : inside ? 'Interior del Nodo' : 'Mapa del valle'} tabIndex={0} onPointerDown={event => { if (!(event.target as HTMLElement).closest('button')) event.currentTarget.focus(); }}>
-      <div className={styles.map} style={{'--map-zoom':zoom,...(!inside ? {width:WORLD_WIDTH*2*zoom,height:WORLD_HEIGHT*2*zoom} : {})} as CSSProperties}
+      <div className={styles.map} style={{'--map-zoom':zoom,...(!inside ? {width:WORLD_WIDTH*2*zoom,height:WORLD_HEIGHT*2*zoom,margin:80*zoom} : {})} as CSSProperties}
         onPointerDown={event => {
           if (event.button !== 0 || !event.isPrimary || (event.target as HTMLElement).closest('button') || panel || tutorial) return;
           tapStart.current = { id: event.pointerId, x: event.clientX, y: event.clientY };

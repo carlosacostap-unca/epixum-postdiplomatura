@@ -50,7 +50,7 @@ type Allowed = (p:Position)=>boolean;
 export function clearOfCompanion(a:Position,b:Position,clearance=0) {
   return ((a.x-b.x)/(22+clearance))**2 + ((a.y-b.y)/(14+clearance))**2 >= 1;
 }
-export interface RobotCompanion { position:Position; facing:CharacterFacing; phase:number; route:Position[]; target:Position; elapsed:number; yielding:number }
+export interface RobotCompanion { position:Position; facing:CharacterFacing; phase:number; route:Position[]; target:Position; elapsed:number; yielding:number; yieldDirection?:Position }
 export function createRobotCompanion(player:Position,allowed:Allowed):RobotCompanion {
   const position=[{x:player.x+23,y:player.y+5},{x:player.x-23,y:player.y+5},{x:player.x,y:player.y-23},player].find(p=>allowed(p)&&clearSegment(player,p,allowed))!;
   return {position:{...position},facing:'down',phase:0,route:[],target:{...player},elapsed:250,yielding:0};
@@ -76,16 +76,22 @@ function yieldRoute(pet:RobotCompanion,player:Position,intent:Position,allowed:A
 export function updateRobotCompanion(pet:RobotCompanion,player:Position,delta:number,allowed:Allowed,paused:boolean,intent:Position={x:0,y:0}) {
   if(paused) { pet.phase=0; return; }
   pet.yielding=Math.max(0,pet.yielding-Math.min(delta,50));
-  if(!pet.yielding) {
+  const length=Math.hypot(intent.x,intent.y);
+  const direction=length?{x:intent.x/length,y:intent.y/length}:null;
+  const changedDirection=direction && pet.yieldDirection && direction.x*pet.yieldDirection.x+direction.y*pet.yieldDirection.y<.5;
+  if(!pet.yielding || !pet.route.length || changedDirection) {
     const route=yieldRoute(pet,player,intent,allowed);
-    if(route?.length) { pet.route=route;pet.yielding=1200; }
+    if(route?.length) { pet.route=route;pet.yielding=1200;pet.yieldDirection=direction ?? undefined; }
   }
   if(pet.yielding) {
+    const hadRoute=pet.route.length>0;
     const next=followWalkPath(pet.position,pet.route,delta,p=>allowed(p)&&clearOfCompanion(p,player));
     const dx=next.x-pet.position.x,dy=next.y-pet.position.y;
     pet.facing=movementFacing(dx,dy,pet.facing);
     pet.phase=dx||dy?(pet.phase+Math.hypot(dx,dy)*Math.PI/10)%(Math.PI*2):0;
     pet.position=next;
+    // A blocked escape must be retried immediately, not held for the rest timer.
+    if(hadRoute && !dx && !dy && !pet.route.length) pet.yielding=0;
     // Finish the route before returning to following; then wait so the player can pass.
     if(pet.route.length) pet.yielding=1200;
     return;

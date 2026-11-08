@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { VillageEngine, VillageState } from './phaser/village-engine';
 import { loadVillageEngine } from './village-loader';
 import styles from './immersive-game.module.css';
+import { WORLD_WIDTH, WORLD_HEIGHT } from '@/lib/course-game/neighborhood';
 
 export default function PhaserVillage(props: VillageState) {
   const host = useRef<HTMLDivElement>(null);
@@ -40,7 +41,7 @@ export default function PhaserVillage(props: VillageState) {
   }, []);
 
   return <>
-    <div ref={host} className={styles.phaserCanvas} aria-hidden="true" />
+    <div ref={host} className={styles.phaserCanvas} style={props.interior || props.classroom ? undefined : {left:`${-40/WORLD_WIDTH*100}%`,top:`${-40/WORLD_HEIGHT*100}%`,width:`${(1+80/WORLD_WIDTH)*100}%`,height:`${(1+80/WORLD_HEIGHT)*100}%`,right:'auto',bottom:'auto'}} aria-hidden="true" />
     {status !== 'ready' && <p role="status" className={styles.engineStatus}>{status === 'loading' ? 'Preparando el valle…' : 'El paisaje no pudo cargarse. Podés elegir un encuentro o usar la vista Lista.'}</p>}
   </>;
 }

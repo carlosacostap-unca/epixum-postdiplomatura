@@ -6,6 +6,23 @@ import {findWalkPath,followWalkPath} from './navigation';
 import {canStandInClass} from './classroom';
 import {canStandInside} from './interior';
 describe('perro robot compañero',()=>{
+  it('vuelve a apartarse de inmediato aunque esté esperando después de ceder el paso',()=>{
+    const player={x:200,y:190},pet=createRobotCompanion(player,canStandInClass);
+    pet.yielding=1100;pet.route=[];
+    const before={...pet.position};
+    updateRobotCompanion(pet,player,33,canStandInClass,false,{x:1,y:0});
+    expect(pet.position).not.toEqual(before);
+    expect(clearOfCompanion(player,pet.position)).toBe(true);
+  });
+  it('descarta una maniobra bloqueada sin exigir otro clic',()=>{
+    const player={x:200,y:190},pet=createRobotCompanion(player,canStandInClass);
+    pet.yielding=1100;pet.route=[player];
+    for(let i=0;i<4 && pet.yielding;i++) updateRobotCompanion(pet,player,33,canStandInClass,false,{x:1,y:0});
+    expect(pet.yielding).toBe(0);
+    const before={...pet.position};
+    updateRobotCompanion(pet,player,33,canStandInClass,false,{x:1,y:0});
+    expect(pet.position).not.toEqual(before);
+  });
   it('mantiene libre el inicio de una ruta después de esperar junto al personaje',()=>{
     const player={...SPAWN};
     const pet=createRobotCompanion(player,canStand);
