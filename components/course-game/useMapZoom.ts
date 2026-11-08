@@ -1,11 +1,24 @@
 'use client';
-import { useCallback, useEffect, useRef, useState, type PointerEvent, type MouseEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type MouseEvent, type RefObject } from 'react';
+
+type ZoomAnchor = {x:number;y:number;clientX:number;clientY:number};
+function readViewport(ref?:RefObject<HTMLDivElement | null>) { return ref?.current ?? null; }
+function getZoomAnchor(viewport:RefObject<HTMLDivElement | null>|undefined,clientX:number,clientY:number):ZoomAnchor|undefined {
+  const map=readViewport(viewport)?.firstElementChild?.getBoundingClientRect();
+  if(!map?.width || !map.height) return;
+  return {x:(clientX-map.left)/map.width,y:(clientY-map.top)/map.height,clientX,clientY};
+}
+function restoreZoomAnchor(element:HTMLDivElement,anchor:ZoomAnchor,map:DOMRect) {
+  element.scrollLeft+=map.left+anchor.x*map.width-anchor.clientX;
+  element.scrollTop+=map.top+anchor.y*map.height-anchor.clientY;
+}
 
 export function useMapZoom(stopWalking: () => void, viewport?: RefObject<HTMLDivElement | null>, disabled = false) {
   const [zoom, setZoom] = useState(1);
   const value = useRef(1);
   const touches = useRef(new Map<number, { x: number; y: number }>());
-  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+  const pinch = useRef<{ distance: number; zoom: number; anchor?:ZoomAnchor } | null>(null);
+  const pendingAnchor = useRef<ZoomAnchor | null>(null);
   const consumed = useRef(false);
   const origins = useRef(new Map<number, {x:number;y:number}>());
   useEffect(() => {
@@ -13,25 +26,35 @@ export function useMapZoom(stopWalking: () => void, viewport?: RefObject<HTMLDiv
     window.addEventListener('blur',reset);
     return () => window.removeEventListener('blur',reset);
   }, []);
-  const changeZoom = useCallback((next: number) => {
+  const anchorAt = useCallback((clientX:number,clientY:number)=>getZoomAnchor(viewport,clientX,clientY),[viewport]);
+  const changeZoom = useCallback((next: number, anchor?:ZoomAnchor) => {
     stopWalking();
+    const rect=readViewport(viewport)?.getBoundingClientRect();
+    pendingAnchor.current=anchor ?? (rect ? anchorAt(rect.left+rect.width/2,rect.top+rect.height/2) : undefined) ?? null;
     value.current = Math.max(.5, Math.min(2, next));
     setZoom(value.current);
-  }, [stopWalking]);
+  }, [stopWalking,viewport,anchorAt]);
+  useLayoutEffect(()=>{
+    const element=viewport?.current, anchor=pendingAnchor.current;
+    const map=element?.firstElementChild?.getBoundingClientRect();
+    if(element && map && anchor) {
+      restoreZoomAnchor(element,anchor,map);
+    }
+    pendingAnchor.current=null;
+  },[zoom,viewport]);
   useEffect(() => {
     const element = viewport?.current;
     if (!element || disabled) return;
     const wheel = (event: WheelEvent) => {
       if (!event.deltaY || event.metaKey || touches.current.size) return;
-      // Trackpad pinches arrive as Ctrl+wheel, even without a pressed key.
-      // Handle them here so the browser does not magnify the entire page.
+      // A non-passive listener prevents scrolling the camera while zooming.
       event.preventDefault();
       const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientHeight : 1);
-      changeZoom(value.current * Math.exp(-Math.max(-200, Math.min(200, pixels)) * (event.ctrlKey ? .01 : .002)));
+      changeZoom(value.current * Math.exp(-Math.max(-200, Math.min(200, pixels)) * (event.ctrlKey ? .01 : .002)),anchorAt(event.clientX,event.clientY));
     };
     element.addEventListener('wheel', wheel, {passive:false});
     return () => element.removeEventListener('wheel', wheel);
-  }, [viewport, disabled, changeZoom]);
+  }, [viewport, disabled, changeZoom,anchorAt]);
   const distance = () => {
     const [a, b] = [...touches.current.values()];
     return a && b ? Math.hypot(a.x-b.x, a.y-b.y) : 0;
@@ -51,7 +74,8 @@ export function useMapZoom(stopWalking: () => void, viewport?: RefObject<HTMLDiv
       if (touches.current.size >= 2) {
         consumed.current = true;
         stopWalking();
-        pinch.current = {distance:Math.max(1,distance()),zoom:value.current};
+        const [a,b]=[...touches.current.values()];
+        pinch.current = {distance:Math.max(1,distance()),zoom:value.current,anchor:anchorAt((a.x+b.x)/2,(a.y+b.y)/2)};
         event.stopPropagation();
       }
     },
@@ -65,7 +89,9 @@ export function useMapZoom(stopWalking: () => void, viewport?: RefObject<HTMLDiv
       }
       touches.current.set(event.pointerId,{x:event.clientX,y:event.clientY});
       if (pinch.current) {
-        changeZoom(pinch.current.zoom * distance() / pinch.current.distance);
+        const [a,b]=[...touches.current.values()];
+        const anchor=pinch.current.anchor;
+        changeZoom(pinch.current.zoom * distance() / pinch.current.distance,anchor?{...anchor,clientX:(a.x+b.x)/2,clientY:(a.y+b.y)/2}:undefined);
         event.stopPropagation();
       } else {
         event.currentTarget.scrollLeft -= event.clientX-previous.x;

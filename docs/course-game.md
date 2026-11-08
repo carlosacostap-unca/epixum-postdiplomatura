@@ -184,7 +184,7 @@ Los accesos del Nodo conservan ahora su lado: frente → vestíbulo sur; escalin
 Por indicación del usuario, el mapa gira 180 grados: sur arriba, norte abajo, este a la izquierda y oeste a la derecha. La brújula fija lo explicita. La geometría de calles, edificios vecinos, canteros y árboles se transforma de norte-arriba a sur-arriba; los sprites y textos conservan orientación legible. Se corrige también la fachada principal del Nodo: mira a Güemes y a la llegada desde Virgen del Valle (abajo), mientras la plaza queda detrás (arriba). Los accesos, rutas, colisiones y puntos de aparición usan las nuevas coordenadas. La salida principal del interior está abajo/norte y la trasera arriba/sur; esto reemplaza las referencias geográficas anteriores de los vestíbulos en esta documentación. Se verificaron ambas rutas y 35 pruebas de movimiento/orientación, con TypeScript y lint.
 
 ### Zoom del mapa
-Controles −/+/porcentaje (50–200%) y pellizco con dos dedos. El zoom conserva al personaje como centro y escala juntos el canvas y los accesos HTML. Un dedo desplaza el mapa; los gestos no activan puertas ni conversaciones. Funciona también dentro del Nodo y de las aulas.
+Controles −/+/porcentaje (50–200%) y pellizco con dos dedos. El zoom conserva el punto elegido y escala juntos el canvas y los accesos HTML. Un dedo desplaza el mapa; los gestos no activan puertas ni conversaciones. Funciona también dentro del Nodo y de las aulas.
 
 El zoom también admite la rueda del mouse sobre el mapa: hacia arriba acerca y hacia abajo aleja, con límites de 50–200 %. Se evita el desplazamiento simultáneo y se desactiva mientras hay un panel o tutorial abierto. El pellizco del touchpad (Ctrl+wheel) controla el mapa; Meta conserva el comportamiento del navegador.
 
@@ -205,7 +205,7 @@ Es una recreación rectificada para el juego: se conservan calles y conexiones o
 
 ### Cámara, mascota y foco del zoom
 
-El zoom con rueda, botones, pellizco táctil y touchpad mantiene al personaje centrado. El margen del mundo ocupa al menos media ventana en cada lado para que la cámara también pueda centrarlo junto a los bordes, sin recortarlo. El touchpad se reconoce por los eventos wheel con ctrlKey y cancela el zoom del navegador solo sobre el mapa activo.
+El zoom con rueda y touchpad conserva el punto bajo el cursor; el pellizco táctil sigue el punto medio entre los dedos y los botones usan el centro visible. Al reanudar la caminata, la cámara vuelve progresivamente al personaje con interpolación temporal, sin retrasar su movimiento. Un nuevo zoom, arrastre, panel o cambio de escena cancela la transición. El primer encuadre de cada escena es inmediato y se respeta la preferencia de movimiento reducido. El margen del mundo ocupa al menos media ventana en cada lado para que la cámara también pueda centrarlo junto a los bordes, sin recortarlo. El touchpad se reconoce por los eventos wheel con ctrlKey y cancela el zoom del navegador solo sobre el mapa activo.
 
 El exterior reserva 40 unidades de dibujo a cada lado del lienzo, con márgenes equivalentes en la cámara. Así, el personaje sigue completo al llegar al borde sur (arriba), incluso sobre Florida. La cámara incluye los márgenes al calcular ambos ejes.
 

@@ -9,25 +9,6 @@ const state = vi.hoisted(() => ({ current: null as VillageState | null }));
 vi.mock('./PhaserVillage', () => ({ default: (props: VillageState) => { state.current = props; return <div />; } }));
 const game = { courseId:'pilot',title:'Valle',courseTitle:'Cohorte 2',introduction:'',places:[{id:'a',name:'Nodo',title:'Clase A',date:'',href:'/class-a'}],missions:[],completed:0 };
 describe('controles del personaje', () => {
-  it.each(['botón','rueda','touchpad','pellizco'])('centra al personaje incluso cerca del borde al hacer zoom con %s',gesture=>{
-    render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
-    const viewport=screen.getByLabelText('Mapa del valle'),map=viewport.firstElementChild as HTMLElement;
-    Object.defineProperties(viewport,{clientWidth:{value:480},clientHeight:{value:600}});
-    Object.defineProperties(map,{offsetWidth:{get:()=>parseFloat(map.style.width)},offsetHeight:{get:()=>parseFloat(map.style.height)},offsetLeft:{value:240},offsetTop:{value:300}});
-    const position={x:640,y:9};
-    act(()=>state.current?.onPosition?.(position));
-    viewport.scrollLeft=0;viewport.scrollTop=0;
-    if(gesture==='botón') fireEvent.click(screen.getByRole('button',{name:'Acercar mapa'}));
-    else if(gesture==='pellizco') {
-      const pointer=(type:string,id:number,x:number)=>{
-        const event=new Event(type,{bubbles:true});Object.assign(event,{pointerType:'touch',pointerId:id,clientX:x,clientY:100});fireEvent(viewport,event);
-      };
-      pointer('pointerdown',1,100);pointer('pointerdown',2,200);pointer('pointermove',2,250);
-    } else fireEvent.wheel(viewport,{deltaY:-50,ctrlKey:gesture==='touchpad',clientX:20,clientY:20});
-    expect(map.offsetWidth).toBeGreaterThan(1920);
-    expect(position.x/960*map.offsetWidth+map.offsetLeft-viewport.scrollLeft).toBeCloseTo(240);
-    expect(position.y/960*map.offsetHeight+map.offsetTop-viewport.scrollTop).toBeCloseTo(300);
-  });
   it('incluye los márgenes del lienzo al seguir al personaje hasta el borde sur',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
     const viewport=screen.getByLabelText('Mapa del valle'),map=viewport.firstElementChild!;

@@ -1,9 +1,10 @@
 'use client';
 import { useMapZoom } from './useMapZoom';
+import { createCameraFollow } from '@/lib/course-game/camera-follow';
 import { CompanionChat } from './CompanionChat';
 import { NODO_ENTRANCE, NODO_REAR_ENTRANCE, NODO_STAIRS_WIDTH, NODO_FOOTPRINT, WORLD_WIDTH, WORLD_HEIGHT } from '@/lib/course-game/neighborhood';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { SPAWN, nodoAccessSide, emptyWalkInput, nearNodo, type Position, type WalkInput } from '@/lib/course-game/movement';
 import { nearbyRoom, nearExit, roomDoor, ROOMS_PER_WING, INTRODUCTION_DOOR, INTERIOR_SPAWN, INTERIOR_FRONT_SPAWN, INTERIOR_REAR_SPAWN, REAR_EXIT, exitSide, type NodoAccess } from '@/lib/course-game/interior';
 import { INTRODUCTION_ID, INTRODUCTION_TITLE, courseIntroduction } from '@/lib/course-game/introduction';
@@ -78,7 +79,9 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
   const tapStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const readInput = useCallback(() => walking.current, []);
   const [atEntrance, setAtEntrance] = useState(false);
-  const clearWalking = useCallback(() => { Object.assign(walking.current, emptyWalkInput()); destination.current = null; }, []);
+  const camera = useMemo(() => createCameraFollow(), []);
+  useEffect(() => () => camera.stop(), [camera]);
+  const clearWalking = useCallback(() => { Object.assign(walking.current, emptyWalkInput()); destination.current = null; camera.stop(); }, [camera]);
   const mapViewport = useRef<HTMLDivElement>(null);
   const cameraPosition = useRef<Position | null>(null);
 
@@ -96,6 +99,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     return () => { clear(); window.removeEventListener('blur', clear); document.removeEventListener('visibilitychange', clear); };
   }, [clearWalking]);
   const onPosition = useCallback((position: Position) => {
+    const firstPosition = cameraPosition.current === null;
     cameraPosition.current = position;
     setAtEntrance(!inside && nearNodo(position));
     setNearRoom(inside && !inClass ? nearbyRoom(position,roomCount) : null);
@@ -106,9 +110,11 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     if (!viewport || !map) return;
     const x = position.x / mapWidth * map.offsetWidth + map.offsetLeft, y = position.y / mapHeight * map.offsetHeight + map.offsetTop;
     // A centered viewport is the camera; HTML hit targets share the canvas world coordinates.
-    viewport.scrollLeft = Math.max(0, Math.min(map.offsetWidth+map.offsetLeft*2-viewport.clientWidth,x-viewport.clientWidth/2));
-    viewport.scrollTop = Math.max(0, Math.min(map.offsetHeight+map.offsetTop*2-viewport.clientHeight,y-viewport.clientHeight/2));
-  }, [inside, inClass, roomCount, mapWidth, mapHeight]);
+    camera.moveTo(viewport,
+      Math.max(0, Math.min(map.offsetWidth+map.offsetLeft*2-viewport.clientWidth,x-viewport.clientWidth/2)),
+      Math.max(0, Math.min(map.offsetHeight+map.offsetTop*2-viewport.clientHeight,y-viewport.clientHeight/2)),
+      firstPosition || reducedMotion);
+  }, [inside, inClass, roomCount, mapWidth, mapHeight, camera, reducedMotion]);
   useEffect(() => {
     const viewport = mapViewport.current;
     if (!viewport || typeof ResizeObserver === 'undefined') return;
@@ -119,8 +125,9 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     return () => observer.disconnect();
   }, [onPosition]);
   useLayoutEffect(() => {
-    if (cameraPosition.current) onPosition(cameraPosition.current);
-  }, [zoom, onPosition]);
+    camera.stop();
+    cameraPosition.current = null;
+  }, [inside, inClass, wing, camera]);
   const enterNodo = useCallback((side:NodoAccess='front') => { setSpawn(side==='rear' ? INTERIOR_REAR_SPAWN : INTERIOR_FRONT_SPAWN); clearWalking(); setInside(true); setWing(0); setAtEntrance(false); mapViewport.current?.focus(); }, [clearWalking]);
   const exitNodo = useCallback((side:NodoAccess='front') => { setSpawn(side==='rear' ? {x:NODO_REAR_ENTRANCE.x,y:NODO_REAR_ENTRANCE.y-30} : SPAWN); clearWalking(); setInside(false); setNearRoom(null); setAtExit(false); mapViewport.current?.focus(); }, [clearWalking]);
   const openRoom = (index: number) => { if (index !== -1 && (index < 0 || index >= roomCount || !isOpen(game.places[wing*ROOMS_PER_WING+index].id))) return; clearWalking(); setClassIndex(index === -1 ? -1 : wing*ROOMS_PER_WING+index); setInClass(true); setAtBoard(false); setAtExit(false); setNearRoom(null); mapViewport.current?.focus(); };
@@ -226,7 +233,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
       {panel === 'encounters' && <><p className={styles.intro}>Bienvenido al Nodo Tecnológico Catamarca. Elegí el encuentro al que querés entrar.</p><button type="button" className={styles.readOnBoard} onClick={()=>{clearWalking();setClassIndex(-1);setPanel('classroom');}}>Aula 0 · Bienvenida al curso · Siempre abierta</button><ol className={styles.placeList}>{game.places.map((place, index) => <li key={place.id}><span className={styles.index}>{String(index + 1).padStart(2, '0')}</span><div><h3>{place.title}</h3><p>Nodo Tecnológico Catamarca · {openingLabel(place.id,place.date)}</p><button type="button" className={styles.readOnBoard} disabled={!isOpen(place.id)} onClick={()=>{if(!isOpen(place.id)) return; clearWalking();setClassIndex(index);setPanel('classroom');}}>Leer en la pizarra <span className={styles.srOnly}>{place.title}</span> →</button></div></li>)}</ol>{!game.places.length && <p>Aún no hay clases publicadas.</p>}</>}
       {panel === 'missions' && <>{game.missions.length ? <><label className={styles.filter}>Mostrar <select value={missionFilter} onChange={event => setMissionFilter(event.target.value)}><option value="all">Todas</option><option value="pending">En camino</option><option value="complete">Completadas</option></select></label><div className={styles.missions}>{missions.map(mission => <article key={mission.id} className={styles.mission}><span className={styles.state}>{stateLabels[mission.state]}</span><h3>{mission.title}</h3><p>{mission.dueDate ? `Entrega: ${displayDate(mission.dueDate)}` : 'Consultá la consigna en el aula.'}</p><Link href={mission.href}>{mission.state === 'approved' || mission.state === 'rejected' ? 'Ver devolución' : mission.state === 'correction_requested' ? 'Revisar devolución y corregir' : 'Abrir misión'} →</Link></article>)}</div>{!missions.length && <p>Todavía no hay misiones en esta categoría.</p>}</> : <div className={styles.empty}><span aria-hidden="true">⚑</span><h3>Pronto habrá nuevas misiones</h3><p>Los trabajos aparecerán cuando el equipo docente los publique. Mientras tanto, podés explorar los encuentros.</p></div>}</>}
       {panel === 'journal' && <div className={styles.journal}><div className={styles.garden} aria-hidden="true">✿ {game.completed ? '✿' : '♧'} ♧</div><h3>Las ideas echan raíces</h3><p>Cada trabajo aprobado ayuda a que tu rincón del valle florezca.</p>{game.missions.length ? <><strong>{game.completed} de {game.missions.length} misiones completadas</strong><progress value={game.completed} max={game.missions.length} aria-label="Trabajos aprobados" /></> : <p>Tu historia está por comenzar.</p>}<p className={styles.note}>El progreso refleja las entregas y evaluaciones del aula. Abrir una clase no registra asistencia ni aprobación.</p></div>}
-      {panel === 'help' && <div className={styles.help}><h3>Explorá a tu ritmo</h3><p>Entrá al Nodo Tecnológico Catamarca, recorré su pasillo y cruzá una puerta de aula. Dentro, caminá hasta la pizarra y presioná E o tocá Ver pizarra para acceder al contenido. Usá la rueda del mouse sobre el mapa o los botones − y + para cambiar el zoom; tocá el porcentaje para restablecerlo. En pantallas táctiles o en el touchpad de la notebook, separá o juntá dos dedos para acercar o alejar. El zoom mantiene al personaje en el centro. En pantallas pequeñas, deslizá el mapa para llegar a todos los lugares. Hacé clic o tap en un punto libre del suelo para caminar hasta allí. El personaje rodea los obstáculos; otro clic cambia el destino. Las flechas del teclado o WASD cancelan el recorrido. Arrastrar el mapa no inicia una caminata. Cruzá el acceso central para entrar al edificio; cerca de una puerta de aula podés presionar E. Para volver al jardín, caminá hacia la salida principal, al norte (abajo), o usá Salir al jardín. La salida trasera queda al sur (arriba), hacia la plaza. La brújula indica también este a la izquierda y oeste a la derecha.</p><h3>Todo a mano</h3><p>Dentro del menú, Encuentros ofrece la lista completa de clases. Misiones reúne los trabajos; Mi diario muestra tu avance.</p><h3>Teclado y movimiento</h3><p>Usá Tab para recorrer los controles y Enter para activarlos. Escape cierra este panel. Podés pausar las animaciones desde el menú; el juego respeta tu preferencia de movimiento reducido.</p><h3>Volver cuando quieras</h3><p>Volver a Epixum te lleva a www.epixum.com. Tu personaje y el recorrido guardado se conservan. Abrir aula clásica permite usar la vista habitual del curso.</p></div>}
+      {panel === 'help' && <div className={styles.help}><h3>Explorá a tu ritmo</h3><p>Entrá al Nodo Tecnológico Catamarca, recorré su pasillo y cruzá una puerta de aula. Dentro, caminá hasta la pizarra y presioná E o tocá Ver pizarra para acceder al contenido. Usá la rueda del mouse sobre el mapa o los botones − y + para cambiar el zoom; tocá el porcentaje para restablecerlo. En pantallas táctiles o en el touchpad de la notebook, separá o juntá dos dedos para acercar o alejar. El zoom se acerca al punto que elegís. Al volver a caminar, la cámara sigue suavemente al personaje. En pantallas pequeñas, deslizá el mapa para llegar a todos los lugares. Hacé clic o tap en un punto libre del suelo para caminar hasta allí. El personaje rodea los obstáculos; otro clic cambia el destino. Las flechas del teclado o WASD cancelan el recorrido. Arrastrar el mapa no inicia una caminata. Cruzá el acceso central para entrar al edificio; cerca de una puerta de aula podés presionar E. Para volver al jardín, caminá hacia la salida principal, al norte (abajo), o usá Salir al jardín. La salida trasera queda al sur (arriba), hacia la plaza. La brújula indica también este a la izquierda y oeste a la derecha.</p><h3>Todo a mano</h3><p>Dentro del menú, Encuentros ofrece la lista completa de clases. Misiones reúne los trabajos; Mi diario muestra tu avance.</p><h3>Teclado y movimiento</h3><p>Usá Tab para recorrer los controles y Enter para activarlos. Escape cierra este panel. Podés pausar las animaciones desde el menú; el juego respeta tu preferencia de movimiento reducido.</p><h3>Volver cuando quieras</h3><p>Volver a Epixum te lleva a www.epixum.com. Tu personaje y el recorrido guardado se conservan. Abrir aula clásica permite usar la vista habitual del curso.</p></div>}
     </GamePanel>}
     {tutorial && <GameTour {...tutorial} />}
   </main>;
