@@ -23,16 +23,16 @@ describe('controles del personaje', () => {
     act(()=>state.current?.onSeated?.(null));
     expect(screen.queryByRole('button',{name:'Levantarse'})).not.toBeInTheDocument();
   });
-  it('incluye los márgenes del lienzo al seguir al personaje hasta el borde sur',()=>{
+  it('detiene la cámara en el borde sur sin añadir márgenes fuera del mapa',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
     const viewport=screen.getByLabelText('Mapa del valle'),map=viewport.firstElementChild!;
     Object.defineProperties(viewport,{clientWidth:{value:480},clientHeight:{value:600}});
-    Object.defineProperties(map,{offsetWidth:{value:1920},offsetHeight:{value:1920},offsetTop:{value:80},offsetLeft:{value:80}});
+    Object.defineProperties(map,{offsetWidth:{value:1920},offsetHeight:{value:1920},offsetTop:{value:0},offsetLeft:{value:0}});
     act(()=>state.current?.onPosition?.({x:640,y:200}));
-    expect(viewport.scrollLeft).toBe(1120);expect(viewport.scrollTop).toBe(180);
-    act(()=>state.current?.onPosition?.({x:640,y:9}));
+    expect(viewport.scrollLeft).toBe(1040);expect(viewport.scrollTop).toBe(100);
+    act(()=>state.current?.onPosition?.({x:640,y:34}));
     expect(viewport.scrollTop).toBe(0);
-    expect(80+(9-34)*2-viewport.scrollTop).toBeGreaterThanOrEqual(0);
+    expect((34-34)*2-viewport.scrollTop).toBeGreaterThanOrEqual(0);
   });
   it('conserva el lado de entrada y salida del Nodo',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);

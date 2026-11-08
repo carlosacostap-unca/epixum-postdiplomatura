@@ -2,9 +2,9 @@
 .world *, .panel * { box-sizing: border-box; }
 .world button, .panel button { font: inherit; cursor: pointer; }
 .world button:focus-visible, .world a:focus-visible, .panel button:focus-visible, .panel a:focus-visible, .panel select:focus-visible { outline: 3px solid #285885; outline-offset: 4px; }
-.viewport { container-type: size; position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; touch-action: none; scrollbar-width: thin; scrollbar-color: #ceb77c #648647; }
+.viewport { container-type: size; position: absolute; inset: 0; overflow: auto; overscroll-behavior: none; touch-action: none; scrollbar-width: thin; scrollbar-color: #ceb77c #648647; }
 .viewport:focus-visible { outline: 3px solid #fff3b1; outline-offset: -4px; }
-.map { position: relative; width: calc(max(100vw, 150dvh) * var(--map-zoom, 1)); height: calc(max(100dvh, 66.6667vw) * var(--map-zoom, 1)); }
+.map { position: relative; overflow: hidden; width: max(calc(max(100vw, 150dvh) * var(--map-zoom, 1)), 100cqw, 150cqh); height: max(calc(max(100dvh, 66.6667vw) * var(--map-zoom, 1)), 100cqh, 66.6667cqw); }
 .phaserCanvas { position: absolute; inset: 0; pointer-events: none; }
 .npcDialog { position:fixed; inset:auto 16px 18px; margin:0 auto; width:min(920px,calc(100vw - 32px)); max-height:62dvh; overflow:auto; padding:6px; border:3px solid #493321; border-radius:2px; background:#ad7845; color:#493321; box-shadow:0 5px 0 #30271c, inset 0 0 0 2px #e6b675; font-family:Georgia,serif; }
 .npcDialog::backdrop { background:transparent; }
@@ -138,7 +138,6 @@
 .nodoLabel b { font:12px Arial,sans-serif; color:#ffe6a1; }
 .nodoEntrance:focus-visible { outline:3px solid #fff2ad !important; }
 @media (max-width: 700px) {
-  .map { width: calc(max(100vw, 100dvh) * var(--map-zoom, 1)); height: calc(max(66.6667vw, 66.6667dvh) * var(--map-zoom, 1)); margin-top: 80px; }
   .nodoLabel { padding: 7px 12px; gap: 4px; }
   .nodoLabel strong { font-size: 11px; }
   .nodoLabel span { font-size: 9px; }

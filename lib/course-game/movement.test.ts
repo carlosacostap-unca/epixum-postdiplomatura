@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { canStand, emptyWalkInput, insideNodo, SPAWN, walk } from './movement';
 describe('caminar por el Nodo', () => {
+  it('mantiene la cabeza dentro del mapa al alcanzar el extremo sur',()=>{
+    expect(canStand({x:640,y:9})).toBe(false);
+    let p={x:640,y:40};
+    for(let i=0;i<30;i++) p=walk(p,{...emptyWalkInput(),up:true},50);
+    expect(p.y).toBe(34);
+  });
   it('normaliza diagonales y limita saltos por frames detenidos', () => {
     const input = emptyWalkInput();
     const a = walk(SPAWN, { ...input, up: true }, 50);

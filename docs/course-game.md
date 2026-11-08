@@ -205,7 +205,7 @@ Es una recreación rectificada para el juego: se conservan calles y conexiones o
 
 ### Cámara, mascota y foco del zoom
 
-El zoom con rueda y touchpad conserva el punto bajo el cursor; el pellizco táctil sigue el punto medio entre los dedos y los botones usan el centro visible. Al reanudar la caminata, la cámara vuelve progresivamente al personaje con interpolación temporal, sin retrasar su movimiento. Un nuevo zoom, arrastre, panel o cambio de escena cancela la transición. El primer encuadre de cada escena es inmediato y se respeta la preferencia de movimiento reducido. El margen del mundo ocupa al menos media ventana en cada lado para que la cámara también pueda centrarlo junto a los bordes, sin recortarlo. El touchpad se reconoce por los eventos wheel con ctrlKey y cancela el zoom del navegador solo sobre el mapa activo.
+El zoom con rueda y touchpad conserva el punto bajo el cursor; el pellizco táctil sigue el punto medio entre los dedos y los botones usan el centro visible. Al reanudar la caminata, la cámara vuelve progresivamente al personaje con interpolación temporal, sin retrasar su movimiento. Un nuevo zoom, arrastre, panel o cambio de escena cancela la transición. El primer encuadre de cada escena es inmediato y se respeta la preferencia de movimiento reducido. La cámara se detiene en los bordes del mundo: no centra al personaje si eso exige mostrar terreno fuera del mapa. El touchpad se reconoce por los eventos wheel con ctrlKey y cancela el zoom del navegador solo sobre el mapa activo.
 
 El exterior reserva 40 unidades de dibujo a cada lado del lienzo, con márgenes equivalentes en la cámara. Así, el personaje sigue completo al llegar al borde sur (arriba), incluso sobre Florida. La cámara incluye los márgenes al calcular ambos ejes.
 
@@ -224,3 +224,7 @@ Los árboles y las palmeras del Nodo se dibujan como objetos independientes, ord
 ### Sentarse en los bancos
 
 Los cuatro bancos de la plaza y los dos bancos de hormigón del Nodo tienen objetivos accesibles para clic, tap y teclado. El personaje recorre una ruta hasta un punto libre frente al banco antes de adoptar la postura sentada; no se teletransporta desde lejos ni atraviesa el asiento. Se levanta al elegir otro destino, pulsar flechas/WASD o usar Levantarse. Los gestos de zoom no activan bancos. Se mantiene sentado al abrir y cerrar un panel; cambiar de escena reinicia la postura. Las colisiones incluyen ambos tipos de banco.
+
+### Límites de la vista móvil
+
+El mapa no tiene márgenes exteriores, incluido el antiguo margen superior móvil. Su contenedor recorta el excedente del canvas para que no amplíe el área desplazable. El tamaño mínimo cubre ambos ejes de la ventana al alejarse, conservando las proporciones, también al rotar el teléfono. El personaje se detiene a 34 píxeles del borde superior para que su cabeza quede dentro del terreno; Florida sigue transitable por su vereda interior.

@@ -14,8 +14,8 @@ for(const b of OBSTACLES) for(let x=Math.floor((b.x-4)/64);x<=Math.floor((b.x+b.
   const key=`${x},${y}`; const items=buckets.get(key) ?? []; items.push(b); buckets.set(key,items);
 }
 export function canStand(p: Position) {
-  // No reserved HUD strip in world coordinates: Florida runs along the south edge.
-  if(p.x<9 || p.x>WORLD_WIDTH-9 || p.y<9 || p.y>WORLD_HEIGHT-8) return false;
+  // Keep the complete 24×36 figure inside the drawn world, including its head.
+  if(p.x<9 || p.x>WORLD_WIDTH-9 || p.y<34 || p.y>WORLD_HEIGHT-8) return false;
   const b=NODO_FOOTPRINT;
   const frontPassage=Math.abs(p.x-NODO_ENTRANCE.x)<=11 && p.y>=NODO_ENTRANCE.y-10;
   if(p.x>b.x && p.x<b.x+b.w && p.y>b.y && p.y<b.y+b.h && !frontPassage) return false;

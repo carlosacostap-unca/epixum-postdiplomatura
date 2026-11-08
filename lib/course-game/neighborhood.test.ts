@@ -6,7 +6,8 @@ import {drawNeighborhoodRoads} from '@/components/course-game/phaser/neighborhoo
 describe('barrio ampliado del Nodo',()=>{
  it.each(ROADS)('mantiene transitable todo el tramo de $name ($x, $y)',road=>{
   const horizontal=road.w>road.h;
-  const start=horizontal?{x:Math.max(12,road.x+2),y:road.y+road.h/2}:{x:road.x+road.w/2,y:Math.max(12,road.y+2)};
+  // At the southern edge use Florida's inner sidewalk so the full sprite fits.
+  const start=horizontal?{x:Math.max(12,road.x+2),y:Math.max(36,road.y+road.h/2)}:{x:road.x+road.w/2,y:Math.max(36,road.y+2)};
   const end=horizontal?{x:Math.min(WORLD_WIDTH-12,road.x+road.w-2),y:start.y}:{x:start.x,y:Math.min(WORLD_HEIGHT-12,road.y+road.h-2)};
   expect(clearSegment(start,end,canStand)).toBe(true);
   const route=findWalkPath(SPAWN,start,canStand);

@@ -171,7 +171,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     }} onKeyUp={event => { const direction = keyDirection(event.key); if (direction) { event.preventDefault(); walking.current[direction] = false; } }}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) clearWalking(); }}>
     <div ref={mapViewport} {...zoomHandlers} className={styles.viewport} aria-label={inClass ? 'Interior del aula' : inside ? 'Interior del Nodo' : 'Mapa del valle'} tabIndex={0} onPointerDown={event => { if (!(event.target as HTMLElement).closest('button')) event.currentTarget.focus(); }}>
-      <div className={styles.map} style={{'--map-zoom':zoom,margin:`max(${80*zoom}px, 50cqh) max(${80*zoom}px, 50cqw)`,...(!inside ? {width:WORLD_WIDTH*2*zoom,height:WORLD_HEIGHT*2*zoom} : {})} as CSSProperties}
+      <div className={styles.map} style={{'--map-zoom':zoom,...(!inside ? {width:`max(${WORLD_WIDTH*2*zoom}px, 100cqw, 100cqh)`,height:`max(${WORLD_HEIGHT*2*zoom}px, 100cqw, 100cqh)`} : {})} as CSSProperties}
         onPointerDown={event => {
           if (event.button !== 0 || !event.isPrimary || (event.target as HTMLElement).closest('button') || panel || tutorial) return;
           tapStart.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
