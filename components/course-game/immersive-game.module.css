@@ -2,7 +2,7 @@
 .world *, .panel * { box-sizing: border-box; }
 .world button, .panel button { font: inherit; cursor: pointer; }
 .world button:focus-visible, .world a:focus-visible, .panel button:focus-visible, .panel a:focus-visible, .panel select:focus-visible { outline: 3px solid #285885; outline-offset: 4px; }
-.viewport { position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; touch-action: none; scrollbar-width: thin; scrollbar-color: #ceb77c #648647; }
+.viewport { container-type: size; position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; touch-action: none; scrollbar-width: thin; scrollbar-color: #ceb77c #648647; }
 .viewport:focus-visible { outline: 3px solid #fff3b1; outline-offset: -4px; }
 .map { position: relative; width: calc(max(100vw, 150dvh) * var(--map-zoom, 1)); height: calc(max(100dvh, 66.6667vw) * var(--map-zoom, 1)); }
 .phaserCanvas { position: absolute; inset: 0; pointer-events: none; }

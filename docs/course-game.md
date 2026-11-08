@@ -186,7 +186,7 @@ Por indicación del usuario, el mapa gira 180 grados: sur arriba, norte abajo, e
 ### Zoom del mapa
 Controles −/+/porcentaje (50–200%) y pellizco con dos dedos. El zoom conserva al personaje como centro y escala juntos el canvas y los accesos HTML. Un dedo desplaza el mapa; los gestos no activan puertas ni conversaciones. Funciona también dentro del Nodo y de las aulas.
 
-El zoom también admite la rueda del mouse sobre el mapa: hacia arriba acerca y hacia abajo aleja, con límites de 50–200 %. Se evita el desplazamiento simultáneo y se desactiva mientras hay un panel o tutorial abierto. Ctrl/Meta conservan el comportamiento del navegador.
+El zoom también admite la rueda del mouse sobre el mapa: hacia arriba acerca y hacia abajo aleja, con límites de 50–200 %. Se evita el desplazamiento simultáneo y se desactiva mientras hay un panel o tutorial abierto. El pellizco del touchpad (Ctrl+wheel) controla el mapa; Meta conserva el comportamiento del navegador.
 
 ### Preparación del servidor antes de publicar
 Ejecutar `npm run schema:course-game` antes de habilitar la aventura en producción. Las colecciones privadas course_game_onboarding y course_game_tour_steps son necesarias también para la primera visita, aunque el alumno todavía no tenga personaje. Una colección ausente produce el error de apertura del valle. La migración no modifica perfiles ni crea personajes.
@@ -205,7 +205,7 @@ Es una recreación rectificada para el juego: se conservan calles y conexiones o
 
 ### Cámara, mascota y foco del zoom
 
-El zoom con rueda conserva el punto bajo el cursor; el pellizco conserva el punto inicial entre los dedos y sigue su punto medio. Los botones usan el centro visible. Esto reemplaza el centrado en el personaje al cambiar zoom; caminar vuelve a activar su seguimiento.
+El zoom con rueda, botones, pellizco táctil y touchpad mantiene al personaje centrado. El margen del mundo ocupa al menos media ventana en cada lado para que la cámara también pueda centrarlo junto a los bordes, sin recortarlo. El touchpad se reconoce por los eventos wheel con ctrlKey y cancela el zoom del navegador solo sobre el mapa activo.
 
 El exterior reserva 40 unidades de dibujo a cada lado del lienzo, con márgenes equivalentes en la cámara. Así, el personaje sigue completo al llegar al borde sur (arriba), incluso sobre Florida. La cámara incluye los márgenes al calcular ambos ejes.
 
