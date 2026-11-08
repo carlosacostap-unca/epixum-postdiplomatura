@@ -3,6 +3,7 @@ export const WORLD_WIDTH=960, WORLD_HEIGHT=960;
 export const NODO_SCALE=.65;
 export const NODO_OFFSET={x:322,y:537};
 export const NODO_PALMS=[[42,203],[342,251]] as const;
+export const NODO_BENCHES=[111,286].map(x=>({x:NODO_OFFSET.x+x*NODO_SCALE,y:NODO_OFFSET.y+220*NODO_SCALE,w:29*NODO_SCALE,h:14*NODO_SCALE}));
 export const NODO_ENTRANCE={x:460,y:668};
 // The rear trigger sits on the first outdoor step, clear of the roof/sign.
 export const NODO_REAR_ENTRANCE={x:460,y:573};
@@ -58,4 +59,4 @@ for(const p of [...BENCHES,...TREES]) {p[0]=WORLD_WIDTH-p[0];p[1]=WORLD_HEIGHT-p
 // Only the foot of each trunk blocks walking; the crown remains passable.
 export const TREE_TRUNKS=TREES.map(([x,y])=>({x:x-2,y:y+2,w:5,h:5}));
 export const PALM_TRUNKS=NODO_PALMS.map(([x,y])=>({x:NODO_OFFSET.x+x*NODO_SCALE,y:NODO_OFFSET.y+(y+2)*NODO_SCALE,w:4*NODO_SCALE,h:6*NODO_SCALE}));
-export const OBSTACLES=[...NEIGHBORHOOD_BUILDINGS,...PLAZA_BEDS,...BENCHES.map(([x,y])=>({x,y:y-3,w:17,h:10})),...TREE_TRUNKS,...PALM_TRUNKS];
+export const OBSTACLES=[...NEIGHBORHOOD_BUILDINGS,...PLAZA_BEDS,...BENCHES.map(([x,y])=>({x,y:y-3,w:17,h:10})),...NODO_BENCHES,...TREE_TRUNKS,...PALM_TRUNKS];

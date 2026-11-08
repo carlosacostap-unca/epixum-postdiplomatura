@@ -1,3 +1,4 @@
+import { reachedBench, type GameBench, type WalkDestination } from '@/lib/course-game/benches';
 import { WORLD_WIDTH, WORLD_HEIGHT, ROADS, TREES, NODO_PALMS, NODO_OFFSET, NODO_SCALE } from '@/lib/course-game/neighborhood';
 import { drawClassroom } from './classroom-art';
 import { robotDogPixels, createRobotCompanion, updateRobotCompanion, clearOfCompanion, type RobotCompanion } from '@/lib/course-game/robot-dog';
@@ -5,7 +6,7 @@ import { findWalkPath, followWalkPath } from '@/lib/course-game/navigation';
 import { CLASSROOM_SPAWN, canStandInClass, atClassExit } from '@/lib/course-game/classroom';
 import { walk, canStand, nodoAccessSide, SPAWN, insideNodo, type WalkInput, type Position } from '@/lib/course-game/movement';
 import type { Character } from '@/lib/course-game/onboarding';
-import { characterPixels, movementFacing, type CharacterFacing } from '@/lib/course-game/character-art';
+import { characterPixels, seatedCharacterPixels, movementFacing, type CharacterFacing } from '@/lib/course-game/character-art';
 import { drawNeighborhood, drawTree } from './neighborhood-art';
 import { drawNodoPalm } from './nodo-art';
 import { drawInterior } from './interior-art';
@@ -13,7 +14,7 @@ import { INTERIOR_SPAWN, canStandInside, enteredRoom, atExit, exitSide, type Nod
 import * as Phaser from 'phaser';
 import { VILLAGE_HEIGHT, VILLAGE_WIDTH } from '@/lib/course-game/village-layout';
 
-export interface VillageState { selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => Position | null; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
+export interface VillageState { selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
 export interface VillageEngine { update: (state: VillageState) => void; destroy: () => void }
 
 
@@ -29,6 +30,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
     private companion!: RobotCompanion;
     private position = { ...(state.spawn ?? (state.classroom ? CLASSROOM_SPAWN : state.interior ? INTERIOR_SPAWN : SPAWN)) };
     private stride = 0;
+    private seated: GameBench | null = null;
     private route: Position[] = [];
     private routeRetry = 0;
     private lastDestination: Position | null = null;
@@ -74,6 +76,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.drawSelection();
       this.drawCharacter();
       this.drawCompanion();
+      state.onSeated?.(null);
       state.onPosition?.(this.position);
       ready();
     }
@@ -90,8 +93,9 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.actor.clear();
       this.actor.setDepth(this.position.y);
       if (!state.character) return;
-      for (const pixel of characterPixels(state.character, this.facing, this.stride)) {
-        this.rect(this.actor, Number.parseInt(pixel.color.slice(1), 16), this.position.x - 12 + pixel.x, this.position.y - 34 + pixel.y, pixel.w, pixel.h);
+      const drawnPosition=this.seated?.seat ?? this.position;
+      for (const pixel of this.seated ? seatedCharacterPixels(state.character) : characterPixels(state.character, this.facing, this.stride)) {
+        this.rect(this.actor, Number.parseInt(pixel.color.slice(1), 16), drawnPosition.x - 12 + pixel.x, drawnPosition.y - 34 + pixel.y, pixel.w, pixel.h);
       }
     }
 
@@ -135,6 +139,9 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       const playerAllowed = (p:Position) => allowed(p) && clearOfCompanion(p,this.companion.position,1);
       this.routeRetry += Math.min(delta,50);
       const manual = input && (input.up || input.down || input.left || input.right);
+      if (this.seated && !state.movementLocked && (manual || (destination && destination !== this.lastDestination))) {
+        this.seated=null; state.onSeated?.(null); this.drawCharacter();
+      }
       const intent = manual ? {x:Number(input.right)-Number(input.left),y:Number(input.down)-Number(input.up)} : destination ? {x:destination.x-this.position.x,y:destination.y-this.position.y} : {x:0,y:0};
       if (state.movementLocked || manual || !destination) this.route = [];
       else if (destination !== this.lastDestination || (!this.route.length && this.routeRetry>=250 && Math.hypot(destination.x-this.position.x,destination.y-this.position.y)>1)) {
@@ -151,7 +158,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       const travelIntent=manual ? intent : waypoint ? {x:waypoint.x-this.position.x,y:waypoint.y-this.position.y} : intent;
       updateRobotCompanion(this.companion,this.position,delta,allowed,Boolean(state.movementLocked),travelIntent);
       let moved = false;
-      if (!state.movementLocked && input && state.character) {
+      if (!state.movementLocked && !this.seated && input && state.character) {
         const next = manual ? walk(this.position, input, delta, playerAllowed) : followWalkPath(this.position, this.route, delta, playerAllowed);
         if (next.x !== this.position.x || next.y !== this.position.y) {
           this.facing = movementFacing(next.x - this.position.x, next.y - this.position.y, this.facing);
@@ -173,6 +180,10 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
           }
           this.drawCharacter(); state.onPosition?.(this.position);
         }
+      }
+      if (!state.interior && !state.classroom && !state.movementLocked && !manual && !this.seated) {
+        const bench=reachedBench(this.position,destination);
+        if(bench) { this.seated=bench; this.stride=0; this.route=[]; this.destinationMarker.clear(); state.onSeated?.(bench.id); this.drawCharacter(); }
       }
       if (!moved && this.stride !== 0) {
         this.stride = 0;

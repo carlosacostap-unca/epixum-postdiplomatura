@@ -220,3 +220,7 @@ El campo de barba se guarda dentro del JSON del personaje. Los personajes existe
 ### Árboles y profundidad
 
 Los árboles y las palmeras del Nodo se dibujan como objetos independientes, ordenados por la base del tronco junto al personaje y su mascota. El follaje tapa a quien pasa por detrás, y quien pasa por delante se dibuja encima. Las sombras permanecen en el suelo. Solo la base de los troncos bloquea caminar y calcular rutas; las copas no son obstáculos. Se incluyen las dos palmeras del edificio en las colisiones.
+
+### Sentarse en los bancos
+
+Los cuatro bancos de la plaza y los dos bancos de hormigón del Nodo tienen objetivos accesibles para clic, tap y teclado. El personaje recorre una ruta hasta un punto libre frente al banco antes de adoptar la postura sentada; no se teletransporta desde lejos ni atraviesa el asiento. Se levanta al elegir otro destino, pulsar flechas/WASD o usar Levantarse. Los gestos de zoom no activan bancos. Se mantiene sentado al abrir y cerrar un panel; cambiar de escena reinicia la postura. Las colisiones incluyen ambos tipos de banco.

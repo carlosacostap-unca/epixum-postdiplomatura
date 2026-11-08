@@ -1,4 +1,5 @@
 'use client';
+import { GAME_BENCHES, type WalkDestination } from '@/lib/course-game/benches';
 import { useMapZoom } from './useMapZoom';
 import { createCameraFollow } from '@/lib/course-game/camera-follow';
 import { CompanionChat } from './CompanionChat';
@@ -74,7 +75,8 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     const button=companionButton.current;
     if(button) {button.style.left=`${position.x/mapWidth*100}%`;button.style.top=`${(position.y-12)/mapHeight*100}%`;button.hidden=false;}
   },[mapWidth,mapHeight]);
-  const destination = useRef<Position | null>(null);
+  const destination = useRef<WalkDestination | null>(null);
+  const [seatedBench,setSeatedBench] = useState<string|null>(null);
   const readDestination = useCallback(() => destination.current, []);
   const tapStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const readInput = useCallback(() => walking.current, []);
@@ -133,7 +135,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
   const openRoom = (index: number) => { if (index !== -1 && (index < 0 || index >= roomCount || !isOpen(game.places[wing*ROOMS_PER_WING+index].id))) return; clearWalking(); setClassIndex(index === -1 ? -1 : wing*ROOMS_PER_WING+index); setInClass(true); setAtBoard(false); setAtExit(false); setNearRoom(null); mapViewport.current?.focus(); };
   const leaveClass = useCallback(() => { clearWalking(); setSpawn(INTERIOR_SPAWN); setPanel(null); setInClass(false); setAtBoard(false); setAtExit(false); mapViewport.current?.focus(); }, [clearWalking]);
   const openBoard = () => { if (!inClass || !atBoard || !selectedClass || !isOpen(selectedClass.id)) return; clearWalking(); setPanel('classroom'); };
-  const walkToEntrance = (target: Position) => {
+  const walkToEntrance = (target: WalkDestination) => {
     if (panel || tutorial) return;
     clearWalking();
     destination.current = target;
@@ -186,10 +188,11 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
           clearWalking();
           destination.current = { x: (event.clientX-bounds.left)/bounds.width*mapWidth, y: (event.clientY-bounds.top)/bounds.height*mapHeight };
         }}>
-        <PhaserVillage spawn={inClass ? undefined : spawn} key={inClass ? `class-${selectedId}` : inside ? `inside-${wing}-${game.places.map(p=>p.id).join("-")}` : 'outside'} classroom={inClass} interior={inside} onRoom={openRoom} onExit={inClass ? leaveClass : exitNodo} openRooms={game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map(p=>isOpen(p.id))} onCompanionPosition={onCompanionPosition} input={readInput} destination={readDestination} movementLocked={panel !== null || Boolean(tutorial)} onPosition={onPosition} onEnter={enterNodo} character={character} selected={panel === 'encounters' ? 0 : -1} paused={paused || panel !== null} restored={game.completed > 0} count={inside ? roomCount : game.places.length} />
+        <PhaserVillage onSeated={setSeatedBench} spawn={inClass ? undefined : spawn} key={inClass ? `class-${selectedId}` : inside ? `inside-${wing}-${game.places.map(p=>p.id).join("-")}` : 'outside'} classroom={inClass} interior={inside} onRoom={openRoom} onExit={inClass ? leaveClass : exitNodo} openRooms={game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map(p=>isOpen(p.id))} onCompanionPosition={onCompanionPosition} input={readInput} destination={readDestination} movementLocked={panel !== null || Boolean(tutorial)} onPosition={onPosition} onEnter={enterNodo} character={character} selected={panel === 'encounters' ? 0 : -1} paused={paused || panel !== null} restored={game.completed > 0} count={inside ? roomCount : game.places.length} />
         {!inside && <button type="button" className={styles.nodoEntrance} style={{left:NODO_FOOTPRINT.x/mapWidth*100+'%',top:NODO_FOOTPRINT.y/mapHeight*100+'%',width:NODO_FOOTPRINT.w/mapWidth*100+'%',height:NODO_FOOTPRINT.h/mapHeight*100+'%'}} aria-label="Entrar al Nodo Tecnológico Catamarca" onClick={() => walkToEntrance(NODO_ENTRANCE)}>
         </button>}
         {!inside && <button type="button" className={styles.nodoEntrance} style={{left:(NODO_REAR_ENTRANCE.x-NODO_STAIRS_WIDTH/2)/mapWidth*100+'%',top:(NODO_REAR_ENTRANCE.y-8)/mapHeight*100+'%',width:NODO_STAIRS_WIDTH/mapWidth*100+'%',height:20/mapHeight*100+'%'}} aria-label="Entrar por detrás al Nodo Tecnológico Catamarca" onClick={() => walkToEntrance(NODO_REAR_ENTRANCE)} />}
+        {!inside && character && GAME_BENCHES.map((bench,index)=><button key={bench.id} type="button" className={styles.benchTouch} style={{left:bench.x/mapWidth*100+'%',top:(bench.y-3)/mapHeight*100+'%',width:bench.w/mapWidth*100+'%',height:(bench.h+6)/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label={'Sentarse en el banco '+(index+1)} title="Caminar hasta el banco y sentarse" onClick={()=>walkToEntrance({...bench.approach,benchId:bench.id})}/>)}
         {inside && !inClass && game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map((place,index) => {
           const door=roomDoor(index);
           return <button key={place.id} type="button" className={styles.roomDoor} style={{left:door.x/480*100+'%',top:(index<4?134:224)/320*100+'%'}} disabled={!isOpen(place.id)} title={isOpen(place.id) ? "Caminar hasta el aula" : openingLabel(place.id,place.date)} onClick={()=>{if(isOpen(place.id)) walkToEntrance({x:door.x,y:door.y+(index<4?-4:4)});}} aria-label={`Entrar al aula ${wing*8+index+1}: ${place.title}`}>Aula {wing*8+index+1}{!isOpen(place.id) && <span> · Cerrada</span>}</button>;
@@ -204,6 +207,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
           onClick={event=>{if(event.detail===0){clearWalking();setPanel('companion');}}}><span aria-hidden="true">?</span></button>}
       </div>
     </div>
+    {seatedBench && !inside && <button type="button" className={styles.standUp} disabled={Boolean(panel||tutorial)} onClick={()=>walkToEntrance({...cameraPosition.current!})}>Levantarse</button>}
     <nav className={styles.zoomControls} aria-label="Zoom del mapa">
       <button type="button" aria-label="Alejar mapa" disabled={zoom <= .5 || Boolean(panel || tutorial)} onClick={() => changeZoom(zoom-.25)}>−</button>
       <button type="button" aria-label="Restablecer zoom" title="Restablecer zoom" disabled={Boolean(panel || tutorial)} onClick={() => changeZoom(1)}>{Math.round(zoom*100)}%</button>

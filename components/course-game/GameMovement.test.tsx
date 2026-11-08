@@ -1,4 +1,5 @@
 import { NODO_ENTRANCE, NODO_REAR_ENTRANCE } from '@/lib/course-game/neighborhood';
+import { GAME_BENCHES } from '@/lib/course-game/benches';
 vi.mock('./useGameSchedule', () => ({ useGameSchedule: () => ({ clock: null, isOpen: () => true }) }));
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -9,6 +10,19 @@ const state = vi.hoisted(() => ({ current: null as VillageState | null }));
 vi.mock('./PhaserVillage', () => ({ default: (props: VillageState) => { state.current = props; return <div />; } }));
 const game = { courseId:'pilot',title:'Valle',courseTitle:'Cohorte 2',introduction:'',places:[{id:'a',name:'Nodo',title:'Clase A',date:'',href:'/class-a'}],missions:[],completed:0 };
 describe('controles del personaje', () => {
+  it('ofrece todos los bancos, espera la llegada y permite levantarse',()=>{
+    render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
+    expect(screen.getAllByRole('button',{name:/Sentarse en el banco/})).toHaveLength(GAME_BENCHES.length);
+    fireEvent.click(screen.getByRole('button',{name:'Sentarse en el banco 5'}));
+    const bench=GAME_BENCHES[4];
+    expect(state.current?.destination?.()).toEqual({...bench.approach,benchId:bench.id});
+    expect(screen.queryByRole('button',{name:'Levantarse'})).not.toBeInTheDocument();
+    act(()=>{state.current?.onPosition?.(bench.approach);state.current?.onSeated?.(bench.id);});
+    fireEvent.click(screen.getByRole('button',{name:'Levantarse'}));
+    expect(state.current?.destination?.()).toEqual(bench.approach);
+    act(()=>state.current?.onSeated?.(null));
+    expect(screen.queryByRole('button',{name:'Levantarse'})).not.toBeInTheDocument();
+  });
   it('incluye los márgenes del lienzo al seguir al personaje hasta el borde sur',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
     const viewport=screen.getByLabelText('Mapa del valle'),map=viewport.firstElementChild!;
