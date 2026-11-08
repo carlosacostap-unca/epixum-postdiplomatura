@@ -13,12 +13,33 @@ describe('bienvenida y recorrido', () => {
     render(<GameWelcome profile={{...profile,confirmed:true}} save={save} onSaved={vi.fn()} />);
     await user.selectOptions(screen.getByLabelText('Peinado'),'pelado');
     await user.selectOptions(screen.getByLabelText('Barba'),'completa');
-    await user.selectOptions(screen.getByLabelText('Vestimenta'),'blusa');
+    await user.selectOptions(screen.getByLabelText('Vestimenta'),'jardinero');
     await user.click(screen.getByRole('button',{name:'Espalda'}));
     await user.click(screen.getByRole('button',{name:'Frente'}));
     await user.click(screen.getByRole('button',{name:/Este es mi personaje/}));
     await user.click(screen.getByRole('button',{name:/Guardar y conocer/}));
-    expect(save).toHaveBeenCalledWith(expect.objectContaining({character:expect.objectContaining({hair:'pelado',beard:'completa',outfit:'blusa'})}));
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({character:expect.objectContaining({hair:'pelado',beard:'completa',outfit:'jardinero'})}));
+  });
+  it('filtra opciones y limpia las incompatibles al cambiar de personaje', async () => {
+    const user=userEvent.setup(), save=vi.fn().mockResolvedValue({success:false,error:'Prueba'});
+    render(<GameWelcome profile={{...profile,confirmed:true}} save={save} onSaved={vi.fn()} />);
+    expect(screen.queryByRole('option',{name:'Vestido'})).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Barba'),'completa');
+    await user.selectOptions(screen.getByLabelText('Peinado'),'pelado');
+    await user.selectOptions(screen.getByLabelText('Accesorios'),'anteojos');
+    await user.click(screen.getByRole('button',{name:'Mujer'}));
+    expect(screen.queryByLabelText('Barba')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Peinado')).toHaveValue('largo');
+    expect(screen.getByLabelText('Accesorios')).toHaveValue('anteojos');
+    await user.selectOptions(screen.getByLabelText('Vestimenta'),'vestido');
+    expect(screen.queryByRole('group',{name:'Color de pantalón'})).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button',{name:'Hombre'}));
+    expect(screen.getByLabelText('Vestimenta')).toHaveValue('camisa');
+    expect(screen.getByLabelText('Barba')).toHaveValue('ninguna');
+    expect(screen.getByLabelText('Peinado')).toHaveValue('corto');
+    await user.click(screen.getByRole('button',{name:/Este es mi personaje/}));
+    await user.click(screen.getByRole('button',{name:/Guardar y conocer/}));
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({character:expect.objectContaining({body:'hombre',outfit:'camisa',beard:'ninguna',accessory:'anteojos'})}));
   });
   it('edita desde el menú, conserva los valores guardados y permite cancelar', async () => {
     const user = userEvent.setup();

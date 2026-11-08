@@ -5,7 +5,7 @@ import type { User } from '@/types';
 export const PLATFORM_URL = 'https://www.epixum.com';
 export const TOUR_VERSION = 1;
 export const petNameSchema = z.string().trim().min(1, 'Elegí un nombre para tu mascota.').max(24, 'Usá hasta 24 caracteres.');
-export const characterSchema = z.object({
+const characterFieldsSchema = z.object({
   petName: petNameSchema.default('Perro robot'),
   body: z.enum(['hombre', 'mujer']),
   skin: z.enum(['clara', 'media', 'morena', 'oscura']),
@@ -18,7 +18,25 @@ export const characterSchema = z.object({
   trousers: z.enum(['azul', 'marron', 'gris']),
   accessory: z.enum(['ninguno', 'anteojos', 'sombrero']),
 }).strict();
-export type Character = z.infer<typeof characterSchema>;
+export type Character = z.infer<typeof characterFieldsSchema>;
+export const CHARACTER_OPTIONS: Record<Character['body'], {
+  hair: Character['hair'][]; beard: Character['beard'][];
+  outfit: Character['outfit'][]; accessory: Character['accessory'][];
+}> = {
+  hombre: { hair:['corto','rizado','pelado'], beard:['ninguna','corta','completa'], outfit:['camisa','jardinero'], accessory:['ninguno','anteojos','sombrero'] },
+  mujer: { hair:['largo','corto','rizado','coleta'], beard:['ninguna'], outfit:['blusa','falda','vestido','camisa','jardinero'], accessory:['ninguno','anteojos','sombrero'] },
+};
+/** Apply the editor's catalog to legacy records and server submissions alike. */
+export function normalizeCharacter(character: Character): Character {
+  const options=CHARACTER_OPTIONS[character.body];
+  return {...character,
+    hair:options.hair.includes(character.hair)?character.hair:options.hair[0],
+    beard:options.beard.includes(character.beard)?character.beard:options.beard[0],
+    outfit:options.outfit.includes(character.outfit)?character.outfit:options.outfit[0],
+    accessory:options.accessory.includes(character.accessory)?character.accessory:options.accessory[0],
+  };
+}
+export const characterSchema = characterFieldsSchema.transform(normalizeCharacter);
 export const DEFAULT_CHARACTER: Character = { petName: 'Perro robot', body: 'hombre', skin: 'media', hair: 'corto', beard: 'ninguna', hairColor: 'castano', eyes: 'marron', shirt: 'verde', outfit: 'camisa', trousers: 'azul', accessory: 'ninguno' };
 export const gameProfileSchema = onboardingProfileSchema.omit({ emailChangeRequested: true }).extend({ contactEmail: z.email('Ingresá un email de contacto válido.').max(254).transform(value => value.toLowerCase()) });
 export const enrollmentCharacterSchema = z.object({ character: characterSchema, profile: gameProfileSchema }).strict();

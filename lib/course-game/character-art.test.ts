@@ -10,7 +10,7 @@ describe('orientación del personaje', () => {
   it.each(['up', 'down', 'left', 'right'] as const)('representa calvicie y nuevas prendas hacia %s', facing => {
     const bald = {...DEFAULT_CHARACTER, hair:'pelado' as const};
     expect(characterPixels(bald,facing).some(p=>p.color===CHARACTER_COLORS.hairColor.castano)).toBe(false);
-    const variants = ['camisa','blusa','falda','vestido','jardinero'].map(outfit=>JSON.stringify(characterPixels(characterSchema.parse({...bald,outfit}),facing)));
+    const variants = (['camisa','blusa','falda','vestido','jardinero'] as const).map(outfit=>JSON.stringify(characterPixels({...bald,outfit},facing)));
     expect(new Set(variants).size).toBe(5);
     if(facing!=='up') {
       const beards=['ninguna','corta','completa'].map(beard=>JSON.stringify(characterPixels(characterSchema.parse({...bald,beard}),facing)));

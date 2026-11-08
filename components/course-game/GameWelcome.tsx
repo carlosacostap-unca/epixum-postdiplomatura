@@ -2,11 +2,12 @@
 
 import { useRef, useState, type FormEvent } from 'react';
 import { CHARACTER_COLORS, type CharacterFacing } from '@/lib/course-game/character-art';
-import { DEFAULT_CHARACTER, PLATFORM_URL, petNameSchema, enrollmentCharacterSchema, type Character, type GameProgress, type ProfileDraft, type WelcomeActions } from '@/lib/course-game/onboarding';
+import { CHARACTER_OPTIONS, normalizeCharacter, DEFAULT_CHARACTER, PLATFORM_URL, petNameSchema, enrollmentCharacterSchema, type Character, type GameProgress, type ProfileDraft, type WelcomeActions } from '@/lib/course-game/onboarding';
 import { CharacterPortrait } from './CharacterPortrait';
 import styles from './welcome.module.css';
 
 const labels: Record<string, string> = { clara: 'Clara', media: 'Media', morena: 'Morena', oscura: 'Oscura', castano: 'Castaño', negro: 'Negro', rubio: 'Rubio', pelirrojo: 'Pelirrojo', marron: 'Marrón', azul: 'Azul', verde: 'Verde', violeta: 'Violeta', rojo: 'Rojo', ocre: 'Ocre', gris: 'Gris' };
+const appearanceLabels = {"hair":{"corto":"Corto","largo":"Largo","rizado":"Rizado","pelado":"Pelado / sin pelo","coleta":"Coleta"},"beard":{"ninguna":"Sin barba","corta":"Barba corta","completa":"Barba abundante"},"outfit":{"camisa":"Camisa","jardinero":"Jardinero","blusa":"Blusa y pantalón","vestido":"Vestido","falda":"Blusa y falda"},"accessory":{"ninguno":"Sin accesorio","anteojos":"Anteojos","sombrero":"Sombrero"}};
 const fields = [
   { name: 'firstName', label: 'Nombre', autoComplete: 'given-name', type: 'text' },
   { name: 'lastName', label: 'Apellido', autoComplete: 'family-name', type: 'text' },
@@ -18,14 +19,14 @@ const fields = [
 
 export function GameWelcome({ profile: initialProfile, initialCharacter = DEFAULT_CHARACTER, editing = false, onCancel, save, onSaved, preview = false }: { initialCharacter?: Character; editing?: boolean; onCancel?: () => void; profile: ProfileDraft; save: WelcomeActions['save']; onSaved: (progress: GameProgress, profile: ProfileDraft) => void; preview?: boolean }) {
   const [step, setStep] = useState<'character' | 'profile'>('character');
-  const [character, setCharacter] = useState<Character>(initialCharacter);
+  const [character, setCharacter] = useState<Character>(() => normalizeCharacter(initialCharacter));
   const [profile, setProfile] = useState(initialProfile);
   const [facing, setFacing] = useState<CharacterFacing>('down');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const heading = useRef<HTMLHeadingElement>(null);
-  const changeCharacter = <K extends keyof Character>(key: K, value: Character[K]) => setCharacter(current => ({ ...current, [key]: value }));
+  const changeCharacter = <K extends keyof Character>(key: K, value: Character[K]) => setCharacter(current => normalizeCharacter({ ...current, [key]: value }));
   const nextStep = (value: typeof step) => {
     if (value === 'profile') {
       const name = petNameSchema.safeParse(character.petName);
@@ -73,12 +74,12 @@ export function GameWelcome({ profile: initialProfile, initialCharacter = DEFAUL
           <fieldset className={styles.bodyChoices}><legend>Personaje</legend>{(['hombre', 'mujer'] as const).map(body => <button key={body} type="button" aria-pressed={character.body === body} onClick={() => changeCharacter('body', body)}>{body === 'hombre' ? 'Hombre' : 'Mujer'}</button>)}</fieldset>
           <div className={styles.editorGrid}>
             {palette('skin', 'Tono de piel')}{palette('eyes', 'Color de ojos')}
-            <label>Peinado<select value={character.hair} onChange={event => changeCharacter('hair', event.target.value as Character['hair'])}><option value="corto">Corto</option><option value="largo">Largo</option><option value="rizado">Rizado</option><option value="pelado">Pelado / sin pelo</option><option value="coleta">Coleta</option></select></label>
-            <label>Barba<select value={character.beard ?? 'ninguna'} onChange={event => changeCharacter('beard', event.target.value as Character['beard'])}><option value="ninguna">Sin barba</option><option value="corta">Barba corta</option><option value="completa">Barba abundante</option></select></label>
+            <label>Peinado<select value={character.hair} onChange={event => changeCharacter('hair', event.target.value as Character['hair'])}>{CHARACTER_OPTIONS[character.body].hair.map(value=><option key={value} value={value}>{appearanceLabels.hair[value]}</option>)}</select></label>
+            {character.body === 'hombre' && <label>Barba<select value={character.beard ?? 'ninguna'} onChange={event => changeCharacter('beard', event.target.value as Character['beard'])}>{CHARACTER_OPTIONS[character.body].beard.map(value=><option key={value} value={value}>{appearanceLabels.beard[value]}</option>)}</select></label>}
             {palette('hairColor', 'Color de pelo')}
-            <label>Vestimenta<select value={character.outfit} onChange={event => changeCharacter('outfit', event.target.value as Character['outfit'])}><option value="camisa">Camisa</option><option value="jardinero">Jardinero</option><option value="blusa">Blusa y pantalón</option><option value="vestido">Vestido</option><option value="falda">Blusa y falda</option></select></label>
-            {palette('shirt', 'Color de ropa')}{palette('trousers', 'Pantalón o falda')}
-            <label>Accesorios<select value={character.accessory} onChange={event => changeCharacter('accessory', event.target.value as Character['accessory'])}><option value="ninguno">Sin accesorio</option><option value="anteojos">Anteojos</option><option value="sombrero">Sombrero</option></select></label>
+            <label>Vestimenta<select value={character.outfit} onChange={event => changeCharacter('outfit', event.target.value as Character['outfit'])}>{CHARACTER_OPTIONS[character.body].outfit.map(value=><option key={value} value={value}>{appearanceLabels.outfit[value]}</option>)}</select></label>
+            {palette('shirt', 'Color de ropa')}{character.outfit !== 'vestido' && palette('trousers', character.outfit === 'falda' ? 'Color de falda' : 'Color de pantalón')}
+            <label>Accesorios<select value={character.accessory} onChange={event => changeCharacter('accessory', event.target.value as Character['accessory'])}>{CHARACTER_OPTIONS[character.body].accessory.map(value=><option key={value} value={value}>{appearanceLabels.accessory[value]}</option>)}</select></label>
           </div>
           <div className={styles.editorGrid}>
             <label htmlFor="welcome-pet-name">Nombre de tu perro robot<input id="welcome-pet-name" aria-label="Nombre de tu perro robot" value={character.petName} maxLength={24} required autoComplete="off" aria-invalid={Boolean(fieldErrors.petName)} aria-describedby="pet-name-help pet-name-error" onChange={event => { changeCharacter('petName', event.target.value); setFieldErrors(current => ({ ...current, petName: '' })); }} /><span id="pet-name-error" className={styles.fieldError}>{fieldErrors.petName}</span></label>
