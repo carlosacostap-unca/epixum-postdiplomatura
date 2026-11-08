@@ -1,4 +1,4 @@
-import { WORLD_WIDTH, WORLD_HEIGHT, ROADS } from '@/lib/course-game/neighborhood';
+import { WORLD_WIDTH, WORLD_HEIGHT, ROADS, TREES, NODO_PALMS, NODO_OFFSET, NODO_SCALE } from '@/lib/course-game/neighborhood';
 import { drawClassroom } from './classroom-art';
 import { robotDogPixels, createRobotCompanion, updateRobotCompanion, clearOfCompanion, type RobotCompanion } from '@/lib/course-game/robot-dog';
 import { findWalkPath, followWalkPath } from '@/lib/course-game/navigation';
@@ -6,7 +6,8 @@ import { CLASSROOM_SPAWN, canStandInClass, atClassExit } from '@/lib/course-game
 import { walk, canStand, nodoAccessSide, SPAWN, insideNodo, type WalkInput, type Position } from '@/lib/course-game/movement';
 import type { Character } from '@/lib/course-game/onboarding';
 import { characterPixels, movementFacing, type CharacterFacing } from '@/lib/course-game/character-art';
-import { drawNeighborhood } from './neighborhood-art';
+import { drawNeighborhood, drawTree } from './neighborhood-art';
+import { drawNodoPalm } from './nodo-art';
 import { drawInterior } from './interior-art';
 import { INTERIOR_SPAWN, canStandInside, enteredRoom, atExit, exitSide, type NodoAccess, roomDoor } from '@/lib/course-game/interior';
 import * as Phaser from 'phaser';
@@ -56,6 +57,14 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.companion = createRobotCompanion(this.position, state.classroom ? canStandInClass : state.interior ? p=>canStandInside(p,state.count,state.openRooms) : canStand);
       this.drawWorld();
       if (!state.interior && !state.classroom) {
+        for (const [x,y] of TREES) {
+          const tree=this.add.graphics().setDepth(y+9);
+          drawTree((color,px,py,w,h,alpha=1)=>this.rect(tree,color,px,py,w,h,alpha),x,y);
+        }
+        for (const [x,y] of NODO_PALMS) {
+          const palm=this.add.graphics().setDepth(NODO_OFFSET.y+(y+7)*NODO_SCALE);
+          drawNodoPalm((color,px,py,w,h,alpha=1)=>this.rect(palm,color,NODO_OFFSET.x+px*NODO_SCALE,NODO_OFFSET.y+py*NODO_SCALE,Math.ceil(w*NODO_SCALE),Math.ceil(h*NODO_SCALE),alpha),x,y);
+        }
         for (const road of [...ROADS,{name:'PLAZA RAÚL ALFONSÍN',tx:418,ty:395,w:100,h:10}]) {
           const label=this.add.text(road.tx,road.ty,road.name,{fontFamily:'monospace',fontSize:'6px',color:'#fff4d5',backgroundColor:'#59685d',padding:{x:2,y:1}});
           if(road.h>road.w) label.setAngle(-90);

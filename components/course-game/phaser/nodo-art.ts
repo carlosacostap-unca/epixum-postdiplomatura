@@ -48,11 +48,11 @@ export function drawNodo(r: Rect) {
   for (const x of [111, 286]) { r(0x697665, x + 2, 231, 24, 3); r(0x9aa797, x + 3, 223, 3, 9); r(0x9aa797, x + 22, 223, 3, 9); r(0xd2d4be, x, 220, 29, 5); for (let n = 3; n < 27; n += 4) r(0x8b998a, x + n, 221, 1, 2); }
   for (const [x,y] of [[143,224],[277,224],[91,201],[326,201]]) { r(0x59685f,x,y-23,2,24); r(0xa8bab0,x-3,y-25,8,2); r(0xf2e7b5,x-2,y-23,6,3); }
   r(0x727e75, 80, 162, 2, 64); r(0xe4dfc1, 79, 161, 3, 3); r(0xb4b8a1, 74, 226, 15, 3);
-  // Palm trees with stepped fronds.
-  for (const [x,y] of [[42,203],[342,251]]) {
-    r(0x5e7248,x-13,y+4,31,5,.35); r(0x7e6848,x,y-50,4,57);
+}
+
+export function drawNodoPalm(r:Rect,x:number,y:number) {
+    r(0x7e6848,x,y-50,4,57);
     for (let i=0;i<8;i++) r(0xb19b64,x,y-i*7,3,2);
     for (const side of [-1,1]) for(let i=0;i<5;i++) { r(0x386948,x+side*i*5-3,y-53+Math.floor(i*i/3),7,3); r(0x527e49,x+side*i*4-2,y-56+Math.floor(i*i/5),6,2); }
     r(0x809347,x-2,y-60,4,9);
-  }
 }

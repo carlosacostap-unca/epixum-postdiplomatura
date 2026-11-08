@@ -1,4 +1,4 @@
-import { NEIGHBORHOOD_BUILDINGS, PLAZA_BEDS, NODO_OFFSET, NODO_SCALE, ROADS, TREES, BENCHES, WORLD_WIDTH, WORLD_HEIGHT, NODO_STAIRS_WIDTH, NODO_REAR_ENTRANCE, NODO_ENTRANCE, southUpPoint } from '@/lib/course-game/neighborhood';
+import { NEIGHBORHOOD_BUILDINGS, PLAZA_BEDS, NODO_OFFSET, NODO_SCALE, NODO_PALMS, ROADS, TREES, BENCHES, WORLD_WIDTH, WORLD_HEIGHT, NODO_STAIRS_WIDTH, NODO_REAR_ENTRANCE, NODO_ENTRANCE, southUpPoint } from '@/lib/course-game/neighborhood';
 import { drawNodo } from './nodo-art';
 type Paint=(color:number,x:number,y:number,w:number,h:number,alpha?:number)=>void;
 export function drawNeighborhoodRoads(paint:Paint) {
@@ -37,10 +37,11 @@ export function drawNeighborhood(paint:Paint) {
   r(0x746452,b.x+b.w-8,b.y+b.h-9,5,9);r(0xe5ddcd,b.x+7,b.y+6,8,5);
  }
  for(const b of PLAZA_BEDS){r(0xb7a27b,b.x-2,b.y-2,b.w+4,b.h+4);r(0x688654,b.x,b.y,b.w,b.h);}
- for(const [x,y] of TREES){r(0x596b4b,x-8,y+4,24,7,.35);r(0x836249,x,y,3,9);r(0x436649,x-9,y-17,21,20);r(0x759754,x-13,y-12,22,12);r(0x9bb966,x-7,y-17,12,5);}
+ for(const [x,y] of TREES) r(0x596b4b,x-8,y+4,24,7,.35);
  for(const [x,y] of BENCHES){r(0x62594b,x,y,17,3);r(0xc7a57c,x,y-3,17,3);r(0x62594b,x+2,y+3,2,4);r(0x62594b,x+13,y+3,2,4);}
  for(const {x,y} of [[480,417],[535,560],[457,747],[364,555]].map(([x,y])=>southUpPoint(x,y))){r(0x596764,x,y-22,2,23);r(0xf4dfaa,x-2,y-25,6,4);}
  drawNodo((c,x,y,w,h,a)=>r(c,NODO_OFFSET.x+x*NODO_SCALE,NODO_OFFSET.y+y*NODO_SCALE,Math.ceil(w*NODO_SCALE),Math.ceil(h*NODO_SCALE),a));
+ for(const [x,y] of NODO_PALMS) r(0x5e7248,NODO_OFFSET.x+(x-13)*NODO_SCALE,NODO_OFFSET.y+(y+4)*NODO_SCALE,31*NODO_SCALE,5*NODO_SCALE,.35);
  // Outdoor rear staircase: no doorway over the roof or the Nodo lettering.
  const rear=NODO_REAR_ENTRANCE;
  r(0xe2d3ae,rear.x-17,rear.y-18,34,18);
@@ -51,4 +52,12 @@ export function drawNeighborhood(paint:Paint) {
   r(0xf0e7d0,x,y,width,1);
   r(0xd8cfb7,x,y+1,width,1);
  }
+}
+
+/** Each upright tree gets its own depth, shared with the actors' foot positions. */
+export function drawTree(paint:Paint,x:number,y:number) {
+ paint(0x836249,x,y,3,9);
+ paint(0x436649,x-9,y-17,21,20);
+ paint(0x759754,x-13,y-12,22,12);
+ paint(0x9bb966,x-7,y-17,12,5);
 }
