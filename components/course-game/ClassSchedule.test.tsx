@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest';
 import CourseMissionMap from './CourseMissionMap';
 import type { VillageState } from './phaser/village-engine';
+import { INTRODUCTION_DOOR } from '@/lib/course-game/interior';
 import { DEFAULT_CHARACTER } from '@/lib/course-game/onboarding';
 const engine=vi.hoisted(()=>({current:null as VillageState|null}));
 vi.mock('./PhaserVillage',()=>({default:(props:VillageState)=>{engine.current=props;return <div/>;}}));
@@ -14,6 +15,7 @@ describe('aulas según horario',()=>{
       const load=vi.fn(async(id:string)=>({success:true as const,content:{title:id,description:`<p>Contenido ${id}</p>`,resources:[]}}));
       const view=render(<CourseMissionMap syncSchedule={sync} loadBoard={load} game={{courseId:'pilot',courseTitle:'Curso',title:'Valle',introduction:'',missions:[],completed:0,places:[]}}/>);
       await act(async()=>{});
+      fireEvent.click(screen.getByRole('button',{name:/Menú/}));
       fireEvent.click(screen.getByRole('button',{name:/Encuentros/}));
       fireEvent.click(screen.getByRole('button',{name:/Leer en la pizarra Primera/}));
       await act(async()=>{});
@@ -42,14 +44,15 @@ describe('aulas según horario',()=>{
     act(()=>{engine.current?.onRoom?.(1);engine.current?.onPosition?.({x:180,y:155});});
     fireEvent.keyDown(screen.getByLabelText('Interior del Nodo'),{key:'e'});
     expect(screen.queryByLabelText('Interior del aula')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button',{name:/Encuentros/}));
+    fireEvent.click(screen.getByRole('button',{name:/Menú/}));
+      fireEvent.click(screen.getByRole('button',{name:/Encuentros/}));
     expect(screen.getByRole('button',{name:/Leer en la pizarra Clase 2/})).toBeDisabled();
     expect(load).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
     fireEvent.click(screen.getByRole('button',{name:'Entrar al Aula 0: Bienvenida al curso'}));
-    expect(engine.current?.destination?.()).toEqual({x:240,y:82});
+    expect(engine.current?.destination?.()).toEqual(INTRODUCTION_DOOR);
     act(()=>engine.current?.onRoom?.(-1));
-    expect(screen.getByRole('heading',{name:'Aula 0'})).toBeVisible();
+    expect(screen.getByLabelText('Interior del aula')).toBeVisible();
     act(()=>engine.current?.onPosition?.({x:240,y:120}));
     fireEvent.click(screen.getByRole('button',{name:'Ver pizarra · E'}));
     expect(await screen.findByText('Una forma de aprender')).toBeVisible();
@@ -60,6 +63,6 @@ describe('aulas según horario',()=>{
     act(()=>engine.current?.onEnter?.());
     expect(screen.getByRole('button',{name:'Entrar al Aula 0: Bienvenida al curso'})).toBeEnabled();
     act(()=>engine.current?.onRoom?.(-1));
-    expect(screen.getByRole('heading',{name:'Aula 0'})).toBeVisible();
+    expect(screen.getByLabelText('Interior del aula')).toBeVisible();
   });
 });
