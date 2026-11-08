@@ -9,8 +9,8 @@ export const CHARACTER_COLORS = {
 };
 export interface CharacterPixel { x: number; y: number; w: number; h: number; color: string }
 export type CharacterFacing = 'up' | 'down' | 'left' | 'right';
-export function seatedCharacterPixels(character:Character):CharacterPixel[] {
-  return characterPixels(character,'down').filter(p=>p.color!=='#486040').map(p=>{
+export function seatedCharacterPixels(character:Character, facing:CharacterFacing = 'down'):CharacterPixel[] {
+  return characterPixels(character,facing).filter(p=>p.color!=='#486040').map(p=>{
     if(p.y<25) return p;
     // Bent knees and short hanging lower legs, with feet turned outward.
     return {...p,x:p.x+(p.x<13?-1:1),y:25+Math.floor((p.y-25)*.6),h:Math.max(1,Math.ceil(p.h*.6))};

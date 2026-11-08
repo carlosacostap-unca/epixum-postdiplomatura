@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { resourceView, type BoardContent, type LoadBoard } from '@/lib/course-game/board';
 import { BoardHtml } from './BoardHtml';
 import styles from './lesson-board.module.css';
-export function LessonBoard({classId,load}:{classId:string;load?:LoadBoard}) {
-  return <BoardReader key={classId} classId={classId} load={load} />;
+export function LessonBoard({classId,load,notebook=false}:{classId:string;load?:LoadBoard;notebook?:boolean}) {
+  return <BoardReader key={classId} classId={classId} load={load} notebook={notebook} />;
 }
-function BoardReader({classId,load}:{classId:string;load?:LoadBoard}) {
+function BoardReader({classId,load,notebook=false}:{classId:string;load?:LoadBoard;notebook?:boolean}) {
   const [content,setContent]=useState<BoardContent|null>(null);
   const [error,setError]=useState(load ? '' : 'El contenido no está conectado en esta vista.');
   const [attempt,setAttempt]=useState(0);
@@ -20,11 +20,12 @@ function BoardReader({classId,load}:{classId:string;load?:LoadBoard}) {
   },[classId,load,attempt]);
   const resource=content?.resources.find(item=>item.id===selected);
   const view=resource?resourceView(resource):null;
-  return <section className={styles.board} aria-label="Pizarra de la clase">
-    {!content&&!error&&<p role="status">Preparando la pizarra…</p>}
+  return <section className={styles.board} aria-label={notebook ? "Notebook de la clase" : "Pizarra de la clase"}>
+    {!content&&!error&&<p role="status">{notebook ? "Encendiendo la notebook…" : "Preparando la pizarra…"}</p>}
     {error&&<div role="alert"><p>{error}</p><button type="button" onClick={()=>{setError('');setContent(null);setSelected(null);setAttempt(a=>a+1);}}>Reintentar</button></div>}
-    {content&&<><nav className={styles.tabs} aria-label="Contenido de la pizarra"><button type="button" aria-pressed={selected===null} onClick={()=>setSelected(null)}>Clase</button>{content.resources.map(item=><button key={item.id} type="button" aria-pressed={selected===item.id} onClick={()=>setSelected(item.id)}>{item.title}</button>)}</nav>
+    {content&&<><nav className={styles.tabs} aria-label={notebook ? "Actividades y materiales de la clase" : "Contenido de la pizarra"}><button type="button" aria-pressed={selected===null} onClick={()=>setSelected(null)}>{notebook ? "Consignas del encuentro" : "Clase"}</button>{content.resources.map(item=><button key={item.id} type="button" aria-pressed={selected===item.id} onClick={()=>setSelected(item.id)}>{item.title}</button>)}</nav>
     <div className={styles.content}>
+    {notebook && <p className={styles.note}>Consultá las consignas y los materiales publicados por el docente para este encuentro. Al cerrar la notebook, seguís en tu asiento.</p>}
     {!selected?<><h3>{content.title}</h3>{content.description.trim()?<BoardHtml html={content.description}/>:<p>El docente todavía no añadió una descripción a esta clase.</p>}{!content.resources.length&&<p className={styles.note}>Todavía no hay materiales publicados para este encuentro.</p>}</>:resource&&<><h3>{resource.title}</h3>
       {!view?<p role="alert">No se pudo preparar este material. Cerrá y volvé a abrir la pizarra para reintentar.</p>:<>
         {view.kind==='frame'&&<iframe key={view.url} className={styles.viewer} src={view.url} title={resource.title} sandbox={new URL(view.url).hostname === "www.youtube-nocookie.com" || new URL(view.url).hostname === "docs.google.com" ? "allow-scripts allow-same-origin allow-presentation" : "allow-scripts allow-presentation"} allow="fullscreen" referrerPolicy="no-referrer"/>}

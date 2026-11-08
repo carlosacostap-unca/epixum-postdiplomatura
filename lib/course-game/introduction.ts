@@ -11,7 +11,7 @@ export function courseIntroduction(courseTitle: string): BoardResult {
     <h3>Preguntas para llevar a cada clase</h3>
     <ul><li>¿Qué problema queremos resolver y qué información nos falta?</li><li>¿Qué evidencia respalda una afirmación? ¿Cómo podemos verificarla?</li><li>¿Qué alternativas, limitaciones o sesgos debemos considerar?</li><li>¿Cómo explicaríamos y revisaríamos nuestra decisión?</li></ul>
     <h3>Tu recorrido por el Nodo</h3>
-    <p>Hacé clic o tap en el suelo para caminar, o usá flechas y WASD. Elegí una puerta para acercarte y entrar automáticamente. Dentro de cada aula, acercate a la pizarra para consultar el contenido.</p>
+    <p>Hacé clic o tap en el suelo para caminar, o usá flechas y WASD. Elegí una puerta para acercarte y entrar automáticamente. Dentro de cada aula, acercate a la pizarra para consultar el contenido. Hacé clic o tap en una silla para sentarte, o en una notebook para caminar hasta ella y consultar las consignas y materiales del encuentro. Para levantarte, elegí otro destino o usá el botón Levantarse.</p>
     <p>Las clases se habilitan en su fecha y horario de inicio, según el reloj del servidor mostrado en horario de Argentina. En Encuentros podés consultar los horarios. El Aula 0 permanece abierta, incluso antes de la primera clase.</p>
     <h3>Materiales, actividades y progreso</h3>
     <p>En la pizarra encontrarás los textos y materiales publicados de cada clase. Misiones reúne los trabajos publicados y Mi diario muestra tu avance. Consultá las consignas de cada actividad para conocer sus requisitos y entregas.</p>

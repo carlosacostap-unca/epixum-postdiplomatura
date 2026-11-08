@@ -19,3 +19,17 @@ describe('aula transitable',()=>{
     expect(nearBoard(CLASSROOM_SPAWN)).toBe(false);
   });
 });
+
+import { CLASSROOM_SEATS } from './classroom';
+import { reachedBench } from './benches';
+import { findWalkPath } from './navigation';
+it.each(CLASSROOM_SEATS)('llega a la silla $id sin atravesar muebles',seat=>{
+  expect(canStandInClass(seat.approach)).toBe(true);
+  const path=findWalkPath(CLASSROOM_SPAWN,seat.approach,canStandInClass);
+  expect(path.at(-1)).toEqual(seat.approach);
+  expect(path.every(canStandInClass)).toBe(true);
+  const target={...seat.approach,benchId:seat.id,notebook:true};
+  expect(reachedBench(CLASSROOM_SPAWN,target,true)).toBeNull();
+  expect(reachedBench(seat.approach,target,true)?.id).toBe(seat.id);
+  expect(reachedBench(seat.approach,target)).toBeNull();
+});

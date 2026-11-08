@@ -9,7 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { SPAWN, nodoAccessSide, emptyWalkInput, nearNodo, type Position, type WalkInput } from '@/lib/course-game/movement';
 import { nearbyRoom, nearExit, roomDoor, ROOMS_PER_WING, INTRODUCTION_DOOR, INTERIOR_SPAWN, INTERIOR_FRONT_SPAWN, INTERIOR_REAR_SPAWN, REAR_EXIT, exitSide, type NodoAccess } from '@/lib/course-game/interior';
 import { INTRODUCTION_ID, INTRODUCTION_TITLE, courseIntroduction } from '@/lib/course-game/introduction';
-import { nearBoard, nearClassExit } from '@/lib/course-game/classroom';
+import { CLASSROOM_SEATS, nearBoard, nearClassExit } from '@/lib/course-game/classroom';
 import { LessonBoard } from './LessonBoard';
 import type { LoadBoard } from '@/lib/course-game/board';
 import Link from 'next/link';
@@ -23,10 +23,10 @@ import styles from './immersive-game.module.css';
 import { useGameSchedule } from './useGameSchedule';
 import { argentinaDateTime, type SyncGameSchedule } from '@/lib/course-game/schedule';
 
-type Panel = 'identity' | 'classroom' | 'menu' | 'encounters' | 'missions' | 'journal' | 'help' | 'companion';
-const panelTitles: Record<Panel, string> = { identity:'Mi personaje y mis datos', companion:'Tu perro robot', classroom: 'Tu aula', menu: 'Menú del aula', encounters: 'Clases en el Nodo', missions: 'Misiones', journal: 'Mi diario', help: 'Cómo jugar' };
+type Panel = 'notebook' | 'identity' | 'classroom' | 'menu' | 'encounters' | 'missions' | 'journal' | 'help' | 'companion';
+const panelTitles: Record<Panel, string> = { notebook:'Actividades de la clase', identity:'Mi personaje y mis datos', companion:'Tu perro robot', classroom: 'Tu aula', menu: 'Menú del aula', encounters: 'Clases en el Nodo', missions: 'Misiones', journal: 'Mi diario', help: 'Cómo jugar' };
 // Extend this list when adding new game sections. Phaser remains independent.
-const menuSections: { panel: Exclude<Panel, 'menu' | 'classroom' | 'identity'>; icon: string; description: string }[] = [
+const menuSections: { panel: Exclude<Panel, 'menu' | 'classroom' | 'identity' | 'notebook'>; icon: string; description: string }[] = [
   {panel:'companion',icon:'◈',description:'Tu compañero robot y una pista para continuar'},
   { panel: 'encounters', icon: '⌂', description: 'Todos los encuentros en el Nodo Tecnológico' },
   { panel: 'missions', icon: '⚑', description: 'Trabajos, entregas y devoluciones' },
@@ -188,11 +188,15 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
           clearWalking();
           destination.current = { x: (event.clientX-bounds.left)/bounds.width*mapWidth, y: (event.clientY-bounds.top)/bounds.height*mapHeight };
         }}>
-        <PhaserVillage onSeated={setSeatedBench} spawn={inClass ? undefined : spawn} key={inClass ? `class-${selectedId}` : inside ? `inside-${wing}-${game.places.map(p=>p.id).join("-")}` : 'outside'} classroom={inClass} interior={inside} onRoom={openRoom} onExit={inClass ? leaveClass : exitNodo} openRooms={game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map(p=>isOpen(p.id))} onCompanionPosition={onCompanionPosition} input={readInput} destination={readDestination} movementLocked={panel !== null || Boolean(tutorial)} onPosition={onPosition} onEnter={enterNodo} character={character} selected={panel === 'encounters' ? 0 : -1} paused={paused || panel !== null} restored={game.completed > 0} count={inside ? roomCount : game.places.length} />
+        <PhaserVillage onNotebook={()=>{if(inClass && selectedClass && isOpen(selectedClass.id)) {clearWalking();setPanel('notebook');}}} onSeated={setSeatedBench} spawn={inClass ? undefined : spawn} key={inClass ? `class-${selectedId}` : inside ? `inside-${wing}-${game.places.map(p=>p.id).join("-")}` : 'outside'} classroom={inClass} interior={inside} onRoom={openRoom} onExit={inClass ? leaveClass : exitNodo} openRooms={game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map(p=>isOpen(p.id))} onCompanionPosition={onCompanionPosition} input={readInput} destination={readDestination} movementLocked={panel !== null || Boolean(tutorial)} onPosition={onPosition} onEnter={enterNodo} character={character} selected={panel === 'encounters' ? 0 : -1} paused={paused || panel !== null} restored={game.completed > 0} count={inside ? roomCount : game.places.length} />
         {!inside && <button type="button" className={styles.nodoEntrance} style={{left:NODO_FOOTPRINT.x/mapWidth*100+'%',top:NODO_FOOTPRINT.y/mapHeight*100+'%',width:NODO_FOOTPRINT.w/mapWidth*100+'%',height:NODO_FOOTPRINT.h/mapHeight*100+'%'}} aria-label="Entrar al Nodo Tecnológico Catamarca" onClick={() => walkToEntrance(NODO_ENTRANCE)}>
         </button>}
         {!inside && <button type="button" className={styles.nodoEntrance} style={{left:(NODO_REAR_ENTRANCE.x-NODO_STAIRS_WIDTH/2)/mapWidth*100+'%',top:(NODO_REAR_ENTRANCE.y-8)/mapHeight*100+'%',width:NODO_STAIRS_WIDTH/mapWidth*100+'%',height:20/mapHeight*100+'%'}} aria-label="Entrar por detrás al Nodo Tecnológico Catamarca" onClick={() => walkToEntrance(NODO_REAR_ENTRANCE)} />}
         {!inside && character && GAME_BENCHES.map((bench,index)=><button key={bench.id} type="button" className={styles.benchTouch} style={{left:bench.x/mapWidth*100+'%',top:(bench.y-3)/mapHeight*100+'%',width:bench.w/mapWidth*100+'%',height:(bench.h+6)/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label={'Sentarse en el banco '+(index+1)} title="Caminar hasta el banco y sentarse" onClick={()=>walkToEntrance({...bench.approach,benchId:bench.id})}/>)}
+        {inClass && character && CLASSROOM_SEATS.map((seat,index)=><span key={seat.id}>
+          <button type="button" className={styles.benchTouch} style={{left:seat.x/mapWidth*100+'%',top:seat.y/mapHeight*100+'%',width:seat.w/mapWidth*100+'%',height:seat.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label={'Sentarse en la silla '+(index+1)} onClick={()=>walkToEntrance({...seat.approach,benchId:seat.id})}/>
+          <button type="button" className={styles.benchTouch} style={{left:seat.notebook.x/mapWidth*100+'%',top:seat.notebook.y/mapHeight*100+'%',width:seat.notebook.w/mapWidth*100+'%',height:seat.notebook.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)||!selectedClass||!isOpen(selectedClass.id)} aria-label={'Usar notebook '+(index+1)+': actividades de la clase'} aria-haspopup="dialog" onClick={()=>walkToEntrance({...seat.approach,benchId:seat.id,notebook:true})}/>
+        </span>)}
         {inside && !inClass && game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map((place,index) => {
           const door=roomDoor(index);
           return <button key={place.id} type="button" className={styles.roomDoor} style={{left:door.x/480*100+'%',top:(index<4?134:224)/320*100+'%'}} disabled={!isOpen(place.id)} title={isOpen(place.id) ? "Caminar hasta el aula" : openingLabel(place.id,place.date)} onClick={()=>{if(isOpen(place.id)) walkToEntrance({x:door.x,y:door.y+(index<4?-4:4)});}} aria-label={`Entrar al aula ${wing*8+index+1}: ${place.title}`}>Aula {wing*8+index+1}{!isOpen(place.id) && <span> · Cerrada</span>}</button>;
@@ -207,7 +211,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
           onClick={event=>{if(event.detail===0){clearWalking();setPanel('companion');}}}><span aria-hidden="true">?</span></button>}
       </div>
     </div>
-    {seatedBench && !inside && <button type="button" className={styles.standUp} disabled={Boolean(panel||tutorial)} onClick={()=>walkToEntrance({...cameraPosition.current!})}>Levantarse</button>}
+    {seatedBench && <button type="button" className={styles.standUp} disabled={Boolean(panel||tutorial)} onClick={()=>walkToEntrance({...cameraPosition.current!})}>Levantarse</button>}
     <nav className={styles.zoomControls} aria-label="Zoom del mapa">
       <button type="button" aria-label="Alejar mapa" disabled={zoom <= .5 || Boolean(panel || tutorial)} onClick={() => changeZoom(zoom-.25)}>−</button>
       <button type="button" aria-label="Restablecer zoom" title="Restablecer zoom" disabled={Boolean(panel || tutorial)} onClick={() => changeZoom(1)}>{Math.round(zoom*100)}%</button>
@@ -223,10 +227,10 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     </aside>
     {inside && <nav className={styles.interiorNav} aria-label="Navegación del edificio"><button type="button" onClick={()=>inClass ? leaveClass() : exitNodo()}>{inClass ? '← Volver al pasillo' : '← Salir al jardín'}</button>{!inClass && game.places.length>8 && <><button type="button" disabled={wing===0} onClick={()=>{clearWalking();setNearRoom(null);setWing(wing-1);}}>← Ala anterior</button><span>Ala {wing+1}</span><button type="button" disabled={(wing+1)*8>=game.places.length} onClick={()=>{clearWalking();setNearRoom(null);setWing(wing+1);}}>Ala siguiente →</button></>}</nav>}
     {panel === 'companion' && <CompanionChat petName={character?.petName} courseTitle={game.courseTitle} places={game.places} fresh={Boolean(clock?.fresh)} inside={inside} inClass={inClass} onClose={()=>setPanel(null)} />}
-    {panel && panel !== 'companion' && <GamePanel wide={panel === 'classroom' || panel === 'identity'} title={panel === 'classroom' && selectedClass ? selectedClass.title : panelTitles[panel]} onClose={() => setPanel(null)} exitHref={panel === 'menu' ? PLATFORM_URL : undefined}>
+    {panel && panel !== 'companion' && <GamePanel wide={panel === 'notebook' || panel === 'classroom' || panel === 'identity'} title={(panel === 'classroom' || panel === 'notebook') && selectedClass ? (panel === 'notebook' ? 'Notebook · ' : '') + selectedClass.title : panelTitles[panel]} onClose={() => setPanel(null)} exitHref={panel === 'menu' ? PLATFORM_URL : undefined}>
 
-      {panel === 'classroom' && !selectedClass && <p>Esta clase ya no está disponible. Volvé a Encuentros para consultar el calendario actualizado.</p>}
-      {panel === 'classroom' && selectedClass && <>{isOpen(selectedClass.id) ? <LessonBoard key={selectedClass.id} classId={selectedClass.id} load={readBoard} /> : <p>{openingLabel(selectedClass.id,selectedClass.date)}. {clock?.fresh ? "El aula está cerrada." : "Esperando confirmación del servidor."}</p>}</>}
+      {(panel === 'classroom' || panel === 'notebook') && !selectedClass && <p>Esta clase ya no está disponible. Volvé a Encuentros para consultar el calendario actualizado.</p>}
+      {(panel === 'classroom' || panel === 'notebook') && selectedClass && <>{isOpen(selectedClass.id) ? <LessonBoard notebook={panel === 'notebook'} key={selectedClass.id} classId={selectedClass.id} load={readBoard} /> : <p>{openingLabel(selectedClass.id,selectedClass.date)}. {clock?.fresh ? "El aula está cerrada." : "Esperando confirmación del servidor."}</p>}</>}
       {panel === 'identity' && renderIdentity?.(() => setPanel('menu'))}
       {panel === 'menu' && <>
         <p className={styles.intro}>Un descanso en el camino. Elegí cómo continuar.</p>

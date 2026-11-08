@@ -150,3 +150,27 @@ describe('controles del personaje', () => {
     expect(screen.queryByRole('group',{name:'Controles para caminar'})).not.toBeInTheDocument();
   });
 });
+
+it('camina a las sillas y abre la notebook de la clase solo al llegar',async()=>{
+  const load=vi.fn(async()=>({success:true as const,content:{title:'Clase A',description:'<p>Resolver la actividad del encuentro</p>',resources:[]}}));
+  render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER} loadBoard={load}/>);
+  act(()=>state.current?.onEnter?.());
+  act(()=>state.current?.onRoom?.(0));
+  expect(screen.getAllByRole('button',{name:/Sentarse en la silla/})).toHaveLength(12);
+  expect(screen.getAllByRole('button',{name:/Usar notebook/})).toHaveLength(12);
+  fireEvent.click(screen.getByRole('button',{name:'Usar notebook 12: actividades de la clase'}));
+  const target=state.current?.destination?.();
+  expect(target?.notebook).toBe(true);
+  expect(load).not.toHaveBeenCalled();
+  act(()=>{state.current?.onPosition?.({x:target!.x,y:target!.y});state.current?.onSeated?.(target!.benchId!);state.current?.onNotebook?.();});
+  expect(await screen.findByText('Resolver la actividad del encuentro')).toBeVisible();
+  expect(load).toHaveBeenCalledWith('a');
+  expect(state.current?.movementLocked).toBe(true);
+  expect(screen.getByLabelText('Notebook de la clase')).toBeVisible();
+  fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
+  expect(state.current?.movementLocked).toBe(false);
+  expect(screen.getByRole('button',{name:'Levantarse'})).toBeVisible();
+  expect(state.current?.destination?.()).toBeNull();
+  fireEvent.click(screen.getByRole('button',{name:'Levantarse'}));
+  expect(state.current?.destination?.()).toEqual({x:target!.x,y:target!.y});
+});

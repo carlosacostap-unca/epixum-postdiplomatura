@@ -1,6 +1,6 @@
 import type { Position } from './movement';
 export const CLASSROOM_SPAWN: Position = { x:240,y:280 };
-export const DESKS = [150,210,260].flatMap(y=>[80,310].map(x=>({x,y,w:90,h:22})));
+export const DESKS = [145,195,245].flatMap(y=>[80,310].map(x=>({x,y,w:90,h:22})));
 export const nearBoard = (p:Position) => p.x>=180 && p.x<=300 && p.y>=90 && p.y<=130;
 export const nearClassExit = (p:Position) => p.x>=222 && p.x<=258 && p.y>=285;
 export const atClassExit = (p:Position) => nearClassExit(p) && p.y>=300;
@@ -12,3 +12,11 @@ export function canStandInClass(p:Position) {
   }
   return !(p.x>64 && p.x<151 && p.y<135);
 }
+
+// Each workstation shares its coordinates with the rendered chair and notebook.
+export const CLASSROOM_SEATS = DESKS.flatMap((desk,row)=>[15,58].map((dx,column)=>({
+  id:`class-chair-${row}-${column}`,x:desk.x+dx,y:desk.y+21,w:18,h:16,
+  approach:{x:desk.x+dx+9,y:desk.y+39},
+  seat:{x:desk.x+dx+9,y:desk.y+37},
+  notebook:{x:desk.x+dx-3,y:desk.y-1,w:24,h:17},
+})));

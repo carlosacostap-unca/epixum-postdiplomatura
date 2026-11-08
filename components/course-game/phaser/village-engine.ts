@@ -15,7 +15,7 @@ import { INTERIOR_SPAWN, canStandInside, enteredRoom, atExit, exitSide, type Nod
 import * as Phaser from 'phaser';
 import { VILLAGE_HEIGHT, VILLAGE_WIDTH } from '@/lib/course-game/village-layout';
 
-export interface VillageState { selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
+export interface VillageState { selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
 export interface VillageEngine { update: (state: VillageState) => void; destroy: () => void }
 
 
@@ -100,7 +100,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.actor.setDepth(this.position.y);
       if (!state.character) return;
       const drawnPosition=this.seated?.seat ?? this.position;
-      for (const pixel of this.seated ? seatedCharacterPixels(state.character) : characterPixels(state.character, this.facing, this.stride)) {
+      for (const pixel of this.seated ? seatedCharacterPixels(state.character,state.classroom ? 'up' : 'down') : characterPixels(state.character, this.facing, this.stride)) {
         this.rect(this.actor, Number.parseInt(pixel.color.slice(1), 16), drawnPosition.x - 12 + pixel.x, drawnPosition.y - 34 + pixel.y, pixel.w, pixel.h);
       }
     }
@@ -187,9 +187,9 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
           this.drawCharacter(); state.onPosition?.(this.position);
         }
       }
-      if (!state.interior && !state.classroom && !state.movementLocked && !manual && !this.seated) {
-        const bench=reachedBench(this.position,destination);
-        if(bench) { this.seated=bench; this.stride=0; this.route=[]; this.destinationMarker.clear(); state.onSeated?.(bench.id); this.drawCharacter(); }
+      if ((!state.interior || state.classroom) && !state.movementLocked && !manual && !this.seated) {
+        const bench=reachedBench(this.position,destination,Boolean(state.classroom));
+        if(bench) { this.seated=bench; this.stride=0; this.route=[]; this.destinationMarker.clear(); state.onSeated?.(bench.id); this.drawCharacter(); if(state.classroom && destination?.notebook) state.onNotebook?.(); }
       }
       if (!moved && this.stride !== 0) {
         this.stride = 0;
