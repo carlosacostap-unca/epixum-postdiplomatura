@@ -13,6 +13,6 @@ export default async function EstudiantesDashboard({ searchParams }: { searchPar
     getStudentDashboardData(user.id),
     getStudentPendingInvitations(),
   ]);
-  const status = query.estado === "en curso" || query.estado === "finalizado" ? query.estado : "all";
+  const status = query.estado === "en curso" || query.estado === "finalizado" || query.estado === "borrador" ? query.estado : "all";
   return <StudentDashboard dashboard={dashboard} invitations={pendingInvitations} firstName={user.firstName || user.name?.split(" ")[0] || "Estudiante"} query={query.buscar || ""} status={status} />;
 }

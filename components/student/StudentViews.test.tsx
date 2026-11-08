@@ -20,6 +20,15 @@ const empty: StudentDashboardData = { courses: [], nextActivityByCourse: {}, nex
 const assignment: Assignment = { ...base, id: "tp-1", title: "Analizar una respuesta", description: "", course: course.id, dueDate: "2026-11-03T18:00:00Z" };
 
 describe("vistas compactas del estudiante", () => {
+  it('identifica borradores sin confundirlos con cursos finalizados y permite filtrarlos', () => {
+    const draft = {...course,id:'draft-course',title:'Curso invitado',status:'borrador' as const};
+    render(<ToastProvider><StudentDashboard dashboard={{...empty,courses:[draft,finished]}} invitations={[]} firstName="Ana" status="borrador"/></ToastProvider>);
+    const row=screen.getByRole('link',{name:/Curso invitado/});
+    expect(row).toHaveTextContent('Borrador');
+    expect(row).not.toHaveTextContent('Finalizado');
+    expect(screen.queryByRole('link',{name:/Innovación digital/})).not.toBeInTheDocument();
+    expect(screen.getByRole('link',{name:'Borradores'})).toHaveAttribute('aria-current','page');
+  });
   it("busca y filtra matrículas y mantiene el texto de búsqueda al cambiar de estado", () => {
     render(<ToastProvider><StudentDashboard dashboard={{ ...empty, courses: [course, finished] }} invitations={[]} firstName="Ana" query="innovación" status="finalizado" /></ToastProvider>);
     const list = screen.getByRole("region", { name: "Mis cursos" });

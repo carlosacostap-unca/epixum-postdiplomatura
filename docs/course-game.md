@@ -187,3 +187,7 @@ Por indicación del usuario, el mapa gira 180 grados: sur arriba, norte abajo, e
 Controles −/+/porcentaje (50–200%) y pellizco con dos dedos. El zoom conserva al personaje como centro y escala juntos el canvas y los accesos HTML. Un dedo desplaza el mapa; los gestos no activan puertas ni conversaciones. Funciona también dentro del Nodo y de las aulas.
 
 El zoom también admite la rueda del mouse sobre el mapa: hacia arriba acerca y hacia abajo aleja, con límites de 50–200 %. Se evita el desplazamiento simultáneo y se desactiva mientras hay un panel o tutorial abierto. Ctrl/Meta conservan el comportamiento del navegador.
+
+### Preparación del servidor antes de publicar
+Ejecutar `npm run schema:course-game` antes de habilitar la aventura en producción. Las colecciones privadas course_game_onboarding y course_game_tour_steps son necesarias también para la primera visita, aunque el alumno todavía no tenga personaje. Una colección ausente produce el error de apertura del valle. La migración no modifica perfiles ni crea personajes.
+Verificación de despliegue: establecer COURSE_GAME_ACCESS_CHECK=1 y ejecutar vitest run lib/course-game/access.integration.test.ts. Comprueba las funciones reales de carga del curso y bienvenida con una identidad invitada y solo realiza lecturas. No imprime datos personales ni tokens.
