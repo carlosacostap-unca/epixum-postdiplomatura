@@ -8,6 +8,18 @@ vi.mock('./PhaserVillage', () => ({ default: () => <div data-testid="landscape" 
 const profile = { firstName: 'Ana', lastName: 'Prueba', dni: '12345678', birthDate: '1990-01-01', contactEmail: 'demo@example.invalid', phone: '+5491112345678', confirmed: false };
 const game = { courseId: 'pilot', title: 'Valle', courseTitle: 'Cohorte 2', introduction: '', places: [], missions: [], completed: 0 };
 describe('bienvenida y recorrido', () => {
+  it('guarda calvicie, barba y ropa nueva sin perderlos al girar el retrato', async () => {
+    const user=userEvent.setup(), save=vi.fn().mockResolvedValue({success:false,error:'Prueba'});
+    render(<GameWelcome profile={{...profile,confirmed:true}} save={save} onSaved={vi.fn()} />);
+    await user.selectOptions(screen.getByLabelText('Peinado'),'pelado');
+    await user.selectOptions(screen.getByLabelText('Barba'),'completa');
+    await user.selectOptions(screen.getByLabelText('Vestimenta'),'blusa');
+    await user.click(screen.getByRole('button',{name:'Espalda'}));
+    await user.click(screen.getByRole('button',{name:'Frente'}));
+    await user.click(screen.getByRole('button',{name:/Este es mi personaje/}));
+    await user.click(screen.getByRole('button',{name:/Guardar y conocer/}));
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({character:expect.objectContaining({hair:'pelado',beard:'completa',outfit:'blusa'})}));
+  });
   it('edita desde el menú, conserva los valores guardados y permite cancelar', async () => {
     const user = userEvent.setup();
     const update = vi.fn(async (input) => ({success:true as const,progress:{character:input.character,tourStep:5,completed:true}}));

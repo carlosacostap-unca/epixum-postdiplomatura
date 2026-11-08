@@ -210,3 +210,9 @@ El zoom con rueda conserva el punto bajo el cursor; el pellizco conserva el punt
 El exterior reserva 40 unidades de dibujo a cada lado del lienzo, con márgenes equivalentes en la cámara. Así, el personaje sigue completo al llegar al borde sur (arriba), incluso sobre Florida. La cámara incluye los márgenes al calcular ambos ejes.
 
 El perro recibe la dirección del próximo tramo del recorrido antes de avanzar el personaje. Si vuelve a bloquear el paso durante su descanso o una maniobra queda bloqueada, vuelve a planificar sin exigir otro clic. La ruta del alumno se calcula contra el entorno estático y conserva la colisión con la mascota durante cada paso.
+
+### Personalización del personaje
+
+El editor permite elegir calvicie, coleta, barba corta o abundante, blusa con pantalón, blusa con falda y vestido. La silueta femenina tiene cintura, hombros y mandíbula diferenciados. Las prendas y rasgos se representan en las cuatro direcciones con el mismo dibujo compartido por el retrato y Phaser. Los botones de orientación permiten revisar el resultado antes de guardar. Todas las combinaciones están disponibles en ambos tipos de personaje.
+
+El campo de barba se guarda dentro del JSON del personaje. Los personajes existentes que no lo tienen se leen como sin barba, sin migrar ni reemplazar sus demás elecciones.

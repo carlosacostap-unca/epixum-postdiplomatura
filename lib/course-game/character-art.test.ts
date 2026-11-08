@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { characterPixels, CHARACTER_COLORS, movementFacing } from './character-art';
-import { DEFAULT_CHARACTER } from './onboarding';
+import { DEFAULT_CHARACTER, characterSchema } from './onboarding';
 
 describe('orientación del personaje', () => {
+  it('conserva personajes guardados antes de incorporar barba', () => {
+    const legacy = Object.fromEntries(Object.entries(DEFAULT_CHARACTER).filter(([key])=>key!=='beard'));
+    expect(characterSchema.parse(legacy)).toEqual(DEFAULT_CHARACTER);
+  });
+  it.each(['up', 'down', 'left', 'right'] as const)('representa calvicie y nuevas prendas hacia %s', facing => {
+    const bald = {...DEFAULT_CHARACTER, hair:'pelado' as const};
+    expect(characterPixels(bald,facing).some(p=>p.color===CHARACTER_COLORS.hairColor.castano)).toBe(false);
+    const variants = ['camisa','blusa','falda','vestido','jardinero'].map(outfit=>JSON.stringify(characterPixels(characterSchema.parse({...bald,outfit}),facing)));
+    expect(new Set(variants).size).toBe(5);
+    if(facing!=='up') {
+      const beards=['ninguna','corta','completa'].map(beard=>JSON.stringify(characterPixels(characterSchema.parse({...bald,beard}),facing)));
+      expect(new Set(beards).size).toBe(3);
+    }
+  });
   it.each(['up', 'down', 'left', 'right'] as const)('alterna manos y pies hacia %s sin desplazar la sombra', facing => {
     const a = characterPixels(DEFAULT_CHARACTER, facing, Math.PI / 2);
     const b = characterPixels(DEFAULT_CHARACTER, facing, Math.PI * 1.5);

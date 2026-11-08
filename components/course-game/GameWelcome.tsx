@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, type FormEvent } from 'react';
-import { CHARACTER_COLORS } from '@/lib/course-game/character-art';
+import { CHARACTER_COLORS, type CharacterFacing } from '@/lib/course-game/character-art';
 import { DEFAULT_CHARACTER, PLATFORM_URL, petNameSchema, enrollmentCharacterSchema, type Character, type GameProgress, type ProfileDraft, type WelcomeActions } from '@/lib/course-game/onboarding';
 import { CharacterPortrait } from './CharacterPortrait';
 import styles from './welcome.module.css';
@@ -20,6 +20,7 @@ export function GameWelcome({ profile: initialProfile, initialCharacter = DEFAUL
   const [step, setStep] = useState<'character' | 'profile'>('character');
   const [character, setCharacter] = useState<Character>(initialCharacter);
   const [profile, setProfile] = useState(initialProfile);
+  const [facing, setFacing] = useState<CharacterFacing>('down');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -60,21 +61,23 @@ export function GameWelcome({ profile: initialProfile, initialCharacter = DEFAUL
   return <main className={`${styles.welcome} ${editing ? styles.editing : ''}`}>
     <header className={styles.top}><span>✦ EPIXUM · VALLE DE LAS IDEAS</span>{editing ? <button type="button" disabled={busy} onClick={onCancel}>Cancelar cambios</button> : <a href={PLATFORM_URL}>← Volver a Epixum</a>}</header>
     <div className={styles.card}>
-      <aside className={styles.characterStage}><span className={styles.caption}>TU HISTORIA COMIENZA AQUÍ</span><h1>Un nuevo habitante<br />para el valle.</h1><div className={styles.portraitFrame}><CharacterPortrait character={character} className={styles.portrait} /><div className={styles.ground} /></div><p>{step === 'character' ? 'Elegí cómo querés explorar este mundo.' : 'Tu personaje está listo. Ahora presentate con tus datos reales.'}</p><span className={styles.stepNote}>PERSONAJE · PERFIL · RECORRIDO</span></aside>
+      <aside className={styles.characterStage}><span className={styles.caption}>TU HISTORIA COMIENZA AQUÍ</span><h1>Un nuevo habitante<br />para el valle.</h1><div className={styles.portraitFrame}><CharacterPortrait character={character} facing={facing} className={styles.portrait} /><div className={styles.ground} /></div><p>{step === 'character' ? 'Elegí cómo querés explorar este mundo.' : 'Tu personaje está listo. Ahora presentate con tus datos reales.'}</p><span className={styles.stepNote}>PERSONAJE · PERFIL · RECORRIDO</span></aside>
       <section className={styles.formArea}>
         <div className={styles.steps} aria-label="Etapas de bienvenida"><span aria-current={step === 'character' ? 'step' : undefined}>1 · Personaje</span><span aria-current={step === 'profile' ? 'step' : undefined}>2 · Tus datos</span><span>3 · Recorrido</span></div>
         <h2 ref={heading} tabIndex={-1}>{step === 'character' ? editing ? 'Editá tu personaje y mascota' : 'Creá tu personaje' : editing ? 'Actualizá tus datos' : 'Conozcámonos'}</h2>
         {preview && <p className={styles.previewNotice}>Vista de demostración: usá datos ficticios. No se envían ni se guardan datos de perfil.</p>}
         {step === 'character' ? <>
-          {editing && <CharacterPortrait character={character} className={styles.editPortrait} />}
+          {editing && <CharacterPortrait character={character} facing={facing} className={styles.editPortrait} />}
+          <fieldset className={styles.bodyChoices}><legend>Girar vista previa</legend>{([['down', 'Frente'], ['left', 'Izquierda'], ['up', 'Espalda'], ['right', 'Derecha']] as const).map(([direction, label]) => <button key={direction} type="button" aria-pressed={facing === direction} onClick={() => setFacing(direction)}>{label}</button>)}</fieldset>
           <p className={styles.description}>Combiná rasgos y ropa para darle tu estilo. La apariencia del personaje no modifica tus datos personales.</p>
           <fieldset className={styles.bodyChoices}><legend>Personaje</legend>{(['hombre', 'mujer'] as const).map(body => <button key={body} type="button" aria-pressed={character.body === body} onClick={() => changeCharacter('body', body)}>{body === 'hombre' ? 'Hombre' : 'Mujer'}</button>)}</fieldset>
           <div className={styles.editorGrid}>
             {palette('skin', 'Tono de piel')}{palette('eyes', 'Color de ojos')}
-            <label>Peinado<select value={character.hair} onChange={event => changeCharacter('hair', event.target.value as Character['hair'])}><option value="corto">Corto</option><option value="largo">Largo</option><option value="rizado">Rizado</option></select></label>
+            <label>Peinado<select value={character.hair} onChange={event => changeCharacter('hair', event.target.value as Character['hair'])}><option value="corto">Corto</option><option value="largo">Largo</option><option value="rizado">Rizado</option><option value="pelado">Pelado / sin pelo</option><option value="coleta">Coleta</option></select></label>
+            <label>Barba<select value={character.beard ?? 'ninguna'} onChange={event => changeCharacter('beard', event.target.value as Character['beard'])}><option value="ninguna">Sin barba</option><option value="corta">Barba corta</option><option value="completa">Barba abundante</option></select></label>
             {palette('hairColor', 'Color de pelo')}
-            <label>Vestimenta<select value={character.outfit} onChange={event => changeCharacter('outfit', event.target.value as Character['outfit'])}><option value="camisa">Camisa</option><option value="jardinero">Jardinero</option></select></label>
-            {palette('shirt', 'Color de ropa')}{palette('trousers', 'Pantalón')}
+            <label>Vestimenta<select value={character.outfit} onChange={event => changeCharacter('outfit', event.target.value as Character['outfit'])}><option value="camisa">Camisa</option><option value="jardinero">Jardinero</option><option value="blusa">Blusa y pantalón</option><option value="vestido">Vestido</option><option value="falda">Blusa y falda</option></select></label>
+            {palette('shirt', 'Color de ropa')}{palette('trousers', 'Pantalón o falda')}
             <label>Accesorios<select value={character.accessory} onChange={event => changeCharacter('accessory', event.target.value as Character['accessory'])}><option value="ninguno">Sin accesorio</option><option value="anteojos">Anteojos</option><option value="sombrero">Sombrero</option></select></label>
           </div>
           <div className={styles.editorGrid}>

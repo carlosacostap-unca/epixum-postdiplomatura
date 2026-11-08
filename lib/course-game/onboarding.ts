@@ -9,16 +9,17 @@ export const characterSchema = z.object({
   petName: petNameSchema.default('Perro robot'),
   body: z.enum(['hombre', 'mujer']),
   skin: z.enum(['clara', 'media', 'morena', 'oscura']),
-  hair: z.enum(['corto', 'largo', 'rizado']),
+  hair: z.enum(['corto', 'largo', 'rizado', 'pelado', 'coleta']),
+  beard: z.enum(['ninguna', 'corta', 'completa']).default('ninguna'),
   hairColor: z.enum(['castano', 'negro', 'rubio', 'pelirrojo']),
   eyes: z.enum(['marron', 'azul', 'verde']),
   shirt: z.enum(['verde', 'azul', 'violeta', 'rojo', 'ocre']),
-  outfit: z.enum(['camisa', 'jardinero']),
+  outfit: z.enum(['camisa', 'jardinero', 'blusa', 'vestido', 'falda']),
   trousers: z.enum(['azul', 'marron', 'gris']),
   accessory: z.enum(['ninguno', 'anteojos', 'sombrero']),
 }).strict();
 export type Character = z.infer<typeof characterSchema>;
-export const DEFAULT_CHARACTER: Character = { petName: 'Perro robot', body: 'hombre', skin: 'media', hair: 'corto', hairColor: 'castano', eyes: 'marron', shirt: 'verde', outfit: 'camisa', trousers: 'azul', accessory: 'ninguno' };
+export const DEFAULT_CHARACTER: Character = { petName: 'Perro robot', body: 'hombre', skin: 'media', hair: 'corto', beard: 'ninguna', hairColor: 'castano', eyes: 'marron', shirt: 'verde', outfit: 'camisa', trousers: 'azul', accessory: 'ninguno' };
 export const gameProfileSchema = onboardingProfileSchema.omit({ emailChangeRequested: true }).extend({ contactEmail: z.email('Ingresá un email de contacto válido.').max(254).transform(value => value.toLowerCase()) });
 export const enrollmentCharacterSchema = z.object({ character: characterSchema, profile: gameProfileSchema }).strict();
 export type GameProfile = z.infer<typeof gameProfileSchema>;
