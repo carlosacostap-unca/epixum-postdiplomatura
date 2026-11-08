@@ -160,6 +160,7 @@ export async function removeCourseStudent(courseId: string, enrollmentId: string
     if (enrollment.course !== courseId) throw new ParticipantActionError('not-found', 'La matrícula no pertenece al curso indicado.');
 
     const servicePb = await createServiceClient();
+    await servicePb.collection('courses').update(courseId, { 'guestStudents-': enrollment.student });
     await servicePb.collection('course_enrollments').delete(enrollment.id);
     await verifyEnrollments(servicePb, courseId, [enrollment.student], false);
     revalidateParticipantSurfaces(courseId);
@@ -167,6 +168,40 @@ export async function removeCourseStudent(courseId: string, enrollmentId: string
   } catch (error) {
     return failure(error, 'No pudimos retirar al alumno. Intentá nuevamente.');
   }
+}
+
+export async function addCourseGuest(courseId: string, email: string): Promise<CourseParticipantMutationResult> {
+  try {
+    const pb = await requireParticipantAdmin();
+    const normalized = email.trim().toLowerCase();
+    if (!normalized || normalized.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      throw new ParticipantActionError('conflict', 'Ingresá un correo válido.');
+    }
+    const service = await createServiceClient();
+    const course = await pb.collection('courses').getOne<Course>(courseId, { fields:'id,teachers' });
+    const student = await service.collection('users').getFirstListItem(service.filter('email:lower = {:email}', {email:normalized}), {fields:'id,email'});
+    if (course.teachers?.includes(student.id)) throw new ParticipantActionError('conflict', 'Esta cuenta ya es docente del curso y puede ver sus borradores.');
+    await assertNoBedels(service,courseId,[student.id]);
+    if (!(await enrollmentFor(service,courseId,student.id))) {
+      await service.collection('course_enrollments').create({course:courseId,student:student.id});
+    }
+    await service.collection('courses').update(courseId, {'guestStudents+':student.id});
+    revalidateParticipantSurfaces(courseId);
+    return success('Estudiante invitado agregado. Puede acceder al curso incluso en borrador.',[student.id]);
+  } catch (error) {
+    if (isNotFound(error)) return {status:'not-found',message:'No encontramos el curso o una cuenta registrada con ese correo.'};
+    return failure(error,'No pudimos agregar al estudiante invitado.');
+  }
+}
+
+export async function removeCourseGuestAccess(courseId: string, studentId: string): Promise<CourseParticipantMutationResult> {
+  try {
+    await requireParticipantAdmin();
+    const service = await createServiceClient();
+    await service.collection('courses').update(courseId, {'guestStudents-':studentId});
+    revalidateParticipantSurfaces(courseId);
+    return success('Permiso de invitado retirado. La matrícula se conserva.',[studentId]);
+  } catch (error) { return failure(error,'No pudimos retirar el permiso de invitado.'); }
 }
 
 export async function addCourseTeachers(courseId: string, requestedUserIds: string[]): Promise<CourseParticipantMutationResult> {

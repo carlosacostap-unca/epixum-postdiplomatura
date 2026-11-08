@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import CourseGuestForm, { RemoveGuestButton } from './CourseGuestForm';
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -117,9 +118,9 @@ export default function CourseParticipantManager({ courseId, courseTitle, page, 
 
   const columns = useMemo(() => [
     { id: "person", header: "Persona", mobileLabel: "Persona", render: (participant: CourseParticipant) => <div className="min-w-0"><p className="font-bold">{participant.name}</p><p className="truncate text-xs text-[var(--color-on-surface-variant)]">{participant.email}</p></div> },
-    { id: "participation", header: "Participación", render: () => <span className="inline-flex rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-bold text-[var(--color-primary)]">{isStudents ? "Alumno" : "Docente"}</span> },
-    { id: "actions", header: <span className="sr-only">Acciones</span>, mobileLabel: "Acciones", className: "text-right", render: (participant: CourseParticipant) => <Button variant="ghost" onClick={() => setRemoveTarget(participant)}>Retirar</Button> },
-  ], [isStudents]);
+    { id: "participation", header: "Participación", render: (participant:CourseParticipant) => <span className="inline-flex rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-bold text-[var(--color-primary)]">{isStudents ? participant.isGuest ? "Estudiante invitado" : "Alumno" : "Docente"}</span> },
+    { id: "actions", header: <span className="sr-only">Acciones</span>, mobileLabel: "Acciones", className: "text-right", render: (participant: CourseParticipant) => <>{participant.isGuest && <RemoveGuestButton courseId={courseId} studentId={participant.userId}/>}<Button variant="ghost" onClick={() => setRemoveTarget(participant)}>Retirar</Button></> },
+  ], [isStudents,courseId]);
 
   function href(nextPage: number) {
     const params = new URLSearchParams({ tab, page: String(nextPage) });
@@ -159,6 +160,7 @@ export default function CourseParticipantManager({ courseId, courseTitle, page, 
       </form>
 
       <p className="sr-only" role="status" aria-live="polite">{page.totalItems} resultados</p>
+      {isStudents && <CourseGuestForm courseId={courseId}/>}
       <DataTable ariaLabel={`${label} de ${courseTitle}`} columns={columns} getKey={(participant) => participant.id} items={page.items} empty={<EmptyState icon="group_off" title={query ? "Sin coincidencias" : `Sin ${label}`} description={query ? "Probá con otro nombre o correo." : `Todavía no hay ${label} en este curso.`} />} />
 
       {page.totalPages > 1 ? <nav aria-label={`Páginas de ${label}`} className="flex items-center justify-between text-sm"><Link aria-disabled={page.page <= 1} tabIndex={page.page <= 1 ? -1 : undefined} href={href(Math.max(1, page.page - 1))} className="rounded-full px-4 py-3 font-bold aria-disabled:pointer-events-none aria-disabled:opacity-50">Anterior</Link><span>Página {page.page} de {page.totalPages}</span><Link aria-disabled={page.page >= page.totalPages} tabIndex={page.page >= page.totalPages ? -1 : undefined} href={href(Math.min(page.totalPages, page.page + 1))} className="rounded-full px-4 py-3 font-bold aria-disabled:pointer-events-none aria-disabled:opacity-50">Siguiente</Link></nav> : null}

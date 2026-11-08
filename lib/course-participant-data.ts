@@ -63,6 +63,7 @@ export async function getCourseParticipants(
   const filter = servicePb.filter(participantSearchExpression(target, Boolean(query)), { courseId, query });
 
   if (target === 'students') {
+    const course = await servicePb.collection('courses').getOne<Course>(courseId, {fields:'id,guestStudents'});
     const result = await servicePb.collection('course_enrollments').getList<CourseEnrollment>(page, COURSE_PARTICIPANTS_PER_PAGE, {
       filter,
       expand: 'student',
@@ -71,7 +72,7 @@ export async function getCourseParticipants(
     return {
       ...result,
       items: result.items.flatMap((enrollment) => enrollment.expand?.student
-        ? [toCourseParticipant(enrollment.expand.student, enrollment.id)]
+        ? [{...toCourseParticipant(enrollment.expand.student, enrollment.id), isGuest:course.guestStudents?.includes(enrollment.student) ?? false}]
         : []),
     };
   }

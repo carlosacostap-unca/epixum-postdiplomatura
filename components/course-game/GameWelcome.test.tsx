@@ -1,0 +1,87 @@
+import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import { GameWelcome } from './GameWelcome';
+import CourseGameExperience from './CourseGameExperience';
+import { DEFAULT_CHARACTER, characterSchema, type GameWelcomeState } from '@/lib/course-game/onboarding';
+vi.mock('./PhaserVillage', () => ({ default: () => <div data-testid="landscape" /> }));
+const profile = { firstName: 'Ana', lastName: 'Prueba', dni: '12345678', birthDate: '1990-01-01', contactEmail: 'demo@example.invalid', phone: '+5491112345678', confirmed: false };
+const game = { courseId: 'pilot', title: 'Valle', courseTitle: 'Cohorte 2', introduction: '', places: [], missions: [], completed: 0 };
+describe('bienvenida y recorrido', () => {
+  it('edita desde el menú, conserva los valores guardados y permite cancelar', async () => {
+    const user = userEvent.setup();
+    const update = vi.fn(async (input) => ({success:true as const,progress:{character:input.character,tourStep:5,completed:true}}));
+    render(<CourseGameExperience game={game} welcome={{profile:{...profile,confirmed:true},character:DEFAULT_CHARACTER,tourStep:5,completed:true}} actions={{save:vi.fn(),advance:vi.fn(),update}} />);
+    await user.click(screen.getByRole('button',{name:/Menú/}));
+    await user.click(screen.getByRole('button',{name:/Mi personaje y mis datos/}));
+    await user.clear(screen.getByLabelText('Nombre de tu perro robot'));
+    await user.type(screen.getByLabelText('Nombre de tu perro robot'),'Chispa');
+    await user.click(screen.getByRole('button',{name:/Este es mi personaje/}));
+    expect(screen.getByLabelText('Nombre')).toHaveValue('Ana');
+    await user.clear(screen.getByLabelText('Nombre'));
+    await user.type(screen.getByLabelText('Nombre'),'Anita');
+    await user.click(screen.getByRole('button',{name:'Guardar cambios'}));
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({profile:expect.objectContaining({firstName:'Anita'}),character:expect.objectContaining({petName:'Chispa'})}));
+    await user.click(screen.getByRole('button',{name:/Mi personaje y mis datos/}));
+    expect(screen.getByLabelText('Nombre de tu perro robot')).toHaveValue('Chispa');
+    await user.clear(screen.getByLabelText('Nombre de tu perro robot'));
+    await user.type(screen.getByLabelText('Nombre de tu perro robot'),'Otro');
+    await user.click(screen.getByRole('button',{name:'Cancelar cambios'}));
+    await user.click(screen.getByRole('button',{name:/Mi personaje y mis datos/}));
+    expect(screen.getByLabelText('Nombre de tu perro robot')).toHaveValue('Chispa');
+    expect(update).toHaveBeenCalledOnce();
+  });
+  it('admite personajes anteriores sin nombre de mascota', () => {
+    const legacy = Object.fromEntries(Object.entries(DEFAULT_CHARACTER).filter(([key]) => key !== 'petName'));
+    expect(characterSchema.parse(legacy).petName).toBe('Perro robot');
+  });
+  it('pide un nombre no vacío antes de continuar', async () => {
+    const user = userEvent.setup();
+    render(<GameWelcome profile={profile} save={vi.fn()} onSaved={vi.fn()} />);
+    await user.clear(screen.getByLabelText('Nombre de tu perro robot'));
+    await user.type(screen.getByLabelText('Nombre de tu perro robot'), '   ');
+    await user.click(screen.getByRole('button', { name: /Este es mi personaje/ }));
+    expect(screen.getByLabelText('Nombre de tu perro robot')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByLabelText('DNI')).not.toBeInTheDocument();
+  });
+  it('mantiene el personaje al volver atrás y retiene el formulario ante fallos', async () => {
+    const user = userEvent.setup(), save = vi.fn().mockResolvedValue({ success: false, error: 'Sin conexión' }), onSaved = vi.fn();
+    render(<GameWelcome profile={profile} save={save} onSaved={onSaved} />);
+    await user.click(screen.getByRole('button', { name: 'Mujer' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: /Peinado/ }), 'largo');
+    await user.clear(screen.getByLabelText('Nombre de tu perro robot'));
+    await user.type(screen.getByLabelText('Nombre de tu perro robot'), '  Chispa  ');
+    await user.click(screen.getByRole('button', { name: /Este es mi personaje/ }));
+    await user.click(screen.getByRole('button', { name: /Editar personaje/ }));
+    expect(screen.getByRole('button', { name: 'Mujer' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('combobox', { name: /Peinado/ })).toHaveValue('largo');
+    expect(screen.getByLabelText('Nombre de tu perro robot')).toHaveValue('Chispa');
+    await user.click(screen.getByRole('button', { name: /Este es mi personaje/ }));
+    await user.click(screen.getByRole('checkbox'));
+    await user.click(screen.getByRole('button', { name: /Guardar y conocer/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sin conexión');
+    expect(screen.getByLabelText('DNI')).toHaveValue('12345678');
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({ character: expect.objectContaining({ body: 'mujer', hair: 'largo', petName: 'Chispa' }) }));
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+  it('no guarda datos inválidos y dirige todas las salidas a Epixum', async () => {
+    const user = userEvent.setup(), save = vi.fn();
+    render(<GameWelcome profile={{ ...profile, dni: '' }} save={save} onSaved={vi.fn()} />);
+    expect(screen.getByRole('link', { name: /Volver a Epixum/ })).toHaveAttribute('href', 'https://www.epixum.com');
+    await user.click(screen.getByRole('button', { name: /Este es mi personaje/ }));
+    await user.click(screen.getByRole('button', { name: /Guardar y conocer/ }));
+    expect(screen.getByLabelText('DNI')).toHaveAttribute('aria-invalid', 'true'); expect(save).not.toHaveBeenCalled();
+  });
+  it('retoma el último paso, impide Escape y libera el juego tras confirmarlo', async () => {
+    const user = userEvent.setup();
+    const welcome: GameWelcomeState = { profile, character: DEFAULT_CHARACTER, tourStep: 4, completed: false };
+    const advance = vi.fn().mockResolvedValue({ success: true, progress: { character: DEFAULT_CHARACTER, tourStep: 5, completed: true } });
+    render(<CourseGameExperience game={game} welcome={welcome} actions={{ save: vi.fn(), advance }} />);
+    const dialog = screen.getByRole('dialog', { name: 'El menú y la salida' });
+    fireEvent(dialog, new Event('cancel', { cancelable: true }));
+    expect(dialog).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Comenzar mi aventura/ }));
+    expect(advance).toHaveBeenCalledWith(4); expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByTestId('landscape')).toBeInTheDocument();
+  });
+});

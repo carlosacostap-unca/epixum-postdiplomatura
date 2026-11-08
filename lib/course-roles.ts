@@ -13,6 +13,10 @@ export function isAdmin(user: { role?: string } | null | undefined) {
   return user?.role === "admin";
 }
 
+export function canViewCourseDraft(course: Pick<Course, 'status' | 'teachers' | 'guestStudents'>, user: {id:string;role?:string}) {
+  return course.status !== 'borrador' || isAdmin(user) || isAssignedTeacher(course,user.id) || Boolean(course.guestStudents?.includes(user.id));
+}
+
 export function isAssignedTeacher(course: Pick<Course, "teachers">, userId: string) {
   return Boolean(course.teachers?.includes(userId));
 }

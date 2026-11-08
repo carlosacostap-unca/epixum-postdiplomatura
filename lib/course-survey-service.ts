@@ -1,4 +1,5 @@
 import 'server-only';
+import { canViewCourseDraft } from './course-roles';
 import { randomBytes } from 'node:crypto';
 import type PocketBase from 'pocketbase';
 import type { Course, User } from '@/types';
@@ -25,7 +26,7 @@ export async function requireSurveyAccess(pb: PocketBase, courseId: string, mode
   if (mode === 'manager') {
     if (user.role !== 'admin' && !teacher) throw new SurveyError('No tenés permisos para gestionar encuestas en este curso.');
   } else {
-    if (teacher || course.status === 'borrador') throw new SurveyError('No tenés acceso estudiantil a las encuestas de este curso.');
+    if (teacher || !canViewCourseDraft(course,user)) throw new SurveyError('No tenés acceso estudiantil a las encuestas de este curso.');
     const enrollment = await first(pb, 'course_enrollments', pb.filter('course = {:course} && student = {:student}', { course: courseId, student: user.id }));
     if (!enrollment) throw new SurveyError('Necesitás una matrícula vigente en este curso.');
   }

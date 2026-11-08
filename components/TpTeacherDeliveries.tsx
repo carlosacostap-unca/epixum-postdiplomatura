@@ -15,42 +15,37 @@ import {
 } from "@/components/ui";
 import { getTeacherDeliveryFileDownloadUrl, updateDeliveryEvaluation } from "@/lib/actions";
 import { Delivery, parseDeliverySubmission, type AIVerdict } from "@/types";
-import { getTeacherDeliveryState, normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
+import { normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
 import DeliveryTimingBadge from './DeliveryTimingBadge';
+import { deliveryReviewHref, matchesReview, reviewStatus, type ReviewContext, type ReviewFilter } from '@/lib/teacher-review';
 
-type ReviewFilter = "all" | "pending" | "resubmitted" | "draft" | "published";
-
-function reviewStatus(delivery: Delivery): Exclude<ReviewFilter, "all"> {
-  const state = getTeacherDeliveryState(delivery);
-  if (state === "draft" || state === "resubmitted" || state === "pending") return state;
-  return "published";
-}
-
-export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId, dueDate }: { deliveries: Delivery[]; courseId: string; assignmentId: string; dueDate?: string }) {
+export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId, dueDate, initialContext = { query: '', filter: 'all' } }: { deliveries: Delivery[]; courseId: string; assignmentId: string; dueDate?: string; initialContext?: ReviewContext }) {
   const [expandedDelivery, setExpandedDelivery] = useState<string | null>(null);
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [query, setQuery] = useState(initialContext.query);
+  const [filter, setFilter] = useState<ReviewFilter>(initialContext.filter);
   const { notify } = useToast();
 
   const counts = useMemo(() => ({
     all: deliveries.length,
+    unreviewed: deliveries.filter((item) => reviewStatus(item) !== "published").length,
     pending: deliveries.filter((item) => reviewStatus(item) === "pending").length,
     resubmitted: deliveries.filter((item) => reviewStatus(item) === "resubmitted").length,
     draft: deliveries.filter((item) => reviewStatus(item) === "draft").length,
     published: deliveries.filter((item) => reviewStatus(item) === "published").length,
   }), [deliveries]);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("es");
-    return deliveries.filter((delivery) => {
-      if (filter !== "all" && reviewStatus(delivery) !== filter) return false;
-      const student = delivery.expand?.student;
-      const identity = [student?.name, student?.firstName, student?.lastName, student?.email].filter(Boolean).join(" ").toLocaleLowerCase("es");
-      return !normalized || identity.includes(normalized);
-    });
-  }, [deliveries, filter, query]);
+  const filtered = useMemo(() => deliveries.filter((delivery) => matchesReview(delivery, { query, filter })), [deliveries, filter, query]);
+
+  const changeContext = (next: ReviewContext) => {
+    setQuery(next.query);
+    setFilter(next.filter);
+    const url = new URL(window.location.href);
+    if (next.query) url.searchParams.set('reviewQuery', next.query); else url.searchParams.delete('reviewQuery');
+    if (next.filter !== 'all') url.searchParams.set('reviewState', next.filter); else url.searchParams.delete('reviewState');
+    window.history.replaceState(null, '', url);
+  };
 
   const download = async (deliveryId: string, fileIndex: number, name: string, version?: number) => {
     const downloadId = `${deliveryId}:${version ?? "current"}:${fileIndex}`;
@@ -77,11 +72,12 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
     <div className="space-y-6">
       <div className="grid gap-4 rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)] p-5 md:grid-cols-[minmax(0,1fr)_14rem]">
         <Field label="Buscar estudiante" id="delivery-search">
-          <input id="delivery-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nombre o correo" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" />
+          <input id="delivery-search" type="search" value={query} onChange={(event) => changeContext({ query: event.target.value, filter })} placeholder="Nombre o correo" className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] px-4 py-2.5" />
         </Field>
         <Field label="Estado de revisión" id="delivery-status">
-          <Select id="delivery-status" value={filter} onChange={(event) => setFilter(event.target.value as ReviewFilter)}>
+          <Select id="delivery-status" value={filter} onChange={(event) => changeContext({ query, filter: event.target.value as ReviewFilter })}>
             <option value="all">Todas ({counts.all})</option>
+            <option value="unreviewed">Por revisar ({counts.unreviewed})</option>
             <option value="pending">Sin evaluar ({counts.pending})</option>
             <option value="resubmitted">Reenviadas ({counts.resubmitted})</option>
             <option value="draft">Borradores ({counts.draft})</option>
@@ -93,7 +89,7 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
       <p role="status" className="text-sm text-[var(--color-on-surface-variant)]">{filtered.length} {filtered.length === 1 ? "entrega encontrada" : "entregas encontradas"}</p>
 
       {filtered.length === 0 ? (
-        <EmptyState icon="filter_alt_off" title="No hay coincidencias" description="Probá otro nombre o cambiá el estado de revisión." action={<Button variant="secondary" onClick={() => { setQuery(""); setFilter("all"); }}>Limpiar filtros</Button>} />
+        <EmptyState icon="filter_alt_off" title="No hay coincidencias" description="Probá otro nombre o cambiá el estado de revisión." action={<Button variant="secondary" onClick={() => changeContext({ query: '', filter: 'all' })}>Limpiar filtros</Button>} />
       ) : (
         <div className="space-y-4">
           {filtered.map((delivery) => {
@@ -107,6 +103,9 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
 
             return (
               <article key={delivery.id} className="overflow-hidden rounded-[var(--epixum-radius-xl)] bg-[var(--color-surface-container-low)]">
+                <div className="flex justify-end border-b border-[var(--color-outline-variant)] px-4">
+                  <Link href={deliveryReviewHref(assignmentId, delivery.id, { query, filter })} aria-label={`Revisar entrega de ${studentLabel}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--color-primary)]">Revisar entrega<span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></Link>
+                </div>
                 <button type="button" aria-expanded={isExpanded} aria-controls={`delivery-${delivery.id}`} onClick={() => setExpandedDelivery(isExpanded ? null : delivery.id)} className="flex w-full flex-col items-start justify-between gap-3 p-4 text-left hover:bg-[var(--color-surface-container)] sm:flex-row sm:items-center md:p-5">
                   <div className="flex min-w-0 items-center gap-4">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]" aria-hidden="true">{studentLabel.charAt(0).toUpperCase()}</span>
@@ -127,7 +126,7 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
                         </div>
                       )}
                       <Link
-                        href={`/assignments/${assignmentId}/deliveries/${delivery.id}`}
+                        href={deliveryReviewHref(assignmentId, delivery.id, { query, filter })}
                         className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--color-surface-container-highest)] px-5 py-2.5 text-sm font-bold hover:text-[var(--color-primary)]"
                       >
                         <span className="material-symbols-outlined text-lg" aria-hidden="true">{submission.type === "url" ? "rate_review" : "auto_awesome"}</span>
@@ -147,7 +146,7 @@ export default function TpTeacherDeliveries({ deliveries, courseId, assignmentId
   );
 }
 
-function TeacherDeliveryHistory({
+export function TeacherDeliveryHistory({
   delivery,
   dueDate,
   downloadingFile,

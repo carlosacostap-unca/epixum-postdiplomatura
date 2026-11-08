@@ -1,4 +1,5 @@
 import 'server-only';
+import { canViewCourseDraft } from './course-roles';
 import { randomBytes } from 'node:crypto';
 import type PocketBase from 'pocketbase';
 import type { Course, User } from '@/types';
@@ -21,7 +22,7 @@ export async function requireOutcomeCourse(pb: PocketBase, courseId: string, mod
   if (mode === 'manager') {
     if (user.role !== 'admin' && !teaches) throw new OutcomeError('No tenés permisos para gestionar los resultados de este curso.');
   } else {
-    if (teaches || course.status === 'borrador') throw new OutcomeError('No tenés acceso estudiantil al resultado de este curso.');
+    if (teaches || !canViewCourseDraft(course,user)) throw new OutcomeError('No tenés acceso estudiantil al resultado de este curso.');
     const enrollment = await first(pb, 'course_enrollments', pb.filter('course = {:course} && student = {:student}', { course: courseId, student: user.id }), 'id');
     if (!enrollment) throw new OutcomeError('Necesitás una matrícula vigente en este curso.');
   }

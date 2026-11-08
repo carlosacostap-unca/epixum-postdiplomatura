@@ -39,8 +39,27 @@ function renderList() {
 
 describe('listado docente de reenvíos', () => {
   beforeEach(() => {
+    window.history.replaceState(null, '', '/docentes/cursos/course-1/tps/assignment-1');
     vi.clearAllMocks();
     vi.mocked(updateDeliveryEvaluation).mockResolvedValue({ success: true });
+  });
+
+  it('abre la corrección directamente con búsqueda y filtro, sin desplegar el acordeón', async () => {
+    const user = userEvent.setup();
+    renderList();
+    await user.type(screen.getByLabelText('Buscar estudiante'), 'Grace');
+    await user.selectOptions(screen.getByLabelText('Estado de revisión'), 'resubmitted');
+    const href = screen.getByRole('link', { name: 'Revisar entrega de Grace' }).getAttribute('href');
+    expect(href).toBe('/assignments/assignment-1/deliveries/delivery0000002?reviewQuery=Grace&reviewState=resubmitted');
+    expect(window.location.search).toBe('?reviewQuery=Grace&reviewState=resubmitted');
+    expect(screen.queryByRole('heading', { name: 'Historial de intentos' })).not.toBeInTheDocument();
+  });
+
+  it('restaura los filtros al regresar desde el detalle', () => {
+    render(<ToastProvider><TpTeacherDeliveries deliveries={deliveries} courseId="course-1" assignmentId="assignment-1" initialContext={{ query: 'Grace', filter: 'resubmitted' }} /></ToastProvider>);
+    expect(screen.getByLabelText('Buscar estudiante')).toHaveValue('Grace');
+    expect(screen.getByLabelText('Estado de revisión')).toHaveValue('resubmitted');
+    expect(screen.queryByText('Ada')).not.toBeInTheDocument();
   });
 
   it('cuenta y filtra los reenvíos como estado propio', async () => {

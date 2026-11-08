@@ -1,4 +1,5 @@
 import "server-only";
+import { canViewCourseDraft } from './course-roles';
 import type PocketBase from "pocketbase";
 import type { Course, User } from "@/types";
 import type { CourseOnboarding, SubmittedOnboardingSurvey } from "./course-onboarding";
@@ -20,7 +21,7 @@ export async function requireOnboardingAccess(pb: PocketBase, courseId: string, 
     if (user.role !== "admin" && !course.teachers?.includes(user.id)) throw new Error("No tenés acceso al seguimiento de este curso.");
     return { course, user, enrolled: false };
   }
-  if (course.status === "borrador" || course.teachers?.includes(user.id)) throw new Error("No tenés acceso al onboarding de este curso.");
+  if (!canViewCourseDraft(course,user) || course.teachers?.includes(user.id)) throw new Error("No tenés acceso al onboarding de este curso.");
   const enrollment = await firstOrNull(pb, "course_enrollments", pb.filter("course = {:course} && student = {:student}", { course: course.id, student: user.id }), "id");
   if (!enrollment) {
     const invitation = course.enrollmentMode === "invitacion_contrasena" && user.email

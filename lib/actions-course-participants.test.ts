@@ -23,6 +23,9 @@ function collection(name: string, service = false) {
     }),
   };
   if (name === 'users') return {
+    getFirstListItem: vi.fn(async (filter: {email:string}) => {
+      const id=filter.email.split('@')[0];if(!mocks.users.has(id)) throw notFound();return {id,email:filter.email};
+    }),
     getOne: vi.fn(async (id: string) => {
       if (!mocks.users.has(id)) throw notFound();
       return { id, email: `${id}@example.com` };
@@ -38,6 +41,9 @@ function collection(name: string, service = false) {
     }),
   };
   if (name === 'course_enrollments') return {
+    create: vi.fn(async (data:{course:string;student:string}) => {
+      const enrollment={id:'new-enrollment',...data};mocks.enrollments.set(data.student,enrollment);return enrollment;
+    }),
     getOne: vi.fn(async (id: string) => {
       const value = [...mocks.enrollments.values()].find((item) => item.id === id);
       if (!value) throw notFound();
@@ -87,7 +93,7 @@ vi.mock('./pocketbase-service', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
-import { addCourseStudents, addCourseTeachers, removeCourseStudent, removeCourseTeacher } from './actions-course-participants';
+import { addCourseGuest, removeCourseGuestAccess, addCourseStudents, addCourseTeachers, removeCourseStudent, removeCourseTeacher } from './actions-course-participants';
 
 describe('acciones administrativas de participantes', () => {
   beforeEach(() => {
@@ -178,3 +184,19 @@ describe('acciones administrativas de participantes', () => {
     expect(mocks.serviceDelete).not.toHaveBeenCalled();
   });
 });
+
+  it('agrega invitados por correo y reutiliza matrículas existentes',async()=>{
+    mocks.role='admin';mocks.teachers=[];mocks.bedels.clear();mocks.enrollments.clear();
+    expect((await addCourseGuest('course-1',' USER-1@example.com ')).status).toBe('success');
+    expect(mocks.serviceUpdate).toHaveBeenCalledWith({'guestStudents+':'user-1'});
+    expect((await addCourseGuest('course-1','user-1@example.com')).status).toBe('success');
+    expect(mocks.enrollments.size).toBe(1);
+    expect((await removeCourseGuestAccess('course-1','user-1')).status).toBe('success');
+    expect(mocks.enrollments.size).toBe(1);
+  });
+  it('impide que estudiantes se concedan acceso invitado',async()=>{
+    mocks.role='estudiante';mocks.serviceUpdate.mockClear();
+    expect((await addCourseGuest('course-1','user-1@example.com')).status).toBe('forbidden');
+    expect((await removeCourseGuestAccess('course-1','user-1')).status).toBe('forbidden');
+    expect(mocks.serviceUpdate).not.toHaveBeenCalled();
+  });

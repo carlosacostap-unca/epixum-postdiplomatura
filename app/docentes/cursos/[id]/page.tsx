@@ -20,6 +20,7 @@ import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
 import { redirect } from "next/navigation";
 import { getStudentProgress } from '@/lib/student-progress-data';
 import { StudentProgressSummary } from '@/components/course/StudentProgressSummary';
+import { deliveryReviewHref } from '@/lib/teacher-review';
 
 const primaryLink = "inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--color-primary)] px-5 py-2.5 text-sm font-bold text-[var(--color-on-primary)]";
 
@@ -78,7 +79,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
               const presentation = teacherDeliveryPresentation(delivery);
               const workflow = normalizeDeliveryWorkflow(delivery);
               return (
-                <Link key={delivery.id} href={`/docentes/cursos/${course.id}/tps/${delivery.assignment}#entregas`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
+                <Link key={delivery.id} href={deliveryReviewHref(delivery.assignment, delivery.id, { query: '', filter: 'unreviewed' })} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                   <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
                     <Badge tone={presentation.tone}>{presentation.label}</Badge>
                     <DeliveryTimingBadge delivery={delivery} dueDate={assignment?.dueDate} />

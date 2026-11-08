@@ -217,6 +217,7 @@ export function parseDeliveryFiles(repositoryUrl: string): DeliveryFile[] {
 }
 
 export interface Course extends BaseModel {
+  guestStudents?: string[];
   title: string;
   description: string;
   startDate?: string;
@@ -394,6 +395,7 @@ export type CourseParticipantKind = 'students' | 'teachers';
 export type CourseCandidateState = 'available' | 'current' | 'incompatible';
 
 export interface CourseParticipant {
+  isGuest?: boolean;
   id: string;
   userId: string;
   enrollmentId?: string;

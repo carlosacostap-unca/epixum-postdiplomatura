@@ -41,6 +41,15 @@ function invitation(id: string, title: string): CourseEnrollmentInvitation {
 }
 
 describe("PendingCourseInvitations", () => {
+  it("conserva la activación y las validaciones en la presentación compacta", async () => {
+    const user = userEvent.setup();
+    mocks.activate.mockResolvedValueOnce({ success: false, error: "La contraseña no es correcta.", attemptsRemaining: 4 });
+    render(<PendingCourseInvitations compact invitations={[invitation("inv-1", "Node.js")]} />);
+    await user.click(screen.getByRole("button", { name: "Activar acceso" }));
+    await user.type(screen.getByLabelText("Contraseña del curso"), "Incorrecta-1{Enter}");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Te quedan 4 intentos");
+    expect(screen.getByLabelText("Contraseña del curso")).toHaveValue("Incorrecta-1");
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.activate.mockReset();

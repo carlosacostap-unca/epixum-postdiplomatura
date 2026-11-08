@@ -1,0 +1,13 @@
+.board { background:#244b41; color:#f3f0d7; border:7px solid #a58b60; border-radius:4px; min-height:300px; padding:18px; box-shadow:inset 0 0 35px #143c3a55; }
+.tabs { display:flex; gap:7px; flex-wrap:wrap; border-bottom:1px solid #819a7c; padding-bottom:14px; }
+.tabs button,.board button { border:1px solid #9eaf8c; padding:9px 12px; background:#325d50; color:#f4edd1; border-radius:4px; font-size:12px; }
+.tabs button[aria-pressed=true] { background:#eee3b8; color:#2e5145; }
+.content { font-size:15px; line-height:1.8; overflow-wrap:anywhere; }
+.content h3 { font:27px Georgia,serif; margin:20px 0; }
+.content img,.content video { max-width:100%; height:auto; }
+.content a { color:#ffe0a0; text-underline-offset:4px; }
+.content table { border-collapse:collapse; display:block; max-width:100%; overflow:auto; }.content td,.content th { border:1px solid #8da68b; padding:8px; }
+.content pre { overflow:auto; background:#163d35; padding:14px; }.content blockquote { border-left:3px solid #b6c39b; padding-left:16px; margin-left:0; }
+.viewer { width:100%; height:min(60dvh,650px); border:0; background:#fff; border-radius:4px; }.media { width:100%; }
+.note { font-size:12px; color:#c6d6bc; margin-top:20px; }
+@media(max-width:700px) { .board { padding:12px; border-width:5px; }.content {font-size:14px;} }

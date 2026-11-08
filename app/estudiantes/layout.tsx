@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { getWorkspaceAccess } from "@/lib/course-role-access";
+import "./student.css";
 
 export default async function EstudiantesLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();

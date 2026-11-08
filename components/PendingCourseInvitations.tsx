@@ -9,9 +9,10 @@ import { Button, Card, CardContent, Dialog } from "@/components/ui";
 
 export interface PendingCourseInvitationsProps {
   invitations: CourseEnrollmentInvitation[];
+  compact?: boolean;
 }
 
-export default function PendingCourseInvitations({ invitations }: PendingCourseInvitationsProps) {
+export default function PendingCourseInvitations({ invitations, compact = false }: PendingCourseInvitationsProps) {
   const router = useRouter();
   const [selected, setSelected] = useState<CourseEnrollmentInvitation | null>(null);
   const [password, setPassword] = useState("");
@@ -59,22 +60,22 @@ export default function PendingCourseInvitations({ invitations }: PendingCourseI
   const isLocked = Boolean(feedback?.lockedUntil);
 
   return (
-    <section aria-labelledby="pending-invitations-title" className="space-y-5">
+    <section aria-labelledby="pending-invitations-title" className={compact ? "student-invitations" : "space-y-5"}>
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">Acceso pendiente</p>
+        {!compact && <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--color-primary)]">Acceso pendiente</p>}
         <h2 id="pending-invitations-title" className="mt-1 font-headline text-2xl font-bold md:text-3xl">Invitaciones pendientes</h2>
-        <p className="mt-1 text-[var(--color-on-surface-variant)]">Tu email ya fue autorizado. Ingresá la contraseña compartida para activar el curso.</p>
+        {!compact && <p className="mt-1 text-[var(--color-on-surface-variant)]">Tu email ya fue autorizado. Ingresá la contraseña compartida para activar el curso.</p>}
       </div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className={compact ? "student-invitation-list" : "grid gap-4 md:grid-cols-2 xl:grid-cols-3"}>
         {invitations.map((invitation) => {
           const course = invitation.expand?.course;
           return (
             <Card key={invitation.id} className="h-full border border-[color-mix(in_srgb,var(--color-primary)_30%,transparent)]">
               <CardContent className="flex h-full flex-col">
-                <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]" aria-hidden="true">mark_email_unread</span>
+                {!compact && <span className="material-symbols-outlined text-3xl text-[var(--color-primary)]" aria-hidden="true">mark_email_unread</span>}
                 <h3 className="mt-4 font-headline text-xl font-bold">{course?.title || "Curso invitado"}</h3>
-                <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">La invitación todavía no forma parte de Mis cursos.</p>
-                <Button className="mt-6 self-start" onClick={() => openInvitation(invitation)}>Activar curso</Button>
+                <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">{compact ? "Activá el acceso con la contraseña del curso." : "La invitación todavía no forma parte de Mis cursos."}</p>
+                <Button className={compact ? "student-invitation-action" : "mt-6 self-start"} onClick={() => openInvitation(invitation)}>{compact ? "Activar acceso" : "Activar curso"}</Button>
                 {course?.onboardingEnabled && <Link href={`/estudiantes/cursos/${invitation.course}/onboarding`} className="mt-3 inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]">Completar onboarding</Link>}
               </CardContent>
             </Card>

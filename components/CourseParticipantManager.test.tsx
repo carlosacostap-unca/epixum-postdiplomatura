@@ -7,6 +7,8 @@ import type { CourseParticipantPage } from "@/types";
 
 const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
+  addGuest: vi.fn(),
+  removeGuest: vi.fn(),
   search: vi.fn(),
   addStudents: vi.fn(),
   addTeachers: vi.fn(),
@@ -17,6 +19,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: mocks.refresh }
 vi.mock("@/lib/actions-course-participants", () => ({
   searchCourseParticipantCandidates: mocks.search,
   addCourseStudents: mocks.addStudents,
+  addCourseGuest: mocks.addGuest,
+  removeCourseGuestAccess: mocks.removeGuest,
   addCourseTeachers: mocks.addTeachers,
   removeCourseStudent: mocks.removeStudent,
   removeCourseTeacher: mocks.removeTeacher,
@@ -94,4 +98,13 @@ describe("CourseParticipantManager", () => {
     await user.click(within(dialog).getByRole("button", { name: "Retirar participación" }));
     expect(mocks.removeStudent).toHaveBeenCalledWith("course-1", "enrollment-1");
   });
+});
+
+it('permite agregar un invitado desde participantes por su correo',async()=>{
+  mocks.addGuest.mockResolvedValue({status:'success',message:'Estudiante invitado agregado.'});
+  renderManager();const user=userEvent.setup();
+  await user.type(screen.getByLabelText('Correo del estudiante invitado'),'persona@example.com');
+  await user.click(screen.getByRole('button',{name:'Agregar estudiante invitado'}));
+  await waitFor(()=>expect(mocks.addGuest).toHaveBeenCalledWith('course-1','persona@example.com'));
+  expect(await screen.findByText('Estudiante invitado agregado.')).toBeVisible();
 });

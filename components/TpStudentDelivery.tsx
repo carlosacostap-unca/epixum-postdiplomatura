@@ -18,6 +18,7 @@ import { canStudentModifyDelivery, getStudentDeliveryState, latestPublishedEvalu
 import { studentDeliveryPresentation } from "@/lib/delivery-presentation";
 import { canSubmitAssignment } from '@/lib/assignment-deadline';
 import DeliveryTimingBadge from './DeliveryTimingBadge';
+import { deliverySubmitError } from '@/lib/delivery-submit-error';
 
 export default function TpStudentDelivery({ assignmentId, courseId, delivery, dueDate, allowLateSubmissions = false }: { assignmentId: string; courseId: string; delivery: Delivery | null; dueDate?: string; allowLateSubmissions?: boolean }) {
   const deadline = getDeadlineState(dueDate);
@@ -55,10 +56,12 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
     if (mode === "url" && !isValidDeliveryUrl(deliveryUrl)) { setError("Ingresá una URL completa que comience con http:// o https://."); return; }
     setLoading(true);
     setError(null);
+    let saving = false;
     try {
       let result: { success: boolean; error?: string; resubmitted?: boolean };
       if (mode === "url") {
         setProgress({ current: 1, total: 1, label: "Guardando el enlace" });
+        saving = true;
         result = delivery
           ? await updateDeliveryWithUrl(delivery.id, courseId, assignmentId, deliveryUrl)
           : await createDeliveryWithUrl(assignmentId, courseId, deliveryUrl);
@@ -69,24 +72,25 @@ export default function TpStudentDelivery({ assignmentId, courseId, delivery, du
           setProgress({ current: index, total: selectedFiles.length, label: `Subiendo ${file.name}` });
           const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
           const authorization = await getUploadUrl(`${Date.now()}_${safeName}`, file.type, assignmentId);
-          if (!authorization.success || !authorization.url) throw new Error(`No se pudo preparar la subida de ${file.name}.`);
+          if (!authorization.success || !authorization.url) throw new Error(authorization.error || `No se pudo preparar la subida de ${file.name}.`);
           const response = await fetch(authorization.url, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
           if (!response.ok) throw new Error(`No se pudo subir ${file.name}.`);
           uploaded.push({ name: file.name, url: authorization.url.split("?")[0] });
           setProgress({ current: index + 1, total: selectedFiles.length, label: `${file.name} subido` });
         }
         setProgress({ current: selectedFiles.length, total: selectedFiles.length, label: "Guardando la entrega" });
+        saving = true;
         result = delivery
           ? await updateDeliveryWithFiles(delivery.id, courseId, assignmentId, uploaded)
           : await createDeliveryWithFiles(assignmentId, courseId, uploaded);
       }
-      if (!result.success) { setError(result.error || "No se pudo guardar la entrega."); return; }
+      if (!result.success) { setError(deliverySubmitError(new Error(result.error || "No se pudo guardar la entrega."), saving)); return; }
       setIsEditing(false);
       setSelectedFiles([]);
       notify({ title: result.resubmitted ? "Corrección reenviada" : delivery ? "Entrega actualizada" : "Entrega enviada", description: result.resubmitted ? "Tu nueva versión quedó pendiente de revisión docente." : mode === "url" ? "El enlace quedó guardado correctamente." : "Los archivos quedaron guardados correctamente.", tone: "success" });
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Ocurrió un error inesperado.");
+      setError(deliverySubmitError(caught, saving));
     } finally {
       setLoading(false);
       setProgress(null);

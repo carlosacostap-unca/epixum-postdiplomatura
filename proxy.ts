@@ -49,6 +49,18 @@ export function proxy(request: NextRequest) {
 
   // Allow access to home page and login page for unauthenticated users
   if (!isLoggedIn && path !== '/') {
+    // A fetch for a Server Action follows ordinary redirects and then receives
+    // the login page instead of an action response. Return readable text so the
+    // form can explain how to recover without losing the selected files.
+    if (request.method === 'POST' && request.headers.has('next-action')) {
+      const response = new NextResponse('Tu sesión venció. Volvé a iniciar sesión y luego intentá enviar nuevamente.', {
+        status: 401,
+        headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' },
+      });
+      if (hasAuthCookie) response.cookies.delete('pb_auth');
+      return response;
+    }
+
     const loginUrl = new URL('/login', request.url);
     const returnTo = safeInteractiveReturn(path + request.nextUrl.search);
     if (returnTo) loginUrl.searchParams.set('next', returnTo);

@@ -1,9 +1,10 @@
+import { draftVisibility } from './course-draft-schema.mjs';
 export const COURSE_UPDATE_RULE =
-  '@request.auth.role = "admin" || (teachers.id ?= @request.auth.id && @request.body.teachers:isset = false && @request.body.organizationMode:isset = false && @request.body.enrollmentMode:isset = false && @request.body.outcomesEnabled:isset = false && @request.body.surveysEnabled:isset = false && @request.body.contentsEnabled:isset = false && @request.body.aiPreevaluationEnabled:isset = false && @request.body.interactiveClassesEnabled:isset = false && @request.body.preparationEnabled:isset = false && @request.body.examsEnabled:isset = false && @request.body.reviewsEnabled:isset = false && @request.body.onboardingEnabled:isset = false && @request.body.attendanceEnabled:isset = false)';
+  '@request.auth.role = "admin" || (teachers.id ?= @request.auth.id && @request.body.teachers:isset = false && @request.body.guestStudents:isset = false && @request.body.organizationMode:isset = false && @request.body.enrollmentMode:isset = false && @request.body.outcomesEnabled:isset = false && @request.body.surveysEnabled:isset = false && @request.body.contentsEnabled:isset = false && @request.body.aiPreevaluationEnabled:isset = false && @request.body.interactiveClassesEnabled:isset = false && @request.body.preparationEnabled:isset = false && @request.body.examsEnabled:isset = false && @request.body.reviewsEnabled:isset = false && @request.body.onboardingEnabled:isset = false && @request.body.attendanceEnabled:isset = false)';
 
 export const COURSE_RULES = {
-  listRule: '@request.auth.id != ""',
-  viewRule: '@request.auth.id != ""',
+  listRule: draftVisibility(),
+  viewRule: draftVisibility(),
   createRule: '@request.auth.role = "admin"',
   updateRule: COURSE_UPDATE_RULE,
   deleteRule: '@request.auth.role = "admin"',

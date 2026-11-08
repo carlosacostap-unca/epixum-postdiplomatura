@@ -45,6 +45,32 @@ function buildUser(role: UserRole): User {
 }
 
 describe("AppShell", () => {
+  it("omite el shell solo en la aventura y lo restaura al salir", () => {
+    currentPathname = '/estudiantes/cursos/pilot/aventura';
+    const props = { user: buildUser('estudiante'), workspaceAccess: workspaceAccess.estudiante, pocketbaseUrl: 'https://pb.example.com' };
+    const view = render(<AppShell {...props}><h1>Mi valle</h1></AppShell>);
+    expect(screen.getByRole('heading', { name: 'Mi valle' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Abrir menú de navegación' })).not.toBeInTheDocument();
+    currentPathname = '/estudiantes';
+    view.rerender(<AppShell {...props}><h1>Mis cursos</h1></AppShell>);
+    expect(screen.getByRole('button', { name: 'Abrir menú de navegación' })).toBeVisible();
+  });
+  it("permite saltar al contenido del estudiante y operar el menú por teclado sin ofrecer roles ajenos", async () => {
+    const user = userEvent.setup();
+    currentPathname = "/estudiantes/cursos/course-1";
+    render(<AppShell user={buildUser("estudiante")} workspaceAccess={workspaceAccess.estudiante} pocketbaseUrl="https://pb.example.com"><div className="student-page"><h1>Mi curso</h1></div></AppShell>);
+    await user.click(screen.getByRole("link", { name: "Saltar al contenido" }));
+    expect(screen.getByRole("heading", { name: "Mi curso" }).parentElement).toHaveFocus();
+    const trigger = screen.getByRole("button", { name: "Abrir menú de navegación" });
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    const menu = screen.getByRole("dialog", { name: "Navegación" });
+    expect(within(menu).getByRole("link", { name: "Mis cursos" })).toHaveAttribute("href", "/estudiantes");
+    expect(within(menu).getByRole("link", { name: "Ingresar a clase en vivo" })).toHaveAttribute("href", "/interactivas");
+    expect(within(menu).queryByRole("navigation", { name: "Cambiar espacio" })).not.toBeInTheDocument();
+    fireEvent(menu, new Event("cancel", { cancelable: true }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
   it("lleva el foco al contenido administrativo al activar el enlace de salto", async () => {
     const user = userEvent.setup();
     currentPathname = "/admin";

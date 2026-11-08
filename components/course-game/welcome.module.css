@@ -1,0 +1,54 @@
+.welcome { position: fixed; inset: 0; z-index: 60; overflow: auto; background: #e9eddf; color: #293e33; font-family: Arial, sans-serif; padding: 24px; }
+.editing { position: static; padding: 12px; }
+.editing .card { display: block; }
+.editing .characterStage { display: none; }
+.editing .formArea { padding: 20px; }
+.editing .steps { display: none; }
+.editPortrait { display: block; width: 72px; height: 108px; margin: 12px auto; image-rendering: pixelated; }
+.top { max-width: 1160px; margin: 0 auto 22px; display: flex; justify-content: space-between; gap: 16px; align-items: center; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
+.top a { letter-spacing: 0; color: #345744; padding: 10px; }
+.card { max-width: 1160px; margin: auto; display: grid; grid-template-columns: .8fr 1.2fr; border: 1px solid #c9d2ba; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 70px #24432b16; background: #fffaf0; }
+.characterStage { background: #315746; color: #f6e6bd; padding: 48px 36px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background-image: radial-gradient(ellipse at 50% 60%, #73906a55, transparent 60%); }
+.caption, .stepNote { font-size: 11px; font-weight: 700; letter-spacing: .16em; }
+.characterStage h1 { font: 34px/1.2 Georgia, serif; margin: 24px 0; }
+.characterStage p { max-width: 270px; font-size: 14px; line-height: 1.7; margin: 20px 0 32px; color: #d7e2c9; }
+.portraitFrame { position: relative; width: 230px; height: 270px; display: flex; align-items: center; justify-content: center; }
+.portrait { width: 144px; height: 216px; image-rendering: pixelated; z-index: 1; filter: drop-shadow(5px 6px 0 #1c392533); }
+.ground { position: absolute; width: 210px; height: 54px; bottom: 16px; background: #8aa769; border-bottom: 14px solid #b69b69; box-shadow: 0 8px 0 #705f43; clip-path: polygon(10% 0,90% 0,100% 20%,100% 80%,90% 100%,10% 100%,0 80%,0 20%); }
+.formArea { padding: 32px 36px; }
+.formArea h2 { font: 30px Georgia, serif; margin: 24px 0 12px; }
+.steps { display: flex; gap: 14px; font-size: 11px; color: #74806a; }
+.steps span { padding-bottom: 8px; border-bottom: 2px solid #e1e4d5; }
+.steps [aria-current] { color: #315746; border-color: #315746; font-weight: bold; }
+.description { font-size: 14px; color: #64705e; line-height: 1.6; margin: 0 0 22px; }
+.editorGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 22px; margin-bottom: 24px; }
+.welcome fieldset { min-width: 0; padding: 0; border: 0; margin: 0; }
+.welcome legend, .editorGrid label { font-size: 12px; font-weight: 700; }
+.welcome legend { margin-bottom: 9px; }
+.editorGrid select, .editorGrid input { display: block; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 12px; border: 1px solid #c9d2ba; border-radius: 7px; background: #fffdf8; color: #293e33; font: 14px Arial, sans-serif; min-height: 44px; }
+.palette > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.palette button { width: 32px; height: 32px; border-radius: 6px; border: 2px solid #fffaf0; box-shadow: 0 0 0 1px #c6c9b7; cursor: pointer; color: white; text-shadow: 0 1px 3px black; }
+.palette button[aria-pressed=true] { box-shadow: 0 0 0 2px #315746; }
+.bodyChoices { margin-bottom: 22px !important; }
+.bodyChoices button, .actions > button { border: 1px solid #bbc8af; background: transparent; border-radius: 7px; padding: 11px 18px; color: #315746; cursor: pointer; font-weight: 700; }
+.bodyChoices button { margin-right: 8px; }
+.bodyChoices button[aria-pressed=true] { background: #dfebd5; border-color: #315746; }
+.primary, .actions > .primary { background: #315746; color: #fff5db; padding: 14px 20px; border: 1px solid #234332; border-bottom: 4px solid #1c392d; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.primary:disabled { opacity: .6; cursor: wait; }
+.confirm { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; line-height: 1.6; }
+.confirm input { margin-top: 4px; accent-color: #315746; }
+.privacy { font-size: 12px; line-height: 1.7; color: #68745f; margin: 20px 0; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+.fieldError { display: block; color: #9a372d; font-size: 12px; margin-top: 6px; }
+.error { color: #842d27; padding: 12px; background: #fbe7de; border-radius: 6px; font-size: 13px; }
+.previewNotice { font-size: 12px; line-height: 1.5; background: #f2eacb; padding: 10px 12px; border-radius: 6px; }
+.welcome :focus-visible, .tour :focus-visible { outline: 3px solid #bb861b; outline-offset: 4px; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.tour { position: fixed; inset: auto 24px 100px auto; margin: 0; width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 150px); overflow: auto; border: 2px solid #6d7956; border-radius: 14px; background: #fff7e3; color: #314834; padding: 0; box-shadow: 0 12px 48px #112d3755; }
+.tour::backdrop { background: #17312835; }
+.tourBody { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.tour progress { width: 100%; height: 6px; accent-color: #456c47; }
+.tour h2 { font: 27px/1.2 Georgia, serif; margin: 0 0 12px; }
+.tour p { font: 14px/1.7 Arial, sans-serif; margin: 0; }
+.tour a { text-align: center; font-size: 12px; color: #48633c; }
+@media(max-width: 700px) { .welcome { padding: 14px; } .top { font-size: 10px; gap: 4px; } .card { grid-template-columns: 1fr; } .characterStage { padding: 20px; } .characterStage h1 { font-size: 24px; margin: 12px 0; } .portraitFrame { height: 145px; } .portrait { width: 80px; height: 120px; } .ground { width: 140px; height: 30px; bottom: 4px; border-bottom-width: 8px; } .characterStage p { margin: 12px 0; } .stepNote { display: none; } .formArea { padding: 24px 18px; } .editorGrid { gap: 18px 12px; } .tour { right: 16px; bottom: 90px; } }

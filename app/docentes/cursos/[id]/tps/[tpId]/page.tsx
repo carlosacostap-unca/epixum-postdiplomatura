@@ -11,10 +11,11 @@ import TpResourceManager from "./TpResourceManager";
 import AssignmentAIConfigPanel from "./AssignmentAIConfigPanel";
 import { getAssignmentAIConfig } from "@/lib/actions-ai-config";
 import { emptyAssignmentAIConfig } from "@/lib/assignment-ai-config";
+import { parseReviewContext, type ReviewSearchParams } from '@/lib/teacher-review';
 
 export const dynamic = "force-dynamic";
 
-export default async function TeacherTpDetailPage({ params }: { params: Promise<{ id: string; tpId: string }> }) {
+export default async function TeacherTpDetailPage({ params, searchParams }: { params: Promise<{ id: string; tpId: string }>; searchParams: Promise<ReviewSearchParams> }) {
   const { id, tpId } = await params;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -31,6 +32,7 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
   ]);
   const isPastDue = assignment.dueDate ? new Date() > new Date(assignment.dueDate) : false;
   const pending = deliveries.filter((delivery) => delivery.status !== "published").length;
+  const reviewContext = parseReviewContext(await searchParams);
 
   return (
     <div className="page-container space-y-8">
@@ -60,7 +62,7 @@ export default async function TeacherTpDetailPage({ params }: { params: Promise<
         </section>
         <section id="entregas" aria-labelledby="deliveries-title" className="scroll-mt-6 space-y-5">
           <div><h2 id="deliveries-title" className="font-headline text-2xl font-bold">Entregas</h2><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Buscá, filtrá y evaluá sin perder el contexto del trabajo.</p></div>
-          <TpTeacherDeliveries deliveries={deliveries} courseId={course.id} assignmentId={assignment.id} dueDate={assignment.dueDate} />
+          <TpTeacherDeliveries key={JSON.stringify(reviewContext)} initialContext={reviewContext} deliveries={deliveries} courseId={course.id} assignmentId={assignment.id} dueDate={assignment.dueDate} />
         </section>
       </div>
     </div>

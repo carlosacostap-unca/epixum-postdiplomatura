@@ -79,6 +79,40 @@ describe('entregar y mostrar tardanza', () => {
     await user.click(screen.getByRole('button', { name: /Enviar entrega/ }));
     await waitFor(() => expect(mocks.submit).toHaveBeenCalledWith('tp-1', 'course-1', [{ name: 'informe.pdf', url: 'https://files.example/informe.pdf' }]));
   });
+  it('explica cómo recuperar una sesión vencida y conserva el archivo seleccionado', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getUploadUrl).mockRejectedValueOnce(new Error('Tu sesión venció. Volvé a iniciar sesión y luego intentá enviar nuevamente.'));
+    render(<ToastProvider><TpStudentDelivery assignmentId="tp-1" courseId="course-1" delivery={null} dueDate={dueDate} allowLateSubmissions /></ToastProvider>);
+    await user.upload(screen.getByLabelText(/Seleccionar archivos/), new File(['contenido'], 'informe.docx'));
+    await user.click(screen.getByRole('button', { name: /Enviar entrega/ }));
+    expect(await screen.findByText(/Tu sesión venció/)).toBeInTheDocument();
+    expect(screen.getByText('informe.docx')).toBeInTheDocument();
+    expect(mocks.submit).not.toHaveBeenCalled();
+    expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+  it('orienta ante la respuesta inesperada de una página desactualizada sin repetir el envío', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getUploadUrl).mockRejectedValueOnce(new Error('An unexpected response was received from the server.'));
+    render(<ToastProvider><TpStudentDelivery assignmentId="tp-1" courseId="course-1" delivery={null} dueDate={dueDate} allowLateSubmissions /></ToastProvider>);
+    await user.upload(screen.getByLabelText(/Seleccionar archivos/), new File(['contenido'], 'informe.docx'));
+    await user.click(screen.getByRole('button', { name: /Enviar entrega/ }));
+    expect(await screen.findByText(/La página o la sesión pueden estar desactualizadas/)).toBeInTheDocument();
+    expect(screen.getByText('informe.docx')).toBeInTheDocument();
+    expect(mocks.submit).not.toHaveBeenCalled();
+  });
+  it('pide comprobar el estado si se pierde la respuesta después de solicitar el guardado', async () => {
+    const user = userEvent.setup();
+    vi.mocked(getUploadUrl).mockResolvedValue({ success: true, url: 'https://files.example/informe.pdf?firma=fixture', fields: { key: 'informe.pdf' } });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 200 })));
+    mocks.submit.mockRejectedValueOnce(new Error('An unexpected response was received from the server.'));
+    render(<ToastProvider><TpStudentDelivery assignmentId="tp-1" courseId="course-1" delivery={null} dueDate={dueDate} allowLateSubmissions /></ToastProvider>);
+    await user.upload(screen.getByLabelText(/Seleccionar archivos/), new File(['contenido'], 'informe.pdf', { type: 'application/pdf' }));
+    await user.click(screen.getByRole('button', { name: /Enviar entrega/ }));
+    expect(await screen.findByText(/revisá su estado antes de volver a enviarla/)).toBeInTheDocument();
+    expect(mocks.submit).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('informe.pdf')).toBeInTheDocument();
+    expect(mocks.refresh).not.toHaveBeenCalled();
+  });
   it('muestra el formulario al habilitar tardías después de refrescar los datos', () => {
     const { rerender } = render(<ToastProvider><TpStudentDelivery assignmentId="tp-1" courseId="course-1" delivery={null} dueDate={dueDate} /></ToastProvider>);
     expect(screen.queryByRole('button', { name: /Enviar entrega/ })).not.toBeInTheDocument();

@@ -13,6 +13,7 @@ import { getTeacherDashboardData } from "@/lib/data";
 import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
 import { normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 import { getCurrentUser } from "@/lib/pocketbase-server";
+import { deliveryReviewHref } from '@/lib/teacher-review';
 
 function studentName(delivery: Awaited<ReturnType<typeof getTeacherDashboardData>>["pendingDeliveries"][number]) {
   const student = delivery.expand?.student;
@@ -89,7 +90,7 @@ export default async function DocentesPage() {
                   const presentation = teacherDeliveryPresentation(delivery);
                   const workflow = normalizeDeliveryWorkflow(delivery);
                   return (
-                    <Link key={delivery.id} href={`/docentes/cursos/${assignment?.course}/tps/${delivery.assignment}#entregas`} className="block rounded-[var(--epixum-radius-lg)] focus-visible:outline-offset-4">
+                    <Link key={delivery.id} href={deliveryReviewHref(delivery.assignment, delivery.id, { query: '', filter: 'unreviewed' })} className="block rounded-[var(--epixum-radius-lg)] focus-visible:outline-offset-4">
                       <Card className="transition-colors hover:bg-[var(--color-surface-container)]">
                         <CardContent className="flex items-center justify-between gap-4 py-5">
                           <div className="min-w-0">

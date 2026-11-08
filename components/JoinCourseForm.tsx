@@ -57,7 +57,7 @@ export default function JoinCourseForm({ className }: { className?: string }) {
 
   return (
     <>
-      <Button className={className} leadingIcon={<span className="material-symbols-outlined text-lg">add</span>} onClick={() => setIsOpen(true)}>Sumarme a un curso</Button>
+      <Button className={className} leadingIcon={<span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>} onClick={() => setIsOpen(true)}>Sumarme a un curso</Button>
       <Dialog open={isOpen} onOpenChange={(open) => open ? setIsOpen(true) : close()} title={courseId ? "¡Ya sos parte del curso!" : "Sumarme a un curso"} description={courseId ? "La matrícula quedó activa inmediatamente." : "Ingresá la clave que te compartió el docente."}>
         {courseId ? (
           <div className="space-y-6 pb-6">

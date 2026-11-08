@@ -11,6 +11,7 @@ import { cx } from "@/components/ui/styles";
 import type { AppWorkspace, WorkspaceAccess } from "@/lib/course-roles";
 import { getNavigationForPath, isNavigationItemActive, roleNavigation } from "@/lib/navigation";
 import type { User } from "@/types";
+import StudentShell from "./StudentShell";
 
 export interface AppShellProps {
   children: ReactNode;
@@ -59,6 +60,11 @@ export default function AppShell({ activeWorkspace, children, pocketbaseUrl, use
         return <li key={item.href}><Link href={item.href} onClick={mobile ? closeMenu : undefined} aria-current={active ? "page" : undefined} className={cx("flex min-h-12 items-center gap-3 rounded-[var(--epixum-radius-md)] px-3 text-sm font-semibold transition-colors", active ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)]")}><span className="material-symbols-outlined text-xl" aria-hidden="true">{item.icon}</span><span>{item.label}</span>{active && <span className="ml-auto size-1.5 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />}</Link></li>;
       })}</ul>
     </nav>;
+  }
+
+  if (workspace === "estudiante") {
+    if (/^\/estudiantes\/cursos\/[^/]+\/aventura\/?$/.test(pathname)) return <>{children}</>;
+    return <StudentShell user={user} workspaceAccess={workspaceAccess} pocketbaseUrl={pocketbaseUrl}>{children}</StudentShell>;
   }
 
   if (workspace === "admin") {

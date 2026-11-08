@@ -1,12 +1,10 @@
-import { getAssignment, getCourse, getDeliveryById } from "@/lib/data";
+import { getAssignment, getCourse, getDeliveries, getDeliveryById } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
 import DeliveryTimingBadge from '@/components/DeliveryTimingBadge';
 import { Badge, Breadcrumbs, Card, CardContent, PageHeader } from "@/components/ui";
 import { teacherDeliveryPresentation } from "@/lib/delivery-presentation";
-import DownloadButtonClient from './DownloadButtonClient';
 import AIPreevaluationClient from './AIPreevaluationClient';
 import Image from "next/image";
 import { isGithubDeliverySubmission, parseDeliverySubmission } from "@/types";
@@ -17,10 +15,13 @@ import { parseGithubRepositoryUrl } from "@/lib/github-url";
 import { isAdmin, isAssignedTeacher } from "@/lib/course-roles";
 import { normalizeDeliveryWorkflow } from "@/lib/delivery-workflow";
 import { isDocumentSubmission } from '@/lib/document-submission';
+import { deliveryReviewHref, parseReviewContext, reviewQueue, reviewSearch, type ReviewSearchParams } from '@/lib/teacher-review';
+import ReviewWorkspace from '@/components/teacher/ReviewWorkspace';
+import DeliveryMaterial from '@/components/teacher/DeliveryMaterial';
 
 export const dynamic = 'force-dynamic';
 
-export default async function DeliveryDetailsPage({ params }: { params: Promise<{ id: string, deliveryId: string }> }) {
+export default async function DeliveryDetailsPage({ params, searchParams }: { params: Promise<{ id: string, deliveryId: string }>; searchParams: Promise<ReviewSearchParams> }) {
   const { id, deliveryId } = await params;
   const user = await getCurrentUser();
 
@@ -37,6 +38,15 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
   const course = await getCourse(assignment.course).catch(() => null);
   if (!course) return notFound();
   if (!isAdmin(user) && !isAssignedTeacher(course, user.id)) redirect("/docentes");
+  const reviewContext = parseReviewContext(await searchParams);
+  const queue = reviewQueue(await getDeliveries(assignment.id), assignment.id, delivery.id, reviewContext);
+  const currentIndex = queue.findIndex(item => item.id === delivery.id);
+  const navigationLink = (index: number) => {
+    const item = queue[index];
+    if (!item) return undefined;
+    const person = item.expand?.student;
+    return { href: deliveryReviewHref(assignment.id, item.id, reviewContext), student: [person?.firstName || person?.name, person?.lastName].filter(Boolean).join(' ') || 'Estudiante' };
+  };
 
   const student = delivery.expand?.student;
   const pbUrl = process.env.NEXT_PUBLIC_POCKETBASE_URL?.replace(/\/$/, "") || "";
@@ -64,29 +74,23 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
 
   const workflow = normalizeDeliveryWorkflow(delivery);
   const presentation = teacherDeliveryPresentation(delivery);
-  const backHref = !isAdmin(user) ? `/docentes/cursos/${course.id}/tps/${id}#entregas` : `/admin/courses/${course.id}`;
-  const studentName = student?.name || [student?.firstName, student?.lastName].filter(Boolean).join(" ") || "Estudiante";
+  const backHref = !isAdmin(user) ? `/docentes/cursos/${course.id}/tps/${id}${reviewSearch(reviewContext)}#entregas` : `/admin/courses/${course.id}`;
+  const studentName = [student?.firstName || student?.name, student?.lastName].filter(Boolean).join(" ") || "Estudiante";
 
-  return <div className="page-container max-w-6xl space-y-6">
-    <Breadcrumbs items={[{ href: backHref, label: assignment.title }, { label: "Revisar entrega" }]} />
-    <PageHeader eyebrow="Revisión docente" title="Revisar entrega" description={assignment.title} metadata={<><Badge tone={presentation.tone}>{presentation.label}</Badge><Badge>Versión {workflow.submissionVersion}</Badge></>} actions={<Link href={backHref} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] px-4 text-sm font-semibold"><span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_back</span>Volver</Link>} />
-    <div className="grid gap-4 xl:grid-cols-2">
-      <Card><CardContent className="space-y-4">
-        <h2 className="text-sm font-semibold text-[var(--color-text-muted)]">Estudiante y entrega</h2>
+  return <div className="page-container space-y-6">
+    <ReviewWorkspace key={`${delivery.id}:${workflow.submissionVersion}`} backHref={backHref} previous={currentIndex > 0 ? navigationLink(currentIndex - 1) : undefined} next={currentIndex >= 0 ? navigationLink(currentIndex + 1) : undefined} position={currentIndex + 1} total={queue.length} filtered={Boolean(reviewContext.query || reviewContext.filter !== 'all')}>
+      <Breadcrumbs items={[{ href: isAdmin(user) ? `/admin/courses/${course.id}` : `/docentes/cursos/${course.id}`, label: course.title }, { href: backHref, label: assignment.title }, { label: studentName }]} />
+      <PageHeader eyebrow="Revisión docente" title={studentName} description={assignment.title} metadata={<><Badge tone={presentation.tone}>{presentation.label}</Badge><Badge>Versión {workflow.submissionVersion}</Badge></>} />
+      <AIPreevaluationClient
+        key={`${delivery.id}:${workflow.submissionVersion}`}
+        submission={<Card><CardContent className="space-y-6">
         <div className="flex items-center gap-3">
           <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-primary)]/10 font-bold text-[var(--color-primary)]">{student?.avatar ? <Image unoptimized src={`${pbUrl}/api/files/${student.collectionId}/${student.id}/${student.avatar}`} alt="" width={48} height={48} className="size-12 object-cover" /> : studentName.charAt(0)}</span>
           <div className="min-w-0"><p className="font-semibold">{studentName}</p><p className="break-all text-sm text-[var(--color-on-surface-variant)]">{student?.email}</p></div>
         </div>
-        <p className="text-sm text-[var(--color-on-surface-variant)]">Enviada el <FormattedDate date={workflow.submittedAt} showTime /></p>
-        <DeliveryTimingBadge delivery={delivery} dueDate={assignment.dueDate} />
-      </CardContent></Card>
-      <Card><CardContent className="space-y-4">
-        <h2 className="text-sm font-semibold text-[var(--color-text-muted)]">{submission.type === "url" ? "Enlace entregado" : "Archivos entregados"}</h2>
-        <div className="flex min-w-0 items-start gap-3"><span className="material-symbols-outlined shrink-0 text-[var(--color-primary)]" aria-hidden="true">{submission.type === "url" ? "link" : "description"}</span><p className="min-w-0 break-all text-sm">{submission.type === "url" ? submission.url : `${submission.files.length} ${submission.files.length === 1 ? "archivo" : "archivos"}`}</p></div>
-        {submission.type === "url" ? <a href={submission.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] px-4 text-sm font-semibold"><span className="material-symbols-outlined text-lg" aria-hidden="true">open_in_new</span>Abrir enlace</a> : <DownloadButtonClient deliveryId={delivery.id} />}
-      </CardContent></Card>
-    </div>
-          <AIPreevaluationClient
+        <div className="flex flex-wrap items-center gap-3"><p className="text-sm text-[var(--color-on-surface-variant)]">Enviada el <FormattedDate date={workflow.submittedAt} showTime /></p><DeliveryTimingBadge delivery={delivery} dueDate={assignment.dueDate} /></div>
+        <DeliveryMaterial delivery={delivery} dueDate={assignment.dueDate} />
+      </CardContent></Card>}
             deliveryId={delivery.id}
             submissionVersion={normalizeDeliveryWorkflow(delivery).submissionVersion}
             aiEligible={aiEligible}
@@ -102,5 +106,6 @@ export default async function DeliveryDetailsPage({ params }: { params: Promise<
             initialVerdict={delivery.verdict}
             initialStatus={delivery.status}
           />
+    </ReviewWorkspace>
   </div>;
 }

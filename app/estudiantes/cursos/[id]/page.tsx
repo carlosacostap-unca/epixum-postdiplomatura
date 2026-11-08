@@ -1,57 +1,24 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import FormattedDate from "@/components/FormattedDate";
-import { CourseUnit } from "@/components/course/CourseUnit";
-import { StudentCourseContext } from "@/components/course/StudentCourseContext";
 import { StudentCourseOutcome } from "@/components/outcomes/StudentCourseOutcome";
 import { CourseOnboardingSummary } from "@/components/onboarding/CourseOnboardingSummary";
-import { Badge, Card, CardContent, EmptyState, StatCard } from "@/components/ui";
+import StudentCourseOverview from "@/components/student/StudentCourseOverview";
 import { getInquiries } from "@/lib/actions-inquiries";
 import { isWeekEffectivelyVisible } from "@/lib/course-weeks";
 import { getAssignmentsByCourse, getClassesByCourse, getCourse, getCourseOrganizationData, getUserDelivery, isStudentEnrolled } from "@/lib/data";
 import { getCurrentUser } from "@/lib/pocketbase-server";
-import { getDeadlineState } from "@/lib/student-learning";
-import { studentDeliveryPresentation } from "@/lib/delivery-presentation";
-import { canSubmitAssignment } from '@/lib/assignment-deadline';
-import type { Assignment, Class, CourseWeek, Delivery, Inquiry } from "@/types";
+import { canSubmitAssignment } from "@/lib/assignment-deadline";
+import { getCourseGame } from "@/lib/course-game/catalog";
 
 export const dynamic = "force-dynamic";
 
-function plainText(value?: string) { return value?.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(); }
-
-function ClassCard({ courseId, item, nextClass, now }: { courseId: string; item: Class; nextClass?: string; now: Date }) {
-  const future = Boolean(item.date && new Date(item.date) >= now);
-  return <Link href={`/estudiantes/cursos/${courseId}/clases/${item.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4"><Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent><div className="flex items-start justify-between gap-4"><Badge tone={item.id === nextClass ? "success" : "neutral"}>{item.id === nextClass ? "Próxima" : future ? "Programada" : "Disponible"}</Badge><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span></div><h3 className="mt-4 font-headline text-xl font-bold">{item.title}</h3><p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{item.date ? <FormattedDate date={item.date} showTime /> : "Sin fecha"}</p></CardContent></Card></Link>;
-}
-
-function AssignmentCard({ courseId, assignment, delivery, now }: { courseId: string; assignment: Assignment; delivery?: Delivery | null; now: Date }) {
-  const deadline = getDeadlineState(assignment.dueDate, now);
-  const badge = delivery
-    ? studentDeliveryPresentation(delivery)
-    : deadline === "overdue" ? assignment.allowLateSubmissions ? { tone: "warning" as const, label: "Admite entrega fuera de término" } : { tone: "error" as const, label: "Vencido sin entrega" }
-      : deadline === "due-soon" ? { tone: "warning" as const, label: "Vence en menos de 72 h" }
-        : { tone: "neutral" as const, label: "Pendiente" };
-  return <Link href={`/estudiantes/cursos/${courseId}/tps/${assignment.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4"><Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent><div className="flex items-start justify-between gap-4"><Badge tone={badge.tone}>{badge.label}</Badge><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span></div><h3 className="mt-4 font-headline text-xl font-bold">{assignment.title}</h3><p className="mt-3 text-sm text-[var(--color-on-surface-variant)]">{assignment.dueDate ? <>Fecha límite: <FormattedDate date={assignment.dueDate} showTime /></> : "Sin fecha límite"}</p></CardContent></Card></Link>;
-}
-
-function WeekSection({ courseId, week, classes, assignments, inquiries, deliveryByAssignment, nextClass, now, open }: { courseId: string; week: CourseWeek; classes: Class[]; assignments: Assignment[]; inquiries: Inquiry[]; deliveryByAssignment: Map<string, Delivery | null>; nextClass?: string; now: Date; open: boolean }) {
-  return <CourseUnit id={week.id} number={week.number} title={week.title} headingLevel="h3" open={open} counts={`${classes.length} clases · ${assignments.length} trabajos · ${inquiries.length} consultas`} metadata={week.startDate || week.endDate ? <Badge>{week.startDate ? <FormattedDate date={week.startDate} /> : null}{week.startDate && week.endDate ? " — " : ""}{week.endDate ? <FormattedDate date={week.endDate} /> : null}</Badge> : undefined}>
-    {classes.length > 0 && <div className="space-y-3"><h4 className="text-sm font-semibold text-[var(--color-on-surface-variant)]">Clases</h4><div className="grid gap-3 md:grid-cols-2">{classes.map((item) => <ClassCard key={item.id} courseId={courseId} item={item} nextClass={nextClass} now={now} />)}</div></div>}
-    {assignments.length > 0 && <div className="space-y-3"><h4 className="text-sm font-semibold text-[var(--color-on-surface-variant)]">Trabajos prácticos</h4><div className="grid gap-3 md:grid-cols-2">{assignments.map((item) => <AssignmentCard key={item.id} courseId={courseId} assignment={item} delivery={deliveryByAssignment.get(item.id)} now={now} />)}</div></div>}
-    {classes.length + assignments.length + inquiries.length === 0 && <p className="text-sm text-[var(--color-on-surface-variant)]">Esta unidad todavía no tiene contenido.</p>}
-    <div className="flex flex-wrap gap-3">
-      <Link href={`/estudiantes/cursos/${courseId}/consultas/nueva?semana=${week.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-highest)] px-4 text-sm font-semibold"><span className="material-symbols-outlined text-lg" aria-hidden="true">chat_bubble</span>Hacer una consulta</Link>
-      {inquiries.length > 0 && <Link href={`/estudiantes/cursos/${courseId}/consultas?semana=${week.id}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">Ver {inquiries.length} {inquiries.length === 1 ? "consulta" : "consultas"}<span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span></Link>}
-    </div>
-  </CourseUnit>;
-}
-
-export default async function EstudianteCoursePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EstudianteCoursePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ vista?: string | string[] }> }) {
   const { id } = await params;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const course = await getCourse(id);
   if (!course || !(await isStudentEnrolled(course.id, user.id))) redirect("/estudiantes");
+  const { vista } = (await searchParams) ?? {};
+  if (vista !== 'clasica' && getCourseGame(course) && !course.teachers?.includes(user.id)) redirect(`/estudiantes/cursos/${course.id}/aventura`);
 
   const weekly = course.organizationMode === "semanal";
   const organization = weekly ? await getCourseOrganizationData(course) : null;
@@ -88,12 +55,19 @@ export default async function EstudianteCoursePage({ params }: { params: Promise
 
   const activeGroup = visibleGroups.find((group) => group.assignments.some((item) => item.id === nextAssignment?.id) || group.classes.some((item) => item.id === nextClass?.id)) || visibleGroups[0];
 
-  return <div className="page-container space-y-8">
-    <StudentCourseContext course={course} current="resumen" description={plainText(course.description) || "Clases, trabajos y consultas del curso."} />
-    {course.onboardingEnabled && <CourseOnboardingSummary courseId={course.id} />}
-    {course.outcomesEnabled && <StudentCourseOutcome courseId={course.id} />}
-    {nextAction ? <Link href={nextAction.href} className="group block rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4"><Card className="bg-[linear-gradient(135deg,var(--color-surface-container-low),color-mix(in_srgb,var(--color-primary)_10%,var(--color-surface-container-low)))] transition-colors group-hover:bg-[var(--color-surface-container)]"><CardContent className="flex flex-col justify-between gap-6 md:flex-row md:items-center md:p-9"><div className="flex items-start gap-5"><span className="material-symbols-outlined text-4xl text-[var(--color-primary)]" aria-hidden="true">{nextAction.icon}</span><div><p className="text-xs font-bold uppercase tracking-wide text-[var(--color-primary)]">{nextAction.eyebrow}</p><h2 className="mt-2 font-headline text-2xl font-bold">{nextAction.title}</h2>{nextAction.date && <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]"><FormattedDate date={nextAction.date} showTime /></p>}</div></div><span className="inline-flex shrink-0 items-center gap-2 font-bold text-[var(--color-primary)]">Continuar <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span></CardContent></Card></Link> : <EmptyState icon="task_alt" title="Explorá el contenido del curso" description="No hay próximas actividades programadas. Las clases y los trabajos disponibles siguen debajo." />}
-    <section aria-label="Resumen del curso" className="grid gap-4 sm:grid-cols-3"><StatCard label="Clases" value={classes.length} icon="menu_book" href={weekly ? "#semanas" : "#clases"} /><StatCard label="Trabajos pendientes" value={pendingAssignments.length} icon="assignment" tone={pendingAssignments.length ? "warning" : "neutral"} href={weekly ? "#semanas" : "#trabajos"} /><StatCard label="Mis consultas pendientes" value={pendingInquiries.length} icon="forum" tone={pendingInquiries.length ? "info" : "neutral"} href={`/estudiantes/cursos/${course.id}/consultas?autor=mis-consultas&estado=Pendiente`} /></section>
-    {weekly ? <section id="semanas" aria-labelledby="weeks-title" className="scroll-mt-6 space-y-6"><div><h2 id="weeks-title" className="font-headline text-2xl font-bold md:text-3xl">Unidades del curso</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Solo aparecen las unidades que el docente ya publicó.</p></div>{visibleGroups.length ? visibleGroups.map((group) => <WeekSection key={group.week.id} courseId={course.id} week={group.week} classes={group.classes} assignments={group.assignments} inquiries={group.inquiries} deliveryByAssignment={deliveryByAssignment} nextClass={nextClass?.id} now={now} open={group.week.id === activeGroup?.week.id} />) : <EmptyState icon="calendar_view_week" title="Todavía no hay unidades publicadas" description="El contenido aparecerá cuando el docente publique la primera unidad." />}</section> : <><section id="clases" aria-labelledby="classes-title" className="scroll-mt-6 space-y-5"><div><h2 id="classes-title" className="font-headline text-2xl font-bold md:text-3xl">Clases y materiales</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Abrí una clase para consultar su contenido y recursos.</p></div>{sortedClasses.length === 0 ? <EmptyState icon="menu_book" title="Todavía no hay clases" description="El contenido aparecerá cuando el docente publique la primera clase." /> : <div className="grid gap-4 md:grid-cols-2">{sortedClasses.map((item) => <ClassCard key={item.id} courseId={course.id} item={item} nextClass={nextClass?.id} now={now} />)}</div>}</section><section id="trabajos" aria-labelledby="assignments-title" className="scroll-mt-6 space-y-5"><div><h2 id="assignments-title" className="font-headline text-2xl font-bold md:text-3xl">Trabajos prácticos</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Revisá el plazo y el estado de tu entrega.</p></div>{assignments.length === 0 ? <EmptyState icon="assignment" title="Todavía no hay trabajos" description="Los trabajos prácticos aparecerán aquí cuando estén disponibles." /> : <div className="grid gap-4 md:grid-cols-2">{assignments.map((assignment) => <AssignmentCard key={assignment.id} courseId={course.id} assignment={assignment} delivery={deliveryByAssignment.get(assignment.id)} now={now} />)}</div>}</section></>}
-  </div>;
+  return <StudentCourseOverview
+    course={course}
+    classes={sortedClasses}
+    assignments={assignments}
+    pendingAssignments={pendingAssignments}
+    pendingInquiries={pendingInquiries}
+    deliveryByAssignment={deliveryByAssignment}
+    visibleGroups={visibleGroups}
+    activeGroupId={activeGroup?.week.id}
+    nextClass={nextClass}
+    nextAction={nextAction ? { ...nextAction, label: nextAction.eyebrow, action: nextAction.icon === "assignment" ? "Ver trabajo" : "Abrir clase" } : null}
+    now={now}
+    onboarding={course.onboardingEnabled ? <CourseOnboardingSummary compact courseId={course.id} /> : undefined}
+    outcome={course.outcomesEnabled ? <StudentCourseOutcome courseId={course.id} /> : undefined}
+  />;
 }
