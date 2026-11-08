@@ -12,8 +12,10 @@ export const ROADS=[
  // Colón continues north of Güemes through the visible neighborhood.
  {x:308,y:0,w:24,h:960,name:'AV. COLÓN',tx:310,ty:680},
  {x:490,y:0,w:24,h:210,name:'VIRGEN DEL VALLE',tx:490,ty:100},
- {x:646,y:0,w:22,h:960,name:'CASEROS',tx:648,ty:650},
- {x:820,y:0,w:20,h:960,name:'ENTRE RÍOS',tx:822,ty:650},
+ {x:646,y:0,w:22,h:210,name:'CASEROS',tx:648,ty:170},
+ {x:646,y:240,w:22,h:720,name:'TIERRA DEL FUEGO',tx:648,ty:650},
+ {x:820,y:0,w:20,h:210,name:'AYACUCHO',tx:822,ty:170},
+ {x:820,y:240,w:20,h:720,name:'ENTRE RÍOS',tx:822,ty:650},
  {x:0,y:498,w:308,h:18,name:'SAN JUAN',tx:156,ty:503},
  {x:668,y:498,w:292,h:18,name:'LA RIOJA',tx:720,ty:503},
  {x:0,y:810,w:646,h:22,name:'MENDOZA',tx:200,ty:816},
@@ -21,7 +23,13 @@ export const ROADS=[
  {x:0,y:926,w:960,h:18,name:'FLORIDA',tx:705,ty:931},
  {x:0,y:94,w:490,h:18,name:'CONGRESAL CENTENO',tx:190,ty:99},
  {x:514,y:94,w:446,h:18,name:'PÉREZ DE ZURITA',tx:700,ty:99},
- {x:110,y:0,w:18,h:960,name:'LA PAMPA',tx:110,ty:700},
+ {x:110,y:0,w:18,h:210,name:'GRAL. LAVALLE',tx:110,ty:170},
+ {x:110,y:240,w:18,h:720,name:'LA PAMPA',tx:110,ty:700},
+ {x:220,y:0,w:16,h:210,name:'GRAL. NAVARRO',tx:220,ty:170},
+ {x:220,y:516,w:16,h:444,name:'JUNÍN',tx:220,ty:750},
+ {x:400,y:0,w:14,h:210,name:'PJE. ESQUIÚ',tx:400,ty:170},
+ {x:0,y:870,w:308,h:12,name:'PJE. MENDOZA',tx:155,ty:874},
+ {x:332,y:884,w:314,h:12,name:'PJE. MENDOZA',tx:460,ty:888},
 ];
 export const NEIGHBORHOOD_BUILDINGS: {x:number;y:number;w:number;h:number}[]=[];
 // Neighboring parcels are illustrative; preserve the observed street-block structure.
@@ -30,6 +38,11 @@ for(const [x,y,w,h] of [[140,10,156,72],[140,128,156,66],[344,10,132,72],[344,12
 }
 // Observed public volumes west of Colón and along the south/east of the plaza.
 NEIGHBORHOOD_BUILDINGS.push({x:167,y:300,w:100,h:48},{x:245,y:260,w:49,h:42},{x:352,y:460,w:34,h:100},{x:350,y:680,w:32,h:104},{x:410,y:723,w:24,h:60},{x:552,y:580,w:30,h:140},{x:597,y:580,w:27,h:198});
+// Illustrative houses must never occupy a surveyed street or its sidewalk.
+for(let i=NEIGHBORHOOD_BUILDINGS.length-1;i>=0;i--) {
+ const b=NEIGHBORHOOD_BUILDINGS[i];
+ if(ROADS.some(r=>b.x<r.x+r.w+6&&b.x+b.w>r.x-6&&b.y<r.y+r.h+6&&b.y+b.h>r.y-6)) NEIGHBORHOOD_BUILDINGS.splice(i,1);
+}
 export const PLAZA_BEDS=[{x:430,y:435,w:28,h:43},{x:507,y:474,w:20,h:40},{x:465,y:655,w:25,h:58}];
 export const BENCHES=[[464,407],[581,437],[392,620],[516,745]];
 export const TREES=[[350,270],[375,315],[616,270],[365,402],[420,460],[451,490],[487,533],[536,540],[614,525],[395,585],[447,630],[510,682],[478,760],[355,795],[628,795],[161,370],[202,390],[280,442],[275,555],[704,520],[786,790],[867,520],[530,176]];

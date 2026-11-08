@@ -1,12 +1,23 @@
 import { NEIGHBORHOOD_BUILDINGS, PLAZA_BEDS, NODO_OFFSET, NODO_SCALE, ROADS, TREES, BENCHES, WORLD_WIDTH, WORLD_HEIGHT, NODO_STAIRS_WIDTH, NODO_REAR_ENTRANCE, NODO_ENTRANCE, southUpPoint } from '@/lib/course-game/neighborhood';
 import { drawNodo } from './nodo-art';
 type Paint=(color:number,x:number,y:number,w:number,h:number,alpha?:number)=>void;
+export function drawNeighborhoodRoads(paint:Paint) {
+ // Paint all sidewalks first: a later street's curb must not cut across asphalt.
+ for(const a of ROADS) paint(0xe8d8b6,a.x-6,a.y-6,a.w+12,a.h+12);
+ for(const a of ROADS) paint(0x69757a,a.x,a.y,a.w,a.h);
+ for(const a of ROADS) {
+  if(a.w>a.h) for(let x=a.x;x<a.x+a.w;x+=24) {
+   const y=a.y+a.h/2;
+   if(!ROADS.some(b=>b!==a&&b.h>b.w&&x+10>b.x&&x<b.x+b.w&&y>=b.y&&y<=b.y+b.h)) paint(0xddcc96,x,y,10,1);
+  }
+ }
+}
 export function drawNeighborhood(paint:Paint) {
  let r:Paint=(c,x,y,w,h,a)=>paint(c,WORLD_WIDTH-x-w,WORLD_HEIGHT-y-h,w,h,a);
  r(0xc5b395,0,0,WORLD_WIDTH,WORLD_HEIGHT);
  r(0x9cab74,337,245,302,560);r(0x9fa87a,135,246,166,245);
  for(let i=0;i<1800;i++) r(i%2?0xb3bc87:0x8e9f69,338+(i*47)%299,246+(i*31)%557,2,1);
- { const r=paint; for(const a of ROADS){r(0xe8d8b6,a.x-6,a.y-6,a.w+12,a.h+12);r(0x69757a,a.x,a.y,a.w,a.h);r(0x8b9697,a.x,a.y,a.w,2);if(a.w>a.h)for(let x=a.x;x<a.x+a.w;x+=24)r(0xddcc96,x,a.y+a.h/2,10,1);} }
+ drawNeighborhoodRoads(paint);
  for(const x of [300,338,636,674,810,846])for(let y=212;y<238;y+=5)r(0xf2e8cf,x,y,5,2);
  const path=(x:number,y:number,ex:number,ey:number,width=12)=>{const steps=Math.ceil(Math.hypot(ex-x,ey-y)/3);for(let i=0;i<=steps;i++)r(0xe2d3ae,x+(ex-x)*i/steps-width/2,y+(ey-y)*i/steps-width/2,width,width);};
  // Fan-shaped northern garden, diagonal paths and the broad southwestern plaza.

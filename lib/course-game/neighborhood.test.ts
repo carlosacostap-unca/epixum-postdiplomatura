@@ -2,7 +2,35 @@ import {describe,it,expect} from 'vitest';
 import {ROADS,NEIGHBORHOOD_BUILDINGS,WORLD_WIDTH,WORLD_HEIGHT,NODO_ENTRANCE,NODO_REAR_ENTRANCE,NODO_FOOTPRINT,southUpPoint} from './neighborhood';
 import {canStand,SPAWN,insideNodo,nearNodo,walk,emptyWalkInput} from './movement';
 import {findWalkPath,clearSegment} from './navigation';
+import {drawNeighborhoodRoads} from '@/components/course-game/phaser/neighborhood-art';
 describe('barrio ampliado del Nodo',()=>{
+ it.each(ROADS)('mantiene transitable todo el tramo de $name ($x, $y)',road=>{
+  const horizontal=road.w>road.h;
+  const start=horizontal?{x:Math.max(12,road.x+2),y:road.y+road.h/2}:{x:road.x+road.w/2,y:Math.max(12,road.y+2)};
+  const end=horizontal?{x:Math.min(WORLD_WIDTH-12,road.x+road.w-2),y:start.y}:{x:start.x,y:Math.min(WORLD_HEIGHT-12,road.y+road.h-2)};
+  expect(clearSegment(start,end,canStand)).toBe(true);
+  const route=findWalkPath(SPAWN,start,canStand);
+  expect(route.at(-1)).toEqual(start);
+ });
+ it('no dibuja veredas atravesando los cruces de calles',()=>{
+  const pixels=new Uint32Array(WORLD_WIDTH*WORLD_HEIGHT);
+  drawNeighborhoodRoads((color,x,y,w,h)=>{
+   for(let py=Math.max(0,Math.floor(y));py<Math.min(WORLD_HEIGHT,y+h);py++)
+    for(let px=Math.max(0,Math.floor(x));px<Math.min(WORLD_WIDTH,x+w);px++) pixels[py*WORLD_WIDTH+px]=color;
+  });
+  for(const a of ROADS) for(const b of ROADS) {
+   if(a===b) continue;
+   const left=Math.max(a.x,b.x-6),right=Math.min(a.x+a.w,b.x+b.w+6);
+   const top=Math.max(a.y,b.y-6),bottom=Math.min(a.y+a.h,b.y+b.h+6);
+   for(let y=top;y<bottom;y++) for(let x=left;x<right;x++) expect(pixels[y*WORLD_WIDTH+x]).not.toBe(0xe8d8b6);
+  }
+ });
+ it.each([['CASEROS','TIERRA DEL FUEGO'],['AYACUCHO','ENTRE RÍOS'],['GRAL. LAVALLE','LA PAMPA']])('conecta %s con %s al cruzar Güemes', (northName,southName)=>{
+  const north=ROADS.find(r=>r.name===northName)!,south=ROADS.find(r=>r.name===southName)!,guemes=ROADS.find(r=>r.name==='AV. GÜEMES')!;
+  expect(north.x).toBe(south.x);
+  expect(north.y).toBe(guemes.y+guemes.h);
+  expect(south.y+south.h).toBe(guemes.y);
+ });
  it('continúa Colón al norte de Güemes hasta el límite del mapa, sin obstáculos',()=>{
   const colon=ROADS.find(r=>r.name==='AV. COLÓN')!,guemes=ROADS.find(r=>r.name==='AV. GÜEMES')!;
   expect(colon.y).toBe(0);

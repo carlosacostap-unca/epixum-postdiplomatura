@@ -191,3 +191,14 @@ El zoom también admite la rueda del mouse sobre el mapa: hacia arriba acerca y 
 ### Preparación del servidor antes de publicar
 Ejecutar `npm run schema:course-game` antes de habilitar la aventura en producción. Las colecciones privadas course_game_onboarding y course_game_tour_steps son necesarias también para la primera visita, aunque el alumno todavía no tenga personaje. Una colección ausente produce el error de apertura del valle. La migración no modifica perfiles ni crea personajes.
 Verificación de despliegue: establecer COURSE_GAME_ACCESS_CHECK=1 y ejecutar vitest run lib/course-game/access.integration.test.ts. Comprueba las funciones reales de carga del curso y bienvenida con una identidad invitada y solo realiza lecturas. No imprime datos personales ni tokens.
+
+### Revisión de calles del entorno (8/11/2026)
+
+Se contrastó la red con la [vista satelital de Google Maps](https://www.google.com/maps/@-28.4772,-65.7868,17z/data=!3m1!1e3), ampliando los sectores norte y sur. La [descripción municipal del Nodo](https://www.catamarcaciudad.gob.ar/el-nodo-tecnologico-ya-es-una-realidad/) confirma su ubicación sobre Güemes, entre Colón y Caseros.
+
+- Colón conserva su continuidad a ambos lados de Güemes. Se distinguen los nombres Caseros/Tierra del Fuego, Ayacucho/Entre Ríos y General Lavalle/La Pampa al cruzar esa avenida.
+- Se agregaron los tramos visibles de General Navarro, Junín al sur de San Juan, pasaje Esquiú y los dos tramos desplazados de pasaje Mendoza. Se mantienen San Juan y La Rioja a ambos lados del predio, sin inventar una conexión a través de la plaza. Mendoza/Buenos Aires delimitan el extremo sur del predio; Florida continúa por el borde del mundo.
+- Todas las veredas se dibujan antes del asfalto para evitar falsos cortes en las intersecciones. Las viviendas ilustrativas que invadían calles nuevas o veredas se retiran del dibujo y de las colisiones. Se elimina el margen superior de movimiento que bloqueaba Florida tras girar el mapa.
+- Las pruebas recorren el eje de cada tramo, comprueban su conexión desde el punto inicial, los cambios de nombre en Güemes y la ausencia de veredas sobre los cruces.
+
+Es una recreación rectificada para el juego: se conservan calles y conexiones observadas, pero pendientes, distancias, curvas y fachadas no tienen precisión catastral. No se modelan sentidos de tránsito ni todos los pasajes menores de la ciudad.
