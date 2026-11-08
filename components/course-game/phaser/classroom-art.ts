@@ -1,4 +1,5 @@
 import { DESKS } from '@/lib/course-game/classroom';
+import { drawChair, drawLaptop } from './furniture-art';
 type Rect=(color:number,x:number,y:number,w:number,h:number,alpha?:number)=>void;
 export function drawClassroom(r:Rect) {
   r(0x293f4c,0,0,480,320);
@@ -16,11 +17,12 @@ export function drawClassroom(r:Rect) {
   // Teacher desk and books.
   r(0x705e49,71,115,74,17); r(0xc09862,68,110,80,9);
   r(0x537a87,77,107,17,4); r(0xc2cdae,99,105,18,6); r(0xefdfb3,101,106,14,3);
+  drawLaptop(r,121,101,.8);
   for(const {x,y,w,h} of DESKS) {
     r(0x7c725b,x+3,y+h+7,w,6,.3);
     for(const dx of [7,w-11]) r(0x645c4b,x+dx,y+8,4,h+3);
     r(0x866643,x,y,w,h); r(0xc7a26d,x,y,w,15); r(0xe3bf83,x+2,y+1,w-4,2);
-    for(const dx of [15,58]) { r(0x476a75,x+dx,y+21,18,10); r(0x6b98a0,x+dx+1,y+21,16,4); r(0xf0e9ce,x+dx-1,y+4,14,8); r(0x9eb0a4,x+dx+2,y+6,8,1); }
+    for(const dx of [15,58]) { drawChair(r,x+dx,y+21); drawLaptop(r,x+dx-3,y-1); }
   }
   r(0x7c9788,219,294,42,18); r(0xd0c29a,223,296,34,13); r(0x50796b,235,299,10,7);
   r(0x937551,431,112,12,13); r(0x4f835c,426,101,22,15); r(0x8db476,432,97,10,11);

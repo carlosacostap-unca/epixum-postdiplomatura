@@ -1,4 +1,5 @@
 import { roomDoor } from '@/lib/course-game/interior';
+import { drawChair, drawLaptop } from './furniture-art';
 type Rect = (color:number,x:number,y:number,w:number,h:number,alpha?:number)=>void;
 /** An imagined teaching interior, not a claim about the real building's floor plan. */
 export function drawInterior(r:Rect,count:number,openRooms?:boolean[]) {
@@ -16,7 +17,7 @@ export function drawInterior(r:Rect,count:number,openRooms?:boolean[]) {
     r(0x468aaf,x-31,y+7,62,10);
     for(let n=0;n<4;n++) { r(0xb2dae1,x-29+n*16,y+8,12,7); r(0x487682,x-30+n*16,y+8,1,8); }
     r(0x365d58,x-22,y+20,44,11); r(0xd6d7af,x-18,y+23,24,1);
-    for(const dx of [-27,9]) { r(0x7e6c51,x+dx,y+40,20,4); r(0xc79961,x+dx,y+36,20,6); r(0x467d87,x+dx+5,y+48,10,6); }
+    for(const dx of [-27,9]) { r(0x7e6c51,x+dx,y+40,20,4); r(0xc79961,x+dx,y+36,20,6); drawChair(r,x+dx+5,y+45,.6); drawLaptop(r,x+dx+4,y+32,.5); }
     const dy=top?140:205;
     r(0x4b6061,x-15,dy,30,15); r(i<count?0xb89462:0x7c8884,x-12,dy+2,24,12);
     if(i<count) { r(0xf7d88e,x+7,dy+7,2,2); r(0xdbc89d,x-14,dy,28,2); }

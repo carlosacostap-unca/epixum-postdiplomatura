@@ -228,3 +228,7 @@ Los cuatro bancos de la plaza y los dos bancos de hormigón del Nodo tienen obje
 ### Límites de la vista móvil
 
 El mapa no tiene márgenes exteriores, incluido el antiguo margen superior móvil. Su contenedor recorta el excedente del canvas para que no amplíe el área desplazable. El tamaño mínimo cubre ambos ejes de la ventana al alejarse, conservando las proporciones, también al rotar el teléfono. El personaje se detiene a 34 píxeles del borde superior para que su cabeza quede dentro del terreno; Florida sigue transitable por su vereda interior.
+
+### Copas legibles y aulas equipadas
+
+Las copas se separan de los troncos y permanecen en una capa superior. Cuando se superponen al personaje o al perro, pasan gradualmente al 40 % de opacidad; recuperan su aspecto al alejarse. Los troncos mantienen profundidad y colisión. Esto evita los cambios bruscos de orden que parecían atravesar las hojas. Las aulas muestran doce sillas con respaldo y patas, una notebook por puesto y otra en el escritorio docente; el pasillo presenta la misma decoración en miniatura. Las colisiones contemplan las patas de las sillas y conservan el pasillo central libre.
