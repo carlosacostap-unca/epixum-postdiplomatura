@@ -139,6 +139,8 @@ describe('controles del personaje', () => {
     expect(screen.getByLabelText('Interior del aula')).toBeVisible();
     act(()=>state.current?.onPosition?.({x:160,y:444}));
     act(()=>state.current?.onNotebook?.());
+ fireEvent.click(screen.getByRole('button',{name:'Abrir carpeta Clase 1'}));
+ fireEvent.click(screen.getByRole('button',{name:/Actividades de la clase/}));
     expect(await screen.findByText('Contenido en la pizarra')).toBeVisible();
     expect(screen.queryByRole('link',{name:/Abrir contenido/})).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
@@ -165,6 +167,8 @@ it('camina a las sillas y abre la notebook de la clase solo al llegar',async()=>
   expect(target?.notebook).toBe(true);
   expect(load).not.toHaveBeenCalled();
   act(()=>{state.current?.onPosition?.({x:target!.x,y:target!.y});state.current?.onSeated?.(target!.benchId!);state.current?.onNotebook?.();});
+ fireEvent.click(screen.getByRole('button',{name:'Abrir carpeta Clase 1'}));
+ fireEvent.click(screen.getByRole('button',{name:/Actividades de la clase/}));
   expect(await screen.findByText('Resolver la actividad del encuentro')).toBeVisible();
   expect(load).toHaveBeenCalledWith('a');
   expect(state.current?.movementLocked).toBe(true);
@@ -187,6 +191,8 @@ it('limita la misión de Sofía al Aula 1 del curso piloto y la abre desde la no
  expect(screen.getByRole('log')).toHaveTextContent('seis días');
  fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
  act(()=>state.current?.onNotebook?.());
+ fireEvent.click(screen.getByRole('button',{name:'Abrir carpeta Clase 1'}));
+ fireEvent.click(screen.getByRole('button',{name:/Actividades de la clase/}));
  expect(screen.getByRole('region',{name:'Misión Sofía y su examen'})).toBeVisible();
  fireEvent.click(screen.getByText('Pedir una pista al perro'));
  expect(screen.getByRole('log')).toHaveTextContent('qué no sabe la IA');
@@ -230,4 +236,18 @@ it.each([false,true])('la pizarra es decorativa incluso con permiso docente=%s',
  expect(screen.queryByRole('button',{name:/pizarra/i})).not.toBeInTheDocument();
  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
  expect(load).not.toHaveBeenCalled();
+});
+
+it('las notebooks de alumnos abren la carpeta y los enlaces sin dar acceso al escritorio docente',async()=>{
+ const load=vi.fn(async()=>({success:true as const,content:{title:'Clase 1',description:'',resources:[{id:'meet',title:'Clase en vivo',url:'https://meet.google.com/test',file:false,filename:''},{id:'video',title:'Grabación de la clase en vivo',url:'https://youtube.com/test',file:false,filename:''}]}}));
+ render(<CourseMissionMap game={{...game,canPresent:false}} character={DEFAULT_CHARACTER} loadBoard={load}/>);
+ act(()=>state.current?.onEnter?.());act(()=>state.current?.onRoom?.(0));
+ fireEvent.click(screen.getByRole('button',{name:'Usar notebook 1: actividades de la clase'}));
+ expect(load).not.toHaveBeenCalled();act(()=>state.current?.onNotebook?.());
+ expect(screen.getByLabelText('Computadora del alumno')).toBeVisible();
+ fireEvent.click(screen.getByRole('button',{name:'Abrir carpeta Clase 1'}));
+ expect(await screen.findByRole('link',{name:/Clase en vivo/})).toHaveAttribute('href','https://meet.google.com/test');
+ expect(screen.getByRole('link',{name:/Grabación/})).toHaveAttribute('href','https://youtube.com/test');
+ expect(screen.getByRole('link',{name:/Diapositivas/})).toHaveAttribute('href','https://google.com/');
+ expect(screen.queryByRole('button',{name:'Notebook docente: abrir computadora'})).not.toBeInTheDocument();
 });

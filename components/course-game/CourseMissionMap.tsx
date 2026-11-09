@@ -1,5 +1,6 @@
 'use client';
 import { TeacherComputer } from './TeacherComputer';
+import { computerContent } from '@/lib/course-game/computer';
 import { RECEPTIONIST,RECEPTION_ANSWERS } from '@/lib/course-game/reception';
 import { useSofiaSave } from './useSofiaSave';
 import type { SaveSofia,SofiaProgress } from '@/lib/course-game/sofia';
@@ -57,6 +58,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
   }))} : initialGame;
   const isOpen = (id:string) => id===INTRODUCTION_ID || (game.enabledClassIds ? game.enabledClassIds.includes(id) && game.places.some(p=>p.id===id) : scheduledOpen(id));
   const readBoard = useCallback<LoadBoard>(async id => id === INTRODUCTION_ID ? courseIntroduction(game.courseTitle) : loadBoard ? loadBoard(id) : {success:false,error:'No pudimos cargar esta clase.'}, [game.courseTitle,loadBoard]);
+  const readComputer = useCallback<LoadBoard>(async id => {const result=await readBoard(id);return result.success ? {success:true,content:computerContent(result.content)} : result;},[readBoard]);
   const openingLabel = (id: string, date: string) => {
     if(game.enabledClassIds) return game.enabledClassIds.includes(id) ? 'Habilitada para este encuentro' : 'Todavía no habilitada';
     const value = clock?.schedule.classes.find(c=>c.id===id)?.date ?? date;
@@ -252,7 +254,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
 
       {saveSofia && <div role="status"><p>{sofiaSave.label}{sofiaSave.dirty && ' · Esperá la confirmación antes de salir.'}</p>{sofiaSave.error && <><p>{sofiaSave.error}</p><button onClick={sofiaSave.retry}>Reintentar guardado</button></>}</div>}
       {(panel === 'classroom' || panel === 'notebook') && !selectedClass && <p>Esta clase ya no está disponible. Volvé a Encuentros para consultar el calendario actualizado.</p>}
-      {(panel === 'classroom' || panel === 'notebook') && selectedClass && <>{isOpen(selectedClass.id) ? <>{panel === 'notebook' && sofiaClass ? <SofiaMission persistent={Boolean(saveSofia)} progress={sofiaProgress} onChange={setSofiaProgress} onTalk={()=>setPanel('sofia')} onHint={()=>setPanel('companion')}/> : <LessonBoard notebook key={selectedClass.id} classId={selectedClass.id} load={readBoard} />}</> : <p>{openingLabel(selectedClass.id,selectedClass.date)}. {clock?.fresh ? "El aula está cerrada." : "Esperando confirmación del servidor."}</p>}</>}
+      {(panel === 'classroom' || panel === 'notebook') && selectedClass && <>{isOpen(selectedClass.id) ? <>{panel === 'notebook' ? <TeacherComputer key={selectedClass.id} classId={selectedClass.id} label="Computadora del alumno" load={readComputer} activities={sofiaClass ? <SofiaMission persistent={Boolean(saveSofia)} progress={sofiaProgress} onChange={setSofiaProgress} onTalk={()=>setPanel('sofia')} onHint={()=>setPanel('companion')}/> : <LessonBoard notebook classId={selectedClass.id} load={readBoard}/>}/> : <LessonBoard notebook key={selectedClass.id} classId={selectedClass.id} load={readBoard} />}</> : <p>{openingLabel(selectedClass.id,selectedClass.date)}. {clock?.fresh ? "El aula está cerrada." : "Esperando confirmación del servidor."}</p>}</>}
       {panel === 'presentation' && game.canPresent && selectedClass && isOpen(selectedClass.id) && <TeacherComputer classId={selectedClass.id} load={loadPresentation}/>}
       {panel === 'identity' && renderIdentity?.(() => setPanel('menu'))}
       {panel === 'menu' && <>
