@@ -28,7 +28,7 @@ describe('resultado y notas privadas del turno', () => {
     const agenda = { ...data, now: Date.parse(now), bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })) } as typeof data;
     render(<ReviewAgenda data={agenda} mode="teacher" />);
     document.querySelectorAll("details").forEach(details => { details.open = true; });
-    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ver detalle$/ }));
     const summary = screen.queryByText('Evaluar turno: resultado, devolución y notas privadas');
     if (enabled) {
       expect(summary).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('resultado y notas privadas del turno', () => {
     render(<ReviewAgenda data={agenda} mode="teacher" />);
     document.querySelectorAll("details").forEach(details => { details.open = true; });
     expect(screen.queryByText('Evaluar turno: resultado, devolución y notas privadas')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ver detalle$/ }));
     act(() => vi.advanceTimersByTime(15000));
     expect(screen.getByText('Evaluar turno: resultado, devolución y notas privadas')).toBeInTheDocument();
   });
@@ -91,7 +91,7 @@ describe('resultado y notas privadas del turno', () => {
   it('permite abrir el mismo detalle desde la lista de reservas y avisa si faltan contactos', () => {
     render(<ReviewAgenda data={contactAgenda({ email: '', phone: '' })} mode="teacher" />);
     document.querySelectorAll("details").forEach(details => { details.open = true; });
-    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ver detalle$/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle y contacto' }));
     const dialog = screen.getByRole('dialog', { name: 'Detalle del turno reservado' });
     expect(within(dialog).getByText('Email no registrado')).toBeInTheDocument();
@@ -189,7 +189,7 @@ describe('resultado y notas privadas del turno', () => {
   });
   it('muestra resultado, devolución y notas a los docentes', () => {
     render(<ReviewAgenda data={data} mode="teacher" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ver detalle$/ }));
     expect(within(screen.getByRole('dialog')).getByText('Aprobado')).toBeInTheDocument();
     expect(screen.getByText('Buen trabajo')).toBeInTheDocument();
     expect(screen.getByText('Observación interna confidencial')).toBeInTheDocument();
@@ -283,14 +283,14 @@ describe('resultado y notas privadas del turno', () => {
   it('pagina las reservas en grupos de diez y permite volver', () => {
     const agenda = { ...data, bookings: Array.from({ length: 12 }, (_, index) => ({ ...data.bookings[0], id: 'booking-' + index })) };
     render(<ReviewAgenda data={agenda} mode="teacher" />);
-    expect(screen.getAllByRole('button', { name: 'Ver detalle', exact: true })).toHaveLength(10);
+    expect(screen.getAllByRole('button', { name: /^Ver detalle$/ })).toHaveLength(10);
     expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
-    expect(screen.getAllByRole('button', { name: 'Ver detalle', exact: true })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /^Ver detalle$/ })).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
     expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
-    expect(screen.getAllByRole('button', { name: 'Ver detalle', exact: true })).toHaveLength(10);
+    expect(screen.getAllByRole('button', { name: /^Ver detalle$/ })).toHaveLength(10);
   });
 
 });
