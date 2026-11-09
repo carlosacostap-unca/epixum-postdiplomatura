@@ -27,11 +27,13 @@ describe('resultado y notas privadas del turno', () => {
   ])('habilita la evaluación docente desde el inicio, a las %s: %s', (now, enabled) => {
     const agenda = { ...data, now: Date.parse(now), bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })) } as typeof data;
     render(<ReviewAgenda data={agenda} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
     const summary = screen.queryByText('Evaluar turno: resultado, devolución y notas privadas');
     if (enabled) {
       expect(summary).toBeInTheDocument();
       expect(screen.queryByText('La evaluación se habilita al comenzar el turno.')).not.toBeInTheDocument();
-      expect(screen.getByText('Pendientes de evaluación').parentElement).toHaveTextContent('1');
+      expect(screen.queryByText('Pendientes de evaluación')).not.toBeInTheDocument();
     } else {
       expect(summary).not.toBeInTheDocument();
       expect(screen.getByText('La evaluación se habilita al comenzar el turno.')).toBeInTheDocument();
@@ -41,13 +43,16 @@ describe('resultado y notas privadas del turno', () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date('2026-01-01T11:59:45Z'));
     const agenda = { ...data, now: Date.now(), bookings: data.bookings.map(booking => ({ ...booking, status: 'reserved' })) } as typeof data;
     render(<ReviewAgenda data={agenda} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     expect(screen.queryByText('Evaluar turno: resultado, devolución y notas privadas')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
     act(() => vi.advanceTimersByTime(15000));
     expect(screen.getByText('Evaluar turno: resultado, devolución y notas privadas')).toBeInTheDocument();
   });
   it.each(['passed', 'not_passed', 'cancelled'])('no ofrece evaluar reservas %s', status => {
     const agenda = { ...data, bookings: data.bookings.map(booking => ({ ...booking, status })) } as typeof data;
     render(<ReviewAgenda data={agenda} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     expect(screen.queryByText('Evaluar turno: resultado, devolución y notas privadas')).not.toBeInTheDocument();
   });
   it('no ofrece evaluar al alumno durante su turno', () => {
@@ -67,6 +72,7 @@ describe('resultado y notas privadas del turno', () => {
   }
   it('abre el alumno y sus contactos desde la tarjeta del turno reservado y permite cerrar', () => {
     render(<ReviewAgenda data={contactAgenda()} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     const button = screen.getByRole('button', { name: 'Ver detalle del turno de Alumno' });
     expect(button).toHaveTextContent('Alumno');
     fireEvent.click(button);
@@ -84,6 +90,8 @@ describe('resultado y notas privadas del turno', () => {
   });
   it('permite abrir el mismo detalle desde la lista de reservas y avisa si faltan contactos', () => {
     render(<ReviewAgenda data={contactAgenda({ email: '', phone: '' })} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle y contacto' }));
     const dialog = screen.getByRole('dialog', { name: 'Detalle del turno reservado' });
     expect(within(dialog).getByText('Email no registrado')).toBeInTheDocument();
@@ -92,6 +100,7 @@ describe('resultado y notas privadas del turno', () => {
   });
   it('muestra un teléfono incompleto sin crear un enlace de WhatsApp erróneo', () => {
     render(<ReviewAgenda data={contactAgenda({ email: '', phone: '4000000' })} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle del turno de Alumno' }));
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText('4000000')).toBeInTheDocument();
@@ -107,13 +116,15 @@ describe('resultado y notas privadas del turno', () => {
   it('cierra el detalle al dejar de estar vigente la reserva y no ofrece contacto en turnos libres', () => {
     const agenda = contactAgenda();
     const { rerender } = render(<ReviewAgenda data={agenda} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle del turno de Alumno' }));
     rerender(<ReviewAgenda data={{ ...agenda, bookings: agenda.bookings.map(booking => ({ ...booking, status: 'cancelled' })) }} mode="teacher" />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Ver detalle/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Ver detalle del turno/ })).not.toBeInTheDocument();
   });
   it('abre la edición completa en un diálogo con los datos de la franja y permite cerrar', () => {
     render(<ReviewAgenda data={editableAgenda(false)} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
     const dialog = screen.getByRole('dialog', { name: 'Editar franja' });
     expect(within(dialog).getByLabelText('Fecha')).toHaveValue('2026-10-29');
@@ -123,6 +134,7 @@ describe('resultado y notas privadas del turno', () => {
   });
   it('permite cambiar jueves por viernes con reservas, únicamente después de previsualizar y confirmar', async () => {
     render(<ReviewAgenda data={editableAgenda(true)} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     expect(screen.getByRole('button', { name: 'Editar' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Retirar' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
@@ -141,6 +153,7 @@ describe('resultado y notas privadas del turno', () => {
   it('descarta la confirmación anterior si se cambia la fecha y muestra errores sin cerrar', async () => {
     mocks.reschedule.mockResolvedValue({ success: false, error: 'Este docente ya tiene una franja superpuesta.' });
     render(<ReviewAgenda data={editableAgenda(true)} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
     const dialog = screen.getByRole('dialog', { name: 'Editar franja' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Previsualizar cambio de fecha' }));
@@ -156,6 +169,7 @@ describe('resultado y notas privadas del turno', () => {
   });
   it('abre también la creación en un diálogo sin reutilizar los datos editados', () => {
     render(<ReviewAgenda data={editableAgenda(false)} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cerrar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Agregar franja' }));
@@ -164,6 +178,7 @@ describe('resultado y notas privadas del turno', () => {
   it('actualiza los datos del editor y descarta una previsualización al cambiar la revisión del servidor', () => {
     const agenda = editableAgenda(true);
     const { rerender } = render(<ReviewAgenda data={agenda} mode="teacher" />);
+    document.querySelectorAll("details").forEach(details => { details.open = true; });
     fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
     const dialog = screen.getByRole('dialog', { name: 'Editar franja' });
     fireEvent.change(within(dialog).getByLabelText('Nueva fecha'), { target: { value: '2026-10-30' } });
@@ -174,7 +189,8 @@ describe('resultado y notas privadas del turno', () => {
   });
   it('muestra resultado, devolución y notas a los docentes', () => {
     render(<ReviewAgenda data={data} mode="teacher" />);
-    expect(screen.getByText('Aprobado')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle', exact: true }));
+    expect(within(screen.getByRole('dialog')).getByText('Aprobado')).toBeInTheDocument();
     expect(screen.getByText('Buen trabajo')).toBeInTheDocument();
     expect(screen.getByText('Observación interna confidencial')).toBeInTheDocument();
   });
@@ -245,4 +261,36 @@ describe('resultado y notas privadas del turno', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Las indicaciones cambiaron.');
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
+  it('simplifica la agenda y combina filtros de docente y fecha con franjas contraídas', () => {
+    const agenda = { ...editableAgenda(false), review: { ...data.review, instructions: 'Preparar proyecto' }, blocks: [futureBlock, { ...futureBlock, id: 'past', teacher: 'other', startsAt: '2025-01-01T12:00:00Z', endsAt: '2025-01-01T13:00:00Z' }], teachers: [{ id: futureBlock.teacher, name: 'Docente' }, { id: 'other', name: 'Otra docente' }] } as typeof data;
+    const { container } = render(<ReviewAgenda data={agenda} mode="teacher" />);
+    expect(screen.getByRole('link', { name: 'Editar revisión' })).toHaveAttribute('href', '/docentes/cursos/course/revisiones/review/editar');
+    expect(screen.queryByText('Turnos libres futuros')).not.toBeInTheDocument();
+    expect(screen.queryByText('Estado de la revisión')).not.toBeInTheDocument();
+    expect(screen.getByText('Descripción').closest('details')).not.toHaveAttribute('open');
+    const summaries = () => [...container.querySelectorAll('summary')].filter(node => node.textContent?.includes('turnos'));
+    expect(summaries()).toHaveLength(2);
+    expect(summaries()[0].closest('details')).not.toHaveAttribute('open');
+    fireEvent.change(screen.getByLabelText('Filtrar por franja'), { target: { value: 'past' } });
+    expect(summaries()).toHaveLength(1);
+    expect(summaries()[0]).toHaveTextContent('01/01/2025');
+    fireEvent.change(screen.getByLabelText('Filtrar por docente'), { target: { value: futureBlock.teacher } });
+    expect(screen.getByText('No hay franjas para los filtros seleccionados.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Filtrar por franja'), { target: { value: 'upcoming' } });
+    expect(summaries()).toHaveLength(1);
+    expect(summaries()[0]).toHaveTextContent('29/10/2026');
+  });
+  it('pagina las reservas en grupos de diez y permite volver', () => {
+    const agenda = { ...data, bookings: Array.from({ length: 12 }, (_, index) => ({ ...data.bookings[0], id: 'booking-' + index })) };
+    render(<ReviewAgenda data={agenda} mode="teacher" />);
+    expect(screen.getAllByRole('button', { name: 'Ver detalle', exact: true })).toHaveLength(10);
+    expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(screen.getAllByRole('button', { name: 'Ver detalle', exact: true })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
+    expect(screen.getAllByRole('button', { name: 'Ver detalle', exact: true })).toHaveLength(10);
+  });
+
 });

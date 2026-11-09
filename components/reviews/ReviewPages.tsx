@@ -34,3 +34,13 @@ export async function ReviewDetailPage({ courseId, reviewId, mode }: Props & { r
   const Context = mode === 'teacher' ? TeacherCourseContext : StudentCourseContext;
   return <div className="page-container space-y-8"><Context course={data.course} current="revisiones" title={`Revisión ${data.review.number} · ${data.review.title}`} description={mode === 'teacher' ? 'Gestioná los horarios de cualquier docente del curso y registrá los resultados.' : 'Una reserva pendiente por revisión. Podés volver a intentarlo hasta aprobar.'} /><ReviewAgenda data={data} mode={mode} /></div>;
 }
+
+export async function ReviewEditPage({ courseId, reviewId }: { courseId: string; reviewId: string }) {
+  let data;
+  try { data = await getReviewAgenda(courseId, reviewId, 'teacher'); } catch (error) { return <AccessMessage error={error} />; }
+  return <div className="page-container space-y-8">
+    <TeacherCourseContext course={data.course} current="revisiones" title="Editar revisión" description={data.review.title} />
+    <Link className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--color-primary)]" href={'/docentes/cursos/' + courseId + '/revisiones/' + reviewId}>← Volver a la revisión</Link>
+    <section className="rounded-2xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-6"><ReviewEditor key={data.review.revision} courseId={courseId} review={data.review} /></section>
+  </div>;
+}
