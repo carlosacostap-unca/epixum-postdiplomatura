@@ -6,6 +6,8 @@ import type { CourseGameConfig } from './catalog';
 export interface GamePlace { id: string; name: string; title: string; href: string; date: string }
 export interface GameMission { id: string; title: string; href: string; state: StudentDeliveryState | 'available'; dueDate: string }
 export interface CourseGameView {
+  canPresent?:boolean;
+  enabledClassIds?:readonly string[];
   courseId: string;
   courseTitle: string;
   title: string;
@@ -37,5 +39,5 @@ export function buildCourseGame(input: {
       }
       return { id: item.id, title: item.title, href: `${base}/tps/${encodeURIComponent(item.id)}`, state, dueDate: item.dueDate || '' };
     });
-  return { courseId, courseTitle, title: config.title, introduction: config.introduction, places, missions, completed: missions.filter(item => item.state === 'approved').length };
+  return { enabledClassIds:config.enabledClassIds, courseId, courseTitle, title: config.title, introduction: config.introduction, places, missions, completed: missions.filter(item => item.state === 'approved').length };
 }

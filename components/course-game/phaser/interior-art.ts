@@ -29,8 +29,7 @@ export function drawInterior(r:Rect,count:number,openRooms?:boolean[]) {
   }
   // Reception, plants and a luminous exit at the end of the central passage.
   r(0x8baaa5,228,50,24,105); r(0xd7d6b7,232,50,16,105);
-  r(0x8baaa5,208,102,24,20);r(0xd7d6b7,212,106,20,12);
-  r(0x426f56,208,102,8,20);r(0xf7d88e,212,111,2,2);
+  r(0x72523d,201,167,23,15);r(0xcba76c,199,165,27,6);r(0xf5e5b8,202,166,21,2);
   r(0x355969,225,44,30,13);r(0xa9cf9c,229,47,22,8);
   for(const x of [15,458]) { r(0x947151,x,177,8,9); r(0x4b8056,x-2,170,12,9); r(0x9ab66b,x+2,167,5,8); }
   r(0x355969,225,299,30,13); r(0xa9cf9c,229,301,22,8); r(0x47704d,237,302,6,6);

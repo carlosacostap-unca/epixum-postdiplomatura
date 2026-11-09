@@ -29,3 +29,17 @@ it.skipIf(process.env.COURSE_GAME_ACCESS_CHECK !== '1')('abre el curso y su bien
     }
   } finally {student.authStore.clear();service.authStore.clear();}
 },30000);
+
+it.skipIf(process.env.COURSE_GAME_ACCESS_CHECK !== '1')('abre el acceso real del docente y reserva el escritorio a Carlos',async()=>{
+ dotenv.config({path:'.env.local',quiet:true});
+ const admin=new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL);admin.autoCancellation(false);
+ await admin.collection('_superusers').authWithPassword(process.env.POCKETBASE_SUPERUSER_EMAIL||process.env.POCKETBASE_ADMIN_EMAIL!,process.env.POCKETBASE_SUPERUSER_PASSWORD||process.env.POCKETBASE_ADMIN_PASSWORD!);
+ const teacher=await admin.collection('users').impersonate('jz8xc7htg1ra6wr',60);teacher.autoCancellation(false);
+ try {
+  const game=await readCourseGame(teacher,'5wdbs1o1p22vszm');
+  expect(game?.canPresent).toBe(true);
+  expect(game?.enabledClassIds).toEqual(['cf8xxh363j2pglb']);
+  expect(game?.places).toHaveLength(8);
+  await expect(readGameWelcome(teacher,admin,'5wdbs1o1p22vszm')).resolves.toHaveProperty('character');
+ }finally {teacher.authStore.clear();admin.authStore.clear();}
+},30000);

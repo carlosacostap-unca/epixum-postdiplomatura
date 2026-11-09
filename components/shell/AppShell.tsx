@@ -63,7 +63,7 @@ export default function AppShell({ activeWorkspace, children, pocketbaseUrl, use
   }
 
   if (workspace === "estudiante") {
-    if (/^\/estudiantes\/cursos\/[^/]+\/aventura\/?$/.test(pathname)) return <>{children}</>;
+    if (/^\/(?:estudiantes|docentes)\/cursos\/[^/]+\/aventura\/?$/.test(pathname)) return <>{children}</>;
     return <StudentShell user={user} workspaceAccess={workspaceAccess} pocketbaseUrl={pocketbaseUrl}>{children}</StudentShell>;
   }
 

@@ -11,11 +11,11 @@ import { characterPixels, seatedCharacterPixels, movementFacing, type CharacterF
 import { drawNeighborhood, drawTree } from './neighborhood-art';
 import { drawNodoPalm } from './nodo-art';
 import { drawInterior } from './interior-art';
-import { INTERIOR_SPAWN, canStandInside, enteredRoom, atExit, exitSide, type NodoAccess, roomDoor } from '@/lib/course-game/interior';
+import { INTERIOR_SPAWN, INTRODUCTION_DOOR, canStandInside, enteredRoom, atExit, exitSide, type NodoAccess, roomDoor } from '@/lib/course-game/interior';
 import * as Phaser from 'phaser';
 import { VILLAGE_HEIGHT, VILLAGE_WIDTH } from '@/lib/course-game/village-layout';
 
-export interface VillageState { sofia?: boolean; selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
+export interface VillageState { canPresent?:boolean; onPresent?:()=>void; sofia?: boolean; selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
 export interface VillageEngine { update: (state: VillageState) => void; destroy: () => void }
 
 
@@ -175,8 +175,8 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
           const room = state.interior && !state.classroom ? enteredRoom(this.position,state.count,state.openRooms) : null;
           if ((state.classroom && atClassExit(this.position)) || (state.interior && !state.classroom && atExit(this.position))) {
             const side=exitSide(this.position); this.position = { ...INTERIOR_SPAWN }; Object.assign(input,{up:false,down:false,left:false,right:false}); state.onExit?.(side);
-          } else if (room !== null) {
-            const door = room === -1 ? {x:240} : roomDoor(room); this.position = {x:door.x,y:room<4?166:198};
+          } else if (room !== null && (room !== -1 || (destination && Math.hypot(destination.x-INTRODUCTION_DOOR.x,destination.y-INTRODUCTION_DOOR.y)<4))) {
+            const door = room === -1 ? {x:240} : roomDoor(room); this.position = room===-1 ? {x:220,y:190} : {x:door.x,y:room<4?166:198};
             Object.assign(input,{up:false,down:false,left:false,right:false}); state.onRoom?.(room);
           } else if (!state.interior && insideNodo(this.position)) {
             const side:NodoAccess=nodoAccessSide(this.position);
@@ -188,8 +188,8 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
         }
       }
       if ((!state.interior || state.classroom) && !state.movementLocked && !manual && !this.seated) {
-        const bench=reachedBench(this.position,destination,Boolean(state.classroom));
-        if(bench) { this.seated=bench; this.stride=0; this.route=[]; this.destinationMarker.clear(); state.onSeated?.(bench.id); this.drawCharacter(); if(state.classroom && destination?.notebook) state.onNotebook?.(); }
+        const bench=reachedBench(this.position,destination,Boolean(state.classroom),Boolean(state.canPresent));
+        if(bench) { this.seated=bench; this.stride=0; this.route=[]; this.destinationMarker.clear(); state.onSeated?.(bench.id); this.drawCharacter(); if(state.classroom && destination?.notebook) {if(bench.id==='teacher-desk' && state.canPresent) state.onPresent?.();else state.onNotebook?.();} }
       }
       if (!moved && this.stride !== 0) {
         this.stride = 0;

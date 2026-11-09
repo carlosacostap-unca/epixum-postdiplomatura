@@ -19,3 +19,12 @@ it('mantiene los rasgos y dobla las piernas al sentarse',()=>{
   expect(seated.filter(p=>p.y<25)).toEqual(standing.filter(p=>p.y<25));
   expect(seated.filter(p=>p.y>=25)).not.toEqual(standing.filter(p=>p.y>=25));
 });
+
+import { TEACHER_SEAT,CLASSROOM_SPAWN,canStandInClass } from './classroom';
+it('reserva el asiento docente y permite llegar por el pasillo',()=>{
+ const destination={...TEACHER_SEAT.approach,benchId:TEACHER_SEAT.id,notebook:true};
+ expect(reachedBench(TEACHER_SEAT.approach,destination,true,false)).toBeNull();
+ expect(reachedBench(TEACHER_SEAT.approach,destination,true,true)?.id).toBe('teacher-desk');
+ expect(canStandInClass(TEACHER_SEAT.approach)).toBe(true);
+ expect(findWalkPath(CLASSROOM_SPAWN,TEACHER_SEAT.approach,canStandInClass).at(-1)).toEqual(TEACHER_SEAT.approach);
+});

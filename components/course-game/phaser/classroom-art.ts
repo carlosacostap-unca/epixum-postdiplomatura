@@ -17,6 +17,7 @@ export function drawClassroom(r:Rect) {
   // Teacher desk and books.
   r(0x705e49,71,115,74,17); r(0xc09862,68,110,80,9);
   r(0x537a87,77,107,17,4); r(0xc2cdae,99,105,18,6); r(0xefdfb3,101,106,14,3);
+  drawChair(r,121,125);
   drawLaptop(r,121,101,.8);
   for(const {x,y,w,h} of DESKS) {
     r(0x7c725b,x+3,y+h+7,w,6,.3);

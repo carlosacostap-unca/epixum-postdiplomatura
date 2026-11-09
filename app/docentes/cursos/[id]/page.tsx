@@ -1,3 +1,4 @@
+import { getCourseGame } from '@/lib/course-game/catalog';
 import { PublicationBadge } from '@/components/course/PublicationBadge';
 import Link from "next/link";
 import FormattedDate from "@/components/FormattedDate";
@@ -60,6 +61,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
         description={plainText(course.description) || "Gestioná el contenido, la actividad y el acceso del curso."}
       />
 
+      {getCourseGame(course)?.presenterId===user.id && <Link href={`/docentes/cursos/${course.id}/aventura`} className={primaryLink}>Entrar al juego como docente →</Link>}
       <section aria-label="Resumen del curso" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Entregas por revisar" value={pendingDeliveries.length} icon="rate_review" tone={pendingDeliveries.length ? "warning" : "neutral"} href={pendingDeliveries.length ? "#course-pending-title" : weekly ? "#semanas" : "#trabajos"} />
         <StatCard label="Consultas pendientes" value={pendingInquiries.length} icon="forum" tone={pendingInquiries.length ? "warning" : "neutral"} href={`/docentes/cursos/${course.id}/consultas?estado=Pendiente`} />

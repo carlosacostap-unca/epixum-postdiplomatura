@@ -4,13 +4,13 @@ import { readCourseGame } from './service';
 
 vi.mock('@/lib/pocketbase-server', () => ({ createServerClient: vi.fn() }));
 const courseId = '5wdbs1o1p22vszm';
-function fixture({ valid = true, enrolled = true, teacher = false, enabled = true, fail = '', draft = false, guest = false } = {}) {
+function fixture({ valid = true, enrolled = true, teacher = false, enabled = true, fail = '', draft = false, guest = false, userId = 'student' } = {}) {
   const calls: { collection: string; filter?: string; fields?: string }[] = [];
   const pb = {
-    authStore: { isValid: valid, record: { id: 'student', role: 'docente' } },
+    authStore: { isValid: valid, record: { id: userId, role: 'docente' } },
     filter: (expression: string, values: unknown) => JSON.stringify({ expression, values }),
     collection: (name: string) => ({
-      getOne: async () => ({ id: enabled ? courseId : 'another', status: draft ? 'borrador' : 'en curso', guestStudents:guest?['student']:[], organizationMode: 'tradicional', teachers: teacher ? ['student'] : [], title: 'Curso' }),
+      getOne: async () => ({ id: enabled ? courseId : 'another', status: draft ? 'borrador' : 'en curso', guestStudents:guest?['student']:[], organizationMode: 'tradicional', teachers: teacher ? [userId] : [], title: 'Curso' }),
       getFirstListItem: async (filter: string) => { calls.push({ collection: name, filter }); if (fail === name) throw new Error('Network'); if (!enrolled) throw { status: 404 }; return { id: 'enrollment' }; },
       getFullList: async (options: { filter: string; fields: string }) => { calls.push({ collection: name, ...options }); if (fail === name) throw new Error('Network'); return []; },
     }),
@@ -37,4 +37,10 @@ describe('acceso al mapa', () => {
     const f = fixture({ fail });
     await expect(readCourseGame(f.pb, courseId)).rejects.toThrow('Network');
   });
+});
+
+it('Carlos puede entrar como docente sin matrícula de alumno',async()=>{
+ const f=fixture({teacher:true,enrolled:false,draft:true,userId:'jz8xc7htg1ra6wr'});
+ expect(await readCourseGame(f.pb,courseId)).toMatchObject({canPresent:true});
+ expect(f.calls.some(c=>c.collection==='deliveries')).toBe(false);
 });

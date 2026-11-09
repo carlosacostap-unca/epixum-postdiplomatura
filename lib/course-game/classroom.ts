@@ -20,3 +20,5 @@ export const CLASSROOM_SEATS = DESKS.flatMap((desk,row)=>[15,58].map((dx,column)
   seat:{x:desk.x+dx+9,y:desk.y+37},
   notebook:{x:desk.x+dx-3,y:desk.y-1,w:24,h:17},
 })));
+
+export const TEACHER_SEAT={id:'teacher-desk',x:121,y:125,w:18,h:16,approach:{x:159,y:136},seat:{x:130,y:141},notebook:{x:121,y:101,w:20,h:14}};

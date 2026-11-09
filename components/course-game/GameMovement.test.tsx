@@ -189,3 +189,32 @@ it('limita la misión de Sofía al Aula 1 del curso piloto y la abre desde la no
  fireEvent.click(screen.getByText('Pedir una pista al perro'));
  expect(screen.getByRole('log')).toHaveTextContent('qué no sabe la IA');
 });
+
+it('convierte Aula 0 en recepción sin entrar a otra aula',()=>{
+ render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
+ act(()=>state.current?.onEnter?.());
+ expect(screen.getByRole('button',{name:'Consultar en recepción'})).toBeVisible();
+ act(()=>state.current?.onRoom?.(-1));
+ expect(screen.getByRole('dialog',{name:'Recepción'})).toBeVisible();
+ expect(state.current?.classroom).toBe(false);
+});
+it('solo habilita la clase configurada y ofrece la notebook docente al presentador',async()=>{
+ const present=vi.fn(async()=>({success:true as const,content:{title:'Bienvenidos',description:'Pensamiento crítico',resources:[]}}));
+ const teacherGame={...game,canPresent:true,enabledClassIds:['a'],places:[...game.places,{...game.places[0],id:'b',title:'Clase 2'}]};
+ render(<CourseMissionMap game={teacherGame} character={DEFAULT_CHARACTER} loadPresentation={present}/>);
+ act(()=>state.current?.onEnter?.());
+ expect(screen.getByRole('button',{name:'Entrar al aula 2: Clase 2'})).toBeDisabled();
+ act(()=>state.current?.onRoom?.(1));expect(state.current?.classroom).toBe(false);
+ act(()=>state.current?.onRoom?.(0));
+ fireEvent.click(screen.getByRole('button',{name:'Notebook docente: mostrar bienvenida'}));
+ expect(state.current?.destination?.()?.benchId).toBe('teacher-desk');
+ expect(present).not.toHaveBeenCalled();
+ act(()=>state.current?.onPresent?.());
+ expect(await screen.findByRole('heading',{name:'Bienvenidos'})).toBeVisible();expect(present).toHaveBeenCalledWith('a');
+});
+it('no ofrece el escritorio docente al alumno',()=>{
+ render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
+ act(()=>state.current?.onEnter?.());act(()=>state.current?.onRoom?.(0));
+ expect(screen.queryByRole('button',{name:'Notebook docente: mostrar bienvenida'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Sentarme en el escritorio docente'})).not.toBeInTheDocument();
+});
