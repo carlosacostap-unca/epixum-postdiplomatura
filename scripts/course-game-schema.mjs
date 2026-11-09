@@ -19,6 +19,7 @@ export async function applyCourseGameSchema(pb) {
   const onboarding = await ensure(pb, 'course_game_onboarding', [
     { name: 'course', type: 'relation', required: true, collectionId: courses.id, maxSelect: 1, cascadeDelete: true },
     { name: 'student', type: 'relation', required: true, collectionId: users.id, maxSelect: 1, cascadeDelete: true },
+    { name:'sofiaProgress', type:'json', required:false, maxSize:16384 },
     { name: 'character', type: 'json', required: true, maxSize: 4096 },
     { name: 'contactEmail', type: 'email', required: true },
     { name: 'profileConfirmedAt', type: 'date', required: true },

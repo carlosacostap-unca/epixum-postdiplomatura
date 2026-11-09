@@ -1,3 +1,5 @@
+import { readSofiaProgress } from '@/lib/course-game/sofia-service';
+import { saveSofiaAction } from '@/lib/course-game/sofia-actions';
 import { loadBoardAction } from '@/lib/course-game/board-actions';
 import { syncGameScheduleAction } from '@/lib/course-game/schedule-actions';
 import { notFound, redirect } from 'next/navigation';
@@ -17,5 +19,6 @@ export default async function CourseAdventurePage({ params }: { params: Promise<
   const game = await readCourseGame(pb, id);
   if (!game) notFound();
   const welcome = await readGameWelcome(pb, await createServiceClient(), id);
-  return <CourseGameExperience syncSchedule={syncGameScheduleAction.bind(null,id)} loadBoard={loadBoardAction.bind(null, id)} game={game} welcome={welcome} actions={{ update: updateGameIdentityAction.bind(null, id), save: saveGameIdentityAction.bind(null, id), advance: advanceGameTourAction.bind(null, id) }} />;
+  const sofia=await readSofiaProgress(pb,await createServiceClient(),id);
+  return <CourseGameExperience initialSofia={sofia} saveSofia={saveSofiaAction.bind(null,id)} syncSchedule={syncGameScheduleAction.bind(null,id)} loadBoard={loadBoardAction.bind(null, id)} game={game} welcome={welcome} actions={{ update: updateGameIdentityAction.bind(null, id), save: saveGameIdentityAction.bind(null, id), advance: advanceGameTourAction.bind(null, id) }} />;
 }

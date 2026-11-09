@@ -2,7 +2,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { SOFIA_ACTIONS, SOFIA_QUESTIONS, sofiaFeedback, type SofiaProgress } from '@/lib/course-game/sofia';
 import styles from './sofia-mission.module.css';
-export function SofiaMission({progress:p,onChange,onTalk,onHint}:{progress:SofiaProgress;onChange:Dispatch<SetStateAction<SofiaProgress>>;onTalk:()=>void;onHint:()=>void}) {
+export function SofiaMission({progress:p,onChange,onTalk,onHint,persistent=false}:{persistent?:boolean;progress:SofiaProgress;onChange:Dispatch<SetStateAction<SofiaProgress>>;onTalk:()=>void;onHint:()=>void}) {
  const update=(patch:Partial<SofiaProgress>)=>onChange(previous=>({...previous,...patch,reviewed:false}));
  const feedback=sofiaFeedback(p);
  return <section className={styles.mission} aria-label="Misión Sofía y su examen">
@@ -18,7 +18,7 @@ export function SofiaMission({progress:p,onChange,onTalk,onHint}:{progress:Sofia
  <label className={styles.reflection}>4. Tu recomendación para Sofía<textarea rows={4} maxLength={1500} value={p.reflection} onChange={e=>update({reflection:e.target.value})} placeholder="Qué conservarías, qué cambiarías y qué comprobarías antes de decidir…"/></label>
  <button type="submit">Revisar mi propuesta</button>
  </form>
- {p.reviewed && <div role="status" className={styles.feedback}><h3>{feedback.length?'Una oportunidad para revisar':'Recorrido de práctica completado'}</h3>{feedback.length?<ul>{feedback.map(note=><li key={note}>{note}</li>)}</ul>:<><p>Identificaste la diferencia entre tiempo disponible y estimado, y propusiste revisar el plan. Tu reflexión queda en Mi diario durante esta sesión.</p><p>Para pensar: ¿qué dato nuevo te haría cambiar tu recomendación?</p></>}<p>Esta devolución comprueba los pasos de la actividad; no califica automáticamente la calidad de tu reflexión.</p></div>}
- <small>Adaptación didáctica del caso del curso. Progreso de esta sesión: se reinicia al recargar. No registra asistencia, entregas ni aprobación.</small>
+ {p.reviewed && <div role="status" className={styles.feedback}><h3>{feedback.length?'Una oportunidad para revisar':'Recorrido de práctica completado'}</h3>{feedback.length?<ul>{feedback.map(note=><li key={note}>{note}</li>)}</ul>:<><p>Identificaste la diferencia entre tiempo disponible y estimado, y propusiste revisar el plan. Tu reflexión queda en Mi diario.</p><p>Para pensar: ¿qué dato nuevo te haría cambiar tu recomendación?</p></>}<p>Esta devolución comprueba los pasos de la actividad; no califica automáticamente la calidad de tu reflexión.</p></div>}
+ <small>Adaptación didáctica del caso del curso. {persistent ? 'Guardado automático: esperá la confirmación antes de salir.' : 'Progreso de esta sesión: se reinicia al recargar.'} No registra asistencia, entregas ni aprobación.</small>
  </section>;
 }

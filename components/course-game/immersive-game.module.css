@@ -178,3 +178,5 @@
 .standUp { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:8; padding:12px 20px; border:2px solid #8a774c; border-radius:6px; background:#fff0c4; color:#35462e; font-weight:bold; cursor:pointer; }
 
 .sofiaNpc {position:absolute;padding:0;border:0;background:transparent;cursor:pointer;z-index:2;color:#fff7df;} .sofiaNpc svg {display:block;width:100%;height:auto;image-rendering:pixelated;} .sofiaNpc span {display:block;position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;background:#4e3c62;padding:3px 7px;border:2px solid #c9b68d;border-radius:4px;font-size:12px;} .sofiaNpc:focus-visible {outline:3px solid #e7bb55;}
+
+.sofiaSave {position:fixed;left:16px;bottom:72px;z-index:30;background:#fff5d9;color:#315247;padding:8px 12px;border:1px solid #8f9475;border-radius:5px;max-width:300px;font-size:13px;}
