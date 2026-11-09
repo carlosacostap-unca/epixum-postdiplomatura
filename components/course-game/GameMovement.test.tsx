@@ -174,3 +174,18 @@ it('camina a las sillas y abre la notebook de la clase solo al llegar',async()=>
   fireEvent.click(screen.getByRole('button',{name:'Levantarse'}));
   expect(state.current?.destination?.()).toEqual({x:target!.x,y:target!.y});
 });
+
+it('limita la misión de Sofía al Aula 1 del curso piloto y la abre desde la notebook',()=>{
+ const pilot={...game,courseId:'5wdbs1o1p22vszm',places:[{...game.places[0],title:'Clase 1'}]};
+ render(<CourseMissionMap game={pilot} character={DEFAULT_CHARACTER}/>);
+ expect(screen.queryByRole('button',{name:'Hablar con Sofía sobre su examen'})).not.toBeInTheDocument();
+ act(()=>state.current?.onEnter?.());act(()=>state.current?.onRoom?.(0));
+ fireEvent.click(screen.getByRole('button',{name:'Hablar con Sofía sobre su examen'}));
+ expect(screen.getByRole('dialog',{name:'Sofía'})).toBeVisible();
+ expect(screen.getByRole('log')).toHaveTextContent('seis días');
+ fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
+ act(()=>state.current?.onNotebook?.());
+ expect(screen.getByRole('region',{name:'Misión Sofía y su examen'})).toBeVisible();
+ fireEvent.click(screen.getByText('Pedir una pista al perro'));
+ expect(screen.getByRole('log')).toHaveTextContent('qué no sabe la IA');
+});

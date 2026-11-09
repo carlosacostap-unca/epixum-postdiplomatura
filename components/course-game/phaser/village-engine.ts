@@ -15,7 +15,7 @@ import { INTERIOR_SPAWN, canStandInside, enteredRoom, atExit, exitSide, type Nod
 import * as Phaser from 'phaser';
 import { VILLAGE_HEIGHT, VILLAGE_WIDTH } from '@/lib/course-game/village-layout';
 
-export interface VillageState { selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
+export interface VillageState { sofia?: boolean; selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
 export interface VillageEngine { update: (state: VillageState) => void; destroy: () => void }
 
 
@@ -58,7 +58,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.destinationMarker = this.add.graphics();
       this.actor = this.add.graphics();
       this.companionArt = this.add.graphics();
-      this.companion = createRobotCompanion(this.position, state.classroom ? canStandInClass : state.interior ? p=>canStandInside(p,state.count,state.openRooms) : canStand);
+      this.companion = createRobotCompanion(this.position, state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-400,p.y-126)>14) : state.interior ? p=>canStandInside(p,state.count,state.openRooms) : canStand);
       this.drawWorld();
       if (!state.interior && !state.classroom) {
         for (const [x,y] of TREES) {
@@ -141,7 +141,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
     update(_time: number, delta: number) {
       const input = state.input?.();
       const destination = state.destination?.() ?? null;
-      const allowed = state.classroom ? canStandInClass : state.interior ? (p: Position) => canStandInside(p, state.count, state.openRooms) : canStand;
+      const allowed = state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-400,p.y-126)>14) : state.interior ? (p: Position) => canStandInside(p, state.count, state.openRooms) : canStand;
       const playerAllowed = (p:Position) => allowed(p) && clearOfCompanion(p,this.companion.position,1);
       this.routeRetry += Math.min(delta,50);
       const manual = input && (input.up || input.down || input.left || input.right);

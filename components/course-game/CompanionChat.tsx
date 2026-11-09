@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GamePlace } from '@/lib/course-game/model';
 import { argentinaDateTime } from '@/lib/course-game/schedule';
 import { robotDogPixels } from '@/lib/course-game/robot-dog';
@@ -33,8 +33,8 @@ export function dialoguePages(text:string) {
   return pages;
 }
 
-export function CompanionChat({courseTitle,places,fresh,inside,inClass,petName='Perro robot',onClose=()=>{}}:{courseTitle:string;places:GamePlace[];fresh:boolean;inside:boolean;inClass:boolean;petName?:string;onClose?:()=>void}) {
-  const [answer,setAnswer]=useState('¡Hola! ¿Necesitás una pata? Estoy acá para acompañarte. Podemos hablar sobre cómo jugar, el curso o los horarios de las aulas.');
+export function CompanionChat({courseTitle,places,fresh,inside,inClass,petName='Perro robot',onClose=()=>{},conversation}:{courseTitle:string;places:GamePlace[];fresh:boolean;inside:boolean;inClass:boolean;petName?:string;onClose?:()=>void;conversation?:{name:string;intro:string;questions:string[];answer:(question:string)=>string;portrait?:ReactNode}}) {
+  const [answer,setAnswer]=useState(conversation?.intro ?? '¡Hola! ¿Necesitás una pata? Estoy acá para acompañarte. Podemos hablar sobre cómo jugar, el curso o los horarios de las aulas.');
   const [page,setPage]=useState(0);
   const [question,setQuestion]=useState('');
   const [writing,setWriting]=useState(false);
@@ -72,26 +72,26 @@ export function CompanionChat({courseTitle,places,fresh,inside,inClass,petName='
   },[]);
   const ask=(text:string)=>{
     const value=text.trim().slice(0,500);if(!value)return;
-    setAnswer(companionAnswer(value,courseTitle,places,fresh,inside,inClass));setPage(0);setProgress({text:'',count:0});setQuestion('');setWriting(false);
+    setAnswer(conversation ? conversation.answer(value) : companionAnswer(value,courseTitle,places,fresh,inside,inClass));setPage(0);setProgress({text:'',count:0});setQuestion('');setWriting(false);
     setUtterance(value=>value+1);
     dialog.current?.focus();
   };
   const advance=()=>{if(typing)setProgress({text,count:text.length});else if(!last)setPage(p=>p+1);else choices.current?.querySelector('button')?.focus();};
-  return <dialog ref={dialog} tabIndex={-1} aria-label="Tu perro robot" className={styles.npcDialog}
+  return <dialog ref={dialog} tabIndex={-1} aria-label={conversation?.name ?? "Tu perro robot"} className={styles.npcDialog}
     onCancel={e=>{e.preventDefault();onClose();}}
     onClick={e=>{if(!(e.target as HTMLElement).closest('button,input,form'))advance();}}
     onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&e.target===e.currentTarget){e.preventDefault();if(!e.repeat)advance();}}}>
     <div className={styles.npcFrame}>
-      <div className={styles.npcPortrait}><svg viewBox="0 0 32 28" role="img" aria-label="Retrato del perro robot" shapeRendering="crispEdges">{robotDogPixels('right').map((p,i)=><rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} fill={p.color}/>)}</svg><strong style={{overflowWrap:'anywhere'}}>{petName}</strong><span>Tu compañero</span></div>
+      <div className={styles.npcPortrait}>{conversation?.portrait ?? <svg viewBox="0 0 32 28" role="img" aria-label="Retrato del perro robot" shapeRendering="crispEdges">{robotDogPixels('right').map((p,i)=><rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} fill={p.color}/>)}</svg>}<strong style={{overflowWrap:'anywhere'}}>{conversation?.name ?? petName}</strong><span>{conversation?.portrait ? "Compañera de clase" : "Tu compañero"}</span></div>
       <div className={styles.npcSpeech}>
         <button type="button" className={styles.npcClose} aria-label="Cerrar y volver al juego" onClick={onClose}>×</button>
-        <div role="log" aria-live="polite" aria-label="Conversación con tu perro robot" className={`${styles.npcText} ${styles.npcTypewriter}`}>
+        <div role="log" aria-live="polite" aria-label={conversation ? "Conversación con "+conversation.name : "Conversación con tu perro robot"} className={`${styles.npcText} ${styles.npcTypewriter}`}>
           <span className={styles.srOnly}>{text}</span>
           <span aria-hidden="true" className={styles.npcTextMeasure}>{text}</span>
           <span aria-hidden="true" data-testid="dialogue-visible-text">{text.slice(0,count)}</span>
         </div>
         {typing || !last ? <button type="button" className={styles.npcContinue} onClick={advance}>{typing?'Mostrar texto completo':'Continuar ▸'} <small>{page+1}/{pages.length}</small></button> : <>
-          <div ref={choices} className={styles.npcChoices} aria-label="Preguntas sugeridas">{['¿Cómo jugar?','¿De qué trata el curso?','¿Cuándo abren las aulas?','¿Cómo uso la pizarra?','¿Dónde voy ahora?'].map(q=><button type="button" key={q} aria-label={q} onClick={()=>ask(q)}>▸ {q}</button>)}<button type="button" onClick={()=>setWriting(v=>!v)}>▸ Otra pregunta…</button><button type="button" onClick={onClose}>▸ Hasta luego</button></div>
+          <div ref={choices} className={styles.npcChoices} aria-label="Preguntas sugeridas">{(conversation?.questions ?? ['¿Cómo jugar?','¿De qué trata el curso?','¿Cuándo abren las aulas?','¿Cómo uso la pizarra?','¿Dónde voy ahora?']).map(q=><button type="button" key={q} aria-label={q} onClick={()=>ask(q)}>▸ {q}</button>)}{!conversation && <button type="button" onClick={()=>setWriting(v=>!v)}>▸ Otra pregunta…</button>}<button type="button" onClick={onClose}>▸ Hasta luego</button></div>
           {writing&&<form className={styles.npcQuestion} onSubmit={e=>{e.preventDefault();ask(question);}}><label htmlFor="companion-question">Tu pregunta</label><div><input autoFocus id="companion-question" maxLength={500} value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Escribí tu pregunta…"/><button type="submit" disabled={!question.trim()}>Preguntar</button></div></form>}
         </>}
         <span className={styles.npcHint}>{typing?'Clic, tap o Enter para completar':'Clic, tap o Enter para continuar'} · Esc para salir</span>
