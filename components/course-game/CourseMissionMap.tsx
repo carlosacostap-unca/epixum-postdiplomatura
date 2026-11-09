@@ -1,5 +1,5 @@
 'use client';
-import { WelcomeSlide } from './WelcomeSlide';
+import { TeacherComputer } from './TeacherComputer';
 import { RECEPTIONIST,RECEPTION_ANSWERS } from '@/lib/course-game/reception';
 import { useSofiaSave } from './useSofiaSave';
 import type { SaveSofia,SofiaProgress } from '@/lib/course-game/sofia';
@@ -31,7 +31,7 @@ import { useGameSchedule } from './useGameSchedule';
 import { argentinaDateTime, type SyncGameSchedule } from '@/lib/course-game/schedule';
 
 type Panel = 'reception' | 'presentation' | 'sofia' | 'notebook' | 'identity' | 'classroom' | 'menu' | 'encounters' | 'missions' | 'journal' | 'help' | 'companion';
-const panelTitles: Record<Panel, string> = { reception:'Recepción del curso',presentation:'Bienvenida · Clase 1',sofia:'Sofía', notebook:'Actividades de la clase', identity:'Mi personaje y mis datos', companion:'Tu perro robot', classroom: 'Tu aula', menu: 'Menú del aula', encounters: 'Clases en el Nodo', missions: 'Misiones', journal: 'Mi diario', help: 'Cómo jugar' };
+const panelTitles: Record<Panel, string> = { reception:'Recepción del curso',presentation:'Computadora del docente',sofia:'Sofía', notebook:'Actividades de la clase', identity:'Mi personaje y mis datos', companion:'Tu perro robot', classroom: 'Tu aula', menu: 'Menú del aula', encounters: 'Clases en el Nodo', missions: 'Misiones', journal: 'Mi diario', help: 'Cómo jugar' };
 // Extend this list when adding new game sections. Phaser remains independent.
 const menuSections: { panel: Exclude<Panel, 'menu' | 'classroom' | 'identity' | 'notebook' | 'sofia' | 'presentation' | 'reception'>; icon: string; description: string }[] = [
   {panel:'companion',icon:'◈',description:'Tu compañero robot y una pista para continuar'},
@@ -209,7 +209,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
         {sofiaActive && <button type="button" className={styles.sofiaNpc} disabled={Boolean(panel||tutorial)} style={{left:268/mapWidth*100+'%',top:(80-34)/mapHeight*100+'%',width:24/mapWidth*100+'%'}} aria-label="Hablar con Sofía sobre su examen" onClick={()=>{clearWalking();setPanel('sofia');}}><CharacterPortrait character={SOFIA} label="Sofía"/><span>Sofía · !</span></button>}
         {inClass && game.canPresent && <>
           <button type="button" className={styles.benchTouch} style={{left:TEACHER_SEAT.x/mapWidth*100+'%',top:TEACHER_SEAT.y/mapHeight*100+'%',width:TEACHER_SEAT.w/mapWidth*100+'%',height:TEACHER_SEAT.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label="Sentarme en el escritorio docente" onClick={()=>walkToEntrance({...TEACHER_SEAT.approach,benchId:TEACHER_SEAT.id})}/>
-          <button type="button" className={styles.benchTouch} style={{left:TEACHER_SEAT.notebook.x/mapWidth*100+'%',top:TEACHER_SEAT.notebook.y/mapHeight*100+'%',width:TEACHER_SEAT.notebook.w/mapWidth*100+'%',height:TEACHER_SEAT.notebook.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label="Notebook docente: mostrar bienvenida" onClick={()=>walkToEntrance({...TEACHER_SEAT.approach,benchId:TEACHER_SEAT.id,notebook:true})}/>
+          <button type="button" className={styles.benchTouch} style={{left:TEACHER_SEAT.notebook.x/mapWidth*100+'%',top:TEACHER_SEAT.notebook.y/mapHeight*100+'%',width:TEACHER_SEAT.notebook.w/mapWidth*100+'%',height:TEACHER_SEAT.notebook.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label="Notebook docente: abrir computadora" onClick={()=>walkToEntrance({...TEACHER_SEAT.approach,benchId:TEACHER_SEAT.id,notebook:true})}/>
         </>}
         {inClass && character && CLASSROOM_SEATS.map((seat,index)=><span key={seat.id}>
           <button type="button" className={styles.benchTouch} style={{left:seat.x/mapWidth*100+'%',top:seat.y/mapHeight*100+'%',width:seat.w/mapWidth*100+'%',height:seat.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label={'Sentarse en la silla '+(index+1)} onClick={()=>walkToEntrance({...seat.approach,benchId:seat.id})}/>
@@ -253,7 +253,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
       {saveSofia && <div role="status"><p>{sofiaSave.label}{sofiaSave.dirty && ' · Esperá la confirmación antes de salir.'}</p>{sofiaSave.error && <><p>{sofiaSave.error}</p><button onClick={sofiaSave.retry}>Reintentar guardado</button></>}</div>}
       {(panel === 'classroom' || panel === 'notebook') && !selectedClass && <p>Esta clase ya no está disponible. Volvé a Encuentros para consultar el calendario actualizado.</p>}
       {(panel === 'classroom' || panel === 'notebook') && selectedClass && <>{isOpen(selectedClass.id) ? <>{panel === 'notebook' && sofiaClass ? <SofiaMission persistent={Boolean(saveSofia)} progress={sofiaProgress} onChange={setSofiaProgress} onTalk={()=>setPanel('sofia')} onHint={()=>setPanel('companion')}/> : <LessonBoard notebook key={selectedClass.id} classId={selectedClass.id} load={readBoard} />}</> : <p>{openingLabel(selectedClass.id,selectedClass.date)}. {clock?.fresh ? "El aula está cerrada." : "Esperando confirmación del servidor."}</p>}</>}
-      {panel === 'presentation' && game.canPresent && selectedClass && isOpen(selectedClass.id) && <WelcomeSlide classId={selectedClass.id} load={loadPresentation}/>}
+      {panel === 'presentation' && game.canPresent && selectedClass && isOpen(selectedClass.id) && <TeacherComputer classId={selectedClass.id} load={loadPresentation}/>}
       {panel === 'identity' && renderIdentity?.(() => setPanel('menu'))}
       {panel === 'menu' && <>
         <p className={styles.intro}>Un descanso en el camino. Elegí cómo continuar.</p>

@@ -208,16 +208,16 @@ it('solo habilita la clase configurada y ofrece la notebook docente al presentad
  expect(screen.getByRole('button',{name:'Entrar al aula 2: Clase 2'})).toBeDisabled();
  act(()=>state.current?.onRoom?.(1));expect(state.current?.classroom).toBe(false);
  act(()=>state.current?.onRoom?.(0));
- fireEvent.click(screen.getByRole('button',{name:'Notebook docente: mostrar bienvenida'}));
+ fireEvent.click(screen.getByRole('button',{name:'Notebook docente: abrir computadora'}));
  expect(state.current?.destination?.()?.benchId).toBe('teacher-desk');
  expect(present).not.toHaveBeenCalled();
  act(()=>state.current?.onPresent?.());
- expect(await screen.findByRole('heading',{name:'Bienvenidos'})).toBeVisible();expect(present).toHaveBeenCalledWith('a');
+ expect(await screen.findByRole('button',{name:'Abrir carpeta Clase 1'})).toBeVisible();expect(present).toHaveBeenCalledWith('a');
 });
 it('no ofrece el escritorio docente al alumno',()=>{
  render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
  act(()=>state.current?.onEnter?.());act(()=>state.current?.onRoom?.(0));
- expect(screen.queryByRole('button',{name:'Notebook docente: mostrar bienvenida'})).not.toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Notebook docente: abrir computadora'})).not.toBeInTheDocument();
  expect(screen.queryByRole('button',{name:'Sentarme en el escritorio docente'})).not.toBeInTheDocument();
 });
 
