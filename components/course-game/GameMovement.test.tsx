@@ -37,14 +37,14 @@ describe('controles del personaje', () => {
   it('conserva el lado de entrada y salida del Nodo',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
     act(()=>state.current?.onEnter?.('rear'));
-    expect(state.current?.spawn).toEqual({x:240,y:60});
+    expect(state.current?.spawn).toEqual({x:220,y:60});
     fireEvent.click(screen.getByRole('button',{name:'Salir por detrás del Nodo'}));
-    expect(state.current?.destination?.()).toEqual({x:240,y:52});
+    expect(state.current?.destination?.()).toEqual({x:220,y:52});
     act(()=>state.current?.onExit?.('rear'));
     expect(state.current?.spawn).toEqual({x:NODO_REAR_ENTRANCE.x,y:NODO_REAR_ENTRANCE.y-30});
     expect(screen.getByLabelText('Mapa del valle')).toBeVisible();
     act(()=>state.current?.onEnter?.('front'));
-    expect(state.current?.spawn).toEqual({x:240,y:270});
+    expect(state.current?.spawn).toEqual({x:220,y:900});
   });
   it('centra la cámara en el personaje y la limita a los bordes del mundo ampliado',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
@@ -116,7 +116,7 @@ describe('controles del personaje', () => {
     expect(screen.getByRole('button',{name:'Acercate a la pizarra'})).toBeDisabled();
     fireEvent.keyDown(screen.getByLabelText('Interior del aula'),{key:'e'});
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    act(()=>state.current?.onPosition?.({x:240,y:120}));
+    act(()=>state.current?.onPosition?.({x:160,y:120}));
     fireEvent.keyDown(screen.getByLabelText('Interior del aula'),{key:'e'});
     expect(screen.getByRole('dialog',{name:'Clase A'})).toBeVisible();
     expect(state.current?.movementLocked).toBe(true);
@@ -132,10 +132,10 @@ describe('controles del personaje', () => {
     act(()=>state.current?.onPosition?.({x:NODO_ENTRANCE.x,y:NODO_ENTRANCE.y+15}));
     fireEvent.keyDown(screen.getByLabelText('Mapa del valle'),{key:'e'});
     expect(screen.getByLabelText('Interior del Nodo')).toBeVisible();
-    act(()=>state.current?.onPosition?.({x:214,y:230}));
+    act(()=>state.current?.onPosition?.({x:194,y:800}));
     fireEvent.keyDown(screen.getByLabelText('Interior del Nodo'),{key:'e'});
     expect(screen.getByLabelText('Interior del aula')).toBeVisible();
-    act(()=>state.current?.onPosition?.({x:240,y:120}));
+    act(()=>state.current?.onPosition?.({x:160,y:120}));
     fireEvent.click(screen.getByRole('button',{name:'Ver pizarra · E'}));
     expect(await screen.findByText('Contenido en la pizarra')).toBeVisible();
     expect(screen.queryByRole('link',{name:/Abrir contenido/})).not.toBeInTheDocument();

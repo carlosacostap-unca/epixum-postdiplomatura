@@ -4,16 +4,16 @@ import { WORLD_WIDTH, WORLD_HEIGHT, ROADS, TREES, NODO_PALMS, NODO_OFFSET, NODO_
 import { drawClassroom } from './classroom-art';
 import { robotDogPixels, createRobotCompanion, updateRobotCompanion, clearOfCompanion, type RobotCompanion } from '@/lib/course-game/robot-dog';
 import { findWalkPath, followWalkPath } from '@/lib/course-game/navigation';
-import { CLASSROOM_SPAWN, canStandInClass, atClassExit } from '@/lib/course-game/classroom';
+import { CLASSROOM_WIDTH, CLASSROOM_HEIGHT, CLASSROOM_SPAWN, canStandInClass, atClassExit } from '@/lib/course-game/classroom';
 import { walk, canStand, nodoAccessSide, SPAWN, insideNodo, type WalkInput, type Position } from '@/lib/course-game/movement';
 import type { Character } from '@/lib/course-game/onboarding';
 import { characterPixels, seatedCharacterPixels, movementFacing, type CharacterFacing } from '@/lib/course-game/character-art';
 import { drawNeighborhood, drawTree } from './neighborhood-art';
 import { drawNodoPalm } from './nodo-art';
 import { drawInterior } from './interior-art';
-import { INTERIOR_SPAWN, INTRODUCTION_DOOR, canStandInside, enteredRoom, atExit, exitSide, type NodoAccess, roomApproach } from '@/lib/course-game/interior';
+import { INTERIOR_WIDTH, INTERIOR_HEIGHT, INTERIOR_SPAWN, INTRODUCTION_DOOR, canStandInside, enteredRoom, atExit, exitSide, type NodoAccess, roomApproach } from '@/lib/course-game/interior';
 import * as Phaser from 'phaser';
-import { VILLAGE_HEIGHT, VILLAGE_WIDTH } from '@/lib/course-game/village-layout';
+
 
 export interface VillageState { canPresent?:boolean; onPresent?:()=>void; sofia?: boolean; selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
 export interface VillageEngine { update: (state: VillageState) => void; destroy: () => void }
@@ -58,7 +58,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.destinationMarker = this.add.graphics();
       this.actor = this.add.graphics();
       this.companionArt = this.add.graphics();
-      this.companion = createRobotCompanion(this.position, state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-400,p.y-126)>14) : state.interior ? p=>canStandInside(p,state.count,state.openRooms) : canStand);
+      this.companion = createRobotCompanion(this.position, state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-268,p.y-450)>14) : state.interior ? p=>canStandInside(p,state.count,state.openRooms) : canStand);
       this.drawWorld();
       if (!state.interior && !state.classroom) {
         for (const [x,y] of TREES) {
@@ -100,7 +100,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.actor.setDepth(this.position.y);
       if (!state.character) return;
       const drawnPosition=this.seated?.seat ?? this.position;
-      for (const pixel of this.seated ? seatedCharacterPixels(state.character,state.classroom ? 'up' : 'down') : characterPixels(state.character, this.facing, this.stride)) {
+      for (const pixel of this.seated ? seatedCharacterPixels(state.character,state.classroom && this.seated.id!=='teacher-desk' ? 'up' : 'down') : characterPixels(state.character, this.facing, this.stride)) {
         this.rect(this.actor, Number.parseInt(pixel.color.slice(1), 16), drawnPosition.x - 12 + pixel.x, drawnPosition.y - 34 + pixel.y, pixel.w, pixel.h);
       }
     }
@@ -141,7 +141,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
     update(_time: number, delta: number) {
       const input = state.input?.();
       const destination = state.destination?.() ?? null;
-      const allowed = state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-400,p.y-126)>14) : state.interior ? (p: Position) => canStandInside(p, state.count, state.openRooms) : canStand;
+      const allowed = state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-268,p.y-450)>14) : state.interior ? (p: Position) => canStandInside(p, state.count, state.openRooms) : canStand;
       const playerAllowed = (p:Position) => allowed(p) && clearOfCompanion(p,this.companion.position,1);
       this.routeRetry += Math.min(delta,50);
       const manual = input && (input.up || input.down || input.left || input.right);
@@ -176,7 +176,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
           if ((state.classroom && atClassExit(this.position)) || (state.interior && !state.classroom && atExit(this.position))) {
             const side=exitSide(this.position); this.position = { ...INTERIOR_SPAWN }; Object.assign(input,{up:false,down:false,left:false,right:false}); state.onExit?.(side);
           } else if (room !== null && (room !== -1 || (destination && Math.hypot(destination.x-INTRODUCTION_DOOR.x,destination.y-INTRODUCTION_DOOR.y)<4))) {
-            this.position = room===-1 ? {x:190,y:280} : roomApproach(room);
+            this.position = room===-1 ? {x:166,y:900} : roomApproach(room);
             Object.assign(input,{up:false,down:false,left:false,right:false}); state.onRoom?.(room);
           } else if (!state.interior && insideNodo(this.position)) {
             const side:NodoAccess=nodoAccessSide(this.position);
@@ -213,7 +213,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
   }
 
   const game = new Phaser.Game({
-    type: Phaser.AUTO, parent, width: state.interior || state.classroom ? VILLAGE_WIDTH : WORLD_WIDTH+80, height: state.interior || state.classroom ? VILLAGE_HEIGHT : WORLD_HEIGHT+80,
+    type: Phaser.AUTO, parent, width: state.classroom ? CLASSROOM_WIDTH : state.interior ? INTERIOR_WIDTH : WORLD_WIDTH+80, height: state.classroom ? CLASSROOM_HEIGHT : state.interior ? INTERIOR_HEIGHT : WORLD_HEIGHT+80,
     backgroundColor: '#88ad58', pixelArt: true, roundPixels: true,
     banner: false, audio: { noAudio: true }, fps: { target: 30 },
     callbacks: { postBoot: instance => instance.canvas.setAttribute('aria-hidden', 'true') },

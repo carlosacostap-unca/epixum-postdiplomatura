@@ -14,9 +14,9 @@ import { NODO_ENTRANCE, NODO_REAR_ENTRANCE, NODO_STAIRS_WIDTH, NODO_FOOTPRINT, W
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { SPAWN, nodoAccessSide, emptyWalkInput, nearNodo, type Position, type WalkInput } from '@/lib/course-game/movement';
-import { nearbyRoom, nearExit, roomDoor, roomTarget, roomApproach, ROOMS_PER_WING, INTRODUCTION_DOOR, INTERIOR_SPAWN, INTERIOR_FRONT_SPAWN, INTERIOR_REAR_SPAWN, REAR_EXIT, exitSide, type NodoAccess } from '@/lib/course-game/interior';
+import { INTERIOR_WIDTH, INTERIOR_HEIGHT, nearbyRoom, nearExit, roomDoor, roomTarget, roomApproach, ROOMS_PER_WING, INTRODUCTION_DOOR, INTERIOR_SPAWN, INTERIOR_FRONT_SPAWN, INTERIOR_REAR_SPAWN, REAR_EXIT, exitSide, type NodoAccess } from '@/lib/course-game/interior';
 import { INTRODUCTION_ID, INTRODUCTION_TITLE, courseIntroduction } from '@/lib/course-game/introduction';
-import { TEACHER_SEAT, CLASSROOM_SEATS, nearBoard, nearClassExit } from '@/lib/course-game/classroom';
+import { CLASSROOM_WIDTH, CLASSROOM_HEIGHT, TEACHER_SEAT, CLASSROOM_SEATS, nearBoard, nearClassExit } from '@/lib/course-game/classroom';
 import { LessonBoard } from './LessonBoard';
 import type { LoadBoard } from '@/lib/course-game/board';
 import Link from 'next/link';
@@ -65,7 +65,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
   const [inside, setInside] = useState(false);
   const [spawn,setSpawn] = useState<Position>(SPAWN);
   const [inClass, setInClass] = useState(false);
-  const mapWidth = inside ? 480 : WORLD_WIDTH, mapHeight = inside ? 320 : WORLD_HEIGHT;
+  const mapWidth = inClass ? CLASSROOM_WIDTH : inside ? INTERIOR_WIDTH : WORLD_WIDTH, mapHeight = inClass ? CLASSROOM_HEIGHT : inside ? INTERIOR_HEIGHT : WORLD_HEIGHT;
   const [atBoard, setAtBoard] = useState(false);
   const [requestedWing, setWing] = useState(0);
   const wing = Math.min(requestedWing,Math.max(0,Math.ceil(game.places.length/ROOMS_PER_WING)-1));
@@ -185,7 +185,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
     }} onKeyUp={event => { const direction = keyDirection(event.key); if (direction) { event.preventDefault(); walking.current[direction] = false; } }}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) clearWalking(); }}>
     <div ref={mapViewport} {...zoomHandlers} className={styles.viewport} aria-label={inClass ? 'Interior del aula' : inside ? 'Interior del Nodo' : 'Mapa del valle'} tabIndex={0} onPointerDown={event => { if (!(event.target as HTMLElement).closest('button')) event.currentTarget.focus(); }}>
-      <div className={styles.map} style={{'--map-zoom':zoom,...(!inside ? {width:`max(${WORLD_WIDTH*2*zoom}px, 100cqw, 100cqh)`,height:`max(${WORLD_HEIGHT*2*zoom}px, 100cqw, 100cqh)`} : {})} as CSSProperties}
+      <div className={styles.map} style={{'--map-zoom':zoom,...(!inside ? {width:`max(${WORLD_WIDTH*2*zoom}px, 100cqw, 100cqh)`,height:`max(${WORLD_HEIGHT*2*zoom}px, 100cqw, 100cqh)`} : {width:`max(${mapWidth*(inClass?1:2)*zoom}px, 100cqw, ${100*mapWidth/mapHeight}cqh)`,height:`max(${mapHeight*(inClass?1:2)*zoom}px, ${100*mapHeight/mapWidth}cqw, 100cqh)`})} as CSSProperties}
         onPointerDown={event => {
           if (event.button !== 0 || !event.isPrimary || (event.target as HTMLElement).closest('button') || panel || tutorial) return;
           tapStart.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
@@ -207,7 +207,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
         </button>}
         {!inside && <button type="button" className={styles.nodoEntrance} style={{left:(NODO_REAR_ENTRANCE.x-NODO_STAIRS_WIDTH/2)/mapWidth*100+'%',top:(NODO_REAR_ENTRANCE.y-8)/mapHeight*100+'%',width:NODO_STAIRS_WIDTH/mapWidth*100+'%',height:20/mapHeight*100+'%'}} aria-label="Entrar por detrás al Nodo Tecnológico Catamarca" onClick={() => walkToEntrance(NODO_REAR_ENTRANCE)} />}
         {!inside && character && GAME_BENCHES.map((bench,index)=><button key={bench.id} type="button" className={styles.benchTouch} style={{left:bench.x/mapWidth*100+'%',top:(bench.y-3)/mapHeight*100+'%',width:bench.w/mapWidth*100+'%',height:(bench.h+6)/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label={'Sentarse en el banco '+(index+1)} title="Caminar hasta el banco y sentarse" onClick={()=>walkToEntrance({...bench.approach,benchId:bench.id})}/>)}
-        {sofiaActive && <button type="button" className={styles.sofiaNpc} disabled={Boolean(panel||tutorial)} style={{left:400/mapWidth*100+'%',top:(126-34)/mapHeight*100+'%',width:24/mapWidth*100+'%'}} aria-label="Hablar con Sofía sobre su examen" onClick={()=>{clearWalking();setPanel('sofia');}}><CharacterPortrait character={SOFIA} label="Sofía"/><span>Sofía · !</span></button>}
+        {sofiaActive && <button type="button" className={styles.sofiaNpc} disabled={Boolean(panel||tutorial)} style={{left:268/mapWidth*100+'%',top:(450-34)/mapHeight*100+'%',width:24/mapWidth*100+'%'}} aria-label="Hablar con Sofía sobre su examen" onClick={()=>{clearWalking();setPanel('sofia');}}><CharacterPortrait character={SOFIA} label="Sofía"/><span>Sofía · !</span></button>}
         {inClass && game.canPresent && <>
           <button type="button" className={styles.benchTouch} style={{left:TEACHER_SEAT.x/mapWidth*100+'%',top:TEACHER_SEAT.y/mapHeight*100+'%',width:TEACHER_SEAT.w/mapWidth*100+'%',height:TEACHER_SEAT.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label="Sentarme en el escritorio docente" onClick={()=>walkToEntrance({...TEACHER_SEAT.approach,benchId:TEACHER_SEAT.id})}/>
           <button type="button" className={styles.benchTouch} style={{left:TEACHER_SEAT.notebook.x/mapWidth*100+'%',top:TEACHER_SEAT.notebook.y/mapHeight*100+'%',width:TEACHER_SEAT.notebook.w/mapWidth*100+'%',height:TEACHER_SEAT.notebook.h/mapHeight*100+'%'}} disabled={Boolean(panel||tutorial)} aria-label="Notebook docente: mostrar bienvenida" onClick={()=>walkToEntrance({...TEACHER_SEAT.approach,benchId:TEACHER_SEAT.id,notebook:true})}/>
@@ -218,11 +218,11 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
         </span>)}
         {inside && !inClass && game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map((place,index) => {
           const door=roomDoor(index);
-          return <button key={place.id} type="button" className={styles.roomDoor} style={{left:(index%2===0?139:341)/480*100+'%',top:door.y/320*100+'%'}} disabled={!isOpen(place.id)} title={isOpen(place.id) ? "Caminar hasta el aula" : openingLabel(place.id,place.date)} onClick={()=>{if(isOpen(place.id)) walkToEntrance(roomTarget(index));}} aria-label={`Entrar al aula ${wing*8+index+1}: ${place.title}`}>Aula {wing*8+index+1}{!isOpen(place.id) && <span> · Cerrada</span>}</button>;
+          return <button key={place.id} type="button" className={styles.roomDoor} style={{left:126/mapWidth*100+'%',top:door.y/mapHeight*100+'%'}} disabled={!isOpen(place.id)} title={isOpen(place.id) ? "Caminar hasta el aula" : openingLabel(place.id,place.date)} onClick={()=>{if(isOpen(place.id)) walkToEntrance(roomTarget(index));}} aria-label={`Entrar al aula ${wing*8+index+1}: ${place.title}`}>Aula {wing*8+index+1}{!isOpen(place.id) && <span> · Cerrada</span>}</button>;
         })}
-        {inside && !inClass && <div className={styles.receptionist} style={{left:158/mapWidth*100+'%',top:235/mapHeight*100+'%',width:22/mapWidth*100+'%'}}><CharacterPortrait character={RECEPTIONIST} label="Empleada de recepción"/></div>}
-        {inside && !inClass && <button type="button" className={styles.roomDoor} style={{left:INTRODUCTION_DOOR.x/480*100+'%',top:INTRODUCTION_DOOR.y/320*100+'%'}} onClick={()=>walkToEntrance(INTRODUCTION_DOOR)} aria-label="Consultar en recepción">Recepción</button>}
-        {inside && !inClass && <button type="button" className={styles.roomDoor} style={{left:'50%',top:'16%'}} aria-label="Salir por detrás del Nodo" onClick={()=>walkToEntrance(REAR_EXIT)}>Salida trasera</button>}{inClass && <button type="button" className={styles.boardInteraction} disabled={!atBoard || !selectedClass || !isOpen(selectedClass.id)} onClick={openBoard} aria-haspopup="dialog">{atBoard ? 'Ver pizarra · E' : 'Acercate a la pizarra'}</button>}
+        {inside && !inClass && <div className={styles.receptionist} style={{left:140/mapWidth*100+'%',top:853/mapHeight*100+'%',width:22/mapWidth*100+'%'}}><CharacterPortrait character={RECEPTIONIST} label="Empleada de recepción"/></div>}
+        {inside && !inClass && <button type="button" className={styles.roomDoor} style={{left:INTRODUCTION_DOOR.x/mapWidth*100+'%',top:INTRODUCTION_DOOR.y/mapHeight*100+'%'}} onClick={()=>walkToEntrance(INTRODUCTION_DOOR)} aria-label="Consultar en recepción">Recepción</button>}
+        {inside && !inClass && <button type="button" className={styles.roomDoor} style={{left:REAR_EXIT.x/mapWidth*100+'%',top:REAR_EXIT.y/mapHeight*100+'%'}} aria-label="Salir por detrás del Nodo" onClick={()=>walkToEntrance(REAR_EXIT)}>Salida trasera</button>}{inClass && <button type="button" className={styles.boardInteraction} disabled={!atBoard || !selectedClass || !isOpen(selectedClass.id)} onClick={openBoard} aria-haspopup="dialog">{atBoard ? 'Ver pizarra · E' : 'Acercate a la pizarra'}</button>}
         {character && !tutorial && <button ref={companionButton} hidden type="button" className={styles.companionTouch} style={{width:32/mapWidth*100+'%',height:28/mapHeight*100+'%'}} aria-label="Hablar con tu perro robot" aria-haspopup="dialog" title="Hablar con tu perro robot"
           onPointerDown={event=>{if(event.isPrimary&&event.button===0) companionTap.current={x:event.clientX,y:event.clientY,id:event.pointerId};}}
           onPointerMove={event=>{const start=companionTap.current;if(start&&Math.hypot(event.clientX-start.x,event.clientY-start.y)>8) companionTap.current=null;}}
