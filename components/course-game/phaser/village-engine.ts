@@ -15,7 +15,7 @@ import { INTERIOR_WIDTH, INTERIOR_HEIGHT, INTERIOR_SPAWN, INTRODUCTION_DOOR, can
 import * as Phaser from 'phaser';
 
 
-export interface VillageState { canPresent?:boolean; onPresent?:()=>void; sofia?: boolean; selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
+export interface VillageState { onWorkshopNpc?:(person:import("@/lib/course-game/workshop").WorkshopPerson)=>void; canPresent?:boolean; onPresent?:()=>void; sofia?: boolean; selected: number; paused: boolean; restored: boolean; count: number; openRooms?: boolean[]; character?: Character; input?: () => WalkInput; destination?: () => WalkDestination | null; onSeated?: (id:string|null) => void; onNotebook?: () => void; movementLocked?: boolean; onPosition?: (position: Position) => void; onCompanionPosition?: (position: Position) => void; onEnter?: (side?:NodoAccess) => void; classroom?: boolean; interior?: boolean; onRoom?: (index: number) => void; onExit?: (side?:NodoAccess) => void; spawn?: Position }
 export interface VillageEngine { update: (state: VillageState) => void; destroy: () => void }
 
 
@@ -190,6 +190,9 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       if ((!state.interior || state.classroom) && !state.movementLocked && !manual && !this.seated) {
         const bench=reachedBench(this.position,destination,Boolean(state.classroom),Boolean(state.canPresent));
         if(bench) { this.seated=bench; this.stride=0; this.route=[]; this.destinationMarker.clear(); state.onSeated?.(bench.id); this.drawCharacter(); if(state.classroom && destination?.notebook) {if(bench.id==='teacher-desk' && state.canPresent) state.onPresent?.();else state.onNotebook?.();} }
+      }
+      if (state.interior && !state.classroom && state.canPresent && !state.movementLocked && !manual && destination?.workshopNpc && Math.hypot(this.position.x-destination.x,this.position.y-destination.y)<2) {
+        state.onWorkshopNpc?.(destination.workshopNpc);
       }
       if (!moved && this.stride !== 0) {
         this.stride = 0;

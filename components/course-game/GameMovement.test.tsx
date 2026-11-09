@@ -251,3 +251,25 @@ it('las notebooks de alumnos abren la carpeta y los enlaces sin dar acceso al es
  expect(screen.getByRole('link',{name:/Diapositivas/})).toHaveAttribute('href','https://google.com/');
  expect(screen.queryByRole('button',{name:'Notebook docente: abrir computadora'})).not.toBeInTheDocument();
 });
+it('reserva el taller al docente y conversa solo después de llegar al personaje',()=>{
+ const pilot={...game,courseId:'5wdbs1o1p22vszm',places:[{...game.places[0],title:'Clase 1'}]};
+ const view=render(<CourseMissionMap game={pilot} character={DEFAULT_CHARACTER}/>);
+ act(()=>state.current?.onEnter?.());
+ expect(screen.queryByRole('button',{name:/Hablar con Lucía/})).not.toBeInTheDocument();
+ view.rerender(<CourseMissionMap game={{...pilot,canPresent:true}} character={DEFAULT_CHARACTER}/>);
+ fireEvent.click(screen.getByRole('button',{name:/Hablar con Lucía/}));
+ expect(state.current?.destination?.()).toEqual({x:252,y:895,workshopNpc:'lucia'});
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+ act(()=>state.current?.onWorkshopNpc?.('lucia'));
+ expect(screen.getByRole('dialog',{name:'Taller en el Nodo · Partida docente'})).toBeVisible();
+ expect(state.current?.movementLocked).toBe(true);
+ fireEvent.click(screen.getByText('Ir a la notebook docente'));
+ expect(state.current?.destination?.()).toMatchObject({x:171,y:800});
+ act(()=>state.current?.onRoom?.(0));
+ expect(state.current?.destination?.()).toMatchObject({benchId:'teacher-desk',notebook:true});
+ expect(state.current?.sofia).toBe(false);
+ act(()=>state.current?.onPresent?.());
+ fireEvent.click(screen.getByRole('button',{name:'Abrir carpeta Clase 1'}));
+ fireEvent.click(screen.getByRole('button',{name:/Planificador del taller/}));
+ expect(screen.getByRole('region',{name:'Misión docente: Taller en el Nodo'})).toBeVisible();
+});

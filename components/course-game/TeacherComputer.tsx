@@ -2,7 +2,7 @@
 import { useEffect,useState,type ReactNode } from 'react';
 import { safeResourceUrl,type LoadBoard,type BoardContent } from '@/lib/course-game/board';
 import styles from './teacher-computer.module.css';
-export function TeacherComputer({load,classId,label="Computadora del docente",activities}:{load?:LoadBoard;classId:string;label?:string;activities?:ReactNode}) {
+export function TeacherComputer({load,classId,label="Computadora del docente",activities,activitiesLabel="Actividades de la clase"}:{activitiesLabel?:string;load?:LoadBoard;classId:string;label?:string;activities?:ReactNode}) {
  const [result,setResult]=useState<{classId:string;content?:BoardContent;error?:string}|null>(null);
  const [activity,setActivity]=useState(false);
  const [folder,setFolder]=useState(false),[attempt,retry]=useState(0);
@@ -17,7 +17,7 @@ export function TeacherComputer({load,classId,label="Computadora del docente",ac
     const resource=current.content!.resources.find(r=>r.id===item.id),url=resource&&safeResourceUrl(resource.url);
     return <li key={item.id}>{url?<a href={url} target="_blank" rel="noopener noreferrer"><span className={styles.fileIcon} aria-hidden="true">{item.icon}</span><span><strong>{item.label}</strong><small>{item.id==='slides'?'Google · enlace provisional':'Abrir en una pestaña nueva'}</small></span><span aria-hidden="true">↗</span></a>:<div className={styles.unavailable}><span className={styles.fileIcon} aria-hidden="true">{item.icon}</span><span><strong>{item.label}</strong><small>Enlace todavía no disponible</small></span></div>}</li>;
    })}</ul>}
-   {activities && <button className={styles.activity} onClick={()=>setActivity(true)}>▤ Actividades de la clase</button>}</>}
+   {activities && <button className={styles.activity} onClick={()=>setActivity(true)}>▤ {activitiesLabel}</button>}</>}
   </div>}
   <footer className={styles.taskbar}><span>◈ Epixum</span><span>{folder?'Clase 1':'Escritorio'}</span></footer>
  </section>;
