@@ -3,19 +3,19 @@ import { atClassExit, canStandInClass, CLASSROOM_SPAWN, DESKS, nearBoard } from 
 import { emptyWalkInput, walk } from './movement';
 describe('aula transitable',()=>{
   it('permite llegar a la pizarra por el pasillo central',()=>{
-    let p={x:160,y:470};
-    for(let n=0;n<250;n++) p=walk(p,{...emptyWalkInput(),up:true},30,canStandInClass);
-    expect(nearBoard(p)).toBe(true); expect(p.y).toBeGreaterThanOrEqual(103);
+    let p={x:160,y:80};
+    for(let n=0;n<250;n++) p=walk(p,{...emptyWalkInput(),down:true},30,canStandInClass);
+    expect(nearBoard(p)).toBe(true); expect(p.y).toBeLessThanOrEqual(456);
   });
   it.each(DESKS)('bloquea escritorio y silla en $x,$y',desk=>{
     expect(canStandInClass({x:desk.x+20,y:desk.y+10})).toBe(false);
-    expect(canStandInClass({x:desk.x+20,y:desk.y+27})).toBe(false);
+    expect(canStandInClass({x:desk.x+20,y:desk.y-15})).toBe(false);
   });
   it('la salida solo se cruza por la puerta y no desde el punto inicial',()=>{
     expect(atClassExit(CLASSROOM_SPAWN)).toBe(false);
     expect(canStandInClass({x:100,y:500})).toBe(false);
-    expect(canStandInClass({x:304,y:160})).toBe(true);
-    expect(atClassExit({x:304,y:160})).toBe(true);
+    expect(canStandInClass({x:304,y:400})).toBe(true);
+    expect(atClassExit({x:304,y:400})).toBe(true);
     expect(nearBoard(CLASSROOM_SPAWN)).toBe(false);
   });
 });

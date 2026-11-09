@@ -58,7 +58,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.destinationMarker = this.add.graphics();
       this.actor = this.add.graphics();
       this.companionArt = this.add.graphics();
-      this.companion = createRobotCompanion(this.position, state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-268,p.y-450)>14) : state.interior ? p=>canStandInside(p,state.count,state.openRooms) : canStand);
+      this.companion = createRobotCompanion(this.position, state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-268,p.y-80)>14) : state.interior ? p=>canStandInside(p,state.count,state.openRooms) : canStand);
       this.drawWorld();
       if (!state.interior && !state.classroom) {
         for (const [x,y] of TREES) {
@@ -100,7 +100,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
       this.actor.setDepth(this.position.y);
       if (!state.character) return;
       const drawnPosition=this.seated?.seat ?? this.position;
-      for (const pixel of this.seated ? seatedCharacterPixels(state.character,state.classroom && this.seated.id!=='teacher-desk' ? 'up' : 'down') : characterPixels(state.character, this.facing, this.stride)) {
+      for (const pixel of this.seated ? seatedCharacterPixels(state.character,state.classroom && this.seated.id==='teacher-desk' ? 'up' : 'down') : characterPixels(state.character, this.facing, this.stride)) {
         this.rect(this.actor, Number.parseInt(pixel.color.slice(1), 16), drawnPosition.x - 12 + pixel.x, drawnPosition.y - 34 + pixel.y, pixel.w, pixel.h);
       }
     }
@@ -141,7 +141,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
     update(_time: number, delta: number) {
       const input = state.input?.();
       const destination = state.destination?.() ?? null;
-      const allowed = state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-268,p.y-450)>14) : state.interior ? (p: Position) => canStandInside(p, state.count, state.openRooms) : canStand;
+      const allowed = state.classroom ? (p:Position)=>canStandInClass(p) && (!state.sofia || Math.hypot(p.x-268,p.y-80)>14) : state.interior ? (p: Position) => canStandInside(p, state.count, state.openRooms) : canStand;
       const playerAllowed = (p:Position) => allowed(p) && clearOfCompanion(p,this.companion.position,1);
       this.routeRetry += Math.min(delta,50);
       const manual = input && (input.up || input.down || input.left || input.right);

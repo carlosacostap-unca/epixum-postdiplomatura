@@ -116,7 +116,7 @@ describe('controles del personaje', () => {
     expect(screen.getByRole('button',{name:'Acercate a la pizarra'})).toBeDisabled();
     fireEvent.keyDown(screen.getByLabelText('Interior del aula'),{key:'e'});
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    act(()=>state.current?.onPosition?.({x:160,y:120}));
+    act(()=>state.current?.onPosition?.({x:160,y:444}));
     fireEvent.keyDown(screen.getByLabelText('Interior del aula'),{key:'e'});
     expect(screen.getByRole('dialog',{name:'Clase A'})).toBeVisible();
     expect(state.current?.movementLocked).toBe(true);
@@ -135,7 +135,7 @@ describe('controles del personaje', () => {
     act(()=>state.current?.onPosition?.({x:194,y:800}));
     fireEvent.keyDown(screen.getByLabelText('Interior del Nodo'),{key:'e'});
     expect(screen.getByLabelText('Interior del aula')).toBeVisible();
-    act(()=>state.current?.onPosition?.({x:160,y:120}));
+    act(()=>state.current?.onPosition?.({x:160,y:444}));
     fireEvent.click(screen.getByRole('button',{name:'Ver pizarra · E'}));
     expect(await screen.findByText('Contenido en la pizarra')).toBeVisible();
     expect(screen.queryByRole('link',{name:/Abrir contenido/})).not.toBeInTheDocument();

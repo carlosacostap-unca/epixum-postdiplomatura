@@ -21,7 +21,7 @@ describe('caminar hacia un destino', () => {
   });
   it.each([
     ['cantero', {x:547,y:510}, {x:484,y:510}, canStand],
-    ['escritorios', CLASSROOM_SPAWN, {x:55,y:120}, canStandInClass],
+    ['escritorios', CLASSROOM_SPAWN, {x:55,y:170}, canStandInClass],
     ['calle', SPAWN, {x:305,y:200}, canStand],
     ['puerta de aula', INTERIOR_SPAWN, roomTarget(0), (p: {x:number;y:number})=>canStandInside(p,8)],
   ] as const)('llega sin atravesar obstáculos: %s', (_name, start, target, allowed) => {
