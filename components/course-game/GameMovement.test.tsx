@@ -37,7 +37,7 @@ describe('controles del personaje', () => {
   it('conserva el lado de entrada y salida del Nodo',()=>{
     render(<CourseMissionMap game={game} character={DEFAULT_CHARACTER}/>);
     act(()=>state.current?.onEnter?.('rear'));
-    expect(state.current?.spawn).toEqual({x:240,y:106});
+    expect(state.current?.spawn).toEqual({x:240,y:60});
     fireEvent.click(screen.getByRole('button',{name:'Salir por detrás del Nodo'}));
     expect(state.current?.destination?.()).toEqual({x:240,y:52});
     act(()=>state.current?.onExit?.('rear'));
@@ -132,7 +132,7 @@ describe('controles del personaje', () => {
     act(()=>state.current?.onPosition?.({x:NODO_ENTRANCE.x,y:NODO_ENTRANCE.y+15}));
     fireEvent.keyDown(screen.getByLabelText('Mapa del valle'),{key:'e'});
     expect(screen.getByLabelText('Interior del Nodo')).toBeVisible();
-    act(()=>state.current?.onPosition?.({x:60,y:160}));
+    act(()=>state.current?.onPosition?.({x:214,y:230}));
     fireEvent.keyDown(screen.getByLabelText('Interior del Nodo'),{key:'e'});
     expect(screen.getByLabelText('Interior del aula')).toBeVisible();
     act(()=>state.current?.onPosition?.({x:240,y:120}));

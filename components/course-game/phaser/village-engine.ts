@@ -11,7 +11,7 @@ import { characterPixels, seatedCharacterPixels, movementFacing, type CharacterF
 import { drawNeighborhood, drawTree } from './neighborhood-art';
 import { drawNodoPalm } from './nodo-art';
 import { drawInterior } from './interior-art';
-import { INTERIOR_SPAWN, INTRODUCTION_DOOR, canStandInside, enteredRoom, atExit, exitSide, type NodoAccess, roomDoor } from '@/lib/course-game/interior';
+import { INTERIOR_SPAWN, INTRODUCTION_DOOR, canStandInside, enteredRoom, atExit, exitSide, type NodoAccess, roomApproach } from '@/lib/course-game/interior';
 import * as Phaser from 'phaser';
 import { VILLAGE_HEIGHT, VILLAGE_WIDTH } from '@/lib/course-game/village-layout';
 
@@ -176,7 +176,7 @@ export function createVillageEngine(parent: HTMLElement, initial: VillageState, 
           if ((state.classroom && atClassExit(this.position)) || (state.interior && !state.classroom && atExit(this.position))) {
             const side=exitSide(this.position); this.position = { ...INTERIOR_SPAWN }; Object.assign(input,{up:false,down:false,left:false,right:false}); state.onExit?.(side);
           } else if (room !== null && (room !== -1 || (destination && Math.hypot(destination.x-INTRODUCTION_DOOR.x,destination.y-INTRODUCTION_DOOR.y)<4))) {
-            const door = room === -1 ? {x:240} : roomDoor(room); this.position = room===-1 ? {x:220,y:190} : {x:door.x,y:room<4?166:198};
+            this.position = room===-1 ? {x:190,y:280} : roomApproach(room);
             Object.assign(input,{up:false,down:false,left:false,right:false}); state.onRoom?.(room);
           } else if (!state.interior && insideNodo(this.position)) {
             const side:NodoAccess=nodoAccessSide(this.position);

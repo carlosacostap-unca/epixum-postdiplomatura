@@ -14,7 +14,7 @@ import { NODO_ENTRANCE, NODO_REAR_ENTRANCE, NODO_STAIRS_WIDTH, NODO_FOOTPRINT, W
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { SPAWN, nodoAccessSide, emptyWalkInput, nearNodo, type Position, type WalkInput } from '@/lib/course-game/movement';
-import { nearbyRoom, nearExit, roomDoor, ROOMS_PER_WING, INTRODUCTION_DOOR, INTERIOR_SPAWN, INTERIOR_FRONT_SPAWN, INTERIOR_REAR_SPAWN, REAR_EXIT, exitSide, type NodoAccess } from '@/lib/course-game/interior';
+import { nearbyRoom, nearExit, roomDoor, roomTarget, roomApproach, ROOMS_PER_WING, INTRODUCTION_DOOR, INTERIOR_SPAWN, INTERIOR_FRONT_SPAWN, INTERIOR_REAR_SPAWN, REAR_EXIT, exitSide, type NodoAccess } from '@/lib/course-game/interior';
 import { INTRODUCTION_ID, INTRODUCTION_TITLE, courseIntroduction } from '@/lib/course-game/introduction';
 import { TEACHER_SEAT, CLASSROOM_SEATS, nearBoard, nearClassExit } from '@/lib/course-game/classroom';
 import { LessonBoard } from './LessonBoard';
@@ -147,7 +147,7 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
   const enterNodo = useCallback((side:NodoAccess='front') => { setSpawn(side==='rear' ? INTERIOR_REAR_SPAWN : INTERIOR_FRONT_SPAWN); clearWalking(); setInside(true); setWing(0); setAtEntrance(false); mapViewport.current?.focus(); }, [clearWalking]);
   const exitNodo = useCallback((side:NodoAccess='front') => { setSpawn(side==='rear' ? {x:NODO_REAR_ENTRANCE.x,y:NODO_REAR_ENTRANCE.y-30} : SPAWN); clearWalking(); setInside(false); setNearRoom(null); setAtExit(false); mapViewport.current?.focus(); }, [clearWalking]);
   const openRoom = (index: number) => { if(index===-1){clearWalking();setPanel('reception');return;} if (index !== -1 && (index < 0 || index >= roomCount || !isOpen(game.places[wing*ROOMS_PER_WING+index].id))) return; clearWalking(); setClassIndex(index === -1 ? -1 : wing*ROOMS_PER_WING+index); setInClass(true); setAtBoard(false); setAtExit(false); setNearRoom(null); mapViewport.current?.focus(); };
-  const leaveClass = useCallback(() => { clearWalking(); setSpawn(INTERIOR_SPAWN); setPanel(null); setInClass(false); setAtBoard(false); setAtExit(false); mapViewport.current?.focus(); }, [clearWalking]);
+  const leaveClass = useCallback(() => { clearWalking(); setSpawn(classIndex===null ? INTERIOR_SPAWN : roomApproach(classIndex%ROOMS_PER_WING)); setPanel(null); setInClass(false); setAtBoard(false); setAtExit(false); mapViewport.current?.focus(); }, [clearWalking,classIndex]);
   const openBoard = () => { if (!inClass || !atBoard || !selectedClass || !isOpen(selectedClass.id)) return; clearWalking(); setPanel('classroom'); };
   const walkToEntrance = (target: WalkDestination) => {
     if (panel || tutorial) return;
@@ -218,9 +218,9 @@ export default function CourseMissionMap({ game: initialGame, character, tutoria
         </span>)}
         {inside && !inClass && game.places.slice(wing*ROOMS_PER_WING,(wing+1)*ROOMS_PER_WING).map((place,index) => {
           const door=roomDoor(index);
-          return <button key={place.id} type="button" className={styles.roomDoor} style={{left:door.x/480*100+'%',top:(index<4?134:224)/320*100+'%'}} disabled={!isOpen(place.id)} title={isOpen(place.id) ? "Caminar hasta el aula" : openingLabel(place.id,place.date)} onClick={()=>{if(isOpen(place.id)) walkToEntrance({x:door.x,y:door.y+(index<4?-4:4)});}} aria-label={`Entrar al aula ${wing*8+index+1}: ${place.title}`}>Aula {wing*8+index+1}{!isOpen(place.id) && <span> · Cerrada</span>}</button>;
+          return <button key={place.id} type="button" className={styles.roomDoor} style={{left:(index%2===0?139:341)/480*100+'%',top:door.y/320*100+'%'}} disabled={!isOpen(place.id)} title={isOpen(place.id) ? "Caminar hasta el aula" : openingLabel(place.id,place.date)} onClick={()=>{if(isOpen(place.id)) walkToEntrance(roomTarget(index));}} aria-label={`Entrar al aula ${wing*8+index+1}: ${place.title}`}>Aula {wing*8+index+1}{!isOpen(place.id) && <span> · Cerrada</span>}</button>;
         })}
-        {inside && !inClass && <div className={styles.receptionist} style={{left:200/mapWidth*100+'%',top:141/mapHeight*100+'%',width:22/mapWidth*100+'%'}}><CharacterPortrait character={RECEPTIONIST} label="Empleada de recepción"/></div>}
+        {inside && !inClass && <div className={styles.receptionist} style={{left:158/mapWidth*100+'%',top:235/mapHeight*100+'%',width:22/mapWidth*100+'%'}}><CharacterPortrait character={RECEPTIONIST} label="Empleada de recepción"/></div>}
         {inside && !inClass && <button type="button" className={styles.roomDoor} style={{left:INTRODUCTION_DOOR.x/480*100+'%',top:INTRODUCTION_DOOR.y/320*100+'%'}} onClick={()=>walkToEntrance(INTRODUCTION_DOOR)} aria-label="Consultar en recepción">Recepción</button>}
         {inside && !inClass && <button type="button" className={styles.roomDoor} style={{left:'50%',top:'16%'}} aria-label="Salir por detrás del Nodo" onClick={()=>walkToEntrance(REAR_EXIT)}>Salida trasera</button>}{inClass && <button type="button" className={styles.boardInteraction} disabled={!atBoard || !selectedClass || !isOpen(selectedClass.id)} onClick={openBoard} aria-haspopup="dialog">{atBoard ? 'Ver pizarra · E' : 'Acercate a la pizarra'}</button>}
         {character && !tutorial && <button ref={companionButton} hidden type="button" className={styles.companionTouch} style={{width:32/mapWidth*100+'%',height:28/mapHeight*100+'%'}} aria-label="Hablar con tu perro robot" aria-haspopup="dialog" title="Hablar con tu perro robot"

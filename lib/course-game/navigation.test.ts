@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { clearSegment, findWalkPath, followWalkPath } from './navigation';
 import { canStand, SPAWN, insideNodo } from './movement';
 import { canStandInClass, CLASSROOM_SPAWN } from './classroom';
-import { canStandInside, INTERIOR_SPAWN, enteredRoom, roomDoor } from './interior';
+import { canStandInside, INTERIOR_SPAWN, enteredRoom, roomTarget } from './interior';
 
 describe('caminar hacia un destino', () => {
   it('los destinos de los accesos cruzan sus umbrales de entrada automática', () => {
     const nodoPath = findWalkPath(SPAWN,NODO_ENTRANCE,canStand);
     expect(insideNodo(nodoPath.at(-1)!)).toBe(true);
     for (let i=0;i<8;i++) {
-      const door = roomDoor(i);
-      const path = findWalkPath(INTERIOR_SPAWN,{x:door.x,y:door.y+(i<4?-4:4)},p=>canStandInside(p,8));
+
+      const path = findWalkPath(INTERIOR_SPAWN,roomTarget(i),p=>canStandInside(p,8));
       expect(path.length).toBeGreaterThan(0);
       expect(enteredRoom(path.at(-1)!,8)).toBe(i);
       let position = {...INTERIOR_SPAWN};
@@ -23,7 +23,7 @@ describe('caminar hacia un destino', () => {
     ['cantero', {x:547,y:510}, {x:484,y:510}, canStand],
     ['escritorios', CLASSROOM_SPAWN, {x:55,y:120}, canStandInClass],
     ['calle', SPAWN, {x:305,y:200}, canStand],
-    ['puerta de aula', INTERIOR_SPAWN, {x:60,y:140}, (p: {x:number;y:number})=>canStandInside(p,8)],
+    ['puerta de aula', INTERIOR_SPAWN, roomTarget(0), (p: {x:number;y:number})=>canStandInside(p,8)],
   ] as const)('llega sin atravesar obstáculos: %s', (_name, start, target, allowed) => {
     const path = findWalkPath(start,target,allowed);
     expect(path.length).toBeGreaterThan(0);
