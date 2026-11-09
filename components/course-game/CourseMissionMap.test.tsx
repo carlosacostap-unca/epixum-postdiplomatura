@@ -58,7 +58,7 @@ describe('aula inmersiva', () => {
     await user.click(screen.getByRole('button',{name:'Ala siguiente →'}));
     await user.click(screen.getByRole('button',{name:'Entrar al aula 10: Clase 10'}));
     expect(screen.getByLabelText('Interior del Nodo')).toBeInTheDocument();
-    expect(engine.current?.destination?.()).toEqual({x:180,y:146});
+    expect(engine.current?.destination?.()).toEqual({x:171,y:700});
     act(()=>engine.current?.onRoom?.(1));
     expect(screen.queryByRole('heading',{name:'Aula 10'})).not.toBeInTheDocument();
     expect(screen.getByLabelText('Interior del aula')).toBeVisible();
@@ -66,8 +66,8 @@ describe('aula inmersiva', () => {
     await user.click(screen.getByRole('button',{name:'Menú'}));
     await user.click(screen.getByRole('button',{name:/Encuentros/}));
     const panel = screen.getByRole('dialog', {name:'Clases en el Nodo'});
-    expect(within(panel).getAllByRole('button', {name:/Leer en la pizarra/})).toHaveLength(10);
-    await user.click(within(panel).getByRole('button',{name:/Leer en la pizarra Clase 10/}));
+    expect(within(panel).getAllByRole('button', {name:/Ver materiales/})).toHaveLength(10);
+    await user.click(within(panel).getByRole('button',{name:/Ver materiales Clase 10/}));
     expect(await screen.findByText('Lectura diez')).toBeVisible();
     expect(loadBoard).toHaveBeenCalledWith('9');
     fireEvent(panel, new Event('cancel', {cancelable:true}));

@@ -113,12 +113,14 @@ describe('controles del personaje', () => {
     act(()=>state.current?.onRoom?.(0));
     expect(screen.getByLabelText('Interior del aula')).toBeVisible();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    expect(screen.getByRole('button',{name:'Acercate a la pizarra'})).toBeDisabled();
+    expect(screen.queryByRole('button',{name:/pizarra/i})).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByLabelText('Interior del aula'),{key:'e'});
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     act(()=>state.current?.onPosition?.({x:160,y:444}));
     fireEvent.keyDown(screen.getByLabelText('Interior del aula'),{key:'e'});
-    expect(screen.getByRole('dialog',{name:'Clase A'})).toBeVisible();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    act(()=>state.current?.onNotebook?.());
+    expect(screen.getByRole('dialog',{name:'Notebook · Clase A'})).toBeVisible();
     expect(state.current?.movementLocked).toBe(true);
     expect(state.current?.input?.().up).toBe(false);
     fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
@@ -136,7 +138,7 @@ describe('controles del personaje', () => {
     fireEvent.keyDown(screen.getByLabelText('Interior del Nodo'),{key:'e'});
     expect(screen.getByLabelText('Interior del aula')).toBeVisible();
     act(()=>state.current?.onPosition?.({x:160,y:444}));
-    fireEvent.click(screen.getByRole('button',{name:'Ver pizarra · E'}));
+    act(()=>state.current?.onNotebook?.());
     expect(await screen.findByText('Contenido en la pizarra')).toBeVisible();
     expect(screen.queryByRole('link',{name:/Abrir contenido/})).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
@@ -217,4 +219,15 @@ it('no ofrece el escritorio docente al alumno',()=>{
  act(()=>state.current?.onEnter?.());act(()=>state.current?.onRoom?.(0));
  expect(screen.queryByRole('button',{name:'Notebook docente: mostrar bienvenida'})).not.toBeInTheDocument();
  expect(screen.queryByRole('button',{name:'Sentarme en el escritorio docente'})).not.toBeInTheDocument();
+});
+
+it.each([false,true])('la pizarra es decorativa incluso con permiso docente=%s',canPresent=>{
+ const load=vi.fn();
+ render(<CourseMissionMap game={{...game,canPresent}} character={DEFAULT_CHARACTER} loadBoard={load}/>);
+ act(()=>state.current?.onEnter?.());act(()=>state.current?.onRoom?.(0));
+ act(()=>state.current?.onPosition?.({x:160,y:444}));
+ fireEvent.keyDown(screen.getByLabelText('Interior del aula'),{key:'e'});
+ expect(screen.queryByRole('button',{name:/pizarra/i})).not.toBeInTheDocument();
+ expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+ expect(load).not.toHaveBeenCalled();
 });

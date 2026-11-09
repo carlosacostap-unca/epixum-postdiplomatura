@@ -49,7 +49,7 @@ export type WelcomeActions = { save: (input: unknown) => Promise<WelcomeResult>;
 
 export const TOUR_STEPS = [
   { title: 'Bienvenido al valle', description: 'Este es tu personaje. El Nodo Tecnológico Catamarca es la sede de tu curso: todas tus clases están allí. Hacé clic o tap en el suelo para caminar; también podés usar las flechas del teclado o WASD.', target: 'map' },
-  { title: 'Encontrá tus clases', description: 'Caminá hasta el acceso central del Nodo: al cruzarlo entrás al pasillo. Caminá hacia una puerta de aula, acercate a la pizarra y presioná E para acceder al contenido. Cerca de la entrada también podés presionar E. Dentro del menú, Encuentros reúne todas las clases en una lista accesible.', target: 'encounters' },
+  { title: 'Encontrá tus clases', description: 'Caminá hasta el acceso central del Nodo: al cruzarlo entrás al pasillo. Caminá hacia una puerta de aula y tocá una notebook para acceder a las actividades y materiales. Cerca de la entrada también podés presionar E. Dentro del menú, Encuentros reúne todas las clases en una lista accesible.', target: 'encounters' },
   { title: 'Tus misiones', description: 'Dentro del menú, los trabajos prácticos aparecen en Misiones cuando el docente los publica. Desde allí abrís las consignas, entregas y devoluciones.', target: 'missions' },
   { title: 'Un diario para ver tu avance', description: 'Mi diario, dentro del menú, muestra los trabajos aprobados. Abrir una clase no registra asistencia ni aprobación: el avance viene de tus entregas reales.', target: 'journal' },
   { title: 'El menú y la salida', description: 'El menú permite pausar animaciones, consultar ayuda y abrir el aula clásica. Volver a Epixum te lleva a www.epixum.com. Ya estás listo para comenzar.', target: 'menu' },

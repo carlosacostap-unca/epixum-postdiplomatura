@@ -17,7 +17,7 @@ describe('aulas según horario',()=>{
       await act(async()=>{});
       fireEvent.click(screen.getByRole('button',{name:/Menú/}));
       fireEvent.click(screen.getByRole('button',{name:/Encuentros/}));
-      fireEvent.click(screen.getByRole('button',{name:/Leer en la pizarra Primera/}));
+      fireEvent.click(screen.getByRole('button',{name:/Ver materiales Primera/}));
       await act(async()=>{});
       sync.mockResolvedValue({serverNow:Date.now(),classes:[b,{...a,title:'Primera actualizada'}]});
       await act(async()=>vi.advanceTimersByTimeAsync(15000));
@@ -46,23 +46,21 @@ describe('aulas según horario',()=>{
     expect(screen.queryByLabelText('Interior del aula')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button',{name:/Menú/}));
       fireEvent.click(screen.getByRole('button',{name:/Encuentros/}));
-    expect(screen.getByRole('button',{name:/Leer en la pizarra Clase 2/})).toBeDisabled();
+    expect(screen.getByRole('button',{name:/Ver materiales Clase 2/})).toBeDisabled();
     expect(load).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button',{name:'Cerrar y volver al juego'}));
-    fireEvent.click(screen.getByRole('button',{name:'Entrar al Aula 0: Bienvenida al curso'}));
+    fireEvent.click(screen.getByRole('button',{name:'Consultar en recepción'}));
     expect(engine.current?.destination?.()).toEqual(INTRODUCTION_DOOR);
     act(()=>engine.current?.onRoom?.(-1));
-    expect(screen.getByLabelText('Interior del aula')).toBeVisible();
-    act(()=>engine.current?.onPosition?.({x:240,y:120}));
-    fireEvent.click(screen.getByRole('button',{name:'Ver pizarra · E'}));
-    expect(await screen.findByText('Una forma de aprender')).toBeVisible();
+    expect(screen.getByRole('dialog',{name:'Recepción'})).toBeVisible();
+
     expect(load).not.toHaveBeenCalled();
   });
-  it('el Aula 0 permanece abierta sin sincronización del calendario',()=>{
+  it('la recepción permanece abierta sin sincronización del calendario',()=>{
     render(<CourseMissionMap character={DEFAULT_CHARACTER} game={{courseId:'pilot',courseTitle:'Curso',title:'Valle',introduction:'',missions:[],completed:0,places:[]}}/>);
     act(()=>engine.current?.onEnter?.());
-    expect(screen.getByRole('button',{name:'Entrar al Aula 0: Bienvenida al curso'})).toBeEnabled();
+    expect(screen.getByRole('button',{name:'Consultar en recepción'})).toBeEnabled();
     act(()=>engine.current?.onRoom?.(-1));
-    expect(screen.getByLabelText('Interior del aula')).toBeVisible();
+    expect(screen.getByRole('dialog',{name:'Recepción'})).toBeVisible();
   });
 });
