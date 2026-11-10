@@ -52,6 +52,9 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
   const deliveries = (await Promise.all(assignments.map((assignment) => getDeliveries(assignment.id)))).flat();
   const pendingDeliveries = deliveries.filter(isDeliveryPendingReview);
   const pendingInquiries = inquiries.filter((inquiry) => inquiry.status === "Pendiente");
+  const chronologicalClasses = [...classes].sort((a, b) =>
+    (a.date ? new Date(a.date).getTime() : Infinity) - (b.date ? new Date(b.date).getTime() : Infinity),
+  );
 
   return (
     <div className="page-container space-y-8">
@@ -115,7 +118,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
           <EmptyState icon="menu_book" title="Todavía no hay clases" description="Programá la primera clase y después agregá sus recursos." action={<Link href={`/docentes/cursos/${course.id}/clases/nueva`} className={primaryLink}>Programar clase</Link>} />
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {classes.map((classItem) => (
+            {chronologicalClasses.map((classItem) => (
               <Link key={classItem.id} href={`/docentes/cursos/${course.id}/clases/${classItem.id}`} className="rounded-[var(--epixum-radius-xl)] focus-visible:outline-offset-4">
                 <Card className="h-full transition-colors hover:bg-[var(--color-surface-container)]"><CardContent>
                   <div className="flex items-start justify-between gap-4"><h3 className="font-headline text-xl font-bold">{classItem.title}</h3><PublicationBadge status={classItem.publicationStatus} publishAt={classItem.publishAt} /><span className="material-symbols-outlined text-[var(--color-primary)]" aria-hidden="true">arrow_forward</span></div>
