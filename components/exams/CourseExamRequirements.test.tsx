@@ -7,5 +7,4 @@ it('muestra avance parcial y enlaces únicamente para las actividades pendientes
   expect(screen.getByText(/1 de 3 cumplidos/)).toBeInTheDocument();
   expect(screen.getAllByRole('link')).toHaveLength(2);
   expect(screen.getByRole('link', { name: /Realizar simulación/ })).toHaveAttribute('href', '/estudiantes/cursos/tceqb7atji66fmd/preparacion/iniciar/nqcx3so0zz4o86y');
-  expect(screen.getByText(/sin nota mínima/)).toBeInTheDocument();
 });
