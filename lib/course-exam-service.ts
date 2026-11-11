@@ -2,6 +2,7 @@ import type PocketBase from 'pocketbase';
 import { randomInt } from 'node:crypto';
 import { z } from 'zod';
 import type { Course } from '@/types';
+import { readExamRequirements } from './course-exam-requirement-service';
 import { orderPracticeQuestions, publicPracticeQuestions } from './preparation';
 import { activeExamSession, courseExamSchema, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView, type ExamStudent } from './course-exams';
 
@@ -51,6 +52,8 @@ export async function beginCourseExam(pb: PocketBase, service: PocketBase, cours
   if (previous.items[0]) return previous.items[0].id;
   const session = activeExamSession(exam);
   if (!session) throw new CourseExamError('El parcial sólo se puede iniciar dentro del horario de activación de un turno.');
+  const requirements = await readExamRequirements(service, courseId, examId, pb.authStore.record!.id);
+  if (requirements.some(item => !item.completed)) throw new CourseExamError(`Antes de comenzar, finalizá: ${requirements.filter(item => !item.completed).map(item => item.label).join(', ')}. No se exige nota mínima.`);
   if (cameraActive !== true) throw new CourseExamError('Activá la cámara antes de comenzar.');
   const snapshot = courseExamSchema.parse({ title: exam.sessions?.length ? `${exam.title.slice(0, 77)} · ${session.label}` : exam.title, description: exam.description, status: exam.status, opensAt: new Date(session.opensAt.replace(' ', 'T')).toISOString(), closesAt: new Date(session.closesAt.replace(' ', 'T')).toISOString(), questions: session.questions });
   if (!capturePhoto) throw new CourseExamError('Necesitás guardar una foto inicial de la cámara para comenzar.');

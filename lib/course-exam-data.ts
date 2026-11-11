@@ -1,4 +1,5 @@
 import 'server-only';
+import { readExamRequirements } from './course-exam-requirement-service';
 import { createServerClient } from './pocketbase-server';
 import { createServiceClient } from './pocketbase-service';
 import { CourseExamError, closeExpiredCourseExams, readCourseExamAttempt, requireExamCourse } from './course-exam-service';
@@ -10,7 +11,11 @@ export async function getCourseExams(courseId: string, mode: 'manage' | 'student
   const service = await createServiceClient();
   const filter = service.filter('course = {:course}', { course: courseId });
   const rows = await service.collection('course_exams').getFullList<CourseExam>({ filter: filter + (mode === 'student' ? ' && status = "published"' : ''), fields: 'id,course,title,description,status,opensAt,closesAt,sessions', sort: '-created,id' });
-  const exams = rows.map(examSummary);
+  const exams = await Promise.all(rows.map(async row => {
+    const summary = examSummary(row);
+    const requirements = mode === 'student' ? await readExamRequirements(service, courseId, row.id, pb.authStore.record!.id) : [];
+    return requirements.length ? { ...summary, requirements } : summary;
+  }));
   if (examId && !exams.some(exam => exam.id === examId)) throw new CourseExamError('El parcial no pertenece a este curso o no está disponible.');
   const examFilter = examId ? service.filter(' && exam = {:exam}', { exam: examId }) : '';
   const scope = filter + examFilter + (mode === 'student' ? service.filter(' && student = {:student}', { student: pb.authStore.record!.id }) : '');
@@ -46,7 +51,8 @@ export async function getCourseExamStart(courseId: string, id: string) {
   const exam = examSummary(row);
   if (exam.course !== courseId || exam.status !== 'published') throw new CourseExamError('El parcial no está disponible.');
   const previous = await service.collection('course_exam_attempts').getList(1, 1, { filter: service.filter('course = {:course} && exam = {:exam} && student = {:student}', { course: courseId, exam: id, student: pb.authStore.record!.id }), fields: 'id' });
-  return { course, exam, existingAttemptId: previous.items[0]?.id || null };
+  const requirements = await readExamRequirements(service, courseId, id, pb.authStore.record!.id);
+  return { course, exam, requirements, existingAttemptId: previous.items[0]?.id || null };
 }
 // Explicit entrypoint for externally scheduled runs on hosts without a persistent Node process.
 export async function expireCourseExams() { await closeExpiredCourseExams(await createServiceClient()); }

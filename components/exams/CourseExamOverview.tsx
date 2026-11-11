@@ -1,3 +1,4 @@
+import { CourseExamRequirements } from './CourseExamRequirements';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui';
 import { examAvailability, examDateLabel, examSchedule } from '@/lib/course-exams';
@@ -16,8 +17,11 @@ export function CourseExamOverview({ data, base, manage }: { data: Awaited<Retur
       const attempt = data.attempts.find(a => a.exam === exam.id);
       const result = attempt && data.results.find(r => r.attempt === attempt.id);
       const availability = examAvailability(exam);
+      const requirements = exam.requirements || [];
+      const eligible = requirements.every(item => item.completed);
       return <Card key={exam.id}><CardContent className="space-y-3"><h2 className="text-xl font-bold">{exam.title}</h2><p>{availability}</p><p className="whitespace-pre-wrap">{exam.description}</p>{examSchedule(exam).map(s => <p key={s.id}>{exam.sessions?.length ? `${s.label} · ` : ''}Activación: {examDateLabel(s.opensAt)} · Cierre y entrega: {examDateLabel(s.closesAt)}</p>)}{exam.sessions?.length ? <p>Elegí uno de los turnos. Tenés un solo intento en total: al comenzar un turno ya no podrás rendir en otro.</p> : null}
-        {manage ? <div className="flex flex-wrap gap-3"><Link className={examLink} href={`${base}/${exam.id}/resultados`}>Ver alumnos y notas</Link><Link className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]" href={`${base}/${exam.id}`}>Editar parcial</Link></div> : attempt ? <><Link className={examLink} href={`${base}/intentos/${attempt.id}`}>{result?.feedbackAvailable ? 'Ver resultado y devolución' : result ? 'Ver entrega' : 'Retomar parcial'}</Link>{result?.feedbackAvailable && <CourseExamStanding correct={result.correct} total={result.total} />}{result && !result.feedbackAvailable && <p>La nota y la devolución completa estarán disponibles después del cierre.</p>}</> : availability === 'Activo' ? <Link className={examLink} href={`${base}/iniciar/${exam.id}`}>Comenzar parcial</Link> : <p>{availability === 'Programado' ? 'Disponible al llegar la fecha de activación.' : 'El horario del parcial finalizó.'}</p>}
+        {!manage && <CourseExamRequirements courseId={data.course.id} requirements={requirements} />}
+        {manage ? <div className="flex flex-wrap gap-3"><Link className={examLink} href={`${base}/${exam.id}/resultados`}>Ver alumnos y notas</Link><Link className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]" href={`${base}/${exam.id}`}>Editar parcial</Link></div> : attempt ? <><Link className={examLink} href={`${base}/intentos/${attempt.id}`}>{result?.feedbackAvailable ? 'Ver resultado y devolución' : result ? 'Ver entrega' : 'Retomar parcial'}</Link>{result?.feedbackAvailable && <CourseExamStanding correct={result.correct} total={result.total} />}{result && !result.feedbackAvailable && <p>La nota y la devolución completa estarán disponibles después del cierre.</p>}</> : availability === 'Activo' && eligible ? <Link className={examLink} href={`${base}/iniciar/${exam.id}`}>Comenzar parcial</Link> : <p>{availability === 'Programado' ? 'Podrás comenzar en el horario de un turno si cumplís los requisitos.' : availability === 'Activo' ? 'Inicio bloqueado: completá los requisitos pendientes.' : 'El horario del parcial finalizó.'}</p>}
       </CardContent></Card>;
     })}
     {manage && <section className="space-y-4"><h2 className="text-2xl font-bold">Intentos y entregas</h2>{!data.attempts.length && <p>No hay intentos todavía.</p>}{data.attempts.map(attempt => {

@@ -96,7 +96,7 @@ export async function finishPractice(pb: PocketBase, service: PocketBase, course
   return finalizePractice(service, attempt);
 }
 
-async function finalizePractice(service: PocketBase, attempt: PracticeAttempt) {
+export async function finalizePractice(service: PocketBase, attempt: PracticeAttempt) {
   const previous = await resultFor(service, attempt.id);
   if (previous) return previous;
   const deadline = practiceDeadline(attempt);

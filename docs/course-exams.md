@@ -4,6 +4,14 @@ La sección **Parciales** es independiente de Preparación. Administración habi
 
 ## Configuración y uso
 
+### Requisitos del segundo parcial de Fundamentos de IA
+
+La política de `lib/course-exam-requirements.ts` aplica exclusivamente al curso `tceqb7atji66fmd` y al parcial `fiasecondexam01`. Exige un intento finalizado de cada actividad: unidad 4 (`fiaunit4prep001`), unidad 5 (`fiaunit5prep001`) y simulación del segundo parcial (`nqcx3so0zz4o86y`). No exige nota mínima ni que los intentos sean posteriores a la publicación. Se comprueban resultados del alumno autenticado, del curso y de la actividad exacta; los intentos abiertos no cuentan. Las simulaciones vencidas se finalizan mediante el mismo servicio de preparación y cuentan como terminadas.
+
+El parcial publicado sigue visible antes del horario. El alumno ve el progreso de 0 a 3, el estado de cada actividad y enlaces a las pendientes. El listado y la pantalla previa actualizan el estado cada quince segundos mientras están visibles y ofrecen actualización manual. El servidor vuelve a consultar los requisitos antes de tomar la foto y crear el intento: un enlace directo o una pantalla desactualizada no permiten eludirlos. Cumplirlos no reemplaza el horario de activación; completarlos durante un turno permite ingresar solo hasta su cierre común. Se conserva el único intento entre turnos y la posibilidad de retomar intentos existentes.
+
+No requiere migración de base. La política y la interfaz requieren desplegar esta versión del campus; publicar o editar el registro del parcial por sí solo no activa este control.
+
 - Estados: **Borrador**, **Publicado** y **Archivado**. Borradores y archivados no aparecen en la lista del alumno. Los publicados muestran su disponibilidad como Programado, Activo o Cerrado.
 - La publicación exige preguntas y fechas de activación y desactivación, con cierre posterior al inicio. El editor interpreta siempre horarios de Buenos Aires, UTC−03:00; la base guarda UTC. Un borrador puede quedar sin ambas fechas.
 - La apertura es inclusiva y el cierre exclusivo. Un alumno que empieza más tarde dispone solamente del tiempo restante hasta el cierre común. No hay un plazo adicional de 60 minutos por alumno.
