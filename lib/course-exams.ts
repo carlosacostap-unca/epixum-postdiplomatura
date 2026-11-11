@@ -44,8 +44,14 @@ export const courseExamSchema = z.object({
 export type CourseExamInput = z.infer<typeof courseExamSchema>;
 export type CourseExam = CourseExamInput & { id: string; course: string };
 export type CourseExamSummary = Omit<CourseExam, 'questions' | 'sessions'> & { sessions?: ExamSessionSchedule[]; requirements?: ExamRequirementProgress[] };
+/** The primary session name follows its starting time in Argentina, never the host timezone. */
+export function primaryExamSessionLabel(opensAt: string) {
+  if (!opensAt || !Number.isFinite(Date.parse(opensAt.replace(' ', 'T')))) return 'Turno mañana';
+  const hour = Number(examLocalDate(opensAt).slice(11, 13));
+  return hour < 12 ? 'Turno mañana' : hour < 19 ? 'Turno tarde' : 'Turno noche';
+}
 export function examSchedule(exam: Pick<CourseExamSummary, 'opensAt' | 'closesAt' | 'sessions'>): ExamSessionSchedule[] {
-  return [{ id: 'primary', label: 'Turno mañana', opensAt: exam.opensAt, closesAt: exam.closesAt }, ...(exam.sessions || []).map(({ id, label, opensAt, closesAt }) => ({ id, label, opensAt, closesAt }))];
+  return [{ id: 'primary', label: primaryExamSessionLabel(exam.opensAt), opensAt: exam.opensAt, closesAt: exam.closesAt }, ...(exam.sessions || []).map(({ id, label, opensAt, closesAt }) => ({ id, label, opensAt, closesAt }))];
 }
 /** Explicit projection: no question bank or answer key crosses into a student page. */
 export function examSummary(exam: CourseExam): CourseExamSummary {

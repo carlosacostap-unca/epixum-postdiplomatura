@@ -38,6 +38,19 @@ it('no aplica requisitos a otros cursos o parciales', async () => {
   expect(await readExamRequirements(service, course, 'fiafirstexam001', 'student')).toEqual([]);
   expect(queries).toHaveLength(0);
 });
+it('exige las unidades 5 y 6 y la simulación de Diseño sin mezclar cursos', async () => {
+  const design = '6taf9vkwwi8oxlz';
+  completed.add('dspunit5prep001'); completed.add('fiaunit5prep001'); completed.add('nqcx3so0zz4o86y');
+  const progress = await readExamRequirements(service, design, 'dspsecondexam01', 'student');
+  expect(progress.map(r => [r.quizId, r.completed])).toEqual([
+    ['dspunit5prep001', true], ['dspunit6prep001', false], ['javvc3ngddo3ow2', false],
+  ]);
+  expect(queries.every(q => q.values.course === design)).toBe(true);
+  expect(examRequirements(course, 'dspsecondexam01')).toEqual([]);
+  expect(examRequirements(design, 'dspfirstexam001')).toEqual([]);
+  completed.add('dspunit6prep001'); completed.add('javvc3ngddo3ow2');
+  expect((await readExamRequirements(service, design, 'dspsecondexam01', 'student')).every(r => r.completed)).toBe(true);
+});
 it('no cuenta intentos abiertos; finaliza y cuenta una simulación vencida', async () => {
   pending.fiaunit4prep001 = [{ created: new Date().toISOString(), snapshot: { durationMinutes: 0 } }];
   pending.nqcx3so0zz4o86y = [{ id: 'timed', created: new Date(Date.now() - 61 * 60000).toISOString(), snapshot: { durationMinutes: 60 } }];

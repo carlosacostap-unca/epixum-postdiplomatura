@@ -2,7 +2,7 @@
 import { useState, useTransition, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, CardContent } from '@/components/ui';
-import { courseExamSchema, examDateInput, examLocalDate, examStatusLabels, type CourseExam, type CourseExamInput, type ExamSession } from '@/lib/course-exams';
+import { courseExamSchema, primaryExamSessionLabel, examDateInput, examLocalDate, examStatusLabels, type CourseExam, type CourseExamInput, type ExamSession } from '@/lib/course-exams';
 import type { PracticeQuestion } from '@/lib/preparation';
 import { saveExam } from '@/lib/actions-course-exams';
 import { COURSE_EXAM_APPROVAL_RULES } from '@/lib/course-exam-grading';
@@ -13,6 +13,7 @@ export function CourseExamEditor({ courseId, exam, basePath }: { courseId: strin
   const [title, setTitle] = useState(exam?.title || '');
   const [description, setDescription] = useState(exam?.description || '');
   const [primaryOpens, setPrimaryOpens] = useState(examLocalDate(exam?.opensAt || ''));
+  const primaryLabel = primaryExamSessionLabel(examDateInput(primaryOpens));
   const [primaryCloses, setPrimaryCloses] = useState(examLocalDate(exam?.closesAt || ''));
   const [primaryQuestions, setPrimaryQuestions] = useState<PracticeQuestion[]>(exam?.questions || []);
   const [sessions, setSessions] = useState<ExamSession[]>(exam?.sessions || []);
@@ -51,14 +52,14 @@ export function CourseExamEditor({ courseId, exam, basePath }: { courseId: strin
         <div className="space-y-3 border-t border-[var(--color-outline-variant)] pt-4">
           <h3 className="text-lg font-bold">Turnos alternativos</h3>
           <p>Un solo intento por alumno entre todos los turnos. Cada turno tiene su propio horario y preguntas distintas, con la misma cantidad de preguntas. Después del primer inicio se bloquea la edición de todos los turnos.</p>
-          <label className="block font-bold">Turno que estás editando<select className={field} value={sessionId} onChange={e => setSessionId(e.target.value)}><option value="primary">Turno mañana</option>{sessions.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
+          <label className="block font-bold">Turno que estás editando<select className={field} value={sessionId} onChange={e => setSessionId(e.target.value)}><option value="primary">{primaryLabel}</option>{sessions.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
           <Button variant="secondary" disabled={sessions.length >= 3} onClick={() => {
             const id = crypto.randomUUID();
             setSessions(items => [...items, { id, label: `Turno ${items.length + 2}`, opensAt: '', closesAt: '', questions: [] }]);
             setSessionId(id);
           }}>Agregar turno alternativo</Button>
           {activeSession && <><label className="block font-bold">Nombre del turno<input required maxLength={80} className={field} value={activeSession.label} onChange={e => updateSession({ label: e.target.value })} /></label><Button variant="ghost" onClick={() => { if (window.confirm('¿Eliminar este turno y sus preguntas?')) { setSessions(items => items.filter(s => s.id !== sessionId)); setSessionId('primary'); } }}>Eliminar turno</Button></>}
-          <p className="font-bold">Horario y preguntas de {activeSession?.label || 'Turno mañana'}</p>
+          <p className="font-bold">Horario y preguntas de {activeSession?.label || primaryLabel}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block font-bold">Activación<input type="datetime-local" className={field} value={opens} onChange={e => activeSession ? updateSession({ opensAt: examDateInput(e.target.value) }) : setPrimaryOpens(e.target.value)} required={status === 'published'} /></label>
@@ -79,7 +80,7 @@ export function CourseExamEditor({ courseId, exam, basePath }: { courseId: strin
         const options = Array.from({ length: 4 }, () => ({ id: crypto.randomUUID(), label: '' }));
         setQuestions(items => [...items, { id: crypto.randomUUID(), prompt: '', options, correctOptionId: options[0].id, explanation: '' }]);
       }}>Agregar pregunta</Button>
-      <p>{questions.length} de 80 preguntas en {activeSession?.label || 'Turno mañana'}</p>
+      <p>{questions.length} de 80 preguntas en {activeSession?.label || primaryLabel}</p>
       {error && <p role="alert" className="text-[var(--color-error)]">{error}</p>}
       <Button type="submit" isPending={pending}>{status === 'draft' ? 'Guardar borrador' : status === 'published' ? 'Guardar y publicar parcial' : 'Archivar parcial'}</Button>
     </fieldset>

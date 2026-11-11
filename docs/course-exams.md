@@ -4,6 +4,14 @@ La sección **Parciales** es independiente de Preparación. Administración habi
 
 ## Configuración y uso
 
+### Segundo parcial de Diseño de Software y Patrones
+
+El parcial `dspsecondexam01`, curso `6taf9vkwwi8oxlz`, contempla las unidades 5 y 6 con 20 preguntas por turno (10 por unidad), cuatro opciones y una correcta, dificultad fácil a media y 0,5 puntos por acierto. El 20/11/2026 tiene Turno tarde, de 15:00 a 16:00, y Turno noche, de 20:00 a 21:00, hora argentina. Las preguntas y claves se conservan en archivos privados ignorados por Git y en PocketBase.
+
+La misma política de acceso del segundo parcial de IA exige finalizar las preparaciones `dspunit5prep001`, `dspunit6prep001` y la simulación `javvc3ngddo3ow2`, sin nota mínima. Los intentos previos finalizados cuentan. Las actividades de otros cursos no sustituyen estos requisitos. El estado y los enlaces a pendientes aparecen antes de rendir; el servidor controla requisitos y horarios. La activación de esta política requiere desplegar el código actualizado.
+
+El nombre del turno principal se obtiene de su hora de apertura en Argentina: mañana antes de las 12, tarde desde las 12 hasta antes de las 19 y noche desde las 19. El editor y las vistas usan el mismo criterio; los nombres explícitos de los turnos adicionales se conservan.
+
 ### Requisitos del segundo parcial de Fundamentos de IA
 
 La política de `lib/course-exam-requirements.ts` aplica exclusivamente al curso `tceqb7atji66fmd` y al parcial `fiasecondexam01`. Exige un intento finalizado de cada actividad: unidad 4 (`fiaunit4prep001`), unidad 5 (`fiaunit5prep001`) y simulación del segundo parcial (`nqcx3so0zz4o86y`). No exige nota mínima ni que los intentos sean posteriores a la publicación. Se comprueban resultados del alumno autenticado, del curso y de la actividad exacta; los intentos abiertos no cuentan. Las simulaciones vencidas se finalizan mediante el mismo servicio de preparación y cuentan como terminadas.
