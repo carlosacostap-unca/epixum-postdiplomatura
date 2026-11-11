@@ -18,13 +18,19 @@ export async function ReviewsPage({ courseId, mode }: Props) {
   const Context = mode === 'teacher' ? TeacherCourseContext : StudentCourseContext;
   const base = `/${mode === 'teacher' ? 'docentes' : 'estudiantes'}/cursos/${courseId}/revisiones`;
   return <div className="page-container space-y-8">
-    <Context course={data.course} current="revisiones" title="Revisiones por turnos" description={mode === 'teacher' ? 'Organizá la agenda del equipo docente y acompañá cada intento hasta la aprobación.' : 'Reservá tu lugar, consultá las devoluciones y seguí tu avance en cada revisión.'} />
-    {!data.reviews.length && <EmptyState icon="event_available" title="Todavía no hay revisiones" description={mode === 'teacher' ? 'Creá la primera revisión y luego agregá las franjas de atención.' : 'Las revisiones aparecerán cuando los docentes las publiquen.'} />}
+    <Context course={data.course} current="revisiones" title="Revisiones por turnos" description={mode === 'teacher' ? 'Organizá la agenda del equipo docente y acompañá cada intento hasta la aprobación.' : 'Consultá las próximas revisiones y reservá un turno.'} />
+    {!data.reviews.length && <EmptyState icon="event_available" title={mode === 'teacher' ? 'Todavía no hay revisiones' : 'No hay próximas revisiones'} description={mode === 'teacher' ? 'Creá la primera revisión y luego agregá las franjas de atención.' : 'Las revisiones aparecerán cuando se publiquen con franjas próximas.'} />}
     <div className="grid gap-4 md:grid-cols-2">{data.reviews.map(review => {
       const status = data.progress.find(p => p.id === review.id)?.status;
       const publication = mode === 'teacher' && <PublicationBadge status={review.publicationStatus || undefined} publishAt={review.publishAt || undefined} />;
       return <Card key={review.id}><CardContent className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-bold text-[var(--color-primary)]">REVISIÓN {review.number}</p><div className="flex flex-wrap gap-2">{publication}<Badge tone={status === 'passed' ? 'success' : review.open ? 'info' : 'neutral'}>{status === 'passed' ? 'Aprobada' : status === 'reserved' ? 'Tenés una reserva pendiente' : review.open ? 'Reservas abiertas' : 'Reservas cerradas'}</Badge></div></div><h2 className="text-xl font-bold">{review.title}</h2><p className="line-clamp-3 whitespace-pre-wrap text-sm text-[var(--color-text-muted)]">{review.instructions || 'Consultá los horarios y el seguimiento de esta revisión.'}</p><Link className="inline-flex min-h-11 items-center font-bold text-[var(--color-primary)]" href={`${base}/${review.id}`}>{mode === 'teacher' ? 'Gestionar agenda y evaluaciones' : 'Ver turnos y devoluciones'} →</Link></CardContent></Card>;
     })}</div>
+    {data.history.length > 0 && <details className="rounded-2xl border border-[var(--color-outline-variant)] p-4">
+      <summary className="cursor-pointer font-semibold">Mis reservas y devoluciones anteriores</summary>
+      <ul className="mt-2">{data.history.map(review => <li key={review.id}>
+        <Link className="inline-flex min-h-11 items-center font-semibold text-[var(--color-primary)]" href={`${base}/${review.id}#review-bookings-title`}>{review.title}</Link>
+      </li>)}</ul>
+    </details>}
     {mode === 'teacher' && <section className="rounded-2xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-6"><h2 className="mb-5 text-xl font-bold">Crear revisión</h2><ReviewEditor courseId={courseId} nextNumber={Math.max(0, ...data.reviews.map(r => r.number)) + 1} /></section>}
   </div>;
 }

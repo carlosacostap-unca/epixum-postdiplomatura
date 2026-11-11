@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getReviewAgenda } from './review-appointments-data';
+import { getCourseReviews, getReviewAgenda } from './review-appointments-data';
 
 const mocks = vi.hoisted(() => ({ collection: vi.fn(), service: vi.fn(), course: vi.fn(), review: vi.fn(), people: vi.fn(), serviceCollection: vi.fn() }));
-vi.mock('./pocketbase-server', () => ({ createServerClient: async () => ({ collection: mocks.collection, filter: (value: string) => value }) }));
+vi.mock('./pocketbase-server', () => ({ createServerClient: async () => ({ collection: mocks.collection, filter: (value: string) => value, authStore: { record: { id: 'student' } } }) }));
 vi.mock('./pocketbase-service', () => ({ createServiceClient: mocks.service }));
 vi.mock('./review-appointments-service', () => ({ requireReviewCourse: mocks.course, ensureReviewAllocationKey: vi.fn().mockResolvedValue('server-only') }));
 
@@ -41,7 +41,7 @@ describe('privacidad de las notas en la agenda', () => {
     expect(JSON.stringify(data)).not.toContain('3834000000');
     expect(JSON.stringify(data)).not.toContain('Nota interna confidencial');
     expect(data.bookings[0].feedback).toBe('Buen trabajo');
-    expect(data.blocks[0].availableSlots).toBe(1);
+    expect(data.blocks[0].lastFreeSlotStart).toBe(Date.parse('2099-01-01T12:15:00Z'));
     expect(data.slots.map(slot => slot.id)).toEqual(['own-slot']);
     expect(data.teachers).toEqual([]);
     expect(data.names).toEqual({});
@@ -88,5 +88,26 @@ describe('privacidad de las notas en la agenda', () => {
     mocks.course.mockRejectedValue(new Error('Sin acceso al curso'));
     await expect(getReviewAgenda('course', 'review', 'teacher')).rejects.toThrow('Sin acceso');
     expect(mocks.service).not.toHaveBeenCalled();
+  });
+  it('muestra próximas revisiones y conserva el acceso al historial personal', async () => {
+    const slots = vi.fn().mockResolvedValue([
+      { review: 'upcoming', teacher: 'privateTeacherId' },
+      { review: 'draft', teacher: 'privateTeacherId' },
+      { review: 'unassigned', teacher: 'other' },
+    ]);
+    mocks.collection.mockImplementation((name: string) => ({
+      getFullList: name === 'review_slots' ? slots : async () => name === 'review_bookings'
+        ? [{ review: 'past', status: 'passed' }]
+        : [
+          { id: 'upcoming' }, { id: 'past' }, { id: 'past-without-booking' },
+          { id: 'draft', publicationStatus: 'draft' }, { id: 'unassigned' },
+        ],
+    }));
+    const data = await getCourseReviews('course', 'student');
+    expect(data.reviews.map(review => review.id)).toEqual(['upcoming']);
+    expect(data.history.map(review => review.id)).toEqual(['past']);
+    expect(slots).toHaveBeenCalledWith(expect.objectContaining({
+      filter: expect.stringContaining('block.active = true && startsAt > {:now}'),
+    }));
   });
 });

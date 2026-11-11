@@ -19,7 +19,7 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
   const { course, review, blocks, slots, bookings, names, teachers } = data;
   const teacherMode = mode === 'teacher'; const router = useRouter(); const mutation = useReviewMutation();
   const reservation = useReviewMutation();
-  const [confirmation, setConfirmation] = useState<Data['blocks'][number] | null>(null);
+  const [confirmationId, setConfirmationId] = useState<string | null>(null);
   const [editing, setEditing] = useState<ReviewBlock | 'new' | null>(null);
   const [teacherFilter, setTeacherFilter] = useState('');
   const [timeFilter, setTimeFilter] = useState('all');
@@ -39,7 +39,11 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
   const selectedSlot = selectedBooking ? slots.find(slot => slot.id === selectedBooking.slot) : undefined;
   const selectedContact = selectedBooking ? data.studentContacts?.[selectedBooking.student] : undefined;
   const whatsAppUrl = reviewWhatsAppUrl(selectedContact?.phone);
-  const visibleBlocks = blocks.filter(block => (!teacherFilter || block.teacher === teacherFilter) && (teacherMode ? timeFilter === 'all' || (timeFilter === 'past' ? Date.parse(block.endsAt) <= now : Date.parse(block.endsAt) > now) : Date.parse(block.endsAt) > now));
+  const visibleBlocks = teacherMode
+    ? blocks.filter(block => (!teacherFilter || block.teacher === teacherFilter) && (timeFilter === 'all' || (timeFilter === 'past' ? Date.parse(block.endsAt) <= now : Date.parse(block.endsAt) > now)))
+    : blocks.filter(block => block.lastSlotStart > now);
+  const hasUpcomingBlocks = visibleBlocks.length > 0;
+  const confirmation = visibleBlocks.find(block => block.id === confirmationId);
   const orderedBookings = [...bookings].filter(booking => slots.some(slot => slot.id === booking.slot)).sort((a, b) => Number(waiting.some(w => w.id === b.id)) - Number(waiting.some(w => w.id === a.id)));
   const pageCount = Math.max(1, Math.ceil(orderedBookings.length / 10));
   const currentPage = Math.min(bookingPage, pageCount);
@@ -47,14 +51,15 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
   return <div className="space-y-8">
     <div className="flex flex-wrap items-center justify-between gap-3"><Link href={base} className="text-sm font-semibold text-[var(--color-primary)]">← Todas las revisiones</Link><div className="flex flex-wrap gap-2"><button className={reviewSecondary} onClick={() => router.refresh()}>Actualizar disponibilidad</button>{teacherMode && <Link className={reviewButton} href={`${base}/${review.id}/editar`}>Editar revisión</Link>}</div></div>
     {teacherMode && <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-semibold">Publicación de la revisión</span><PublicationBadge status={review.publicationStatus || undefined} publishAt={review.publishAt || undefined} /></div>}
-    {!teacherMode && <div className="grid gap-4 sm:grid-cols-3">
-      {[{ label: 'Franjas con disponibilidad', value: blocks.filter(block => block.availableSlots > 0 && Date.parse(block.endsAt) > now).length }, { label: 'Mis intentos', value: bookings.filter(b => b.status !== 'cancelled').length }, { label: 'Estado de la revisión', value: passed ? 'Aprobada' : review.open ? 'Reservas abiertas' : 'Reservas cerradas' }].map(item => <div key={item.label} className={reviewPanel}><p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{item.label}</p><p className="mt-2 text-2xl font-bold">{item.value}</p></div>)}
+    {!teacherMode && hasUpcomingBlocks && <div className="grid gap-4 sm:grid-cols-3">
+      {[{ label: 'Franjas con disponibilidad', value: visibleBlocks.filter(block => review.open && block.lastFreeSlotStart > now).length }, { label: 'Mis intentos', value: bookings.filter(b => b.status !== 'cancelled').length }, { label: 'Estado de la revisión', value: passed ? 'Aprobada' : review.open ? 'Reservas abiertas' : 'Reservas cerradas' }].map(item => <div key={item.label} className={reviewPanel}><p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{item.label}</p><p className="mt-2 text-2xl font-bold">{item.value}</p></div>)}
     </div>}
-    {review.instructions && (teacherMode ? <details className={reviewPanel}><summary className="cursor-pointer font-bold">Descripción</summary><p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed">{review.instructions}</p></details> : <div className={reviewPanel}><h2 className="mb-2 font-bold">Para esta revisión</h2><p className="whitespace-pre-wrap text-sm leading-relaxed">{review.instructions}</p></div>)}
-    {!teacherMode && <p role="status" className="rounded-xl bg-[var(--color-surface-container)] p-4 text-sm">{passed ? 'Ya aprobaste esta revisión. Podés consultar tus devoluciones en el historial.' : pending ? 'Tenés un turno reservado o pendiente de evaluación. Podés cancelarlo antes del inicio; después, esperá la devolución docente para saber si necesitás otro intento.' : !review.open ? 'Las nuevas reservas están cerradas. Tus turnos e historial se conservan.' : 'Elegí una franja. Al solicitarla, se te asignará el primer turno disponible y verás tu horario en Mis reservas y devoluciones. Podés tener una reserva pendiente por revisión.'}</p>}
+    {review.instructions && (teacherMode ? <details className={reviewPanel}><summary className="cursor-pointer font-bold">Descripción</summary><p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed">{review.instructions}</p></details> : hasUpcomingBlocks && <div className={reviewPanel}><h2 className="mb-2 font-bold">Para esta revisión</h2><p className="whitespace-pre-wrap text-sm leading-relaxed">{review.instructions}</p></div>)}
+    {!teacherMode && hasUpcomingBlocks && <p role="status" className="rounded-xl bg-[var(--color-surface-container)] p-4 text-sm">{passed ? 'Ya aprobaste esta revisión. Podés consultar tus devoluciones en el historial.' : pending ? 'Tenés un turno reservado o pendiente de evaluación. Podés cancelarlo antes del inicio; después, esperá la devolución docente para saber si necesitás otro intento.' : !review.open ? 'Las nuevas reservas están cerradas. Tus turnos e historial se conservan.' : 'Elegí una franja. Al solicitarla, se te asignará el primer turno disponible y verás tu horario en Mis reservas y devoluciones. Podés tener una reserva pendiente por revisión.'}</p>}
+    {!teacherMode && !hasUpcomingBlocks && <p className={reviewPanel}>No hay próximas franjas para esta revisión.</p>}
     {mutation.feedback}
     {!confirmation && reservation.feedback}
-    <section className="space-y-4" aria-labelledby="review-schedule-title">
+    {(teacherMode || hasUpcomingBlocks) && <section className="space-y-4" aria-labelledby="review-schedule-title">
       <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 id="review-schedule-title" className="text-2xl font-bold">{teacherMode ? 'Franjas y turnos' : 'Elegí una franja'}</h2><p className="mt-1 text-sm text-[var(--color-text-muted)]">Horarios de Argentina (UTC−3).</p></div>{teacherMode && <button className={reviewButton} onClick={() => setEditing('new')}>Agregar franja</button>}</div>
       {teacherMode && <Dialog open={Boolean(editing)} onOpenChange={open => { if (!open) setEditing(null); }} title={editing === 'new' ? 'Nueva franja docente' : 'Editar franja'} className="sm:w-[min(calc(100%_-_2rem),48rem)]">
         {editing && (editingBlock && editingHasPending
@@ -65,17 +70,21 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
         <label className="block min-w-60 text-sm font-semibold">Filtrar por docente<select className={reviewInput} value={teacherFilter} onChange={e => setTeacherFilter(e.target.value)}><option value="">Todos los docentes</option>{teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
         <label className="block min-w-60 text-sm font-semibold">Filtrar por franja<select className={reviewInput} value={timeFilter} onChange={e => setTimeFilter(e.target.value)}><option value="all">Todas las franjas</option><option value="upcoming">Próximas y en curso</option><option value="past">Finalizadas</option></select></label>
       </div>}
-      {!visibleBlocks.length && <div className={reviewPanel}>{teacherMode ? blocks.length ? 'No hay franjas para los filtros seleccionados.' : 'Todavía no hay franjas. Agregá una para ofrecer turnos a los alumnos.' : 'Todavía no hay horarios próximos para esta selección. Volvé a consultar cuando el docente agregue disponibilidad.'}</div>}
+      {teacherMode && !hasUpcomingBlocks && <div className={reviewPanel}>{blocks.length ? 'No hay franjas para los filtros seleccionados.' : 'Todavía no hay franjas. Agregá una para ofrecer turnos a los alumnos.'}</div>}
       <div className="space-y-4">{visibleBlocks.map(block => {
         const blockSlots = slots.filter(s => s.block === block.id && s.active);
         const hasPending = bookings.some(b => b.status === 'reserved' && blockSlots.some(s => s.id === b.slot));
+        const hasFreeSlots = block.lastFreeSlotStart > now;
         return <BlockContainer teacher={teacherMode} key={block.id} heading={<span>{reviewDate(block.startsAt)}–{reviewDate(block.endsAt, true)} · {names[block.teacher] || 'Docente'} · {blockSlots.length} turnos</span>}>
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="text-lg font-bold">{teacherMode ? names[block.teacher] || 'Docente' : 'Franja de atención'}</h3><p className="mt-1 text-sm">{reviewDate(block.startsAt)}–{reviewDate(block.endsAt, true)}</p><p className="mt-1 text-xs text-[var(--color-text-muted)]">Turnos de {block.duration} min{teacherMode && (block.breakEvery ? ` · Descanso de ${block.breakMinutes} min cada ${block.breakEvery} turnos` : ' · Sin descansos')}</p></div>
             {teacherMode && Date.parse(block.startsAt) > now && <div className="flex gap-2"><button className={reviewSecondary} disabled={mutation.pending} onClick={() => setEditing(block)}>Editar</button><button className={reviewSecondary} disabled={hasPending || mutation.pending} onClick={() => { if (window.confirm('¿Retirar esta franja de la disponibilidad? El historial se conserva.')) mutation.run(() => removeReviewBlockAction(course.id, review.id, review.revision, block.id)); }}>Retirar</button></div>}
           </div>
           {teacherMode && hasPending && <p className="mt-3 text-xs text-[var(--color-text-muted)]">La franja tiene reservas pendientes. Desde Editar podés cambiar la fecha conservando los turnos; no se puede retirar ni cambiar los horarios.</p>}
           {teacherMode && <div className="mt-4 space-y-3">{block.meetUrl && <a className={reviewSecondary} href={block.meetUrl} target="_blank" rel="noopener noreferrer">Abrir sala de reunión</a>}<details><summary className="cursor-pointer text-sm font-semibold text-[var(--color-primary)]">Configurar enlace de la sala</summary><ReviewMeetingEditor key={`${block.id}-${review.revision}`} courseId={course.id} review={review} block={block} /></details></div>}
-          {!teacherMode && <div className="mt-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm">{block.availableSlots > 0 ? 'Hay turnos disponibles. Te asignaremos el primero libre.' : 'Sin turnos disponibles en esta franja.'}</p><button className={reviewButton} disabled={!canReserve || block.availableSlots === 0 || mutation.pending || reservation.pending} onClick={() => { if (review.bookingMessage) setConfirmation(block); else reservation.run(() => reserveReviewAction(course.id, review.id, block.id)); }}>{reservation.pending ? 'Asignando…' : 'Solicitar turno en esta franja'}</button></div>}
+          {!teacherMode && <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <Badge tone={hasFreeSlots && review.open ? 'success' : 'neutral'}>{!hasFreeSlots ? 'No hay turnos disponibles' : review.open ? 'Hay turnos disponibles' : 'Reservas cerradas'}</Badge>
+            <button className={reviewButton} disabled={!canReserve || !hasFreeSlots || mutation.pending || reservation.pending} onClick={() => { if (review.bookingMessage) setConfirmationId(block.id); else reservation.run(() => reserveReviewAction(course.id, review.id, block.id)); }}>{reservation.pending ? 'Asignando…' : 'Solicitar turno en esta franja'}</button>
+          </div>}
           {teacherMode && <ul className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{blockSlots.map(slot => {
             const booking = bookings.find(booking => booking.slot === slot.id && booking.status === 'reserved');
             const elapsed = Date.parse(slot.startsAt) <= now;
@@ -90,7 +99,7 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
           })}</ul>}
         </BlockContainer>;
       })}</div>
-    </section>
+    </section>}
     {teacherMode && <Dialog open={Boolean(selectedBooking && selectedSlot)} onOpenChange={open => { if (!open) setSelectedBookingId(null); }} title="Detalle del turno reservado"
       description={selectedSlot ? `${reviewDate(selectedSlot.startsAt)}–${reviewDate(selectedSlot.endsAt, true)}. Horario de Argentina (UTC−3).` : undefined}
       footer={<button type="button" className={reviewSecondary} onClick={() => setSelectedBookingId(null)}>Cerrar</button>}>
@@ -105,9 +114,9 @@ export function ReviewAgenda({ data, mode }: { data: Data; mode: 'teacher' | 'st
         {whatsAppUrl ? <a className={reviewButton} href={whatsAppUrl} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a> : selectedContact?.phone ? <p className="text-sm text-[var(--color-text-muted)]">Para abrir WhatsApp, el teléfono debe incluir un código de área o de país válido.</p> : null}
       </div>}
     </Dialog>}
-    {!teacherMode && <Dialog open={Boolean(confirmation)} onOpenChange={open => { if (!open && !reservation.pending) setConfirmation(null); }} title="Antes de solicitar tu turno" dismissible={!reservation.pending}
+    {!teacherMode && <Dialog open={Boolean(confirmation)} onOpenChange={open => { if (!open && !reservation.pending) setConfirmationId(null); }} title="Antes de solicitar tu turno" dismissible={!reservation.pending}
       description={confirmation ? `Franja: ${reviewDate(confirmation.startsAt)}–${reviewDate(confirmation.endsAt, true)}. Horario de Argentina (UTC−3).` : undefined}
-      footer={<><button className={reviewSecondary} disabled={reservation.pending} onClick={() => setConfirmation(null)}>Volver sin reservar</button><button className={reviewButton} disabled={reservation.pending || !canReserve || !confirmation} onClick={() => { if (confirmation) reservation.run(() => reserveReviewAction(course.id, review.id, confirmation.id, review.bookingMessage || ''), () => setConfirmation(null)); }}>{reservation.pending ? 'Asignando…' : 'Confirmar solicitud'}</button></>}>
+      footer={<><button className={reviewSecondary} disabled={reservation.pending} onClick={() => setConfirmationId(null)}>Volver sin reservar</button><button className={reviewButton} disabled={reservation.pending || !canReserve || !confirmation || confirmation.lastFreeSlotStart <= now} onClick={() => { if (confirmation) reservation.run(() => reserveReviewAction(course.id, review.id, confirmation.id, review.bookingMessage || ''), () => setConfirmationId(null)); }}>{reservation.pending ? 'Asignando…' : 'Confirmar solicitud'}</button></>}>
       <div className="space-y-4 pb-2"><p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{review.bookingMessage}</p><p className="text-sm text-[var(--color-text-muted)]">Al confirmar, te asignaremos el primer turno disponible de esta franja. Todavía no reservaste un lugar.</p>{confirmation && reservation.feedback}</div>
     </Dialog>}
     <section className="space-y-4" aria-labelledby="review-bookings-title"><h2 id="review-bookings-title" className="text-2xl font-bold">{teacherMode ? 'Reservas y evaluaciones' : 'Mis reservas y devoluciones'}</h2>

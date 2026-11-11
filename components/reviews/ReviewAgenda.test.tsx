@@ -15,6 +15,13 @@ const data = {
   teacherNotes: { booking: 'Observación interna confidencial' }, now: Date.parse('2026-01-02T00:00:00Z'),
 } as unknown as Parameters<typeof ReviewAgenda>[0]['data'];
 
+const studentBlock = {
+  id: 'block', active: true, teacher: 'teacher', duration: 15,
+  startsAt: '2026-01-03T12:00:00Z', endsAt: '2026-01-03T13:00:00Z',
+  lastSlotStart: Date.parse('2026-01-03T12:45:00Z'),
+  lastFreeSlotStart: Date.parse('2026-01-03T12:30:00Z'),
+};
+
 describe('resultado y notas privadas del turno', () => {
   beforeEach(() => { mocks.reserve.mockReset().mockResolvedValue({ success: true }); mocks.reschedule.mockReset().mockResolvedValue({ success: true }); });
   afterEach(() => vi.useRealTimers());
@@ -60,7 +67,7 @@ describe('resultado y notas privadas del turno', () => {
     render(<ReviewAgenda data={agenda} mode="student" />);
     expect(screen.queryByText('Evaluar turno: resultado, devolución y notas privadas')).not.toBeInTheDocument();
   });
-  const futureBlock = { id: 'block', review: 'review', active: true, teacher: 'teacher00000001', date: '2026-10-29', start: '15:00', end: '17:00', startsAt: '2026-10-29T18:00:00Z', endsAt: '2026-10-29T20:00:00Z', duration: 15, breakEvery: 0, breakMinutes: 0, availableSlots: 7 };
+  const futureBlock = { id: 'block', review: 'review', active: true, teacher: 'teacher00000001', date: '2026-10-29', start: '15:00', end: '17:00', startsAt: '2026-10-29T18:00:00Z', endsAt: '2026-10-29T20:00:00Z', duration: 15, breakEvery: 0, breakMinutes: 0, meetUrl: '', lastSlotStart: Date.parse('2026-10-29T19:45:00Z'), lastFreeSlotStart: Date.parse('2026-10-29T19:45:00Z') };
   function editableAgenda(reserved: boolean) {
     return { ...data, course: { ...data.course, teachers: [futureBlock.teacher] }, teachers: [{ id: futureBlock.teacher, name: 'Docente' }], blocks: [futureBlock],
       slots: [{ id: 'slot', block: futureBlock.id, teacher: futureBlock.teacher, active: true, occupied: reserved, startsAt: futureBlock.startsAt, endsAt: '2026-10-29T18:15:00Z' }],
@@ -215,12 +222,13 @@ describe('resultado y notas privadas del turno', () => {
     expect(screen.queryByRole('link', { name: 'Unirme a la sala de reunión' })).not.toBeInTheDocument();
   });
   it('permite solicitar una franja sin mostrar docentes ni elegir horarios individuales', async () => {
-    const agenda = { ...data, bookings: [], blocks: [{ id: 'block', active: true, teacher: 'teacher', startsAt: '2026-01-03T12:00:00Z', endsAt: '2026-01-03T13:00:00Z', duration: 15, availableSlots: 3 }],
+    const agenda = { ...data, bookings: [], blocks: [studentBlock],
       slots: [{ id: 'specific-slot', block: 'block', active: true, teacher: 'teacher', startsAt: '2026-01-03T12:15:00Z', endsAt: '2026-01-03T12:30:00Z' }],
       names: { teacher: 'Nombre privado del docente' }, teachers: [{ id: 'teacher', name: 'Nombre privado del docente' }, { id: 'peer', name: 'Otro docente' }],
     } as unknown as typeof data;
     render(<ReviewAgenda data={agenda} mode="student" />);
     expect(screen.getByText('sábado, 03/01/2026, 09:00–10:00')).toBeInTheDocument();
+    expect(screen.getByText('Hay turnos disponibles')).toBeInTheDocument();
     expect(screen.queryByText('09:15–09:30')).not.toBeInTheDocument();
     expect(screen.queryByText('Nombre privado del docente')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Filtrar por docente')).not.toBeInTheDocument();
@@ -230,12 +238,25 @@ describe('resultado y notas privadas del turno', () => {
     await screen.findByText('Cambios guardados.');
   });
   it('inhabilita la solicitud de una franja sin cupos', () => {
-    const agenda = { ...data, bookings: [], blocks: [{ id: 'block', active: true, startsAt: '2026-01-03T12:00:00Z', endsAt: '2026-01-03T13:00:00Z', duration: 15, availableSlots: 0 }] } as unknown as typeof data;
+    const agenda = { ...data, bookings: [], blocks: [{ ...studentBlock, lastFreeSlotStart: 0 }] } as unknown as typeof data;
     render(<ReviewAgenda data={agenda} mode="student" />);
+    expect(screen.getByText('No hay turnos disponibles')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Solicitar turno en esta franja' })).toBeDisabled();
   });
+  it('actualiza el cartel al empezar el último turno libre y oculta la franja al empezar el último turno', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-03T12:29:45Z'));
+    const agenda = { ...data, bookings: [], now: Date.now(), blocks: [studentBlock] } as unknown as typeof data;
+    render(<ReviewAgenda data={agenda} mode="student" />);
+    expect(screen.getByText('Hay turnos disponibles')).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(15000));
+    expect(screen.getByText('No hay turnos disponibles')).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(15 * 60000));
+    expect(screen.queryByText('sábado, 03/01/2026, 09:00–10:00')).not.toBeInTheDocument();
+    expect(screen.getByText('No hay próximas franjas para esta revisión.')).toBeInTheDocument();
+  });
   it('muestra las indicaciones y solicita el turno únicamente después de confirmar', async () => {
-    const agenda = { ...data, bookings: [], review: { ...data.review, bookingMessage: 'Traé tu proyecto.\nRevisá los requisitos antes de reservar.' }, blocks: [{ id: 'block', active: true, startsAt: '2026-01-03T12:00:00Z', endsAt: '2026-01-03T13:00:00Z', duration: 15, availableSlots: 2 }] } as unknown as typeof data;
+    const agenda = { ...data, bookings: [], review: { ...data.review, bookingMessage: 'Traé tu proyecto.\nRevisá los requisitos antes de reservar.' }, blocks: [studentBlock] } as unknown as typeof data;
     render(<ReviewAgenda data={agenda} mode="student" />);
     fireEvent.click(screen.getByRole('button', { name: 'Solicitar turno en esta franja' }));
     const dialog = screen.getByRole('dialog', { name: 'Antes de solicitar tu turno' });
@@ -254,7 +275,7 @@ describe('resultado y notas privadas del turno', () => {
   });
   it('muestra un error de reserva dentro del diálogo sin confirmar un turno', async () => {
     mocks.reserve.mockResolvedValue({ success: false, error: 'Las indicaciones cambiaron. Actualizá la página.' });
-    const agenda = { ...data, bookings: [], review: { ...data.review, bookingMessage: 'Traé tu proyecto.' }, blocks: [{ id: 'block', active: true, startsAt: '2026-01-03T12:00:00Z', endsAt: '2026-01-03T13:00:00Z', duration: 15, availableSlots: 2 }] } as unknown as typeof data;
+    const agenda = { ...data, bookings: [], review: { ...data.review, bookingMessage: 'Traé tu proyecto.' }, blocks: [studentBlock] } as unknown as typeof data;
     render(<ReviewAgenda data={agenda} mode="student" />);
     fireEvent.click(screen.getByRole('button', { name: 'Solicitar turno en esta franja' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar solicitud' }));

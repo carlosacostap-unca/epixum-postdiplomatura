@@ -9,9 +9,25 @@ export async function getCourseReviews(courseId: string, mode: ReviewMode) {
   const pb = await createServerClient();
   const course = await requireReviewCourse(pb, courseId, mode);
   const allReviews = await pb.collection('course_reviews').getFullList<Review>({ filter: pb.filter('course = {:course}', { course: courseId }), sort: 'number' });
-  const reviews = mode === 'student' ? allReviews.filter(review => isPublicationVisible(review)) : allReviews;
-  const bookings = mode === 'student' ? await pb.collection('review_bookings').getFullList<ReviewBooking>({ filter: pb.filter('review.course = {:course} && student = {:student}', { course: courseId, student: pb.authStore.record!.id }), fields: 'review,status' }) : [];
-  return { course, reviews, progress: reviews.map(r => ({ id: r.id, status: bookings.some(b => b.review === r.id && b.status === 'passed') ? 'passed' : bookings.some(b => b.review === r.id && b.status === 'reserved') ? 'reserved' : 'available' })) };
+  if (mode === 'teacher') return { course, reviews: allReviews, progress: [], history: [] };
+
+  const now = new Date();
+  const [slots, bookings] = await Promise.all([
+    pb.collection('review_slots').getFullList<Pick<ReviewSlot, 'review' | 'teacher'>>({
+      filter: pb.filter('review.course = {:course} && active = true && block.active = true && startsAt > {:now} && block.endsAt > {:now}', { course: courseId, now }),
+      fields: 'review,teacher',
+    }),
+    pb.collection('review_bookings').getFullList<Pick<ReviewBooking, 'review' | 'status'>>({
+      filter: pb.filter('review.course = {:course} && student = {:student} && status != "cancelled"', { course: courseId, student: pb.authStore.record!.id }),
+      fields: 'review,status',
+    }),
+  ]);
+  const visible = allReviews.filter(review => isPublicationVisible(review, now));
+  const upcoming = new Set(slots.filter(slot => course.teachers?.includes(slot.teacher)).map(slot => slot.review));
+  const reviews = visible.filter(review => upcoming.has(review.id));
+  const history = visible.filter(review => !upcoming.has(review.id) && bookings.some(booking => booking.review === review.id));
+  const progress = reviews.map(r => ({ id: r.id, status: bookings.some(b => b.review === r.id && b.status === 'passed') ? 'passed' : bookings.some(b => b.review === r.id && b.status === 'reserved') ? 'reserved' : 'available' }));
+  return { course, reviews, progress, history };
 }
 
 export async function getReviewAgenda(courseId: string, reviewId: string, mode: ReviewMode) {
@@ -52,10 +68,16 @@ export async function getReviewAgenda(courseId: string, reviewId: string, mode: 
   }));
   return {
     course: mode === 'teacher' ? course : { ...course, teachers: [] }, review,
-    blocks: blocks.filter(block => block.active && (mode === 'teacher' || course.teachers?.includes(block.teacher))).map(block => ({
-      ...block, teacher: mode === 'teacher' ? block.teacher : '', meetUrl: mode === 'teacher' ? meetingByBlock[block.id] || '' : '',
-      availableSlots: availability.filter(slot => slot.block === block.id && slot.active && !slot.occupied && Date.parse(slot.startsAt) > now && course.teachers?.includes(slot.teacher)).length,
-    })),
+    blocks: blocks.filter(block => block.active && (mode === 'teacher' || course.teachers?.includes(block.teacher))).map(block => {
+      const blockSlots = availability.filter(slot => slot.block === block.id && slot.active && course.teachers?.includes(slot.teacher));
+      const lastSlot = blockSlots.at(-1);
+      const lastFreeSlot = blockSlots.findLast(slot => !slot.occupied);
+      return {
+        ...block, teacher: mode === 'teacher' ? block.teacher : '', meetUrl: mode === 'teacher' ? meetingByBlock[block.id] || '' : '',
+        lastSlotStart: lastSlot ? Date.parse(lastSlot.startsAt) : 0,
+        lastFreeSlotStart: lastFreeSlot ? Date.parse(lastFreeSlot.startsAt) : 0,
+      };
+    }).filter(block => mode === 'teacher' || block.lastSlotStart > now),
     slots: mode === 'teacher' ? availability : availability.filter(slot => ownSlots.has(slot.id)).map(slot => ({ ...slot, teacher: '' })),
     bookings, meetingLinks, ...(mode === 'teacher' ? { teacherNotes, studentContacts } : {}), names, now,
     teachers: mode === 'teacher' ? (course.teachers || []).map(id => ({ id, name: names[id] || 'Docente' })) : [],
