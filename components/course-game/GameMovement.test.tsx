@@ -248,7 +248,7 @@ it('las notebooks de alumnos abren la carpeta y los enlaces sin dar acceso al es
  fireEvent.click(screen.getByRole('button',{name:'Abrir carpeta Clase 1'}));
  expect(await screen.findByRole('link',{name:/Clase en vivo/})).toHaveAttribute('href','https://meet.google.com/test');
  expect(screen.getByRole('link',{name:/Grabación/})).toHaveAttribute('href','https://youtube.com/test');
- expect(screen.getByRole('link',{name:/Diapositivas/})).toHaveAttribute('href','https://google.com/');
+ expect(screen.queryByRole('link',{name:/Diapositivas/})).not.toBeInTheDocument();
  expect(screen.queryByRole('button',{name:'Notebook docente: abrir computadora'})).not.toBeInTheDocument();
 });
 it('reserva el taller al docente y conversa solo después de llegar al personaje',()=>{
