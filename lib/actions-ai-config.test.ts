@@ -72,6 +72,21 @@ describe('configuración docente de preevaluación', () => {
     expect(result).toMatchObject({ success: true, config: { version: 5 } });
   });
 
+  it('permite cargar y volver a guardar una configuración sin nota con ceros de PocketBase', async () => {
+    mocks.config = { id: 'config-1', version: 1, ...valid, gradeMin: 0, gradeMax: 0 };
+    const config = await getAssignmentAIConfig('assignment-1');
+    expect(config).toMatchObject({ gradeEnabled: false, gradeMin: null, gradeMax: null });
+    const { id, version, ...input } = config!;
+    expect(id).toBe('config-1');
+    expect(version).toBe(1);
+    await expect(saveAssignmentAIConfig('assignment-1', input)).resolves.toMatchObject({ success: true });
+  });
+
+  it('conserva cero como mínimo de una escala numérica habilitada', async () => {
+    mocks.config = { ...valid, gradeEnabled: true, gradeMin: 0, gradeMax: 10 };
+    await expect(getAssignmentAIConfig('assignment-1')).resolves.toMatchObject({ gradeMin: 0, gradeMax: 10 });
+  });
+
   it('rechaza docente ajeno y curso deshabilitado', async () => {
     mocks.user = { id: 'teacher-2', role: 'docente' };
     await expect(getAssignmentAIConfig('assignment-1')).rejects.toThrow('No autorizado');

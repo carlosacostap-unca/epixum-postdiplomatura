@@ -6,6 +6,7 @@ import { ZodError } from 'zod';
 import { createServerClient } from './pocketbase-server';
 import { createServiceClient } from './pocketbase-service';
 import { teacherCanManageCourse } from './teacher-scope';
+import { assignmentAIGradeScale } from './assignment-ai-config';
 import { assignmentAIConfigInputSchema, createAIPreevaluationResultSchema, validateAIResultForConfig } from './ai-preevaluation-schema';
 import { AI_PREEVALUATION_INSTRUCTIONS, buildAIPreevaluationInput } from './ai-preevaluation-prompt';
 import { downloadGithubZipball, GithubRepositoryError, prepareRepositoryEvidence, resolvePublicGithubRepository } from './github-repository';
@@ -96,7 +97,7 @@ async function activeConfig(servicePb: Awaited<ReturnType<typeof createServiceCl
   }
   const parsed = assignmentAIConfigInputSchema.safeParse({
     active: record.active, criteria: record.criteria, requiredChecks: record.requiredChecks, allowedVerdicts: record.allowedVerdicts,
-    gradeEnabled: record.gradeEnabled, gradeMin: record.gradeMin ?? null, gradeMax: record.gradeMax ?? null,
+    gradeEnabled: record.gradeEnabled, ...assignmentAIGradeScale(record),
     messageGuidance: record.messageGuidance || '', additionalInstructions: record.additionalInstructions || '',
     studentFeedbackMode: record.studentFeedbackMode || undefined,
   });

@@ -6,6 +6,14 @@ export interface AssignmentAIConfigDTO extends AssignmentAIConfigInput {
   version: number;
 }
 
+export function assignmentAIGradeScale(record: Partial<Pick<AssignmentAIConfig, 'gradeEnabled' | 'gradeMin' | 'gradeMax'>>) {
+  // PocketBase number fields return 0 for empty values. A disabled scale has no bounds.
+  return {
+    gradeMin: record.gradeEnabled && typeof record.gradeMin === 'number' ? record.gradeMin : null,
+    gradeMax: record.gradeEnabled && typeof record.gradeMax === 'number' ? record.gradeMax : null,
+  };
+}
+
 export function assignmentAIConfigDTO(record: Partial<AssignmentAIConfig>): AssignmentAIConfigDTO {
   return {
     id: record.id,
@@ -14,8 +22,7 @@ export function assignmentAIConfigDTO(record: Partial<AssignmentAIConfig>): Assi
     requiredChecks: Array.isArray(record.requiredChecks) ? record.requiredChecks : [],
     allowedVerdicts: Array.isArray(record.allowedVerdicts) ? record.allowedVerdicts : [],
     gradeEnabled: Boolean(record.gradeEnabled),
-    gradeMin: typeof record.gradeMin === 'number' ? record.gradeMin : null,
-    gradeMax: typeof record.gradeMax === 'number' ? record.gradeMax : null,
+    ...assignmentAIGradeScale(record),
     messageGuidance: String(record.messageGuidance || ''),
     studentFeedbackMode: record.studentFeedbackMode || undefined,
     additionalInstructions: String(record.additionalInstructions || ''),

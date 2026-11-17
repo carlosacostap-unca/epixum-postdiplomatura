@@ -127,10 +127,10 @@ describe('autorización previa a efectos externos', () => {
     delete process.env.OPENAI_API_KEY;
   });
 
-  it('preevalúa informes sin GitHub y conserva huella, versión y límites de lectura', async () => {
+  it.each([null, 0, 10])('preevalúa informes sin nota con límites persistidos %s y conserva huella y versión', async (storedBound) => {
     process.env.OPENAI_API_KEY = 'test-key';
     mocks.repositoryUrl = JSON.stringify([{ name: 'informe.docx', url: 'https://storage.example.com/informe.docx' }]);
-    mocks.config = { active: true, version: 1, criteria: [{ id: 'c1', title: 'Reflexión', description: 'Juicio propio', weight: 100 }], requiredChecks: [], allowedVerdicts: ['Aprobado'], gradeEnabled: false, gradeMin: null, gradeMax: null, messageGuidance: '', additionalInstructions: '' };
+    mocks.config = { active: true, version: 1, criteria: [{ id: 'c1', title: 'Reflexión', description: 'Juicio propio', weight: 100 }], requiredChecks: [], allowedVerdicts: ['Aprobado'], gradeEnabled: false, gradeMin: storedBound, gradeMax: storedBound, messageGuidance: '', additionalInstructions: '' };
     mocks.prepareDocuments.mockResolvedValue({ text: 'Documento NO CONFIABLE', files: [{ type: 'input_file', filename: 'informe-1.docx', file_data: 'data:application/octet-stream;base64,UEs=' }], sourceDigest: 'e'.repeat(64), limitations: ['Imágenes requieren revisión docente'], coverage: { commitSha: '', includedFiles: ['informe-1.docx'], omittedFiles: [], includedBytes: 2, expandedBytes: 2, totalEntries: 1, partial: true } });
     mocks.attemptCreate.mockResolvedValue({ id: 'attempt-doc', status: 'processing' });
     mocks.attemptUpdate.mockImplementation(async (_id, data) => ({ id: 'attempt-doc', sourceType: 'documents', sourceDigest: 'e'.repeat(64), submissionVersion: 1, ...data }));
@@ -141,6 +141,8 @@ describe('autorización previa a efectos externos', () => {
     expect(mocks.download).not.toHaveBeenCalled();
     expect(mocks.attemptCreate).toHaveBeenCalledWith(expect.objectContaining({ commitSha: '', sourceType: 'documents', sourceDigest: 'e'.repeat(64), submissionVersion: 1, submissionReferenceHash: 'd'.repeat(64) }));
     expect(mocks.openaiParse.mock.calls[0][0].input[0].content).toContainEqual(expect.objectContaining({ type: 'input_file', filename: 'informe-1.docx' }));
+    expect(result).toMatchObject({ success: true, attempt: { result: { suggestedGrade: null } } });
+    expect(mocks.attemptCreate).toHaveBeenCalledWith(expect.objectContaining({ configSnapshot: expect.objectContaining({ gradeMin: null, gradeMax: null }) }));
     delete process.env.OPENAI_API_KEY;
   });
 
