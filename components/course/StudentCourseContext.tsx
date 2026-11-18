@@ -3,10 +3,18 @@ import type { Course } from "@/types";
 import { Badge, Breadcrumbs, PageHeader, Tabs } from "@/components/ui";
 import { studentCourseNavigation } from "@/lib/course-navigation";
 import FormattedDate from "@/components/FormattedDate";
+import { fiaCourseId, getPendingFiaMakeup } from "@/lib/fia-makeup";
+import { getCurrentUser } from "@/lib/pocketbase-server";
 
 export type StudentCourseSection = "resumen" | "clases" | "trabajos" | "contenidos" | "consultas" | "preparacion" | "parciales" | "revisiones" | "encuestas";
 
 const labels: Record<StudentCourseSection, string> = { resumen: "Resumen", clases: "Clases", trabajos: "Trabajos", contenidos: "Contenidos", consultas: "Consultas", preparacion: "Preparación", parciales: "Parciales", revisiones: "Revisiones", encuestas: "Encuestas" };
+
+async function FiaCourseTabs({ course, current }: { course: Course; current: StudentCourseSection }) {
+  const user = await getCurrentUser();
+  const pending = user && await getPendingFiaMakeup(course.id, user.id);
+  return <Tabs label={`Secciones de ${course.title}`} items={studentCourseNavigation(pending ? { ...course, surveysEnabled: false } : course, current)} />;
+}
 
 export function StudentCourseContext({ actions, compact = false, course, current, description, title }: { actions?: ReactNode; compact?: boolean; course: Course; current: StudentCourseSection; description?: ReactNode; title?: ReactNode }) {
   if (compact) return <header className="student-course-header">
@@ -19,6 +27,6 @@ export function StudentCourseContext({ actions, compact = false, course, current
   return <div className="space-y-6">
     <Breadcrumbs items={[{ href: "/estudiantes", label: "Mis cursos" }, { href: `/estudiantes/cursos/${course.id}`, label: course.title }, { label: labels[current] }]} />
     <PageHeader eyebrow="Curso" title={title ?? course.title} description={description ?? course.description} metadata={<Badge tone={course.status === "en curso" ? "success" : "neutral"}>{course.status}</Badge>} actions={actions} />
-    <Tabs label={`Secciones de ${course.title}`} items={studentCourseNavigation(course, current)} />
+    {course.id === fiaCourseId && course.surveysEnabled ? <FiaCourseTabs course={course} current={current} /> : <Tabs label={`Secciones de ${course.title}`} items={studentCourseNavigation(course, current)} />}
   </div>;
 }

@@ -39,9 +39,10 @@ interface StudentCourseOverviewProps {
   now: Date;
   onboarding?: ReactNode;
   outcome?: ReactNode;
+  notice?: ReactNode;
 }
 
-export default function StudentCourseOverview({ course, classes, assignments, pendingAssignments, pendingInquiries, deliveryByAssignment, visibleGroups, activeGroupId, nextClass, nextAction, now, onboarding, outcome }: StudentCourseOverviewProps) {
+export default function StudentCourseOverview({ course, classes, assignments, pendingAssignments, pendingInquiries, deliveryByAssignment, visibleGroups, activeGroupId, nextClass, nextAction, now, onboarding, outcome, notice }: StudentCourseOverviewProps) {
   const weekly = course.organizationMode === "semanal";
   const base = `/estudiantes/cursos/${course.id}`;
   const showNextClass = nextClass && nextAction?.icon === "assignment";
@@ -49,6 +50,7 @@ export default function StudentCourseOverview({ course, classes, assignments, pe
     <StudentCourseNavigation key={course.id} courseTitle={course.title} items={studentCourseNavigation(course)} />
     <div className="student-page student-course-overview">
       <div className="student-course-heading-row"><StudentCourseContext compact course={course} current="resumen" description={studentPlainText(course.description)} />{onboarding}</div>
+      {notice}
       <StudentMetrics items={[
         { href: weekly ? "#semanas" : "#clases", value: classes.length, label: classes.length === 1 ? "clase" : "clases", icon: "menu_book" },
         { href: weekly ? "#semanas" : "#trabajos", value: pendingAssignments.length, label: pendingAssignments.length === 1 ? "trabajo pendiente" : "trabajos pendientes", icon: "assignment" },

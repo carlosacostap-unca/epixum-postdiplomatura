@@ -8,6 +8,8 @@ import { getAssignmentsByCourse, getClassesByCourse, getCourse, getCourseOrganiz
 import { getCurrentUser } from "@/lib/pocketbase-server";
 import { canSubmitAssignment } from "@/lib/assignment-deadline";
 import { getCourseGame } from "@/lib/course-game/catalog";
+import { getPendingFiaMakeup } from "@/lib/fia-makeup";
+import { FiaMakeupNotice } from "@/components/student/FiaMakeupNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -55,8 +57,10 @@ export default async function EstudianteCoursePage({ params, searchParams }: { p
 
   const activeGroup = visibleGroups.find((group) => group.assignments.some((item) => item.id === nextAssignment?.id) || group.classes.some((item) => item.id === nextClass?.id)) || visibleGroups[0];
 
+  const makeup = await getPendingFiaMakeup(course.id, user.id);
   return <StudentCourseOverview
-    course={course}
+    notice={makeup && <FiaMakeupNotice makeup={makeup} />}
+    course={makeup ? { ...course, surveysEnabled: false } : course}
     classes={sortedClasses}
     assignments={assignments}
     pendingAssignments={pendingAssignments}

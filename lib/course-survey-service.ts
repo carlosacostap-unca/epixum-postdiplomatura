@@ -5,6 +5,7 @@ import type PocketBase from 'pocketbase';
 import type { Course, User } from '@/types';
 import { aggregateSurvey, parseSurveyAnswers, surveyDesignSchema, surveyIsOpen, surveyPublicDto, SurveyError, type CourseSurvey, type SurveyResponse, type SurveyResults, type SurveySummary } from './course-surveys';
 import { matchesSurveyAudience } from './survey-audience';
+import { getPendingFiaMakeup } from './fia-makeup';
 
 export type SurveyMode = 'manager' | 'student';
 const nonce = () => randomBytes(16).toString('hex');
@@ -36,6 +37,7 @@ export async function requireSurveyAccess(pb: PocketBase, courseId: string, mode
     if (teacher || !canViewCourseDraft(course,user)) throw new SurveyError('No tenés acceso estudiantil a las encuestas de este curso.');
     const enrollment = await first(pb, 'course_enrollments', pb.filter('course = {:course} && student = {:student}', { course: courseId, student: user.id }));
     if (!enrollment) throw new SurveyError('Necesitás una matrícula vigente en este curso.');
+    if (await getPendingFiaMakeup(courseId, user.id)) throw new SurveyError('Las encuestas todavía no están disponibles para tu matrícula.');
   }
   return { course, user };
 }

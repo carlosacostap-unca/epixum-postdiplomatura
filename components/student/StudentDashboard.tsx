@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import FormattedDate from "@/components/FormattedDate";
 import JoinCourseForm from "@/components/JoinCourseForm";
 import PendingCourseInvitations from "@/components/PendingCourseInvitations";
@@ -8,7 +9,7 @@ import type { CourseEnrollmentInvitation } from "@/types";
 import { getDeadlineState } from "@/lib/student-learning";
 import { StudentAction, StudentIcon, StudentInquiries, StudentMetrics, StudentPanel, studentPlainText } from "./StudentLearningUI";
 
-export default function StudentDashboard({ dashboard, invitations, firstName, query = "", status = "all" }: { dashboard: StudentDashboardData; invitations: CourseEnrollmentInvitation[]; firstName: string; query?: string; status?: "all" | "en curso" | "finalizado" | "borrador" }) {
+export default function StudentDashboard({ dashboard, invitations, firstName, query = "", status = "all", notice }: { dashboard: StudentDashboardData; invitations: CourseEnrollmentInvitation[]; firstName: string; query?: string; status?: "all" | "en curso" | "finalizado" | "borrador"; notice?: ReactNode }) {
   const filteredCourses = dashboard.courses.filter(course => (!query || course.title.toLocaleLowerCase("es").includes(query.trim().toLocaleLowerCase("es"))) && (status === "all" || course.status === status));
   const nextAssignment = dashboard.pendingAssignments[0];
   const nextClass = dashboard.nextClass;
@@ -23,6 +24,7 @@ export default function StudentDashboard({ dashboard, invitations, firstName, qu
 
   return <div className="student-page student-dashboard">
     <header className="student-page-heading"><div><h1>Hola, <span>{firstName}</span></h1><p className="student-secondary">Todo lo que necesitás para seguir aprendiendo.</p></div><JoinCourseForm className="student-join-course" /></header>
+    {notice}
     <StudentMetrics items={[
       { href: "#mis-cursos", value: dashboard.courses.length, label: dashboard.courses.length === 1 ? "curso" : "cursos", icon: "local_library" },
       { href: "#proximos-trabajos", value: dashboard.pendingAssignmentCount, label: dashboard.pendingAssignmentCount === 1 ? "trabajo pendiente" : "trabajos pendientes", icon: "assignment" },
