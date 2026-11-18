@@ -38,6 +38,17 @@ it('mantiene el seguimiento de notas del equipo docente antes del cierre', async
   const { results } = await getCourseExams('course', 'manage');
   expect(results.every(r => r.feedbackAvailable)).toBe(true);
 });
+it('muestra sólo el recuperatorio asignado y conserva privada la nómina', async () => {
+  mocks.lists.course_exams = [
+    { id: 'original' },
+    { id: 'primero', studentRoster: { students: [] } },
+    { id: 'segundo', studentRoster: { students: ['student', 'otro'] } },
+    { id: 'ambos', studentRoster: { students: ['otro'] } },
+  ];
+  const { exams } = await getCourseExams('course', 'student');
+  expect(exams.map(exam => exam.id)).toEqual(['original', 'segundo']);
+  expect(JSON.stringify(exams)).not.toContain('studentRoster');
+});
 it('no filtra los bancos privados de los turnos a la lista del alumno', async () => {
   mocks.lists.course_exams = [{ id: 'exam', title: 'Parcial', status: 'published', questions: [{ prompt: 'Privada mañana', correctOptionId: 'a' }], sessions: [{ id: 'night', label: 'Noche', opensAt: '2026-10-28T23:00:00Z', closesAt: '2026-10-29T00:00:00Z', questions: [{ prompt: 'Privada noche', correctOptionId: 'b', explanation: 'Clave privada' }] }] }];
   const data = await getCourseExams('course', 'student');

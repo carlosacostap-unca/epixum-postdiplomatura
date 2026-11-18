@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { Course } from '@/types';
 import { readExamRequirements } from './course-exam-requirement-service';
 import { orderPracticeQuestions, publicPracticeQuestions } from './preparation';
-import { activeExamSession, courseExamSchema, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView, type ExamStudent } from './course-exams';
+import { canTakeCourseExam, activeExamSession, courseExamSchema, examScore, examSelections, visibleExamResult, type CourseExam, type ExamAnswerEvent, type ExamAttempt, type ExamResult, type ExamView, type ExamStudent } from './course-exams';
 
 export class CourseExamError extends Error {}
 export async function requireExamCourse(pb: PocketBase, courseId: string, mode: 'manage' | 'student') {
@@ -47,7 +47,7 @@ export type CourseExamInitialPhoto = { photoKey: string; rollback: () => Promise
 export async function beginCourseExam(pb: PocketBase, service: PocketBase, courseId: string, examId: string, cameraActive: boolean, capturePhoto?: () => Promise<CourseExamInitialPhoto>) {
   await requireExamCourse(pb, courseId, 'student');
   const exam = await service.collection('course_exams').getOne<CourseExam>(examId);
-  if (exam.course !== courseId || exam.status !== 'published') throw new CourseExamError('Este parcial no está disponible.');
+  if (exam.course !== courseId || exam.status !== 'published' || !canTakeCourseExam(exam, pb.authStore.record!.id)) throw new CourseExamError('Este parcial no está disponible.');
   const previous = await service.collection('course_exam_attempts').getList<ExamAttempt>(1, 1, { filter: service.filter('exam = {:exam} && student = {:student}', { exam: examId, student: pb.authStore.record!.id }) });
   if (previous.items[0]) return previous.items[0].id;
   const session = activeExamSession(exam);
@@ -64,7 +64,7 @@ export async function beginCourseExam(pb: PocketBase, service: PocketBase, cours
     await requireExamCourse(pb, courseId, 'student');
     const currentExam = await service.collection('course_exams').getOne<CourseExam>(examId);
     const currentSession = activeExamSession(currentExam);
-    if (currentExam.status !== 'published' || currentExam.course !== courseId || !currentSession || currentSession.id !== session.id || JSON.stringify(currentSession) !== JSON.stringify(session)) throw new CourseExamError('Las condiciones del parcial cambiaron o ya se alcanzó el cierre. Actualizá la página.');
+    if (!canTakeCourseExam(currentExam, pb.authStore.record!.id) || currentExam.status !== 'published' || currentExam.course !== courseId || !currentSession || currentSession.id !== session.id || JSON.stringify(currentSession) !== JSON.stringify(session)) throw new CourseExamError('Las condiciones del parcial cambiaron o ya se alcanzó el cierre. Actualizá la página.');
     creating = true;
     const attempt = await service.collection('course_exam_attempts').create({ course: courseId, exam: examId, student: pb.authStore.record!.id, title: snapshot.title, snapshot, deadline: snapshot.closesAt, cameraActive: true, cameraLastSeen: new Date().toISOString(), photoKey: photo.photoKey });
     return attempt.id;

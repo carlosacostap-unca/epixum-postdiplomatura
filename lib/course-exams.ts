@@ -42,8 +42,11 @@ export const courseExamSchema = z.object({
   if (new TextEncoder().encode(JSON.stringify(exam)).length > 200_000) ctx.addIssue({ code: 'custom', message: 'El parcial supera los 200 KB.' });
 });
 export type CourseExamInput = z.infer<typeof courseExamSchema>;
-export type CourseExam = CourseExamInput & { id: string; course: string };
-export type CourseExamSummary = Omit<CourseExam, 'questions' | 'sessions'> & { sessions?: ExamSessionSchedule[]; requirements?: ExamRequirementProgress[] };
+export type CourseExam = CourseExamInput & { id: string; course: string; studentRoster?: { students: string[] } | null };
+export function canTakeCourseExam(exam: Pick<CourseExam, 'studentRoster'>, student: string) {
+  return exam.studentRoster == null || (Array.isArray(exam.studentRoster.students) && exam.studentRoster.students.includes(student));
+}
+export type CourseExamSummary = Omit<CourseExam, 'questions' | 'sessions' | 'studentRoster'> & { sessions?: ExamSessionSchedule[]; requirements?: ExamRequirementProgress[] };
 /** The primary session name follows its starting time in Argentina, never the host timezone. */
 export function primaryExamSessionLabel(opensAt: string) {
   if (!opensAt || !Number.isFinite(Date.parse(opensAt.replace(' ', 'T')))) return 'Turno mañana';

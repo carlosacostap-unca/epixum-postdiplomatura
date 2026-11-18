@@ -3,15 +3,16 @@ import { readExamRequirements } from './course-exam-requirement-service';
 import { createServerClient } from './pocketbase-server';
 import { createServiceClient } from './pocketbase-service';
 import { CourseExamError, closeExpiredCourseExams, readCourseExamAttempt, requireExamCourse } from './course-exam-service';
-import { examSummary, examFeedbackReleased, examResultSummary, type CourseExam, type ExamAttempt, type ExamResult, type ExamStudent } from './course-exams';
+import { canTakeCourseExam, examSummary, examFeedbackReleased, examResultSummary, type CourseExam, type ExamAttempt, type ExamResult, type ExamStudent } from './course-exams';
 
 export async function getCourseExams(courseId: string, mode: 'manage' | 'student', examId?: string) {
   const pb = await createServerClient();
   const course = await requireExamCourse(pb, courseId, mode);
   const service = await createServiceClient();
   const filter = service.filter('course = {:course}', { course: courseId });
-  const rows = await service.collection('course_exams').getFullList<CourseExam>({ filter: filter + (mode === 'student' ? ' && status = "published"' : ''), fields: 'id,course,title,description,status,opensAt,closesAt,sessions', sort: '-created,id' });
-  const exams = await Promise.all(rows.map(async row => {
+  const rows = await service.collection('course_exams').getFullList<CourseExam>({ filter: filter + (mode === 'student' ? ' && status = "published"' : ''), fields: 'id,course,title,description,status,opensAt,closesAt,sessions,studentRoster', sort: '-created,id' });
+  const visible = mode === 'manage' ? rows : rows.filter(row => canTakeCourseExam(row, pb.authStore.record!.id));
+  const exams = await Promise.all(visible.map(async row => {
     const summary = examSummary(row);
     const requirements = mode === 'student' ? await readExamRequirements(service, courseId, row.id, pb.authStore.record!.id) : [];
     return requirements.length ? { ...summary, requirements } : summary;
@@ -47,9 +48,9 @@ export async function getCourseExamStart(courseId: string, id: string) {
   const pb = await createServerClient();
   const course = await requireExamCourse(pb, courseId, 'student');
   const service = await createServiceClient();
-  const row = await service.collection('course_exams').getOne<CourseExam>(id, { fields: 'id,course,title,description,status,opensAt,closesAt,sessions' });
+  const row = await service.collection('course_exams').getOne<CourseExam>(id, { fields: 'id,course,title,description,status,opensAt,closesAt,sessions,studentRoster' });
   const exam = examSummary(row);
-  if (exam.course !== courseId || exam.status !== 'published') throw new CourseExamError('El parcial no está disponible.');
+  if (exam.course !== courseId || exam.status !== 'published' || !canTakeCourseExam(row, pb.authStore.record!.id)) throw new CourseExamError('El parcial no está disponible.');
   const previous = await service.collection('course_exam_attempts').getList(1, 1, { filter: service.filter('course = {:course} && exam = {:exam} && student = {:student}', { course: courseId, exam: id, student: pb.authStore.record!.id }), fields: 'id' });
   const requirements = await readExamRequirements(service, courseId, id, pb.authStore.record!.id);
   return { course, exam, requirements, existingAttemptId: previous.items[0]?.id || null };
