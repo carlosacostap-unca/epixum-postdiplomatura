@@ -9,6 +9,10 @@ const makeups: Record<string, string> = {
   fiarecabnov2401: 'ambos parciales',
 };
 
+export function isFiaMakeup(course: string, exam: string) {
+  return course === fiaCourseId && Object.hasOwn(makeups, exam);
+}
+
 // The caller supplies the authenticated student. Return only that student's grades.
 export const getPendingFiaMakeup = cache(async (course: string, student: string) => {
   if (course !== fiaCourseId) return null;

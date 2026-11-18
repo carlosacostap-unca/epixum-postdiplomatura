@@ -14,6 +14,7 @@ export function FiaMakeupNotice({ makeup }: { makeup: Makeup }) {
       <div><dt>Segundo parcial</dt><dd className="font-bold">{format(makeup.second)}</dd></div>
     </dl>
     {closed ? <p>Los turnos del martes 24 de noviembre ya finalizaron.</p> : <p>Tu recuperatorio ya está publicado. El martes 24 de noviembre de 2026 podés rendirlo de <strong>08:00 a 09:00</strong> o de <strong>20:00 a 21:00</strong> (hora argentina). Elegí uno de los dos turnos. El examen se activa al comenzar cada turno y tenés un solo intento.</p>}
-    <Link className="student-text-action" href={`/estudiantes/cursos/${fiaCourseId}/parciales/iniciar/${makeup.examId}`}>Ver mi recuperatorio</Link>
+    {!closed && <p>Revisá las preparaciones y simulaciones que te corresponden antes de rendir. Durante el examen necesitás mantener la cámara encendida.</p>}
+    <Link className="student-text-action" href={`/estudiantes/cursos/${fiaCourseId}/parciales/iniciar/${makeup.examId}`}>Ver mi recuperatorio y sus requisitos</Link>
   </section>;
 }

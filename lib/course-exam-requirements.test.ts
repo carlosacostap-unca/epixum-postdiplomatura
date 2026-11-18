@@ -74,3 +74,20 @@ it('cumplir todos los requisitos no permite iniciar antes del horario', async ()
   await expect(beginCourseExam(pb, service, course, examId, true, capture)).rejects.toThrow('horario');
   expect(create).not.toHaveBeenCalled();
 });
+const firstIds = ['tl4b9pb7e7gqz3f', 'mh23hheij070ihr', 'os879pp9uhqfb4r', 'qozqi36bw5qepfw'];
+const secondIds = ['fiaunit4prep001', 'fiaunit5prep001', 'nqcx3so0zz4o86y'];
+it.each([
+  ['fiarec1nov24001', firstIds],
+  ['fiarec2nov24001', secondIds],
+  ['fiarecabnov2401', [...firstIds, ...secondIds]],
+] as const)('controla las actividades del recuperatorio %s antes de iniciar', async (id, required) => {
+  expect(examRequirements(course, id).map(r => r.quizId)).toEqual(required);
+  const last = required[required.length - 1];
+  completed = new Set(required.slice(0, -1));
+  const progress = await readExamRequirements(service, course, id, 'student');
+  expect(progress.filter(item => !item.completed).map(item => item.quizId)).toEqual([last]);
+  await expect(beginCourseExam(pb, service, course, id, true, capture)).rejects.toThrow(progress[progress.length - 1].label);
+  expect(capture).not.toHaveBeenCalled();
+  completed.add(last);
+  await expect(beginCourseExam(pb, service, course, id, true, capture)).resolves.toBe('new-attempt');
+});

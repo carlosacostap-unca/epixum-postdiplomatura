@@ -5,8 +5,24 @@ import { getCourseExamStart } from '@/lib/course-exam-data';
 import { StudentCourseContext } from '@/components/course/StudentCourseContext';
 import { CourseExamStart } from '@/components/exams/CourseExamRunner';
 import { redirect } from 'next/navigation';
+import { isFiaMakeup } from '@/lib/fia-makeup';
 export default async function Page({ params }: { params: Promise<{ id: string; examId: string }> }) {
   const { id, examId } = await params; const { course, exam, requirements, existingAttemptId } = await getCourseExamStart(id, examId);
   if (existingAttemptId) redirect(`/estudiantes/cursos/${id}/parciales/intentos/${existingAttemptId}`);
-  return <div className="page-container space-y-6"><StudentCourseContext course={course} current="parciales" title="Comenzar parcial" /><ExamListRefresh label="Actualizar requisitos" /><CourseExamRequirements courseId={id} requirements={requirements} />{requirements.every(item => item.completed) && examAvailability(exam) === 'Activo' ? <CourseExamStart courseId={id} exam={exam} /> : <p>{exam.title} · {examAvailability(exam)}. Para comenzar, necesitás cumplir los requisitos y estar dentro del horario de un turno.</p>}</div>;
+  const availability = examAvailability(exam);
+  const ready = requirements.every(item => item.completed);
+  const makeup = isFiaMakeup(id, examId);
+  return <div className="page-container space-y-6">
+    <StudentCourseContext course={course} current="parciales" title={exam.title} />
+    <p>{availability}</p>
+    {makeup && <section className="space-y-2">
+      <h2 className="text-xl font-bold">{availability === 'Cerrado' ? 'Los turnos de este recuperatorio finalizaron' : ready ? 'Estás habilitado para rendir este recuperatorio' : 'Tenés este recuperatorio asignado'}</h2>
+      <p>Turnos del martes 24 de noviembre de 2026 (hora argentina): <strong>08:00 a 09:00</strong> o <strong>20:00 a 21:00</strong>. Tenés un solo intento entre los dos turnos.</p>
+      <p>Para empezar, encendé la cámara y aceptá la foto inicial. Mantené la cámara encendida mientras rendís.</p>
+    </section>}
+    <ExamListRefresh label={requirements.length ? 'Actualizar requisitos' : 'Actualizar estado'} />
+    <CourseExamRequirements courseId={id} requirements={requirements} />
+    {ready && availability === 'Activo' && <CourseExamStart courseId={id} exam={exam} />}
+    {!makeup && availability === 'Programado' && <p>Podrás comenzar dentro del horario de un turno.</p>}
+  </div>;
 }
