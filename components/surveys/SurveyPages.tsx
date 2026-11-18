@@ -75,7 +75,7 @@ export async function SurveyNewPage({ courseId, workspace }: Props) {
 
 export async function SurveyDetailPage({ courseId, surveyId, workspace }: Props & { surveyId: string }) {
   const { pb, service } = await context(courseId, workspace).catch(unavailable);
-  const { course, survey, submitted } = await readCourseSurvey(pb, service, courseId, surveyId, modeFor(workspace)).catch(unavailable);
+  const { course, survey, submitted, grades } = await readCourseSurvey(pb, service, courseId, surveyId, modeFor(workspace)).catch(unavailable);
   const manager = workspace !== 'student';
   const base = baseFor(courseId, workspace);
   const results = manager && survey.status !== 'draft' ? await readSurveyResults(pb, service, courseId, surveyId).catch(unavailable) : null;
@@ -88,6 +88,17 @@ export async function SurveyDetailPage({ courseId, surveyId, workspace }: Props 
         <details className="rounded-xl border border-[var(--color-outline-variant)] p-5"><summary className="cursor-pointer font-bold">Ver preguntas publicadas</summary><ol className="mt-4 list-inside list-decimal space-y-4">{survey.questions.map(q => <li key={q.id} className="break-words">{q.title} <span className="text-sm text-[var(--color-on-surface-variant)]">({q.required ? 'obligatoria' : 'opcional'})</span>{q.options.length > 0 && <ul className="mt-2 list-inside list-disc pl-4 text-sm">{q.options.map(o => <li key={o.id}>{o.label}</li>)}</ul>}{q.type === 'scale' && <p className="mt-2 text-sm">Escala de 1 a 5</p>}</li>)}</ol></details>
         {results && <SurveyResults survey={survey} results={results} />}
       </>}
-    </> : <SurveyResponseForm survey={survey} submitted={submitted} />}
+    </> : <>
+      <SurveyResponseForm survey={survey} submitted={submitted} />
+      {grades && <Card><CardContent className="space-y-3">
+        <h2 className="text-xl font-bold">Tu resultado de cursada</h2>
+        <p>Condición: <strong>Promocionado</strong></p>
+        <dl className="space-y-1">{[
+          ['Primer parcial', grades.first], ['Segundo parcial', grades.second],
+          ['Nota final', Math.ceil((grades.first + grades.second) / 2)],
+        ].map(([label, value]) => <div key={label} className="flex gap-4"><dt>{label}</dt><dd className="font-bold">{value.toLocaleString('es-AR')}</dd></div>)}</dl>
+        <p>La promoción de esta materia es informal. En el acta de cursada vas a figurar como regular. Inscribite en una mesa de examen para que el docente pueda registrar tu nota de aprobación.</p>
+      </CardContent></Card>}
+    </>}
   </Frame>;
 }

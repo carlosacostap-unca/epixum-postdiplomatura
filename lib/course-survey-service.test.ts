@@ -105,6 +105,23 @@ describe('servicio de encuestas', () => {
     }
     expect(f.rows('course_survey_responses')).toHaveLength(expected.length);
   });
+  it('limita el acceso a la nómina y entrega sólo las notas propias después del envío', async () => {
+    const student = f.actor('student');
+    const row = f.rows('course_surveys')[0];
+    row.audience = 'promotion_roster';
+    row.promotionGrades = { other: { first: 9, second: 9 } };
+    const read = () => readCourseSurvey(student, f.service, courseId, surveyId, 'student');
+    expect((await listCourseSurveys(student, f.service, courseId, 'student')).surveys).toHaveLength(0);
+    await expect(read()).rejects.toThrow('matrícula');
+    await expect(submitCourseSurvey(student, f.service, courseId, surveyId, { q: 'Bien' })).rejects.toThrow('matrícula');
+    row.promotionGrades = { ...row.promotionGrades as object, student: { first: 6.5, second: 8 } };
+    const before = await read();
+    expect(before.grades).toBeNull();
+    expect(before.survey).not.toHaveProperty('promotionGrades');
+    expect((await listCourseSurveys(student, f.service, courseId, 'student')).surveys[0]).not.toHaveProperty('promotionGrades');
+    await submitCourseSurvey(student, f.service, courseId, surveyId, { q: 'Bien' });
+    expect((await read()).grades).toEqual({ first: 6.5, second: 8 });
+  });
   it('usa solamente el publicado del mismo alumno y curso; no considera el borrador', async () => {
     f.rows('courses')[0].outcomesEnabled = true; f.survey().audience = 'approved';
     f.rows('course_outcomes').push({ id: 'other', course: courseId, student: 'other', published: { status: 'aprobado' } }, { id: 'other-course', course: 'other', student: 'student', published: { status: 'aprobado' } });

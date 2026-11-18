@@ -9,7 +9,14 @@ import { matchesSurveyAudience } from './survey-audience';
 export type SurveyMode = 'manager' | 'student';
 const nonce = () => randomBytes(16).toString('hex');
 const recordId = () => randomBytes(8).toString('hex').slice(0, 15);
-type StoredSurvey = CourseSurvey & { opening: string };
+type GradePair = { first: number; second: number };
+type WithRoster = CourseSurvey & { promotionGrades?: Record<string, GradePair> | null };
+type StoredSurvey = WithRoster & { opening: string };
+
+function ownGrades(survey: WithRoster, student: string) {
+  return survey.audience === 'promotion_roster' && survey.promotionGrades && Object.hasOwn(survey.promotionGrades, student)
+    ? survey.promotionGrades[student] : null;
+}
 const conflict = () => new SurveyError('La encuesta cambió o no pudimos confirmar la operación. Actualizá la página e intentá nuevamente.');
 
 async function first<T>(pb: PocketBase, collection: string, filter: string, fields = 'id'): Promise<T | null> {
@@ -36,7 +43,7 @@ export async function requireSurveyAccess(pb: PocketBase, courseId: string, mode
 async function scopedSurvey(service: PocketBase, courseId: string, surveyId: string, mode: SurveyMode) {
   const survey = await service.collection('course_surveys').getOne<StoredSurvey>(surveyId);
   if (survey.course !== courseId || (mode === 'student' && survey.status === 'draft')) throw new SurveyError('Esta encuesta no está disponible en este curso.');
-  return { ...surveyPublicDto(survey), opening: survey.opening || '' };
+  return { ...surveyPublicDto(survey), opening: survey.opening || '', promotionGrades: survey.promotionGrades };
 }
 
 async function publishedStudentStatus(service: PocketBase, course: Course, student: string): Promise<unknown> {
@@ -45,7 +52,11 @@ async function publishedStudentStatus(service: PocketBase, course: Course, stude
   return outcome?.published?.status || null;
 }
 
-async function requireSurveyAudience(service: PocketBase, survey: CourseSurvey, access: Awaited<ReturnType<typeof requireSurveyAccess>>) {
+async function requireSurveyAudience(service: PocketBase, survey: WithRoster, access: Awaited<ReturnType<typeof requireSurveyAccess>>) {
+  if (survey.audience === 'promotion_roster') {
+    if (!ownGrades(survey, access.user.id)) throw new SurveyError('Esta encuesta no está disponible para tu matrícula.');
+    return;
+  }
   const status = survey.audience === 'all' || !survey.audience ? null : await publishedStudentStatus(service, access.course, access.user.id);
   if (!matchesSurveyAudience(survey.audience, status, Boolean(access.course.outcomesEnabled))) throw new SurveyError('Esta encuesta no está disponible para tu resultado de cursada.');
 }
@@ -55,15 +66,16 @@ export async function readCourseSurvey(pb: PocketBase, service: PocketBase, cour
   const survey = await scopedSurvey(service, courseId, surveyId, mode);
   if (mode === 'student') await requireSurveyAudience(service, survey, access);
   const submitted = mode === 'student' && Boolean(await first(service, 'course_survey_participations', service.filter('survey = {:survey} && student = {:student}', { survey: surveyId, student: access.user.id })));
-  return { ...access, survey: surveyPublicDto(survey), submitted };
+  return { ...access, survey: surveyPublicDto(survey), submitted, grades: submitted ? ownGrades(survey, access.user.id) : null };
 }
 
 export async function listCourseSurveys(pb: PocketBase, service: PocketBase, courseId: string, mode: SurveyMode) {
   const access = await requireSurveyAccess(pb, courseId, mode);
   const filter = service.filter(mode === 'student' ? 'course = {:course} && status != "draft"' : 'course = {:course}', { course: courseId });
-  const records = await service.collection('course_surveys').getFullList<CourseSurvey>({ filter, sort: '-created,-id' });
-  const status = mode === 'student' && records.some(record => record.audience && record.audience !== 'all') ? await publishedStudentStatus(service, access.course, access.user.id) : null;
-  const visible = mode === 'student' ? records.filter(record => matchesSurveyAudience(record.audience, status, Boolean(access.course.outcomesEnabled))) : records;
+  const records = await service.collection('course_surveys').getFullList<WithRoster>({ filter, sort: '-created,-id' });
+  const status = mode === 'student' && records.some(record => record.audience === 'approved' || record.audience === 'not_approved_or_incomplete') ? await publishedStudentStatus(service, access.course, access.user.id) : null;
+  const visible = mode === 'student' ? records.filter(record => record.audience === 'promotion_roster'
+    ? Boolean(ownGrades(record, access.user.id)) : matchesSurveyAudience(record.audience, status, Boolean(access.course.outcomesEnabled))) : records;
   const surveys: SurveySummary[] = await Promise.all(visible.map(async record => {
     const filter = service.filter(mode === 'student' ? 'survey = {:survey} && student = {:student}' : 'survey = {:survey}', { survey: record.id, student: access.user.id });
     const participation = await service.collection('course_survey_participations').getList(1, 1, { filter, fields: 'id' });
@@ -85,11 +97,13 @@ export async function saveCourseSurvey(pb: PocketBase, service: PocketBase, cour
   const parsed = surveyDesignSchema.safeParse(input);
   if (!parsed.success) throw new SurveyError(parsed.error.issues[0].message);
   if (!surveyId) {
+    if (parsed.data.audience === 'promotion_roster') throw new SurveyError('Se necesita una nómina de promoción.');
     const created = await service.collection('course_surveys').create<CourseSurvey>({ ...parsed.data, course: courseId, status: 'draft', revision: nonce() });
     return created.id;
   }
   const survey = await scopedSurvey(service, courseId, surveyId, 'manager');
   if (survey.status !== 'draft') throw new SurveyError('El diseño ya está publicado. Duplicá la encuesta para modificarlo.');
+  if ((parsed.data.audience === 'promotion_roster') !== (survey.audience === 'promotion_roster')) throw new SurveyError('La nómina de promoción queda fija.');
   if (survey.revision !== expectedRevision) throw conflict();
   const batch = guardedBatch(service, survey);
   batch.collection('course_surveys').update(surveyId, parsed.data);
@@ -102,12 +116,17 @@ export async function commandCourseSurvey(pb: PocketBase, service: PocketBase, c
   for (let attempt = 0; attempt < 6; attempt++) {
     const { course } = await requireSurveyAccess(pb, courseId, 'manager');
     const survey = await scopedSurvey(service, courseId, surveyId, 'manager');
+    if (command === 'duplicate' && survey.audience === 'promotion_roster') {
+      const { title, description, questions, anonymous, audience, promotionGrades } = survey;
+      const copy = await service.collection('course_surveys').create({ title: `${title.slice(0, 150)} (copia)`, description, questions, anonymous, audience, promotionGrades, course: courseId, status: 'draft', revision: nonce() });
+      return copy.id;
+    }
     if (command === 'duplicate') return saveCourseSurvey(pb, service, courseId, null, '', { ...surveyDesignSchema.parse({ title: survey.title, description: survey.description, questions: survey.questions, anonymous: survey.anonymous, audience: survey.audience, closesAt: '' }), title: `${survey.title.slice(0, 150)} (copia)` });
     if (command === 'close' && survey.status === 'closed') return survey.id;
     if (command === 'close' ? survey.status !== 'published' : survey.status !== 'draft') throw new SurveyError('La operación no está disponible en el estado actual de la encuesta.');
     if (command !== 'close' && survey.revision !== expectedRevision) throw conflict();
     if (command === 'publish') {
-      if (survey.audience !== 'all' && !course.outcomesEnabled) throw new SurveyError('La administración debe habilitar los resultados de cursada antes de publicar una encuesta segmentada.');
+      if (survey.audience !== 'all' && survey.audience !== 'promotion_roster' && !course.outcomesEnabled) throw new SurveyError('La administración debe habilitar los resultados de cursada antes de publicar una encuesta segmentada.');
       surveyDesignSchema.parse({ title: survey.title, description: survey.description, anonymous: survey.anonymous, audience: survey.audience, closesAt: survey.closesAt, questions: survey.questions });
       if (survey.closesAt && Date.parse(survey.closesAt) <= Date.now()) throw new SurveyError('La fecha de cierre debe estar en el futuro.');
     }
