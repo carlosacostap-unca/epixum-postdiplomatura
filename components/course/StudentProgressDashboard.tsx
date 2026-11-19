@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { DataTable } from '@/components/ui';
+import { degreeLabels, fiaCourseId } from '@/lib/fia-degree';
 import { examDateLabel } from '@/lib/course-exams';
 import { examProgressLabels, filterStudentProgress, latestSubmittedStudentExam, progressFilterQuery, progressGradeLabel, type ProgressFilters, type StudentProgressRow } from '@/lib/student-progress';
 import type { getStudentProgress } from '@/lib/student-progress-data';
@@ -10,11 +11,13 @@ import { CourseExamStanding } from '@/components/exams/CourseExamStanding';
 const field = 'mt-2 min-h-11 w-full min-w-0 rounded-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-3 py-2 text-sm';
 export function StudentProgressDashboard({ data, filters }: { data: Awaited<ReturnType<typeof getStudentProgress>>; filters: ProgressFilters }) {
   const base = `/docentes/cursos/${data.course.id}/estudiantes`;
-  const page = filterStudentProgress(data.rows, filters, data.serverNow);
+  const showDegree = data.course.id === fiaCourseId;
+  const page = filterStudentProgress(data.rows, showDegree ? filters : { ...filters, degree: undefined }, data.serverNow);
   const query = progressFilterQuery({ ...filters, page: page.page });
   const pageLink = (n: number) => `${base}?${progressFilterQuery({ ...filters, page: n })}`;
   const columns = [
     { id: 'student', header: 'Estudiante', render: (row: StudentProgressRow) => <div className="space-y-1"><p className="font-bold">{row.name}</p><p className="break-all text-[var(--color-text-muted)]">{row.email || 'Sin correo registrado'}</p></div> },
+    ...(showDegree ? [{ id: 'degree', header: 'Carrera', render: (row: StudentProgressRow) => row.degree ? degreeLabels[row.degree] : 'Sin declarar' }] : []),
     { id: 'preparation', header: 'Preparación', render: (row: StudentProgressRow) => !data.preparationEnabled ? 'No habilitada' : <div className="space-y-1"><p>{row.preparation.attempts ? `${row.preparation.attempts} intentos · ${row.preparation.completedAttempts} finalizados` : 'Sin prácticas iniciadas'}</p>{row.preparation.publishedTotal > 0 && <p>{row.preparation.publishedCompleted} de {row.preparation.publishedTotal} prácticas publicadas finalizadas</p>}<p className="text-[var(--color-text-muted)]">Última nota: {progressGradeLabel(row.preparation.latestGrade)}</p></div> },
     { id: 'exams', header: 'Parciales', render: (row: StudentProgressRow) => {
       if (!data.examsEnabled) return 'No habilitados';
@@ -33,6 +36,13 @@ export function StudentProgressDashboard({ data, filters }: { data: Awaited<Retu
     <form method="get" action={base} className="space-y-4 rounded-2xl border border-[var(--color-outline-variant)] p-4 md:p-6" aria-label="Filtrar estudiantes">
       <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <label className="min-w-0 font-semibold">Buscar estudiante<input className={field} name="q" type="search" maxLength={120} placeholder="Nombre o correo" defaultValue={filters.q} /></label>
+        {showDegree && <label className="min-w-0 font-semibold">Carrera<select className={field} name="carrera" defaultValue={filters.degree || 'all'}>
+          <option value="all">Todas</option>
+          <option value="tecnicatura">{degreeLabels.tecnicatura} (incluye ambas)</option>
+          <option value="ingenieria">{degreeLabels.ingenieria} (incluye ambas)</option>
+          <option value="ambas">Ambas carreras</option>
+          <option value="pending">Sin declarar</option>
+        </select></label>}
         <label className="min-w-0 font-semibold">Preparación<select className={field} name="preparacion" defaultValue={filters.preparation} disabled={!data.preparationEnabled}><option value="all">Todos</option><option value="none">Sin prácticas iniciadas</option><option value="started">Inició, sin finalizar prácticas</option><option value="completed">Con prácticas finalizadas</option><option value="all_completed">Todas las publicadas finalizadas</option></select></label>
         <label className="min-w-0 font-semibold">Parcial<select className={field} name="parcial" defaultValue={filters.exam} disabled={!data.examsEnabled}><option value="">Todos los parciales</option>{data.exams.map(exam => <option key={exam.id} value={exam.id}>{exam.title}</option>)}</select></label>
         <label className="min-w-0 font-semibold">Estado del parcial<select className={field} name="estado_parcial" defaultValue={filters.examState} disabled={!data.examsEnabled}><option value="all">Todos</option><option value="not_started">Sin iniciar</option><option value="in_progress">En curso</option><option value="submitted">Entregado</option><option value="missing_after_close">Sin entrega al cierre</option></select></label>

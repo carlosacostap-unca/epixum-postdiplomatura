@@ -2,7 +2,8 @@ import 'server-only';
 import { cache } from 'react';
 import { createServiceClient } from './pocketbase-service';
 
-export const fiaCourseId = 'tceqb7atji66fmd';
+import { fiaCourseId } from './fia-degree';
+export { fiaCourseId } from './fia-degree';
 const makeups: Record<string, string> = {
   fiarec1nov24001: 'el primer parcial',
   fiarec2nov24001: 'el segundo parcial',

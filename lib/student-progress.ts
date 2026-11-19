@@ -1,4 +1,6 @@
-export type ProgressStudent = { id: string; name: string; email: string; enrolledAt: string };
+import { isFiaDegree, type FiaDegree } from './fia-degree';
+
+export type ProgressStudent = { id: string; name: string; email: string; enrolledAt: string; degree?: FiaDegree };
 export type ProgressPractice = { id: string; student: string; quiz: string; title: string; created: string; updated: string };
 export type ProgressResult = { id: string; attempt: string; student: string; correct: number; total: number; created?: string; finishedAt?: string; reason?: string };
 export type ProgressExam = { id: string; title: string; status: string; opensAt: string; closesAt: string };
@@ -58,18 +60,20 @@ export function studentPracticeHistory(source: ProgressSource, studentId: string
   }).sort((a, b) => progressTimestamp(b.created) - progressTimestamp(a.created));
 }
 type Params = Record<string, string | string[] | undefined>;
-export type ProgressFilters = { q: string; preparation: string; exam: string; examState: string; activity: string; minGrade: string; maxGrade: string; sort: string; page: number };
+export type ProgressFilters = { q: string; preparation: string; exam: string; examState: string; activity: string; minGrade: string; maxGrade: string; sort: string; page: number; degree?: FiaDegree | 'pending' };
 export function parseProgressFilters(params: Params): ProgressFilters {
   const value = (key: string) => { const v = params[key]; return (Array.isArray(v) ? v[0] : v) || ''; };
   const choice = (key: string, choices: string[], fallback = 'all') => choices.includes(value(key)) ? value(key) : fallback;
   const grade = (key: string) => value(key).trim() !== '' && Number.isFinite(Number(value(key))) && Number(value(key)) >= 0 && Number(value(key)) <= 10 ? String(Number(value(key))) : '';
   const page = Number(value('p'));
-  return { q: value('q').trim().slice(0, 120), preparation: choice('preparacion', ['all', 'none', 'started', 'completed', 'all_completed']), exam: /^[a-zA-Z0-9_-]{1,64}$/.test(value('parcial')) ? value('parcial') : '', examState: choice('estado_parcial', ['all', 'not_started', 'in_progress', 'submitted', 'missing_after_close']), activity: choice('actividad', ['all', 'none', 'active', 'recent7', 'inactive14']), minGrade: grade('nota_min'), maxGrade: grade('nota_max'), sort: choice('orden', ['name', 'activity', 'grade_asc', 'grade_desc', 'preparation'], 'name'), page: Number.isSafeInteger(page) && page > 0 ? Math.min(page, 100000) : 1 };
+  const degree = value('carrera');
+  return { q: value('q').trim().slice(0, 120), preparation: choice('preparacion', ['all', 'none', 'started', 'completed', 'all_completed']), exam: /^[a-zA-Z0-9_-]{1,64}$/.test(value('parcial')) ? value('parcial') : '', examState: choice('estado_parcial', ['all', 'not_started', 'in_progress', 'submitted', 'missing_after_close']), activity: choice('actividad', ['all', 'none', 'active', 'recent7', 'inactive14']), minGrade: grade('nota_min'), maxGrade: grade('nota_max'), sort: choice('orden', ['name', 'activity', 'grade_asc', 'grade_desc', 'preparation'], 'name'), page: Number.isSafeInteger(page) && page > 0 ? Math.min(page, 100000) : 1, ...(isFiaDegree(degree) || degree === 'pending' ? { degree } : {}) };
 }
 export function progressFilterQuery(filters: ProgressFilters) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries({ q: filters.q, preparacion: filters.preparation, parcial: filters.exam, estado_parcial: filters.examState, actividad: filters.activity, nota_min: filters.minGrade, nota_max: filters.maxGrade, orden: filters.sort })) if (value && value !== 'all' && !(key === 'orden' && value === 'name')) params.set(key, value);
   if (filters.page > 1) params.set('p', String(filters.page));
+  if (filters.degree) params.set('carrera', filters.degree);
   return params.toString();
 }
 export function filterStudentProgress(rows: StudentProgressRow[], filters: ProgressFilters, now = Date.now()) {
@@ -77,6 +81,8 @@ export function filterStudentProgress(rows: StudentProgressRow[], filters: Progr
   const gradeFor = (row: StudentProgressRow) => filters.exam ? row.exams.find(e => e.id === filters.exam)?.grade ?? null : row.latestExamGrade;
   const filtered = rows.filter(row => {
     if (filters.q && !normalize(`${row.name} ${row.email}`).includes(normalize(filters.q))) return false;
+    if (filters.degree === 'pending' && row.degree) return false;
+    if (isFiaDegree(filters.degree) && row.degree !== filters.degree && row.degree !== 'ambas') return false;
     const prep = row.preparation;
     if (filters.preparation === 'none' && prep.attempts !== 0) return false;
     if (filters.preparation === 'started' && (prep.attempts === 0 || prep.completedAttempts > 0)) return false;

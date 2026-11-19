@@ -18,6 +18,15 @@ function source(): ProgressSource {
   };
 }
 const filter = (params: Parameters<typeof parseProgressFilters>[0] = {}) => filterStudentProgress(buildStudentProgress(source(), now), parseProgressFilters(params), now);
+it('incluye a quienes declararon ambas carreras en el filtro de cada carrera', () => {
+  const [first, second, third] = buildStudentProgress(source(), now);
+  const rows = [{ ...first, degree: 'tecnicatura' as const }, { ...second, degree: 'ambas' as const }, third];
+  const matching = (carrera: string) => filterStudentProgress(rows, parseProgressFilters({ carrera }), now).items.map(row => row.id);
+  expect(matching('tecnicatura')).toEqual(['s0', 's1']);
+  expect(matching('ingenieria')).toEqual(['s1']);
+  expect(matching('ambas')).toEqual(['s1']);
+  expect(matching('pending')).toEqual(['s2']);
+});
 it('cuenta prácticas distintas publicadas y conserva las repeticiones y notas históricas', () => {
   const [ana] = buildStudentProgress(source(), now);
   expect(ana.preparation).toEqual({ attempts: 3, completedAttempts: 3, publishedCompleted: 1, publishedTotal: 2, latestGrade: 10, bestGrade: 10 });

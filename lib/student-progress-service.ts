@@ -1,5 +1,6 @@
 import type PocketBase from 'pocketbase';
 import type { Course } from '@/types';
+import { fiaCourseId, isFiaDegree } from './fia-degree';
 import { buildStudentProgress, studentPracticeHistory, type ProgressSource, type ProgressPractice, type ProgressResult, type ProgressAnswer, type ProgressExam, type ProgressExamAttempt } from './student-progress';
 
 export class StudentProgressError extends Error {}
@@ -14,7 +15,7 @@ export async function readStudentProgress(pb: PocketBase, service: PocketBase, c
   const course = await requireStudentProgressCourse(pb, courseId);
   const courseFilter = service.filter('course = {:course}', { course: courseId });
   const filter = courseFilter + (studentId ? service.filter(' && student = {:student}', { student: studentId }) : '');
-  const enrollments = await service.collection('course_enrollments').getFullList<{ student: string; created: string; expand?: { student?: { id: string; name?: string; firstName?: string; lastName?: string; email?: string } } }>({ filter, expand: 'student', fields: 'student,created,expand.student.id,expand.student.name,expand.student.firstName,expand.student.lastName,expand.student.email' });
+  const enrollments = await service.collection('course_enrollments').getFullList<{ student: string; created: string; fiaDegree?: string; expand?: { student?: { id: string; name?: string; firstName?: string; lastName?: string; email?: string } } }>({ filter, expand: 'student', fields: `student,created,expand.student.id,expand.student.name,expand.student.firstName,expand.student.lastName,expand.student.email${courseId === fiaCourseId ? ',fiaDegree' : ''}` });
   if (studentId && !enrollments.some(e => e.student === studentId)) throw new StudentProgressError('El estudiante no tiene una matrícula vigente en este curso.');
   const enabledPreparation = !!course.preparationEnabled; const enabledExams = !!course.examsEnabled;
   // Bounded field projections exclude snapshots, solutions, submitted selections and photos.
@@ -28,7 +29,7 @@ export async function readStudentProgress(pb: PocketBase, service: PocketBase, c
     enabledExams ? service.collection('course_exam_results').getFullList<ProgressResult>({ filter, fields: 'id,attempt,student,correct,total,finishedAt,reason' }) : [],
     enabledExams ? service.collection('course_exam_answers').getFullList<ProgressAnswer>({ filter, fields: 'attempt,student,created' }) : [],
   ]);
-  const source: ProgressSource = { students: enrollments.map(enrollment => { const student = enrollment.expand?.student; return { id: enrollment.student, name: [student?.firstName || student?.name, student?.lastName].filter(Boolean).join(' ') || student?.email || 'Estudiante sin nombre', email: student?.email || '', enrolledAt: enrollment.created }; }), preparationEnabled: enabledPreparation, examsEnabled: enabledExams, quizzes, practices, practiceResults, practiceAnswers, exams, examAttempts, examResults, examAnswers };
+  const source: ProgressSource = { students: enrollments.map(enrollment => { const student = enrollment.expand?.student; return { id: enrollment.student, name: [student?.firstName || student?.name, student?.lastName].filter(Boolean).join(' ') || student?.email || 'Estudiante sin nombre', email: student?.email || '', enrolledAt: enrollment.created, ...(isFiaDegree(enrollment.fiaDegree) ? { degree: enrollment.fiaDegree } : {}) }; }), preparationEnabled: enabledPreparation, examsEnabled: enabledExams, quizzes, practices, practiceResults, practiceAnswers, exams, examAttempts, examResults, examAnswers };
   const now = Date.now(); const rows = buildStudentProgress(source, now);
   return { course, rows, exams: exams.filter(e => e.status === 'published' || examAttempts.some(a => a.exam === e.id)), serverNow: now, preparationEnabled: enabledPreparation, examsEnabled: enabledExams, practiceHistory: studentId ? studentPracticeHistory(source, studentId) : [] };
 }
