@@ -107,13 +107,18 @@ export function CourseExamRunner({ courseId, initial }: { courseId: string; init
     <p>Podés pasar a otra pregunta sin responder. Cada opción se guarda al seleccionarla y puede cambiarse hasta entregar. Las incorrectas y omitidas suman cero. La nota y la devolución se habilitan después del cierre.</p>
     {error && <p role="alert" className="text-[var(--color-error)]">{error}</p>}
     {unsaved && <Button disabled={pending || !ready || !verified || !remaining} onClick={() => { void save(unsaved); }}>Reintentar guardado</Button>}
-    <div className="flex flex-wrap gap-3"><Button variant="secondary" disabled={index === 0 || pending || !!unsaved} onClick={() => setIndex(i => i - 1)}>Pregunta anterior</Button><Button variant="secondary" disabled={index === view.questions.length - 1 || pending || !!unsaved} onClick={() => setIndex(i => i + 1)}>Siguiente pregunta</Button>
+    <nav aria-label="Navegación entre preguntas" className="flex flex-wrap justify-between gap-3">
+      <Button variant="secondary" disabled={index === 0 || pending || !!unsaved} onClick={() => setIndex(i => i - 1)}>Pregunta anterior</Button>
+      <Button variant="secondary" className="ml-auto" disabled={index === view.questions.length - 1 || pending || !!unsaved} onClick={() => setIndex(i => i + 1)}>Siguiente pregunta</Button>
+    </nav>
+    <div className="mt-8 border-t border-[var(--color-outline-variant)] pt-6">
       <Button disabled={pending || !!unsaved || !remaining} onClick={async () => {
         if (busy.current || !window.confirm(`¿Entregar el parcial? Quedan ${view.questions.length - Object.keys(view.selected).length} preguntas sin responder. La entrega es definitiva.`)) return;
         busy.current = true; setPending(true); setError('');
         try { const result = await sendExam(courseId, initial.id); if (result.success) { setView(v => ({ ...v, result: result.data })); } else setError(result.error); }
         catch { setError('No pudimos confirmar la entrega. Volvé a intentar.'); }
         finally { busy.current = false; setPending(false); }
-      }}>Entregar parcial</Button></div>
+      }}>Entregar parcial</Button>
+    </div>
   </div>;
 }

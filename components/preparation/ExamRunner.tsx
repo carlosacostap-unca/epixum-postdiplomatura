@@ -99,9 +99,11 @@ export function ExamRunner({ courseId, quizId, attemptId, questions, initialSele
         {!confirmed && <Button type="submit" disabled={!choice || !remaining || !camera.ready || !cameraVerified} isPending={pending}>Confirmar respuesta</Button>}
       </fieldset></CardContent></Card>
     </form>
-    <div className="flex flex-wrap gap-3">
+    <nav aria-label="Navegación entre preguntas" className="flex flex-wrap justify-between gap-3">
       {index > 0 && <Button variant="secondary" onClick={() => navigate(index - 1)}>Pregunta anterior</Button>}
-      {index < questions.length - 1 && <Button variant="secondary" onClick={() => navigate(index + 1)}>Siguiente pregunta</Button>}
+      {index < questions.length - 1 && <Button variant="secondary" className="ml-auto" onClick={() => navigate(index + 1)}>Siguiente pregunta</Button>}
+    </nav>
+    <div className="mt-8 border-t border-[var(--color-outline-variant)] pt-6">
       <Button isPending={pending} onClick={() => {
         if (remaining && !window.confirm(`¿Entregar el examen? Hay ${questions.length - Object.keys(selected).length} preguntas sin responder. Contarán como incorrectas.`)) return;
         setError('');
