@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { examLocalDate, examSchedule } from '@/lib/course-exams';
+import { courseExamApprovalRules } from '@/lib/course-exam-grading';
 import type { getPendingDspMakeup } from '@/lib/course-makeup-notice';
 
 type Makeup = NonNullable<Awaited<ReturnType<typeof getPendingDspMakeup>>>;
@@ -17,6 +18,7 @@ export function DspMakeupNotice({ courseId, makeup }: { courseId: string; makeup
       <div><dt>Nota del primer parcial</dt><dd className="font-bold">{format(makeup.first)}</dd></div>
       <div><dt>Nota del segundo parcial</dt><dd className="font-bold">{format(makeup.second)}</dd></div>
     </dl>}
+    {!integral && <p>{courseExamApprovalRules(makeup.examId)}</p>}
     {remaining.length > 0 ? <>
       <p>Tu recuperatorio está publicado. {remaining.length > 1 ? 'Elegí uno de los turnos' : 'Podés rendir en el turno que queda'}. Los horarios son de Argentina y tenés un solo intento.</p>
       <p>{integral ? 'Antes de rendir, completá las preparaciones de las unidades 1 a 6 y las dos simulaciones.' : 'Antes de rendir, completá las preparaciones de las unidades 1 a 4 y la simulación del primer parcial.'} Consultá qué actividades te faltan en el enlace al recuperatorio.</p>

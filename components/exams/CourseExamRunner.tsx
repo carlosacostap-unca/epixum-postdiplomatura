@@ -7,7 +7,7 @@ import { examAvailability, examDateLabel, examSchedule, type CourseExamSummary, 
 import { useWebcam } from '@/components/preparation/useWebcam';
 import { WebcamPanel } from '@/components/preparation/WebcamPanel';
 import { CourseExamFeedback } from './CourseExamFeedback';
-import { COURSE_EXAM_APPROVAL_RULES } from '@/lib/course-exam-grading';
+import { courseExamApprovalRules } from '@/lib/course-exam-grading';
 
 export function CourseExamStart({ courseId, exam }: { courseId: string; exam: Omit<CourseExamSummary, 'course'> }) {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function CourseExamStart({ courseId, exam }: { courseId: string; exam: Om
     {exam.sessions?.length ? <p>Al comenzar, rendís la versión del turno que esté activo. Tenés un único intento entre todos los turnos; no podés volver a rendir en otro horario.</p> : null}
     <p>Un intento por alumno. Podés navegar sin responder y cambiar tus respuestas; cada selección se guarda en tu cuenta. El plazo sigue corriendo aunque salgas. Al cierre se entrega lo guardado. La nota y la devolución completa se habilitan después del cierre, aunque entregues antes.</p>
     <p>El orden de las preguntas y sus opciones se mezcla al iniciar el intento y se conserva cuando lo retomás.</p>
-    <p>{COURSE_EXAM_APPROVAL_RULES}</p>
+    <p>{courseExamApprovalRules(exam.id)}</p>
     <WebcamPanel camera={camera} />
     <label className="flex items-start gap-3"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} className="mt-1 size-5 shrink-0" /><span>Entiendo que se guardará una foto inicial de mi cámara, visible sólo para administradores y docentes del curso, y que debo mantener la cámara activa mientras respondo.</span></label>
     <Button disabled={!camera.ready || !accepted} isPending={pending} pendingLabel="Guardando foto e iniciando…" onClick={async () => {
@@ -96,7 +96,7 @@ export function CourseExamRunner({ courseId, initial }: { courseId: string; init
     } catch { setError('No se guardó esta selección. Revisá la conexión y usá Reintentar guardado.'); }
     finally { busy.current = false; setPending(false); }
   }
-  if (view.result) return <div className="space-y-5"><Card><CardContent className="space-y-3"><h2 className="text-2xl font-bold">Parcial entregado</h2><p>{view.result.reason === 'expired' ? 'Entrega automática por cierre del horario.' : 'La entrega se guardó correctamente.'}</p><p>Finalización: {examDateLabel(view.result.finishedAt)} (Argentina)</p>{!view.result.feedbackAvailable && <><p>La nota y la devolución completa estarán disponibles a partir del cierre: {examDateLabel(view.deadline)} (Argentina).</p><p>Podés volver más tarde. Esta pantalla se actualizará automáticamente al llegar el horario de cierre.</p></>}{error && <p role="alert">{error}</p>}</CardContent></Card>{view.result.feedbackAvailable && <CourseExamFeedback result={view.result} />}</div>;
+  if (view.result) return <div className="space-y-5"><Card><CardContent className="space-y-3"><h2 className="text-2xl font-bold">Parcial entregado</h2><p>{view.result.reason === 'expired' ? 'Entrega automática por cierre del horario.' : 'La entrega se guardó correctamente.'}</p><p>Finalización: {examDateLabel(view.result.finishedAt)} (Argentina)</p>{!view.result.feedbackAvailable && <><p>La nota y la devolución completa estarán disponibles a partir del cierre: {examDateLabel(view.deadline)} (Argentina).</p><p>Podés volver más tarde. Esta pantalla se actualizará automáticamente al llegar el horario de cierre.</p></>}{error && <p role="alert">{error}</p>}</CardContent></Card>{view.result.feedbackAvailable && <CourseExamFeedback examId={view.examId} result={view.result} />}</div>;
   const question = view.questions[index];
   return <div className="space-y-5">
     <Card><CardContent><p role="timer" aria-label="Tiempo restante" className="text-3xl font-bold">{Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}</p><p>Cierre: {examDateLabel(view.deadline)} (Argentina). El plazo continúa aunque salgas.</p><p>Pregunta {index + 1} de {view.questions.length} · {Object.keys(view.selected).length} respuestas guardadas</p><p role="status">{pending ? 'Guardando selección…' : unsaved ? 'Hay una selección sin guardar.' : 'Todas tus selecciones están guardadas.'}</p></CardContent></Card>

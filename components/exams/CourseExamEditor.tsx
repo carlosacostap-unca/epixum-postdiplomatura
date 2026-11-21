@@ -5,7 +5,7 @@ import { Button, Card, CardContent } from '@/components/ui';
 import { courseExamSchema, primaryExamSessionLabel, examDateInput, examLocalDate, examStatusLabels, type CourseExam, type CourseExamInput, type ExamSession } from '@/lib/course-exams';
 import type { PracticeQuestion } from '@/lib/preparation';
 import { saveExam } from '@/lib/actions-course-exams';
-import { COURSE_EXAM_APPROVAL_RULES } from '@/lib/course-exam-grading';
+import { courseExamApprovalRules } from '@/lib/course-exam-grading';
 
 const field = 'mt-2 w-full rounded-xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] p-3';
 export function CourseExamEditor({ courseId, exam, basePath }: { courseId: string; exam: CourseExam | null; basePath: string }) {
@@ -48,7 +48,7 @@ export function CourseExamEditor({ courseId, exam, basePath }: { courseId: strin
         <label className="block font-bold">Estado<select className={field} value={status} onChange={e => setStatus(e.target.value as CourseExamInput['status'])}>{Object.entries(examStatusLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <p>El borrador y el parcial archivado están ocultos para los alumnos. Un parcial publicado se activa y cierra según su programación.</p>
         <p>Las preguntas y sus opciones se mezclan automáticamente para cada intento nuevo. Cada alumno conserva ese orden al retomar. Los intentos ya iniciados mantienen su orden original.</p>
-        <p>{COURSE_EXAM_APPROVAL_RULES}</p>
+        <p>{courseExamApprovalRules(exam?.id)}</p>
         <div className="space-y-3 border-t border-[var(--color-outline-variant)] pt-4">
           <h3 className="text-lg font-bold">Turnos alternativos</h3>
           <p>Un solo intento por alumno entre todos los turnos. Cada turno tiene su propio horario y preguntas distintas, con la misma cantidad de preguntas. Después del primer inicio se bloquea la edición de todos los turnos.</p>

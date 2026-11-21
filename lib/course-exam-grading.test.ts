@@ -1,5 +1,14 @@
 import { expect, it } from 'vitest';
-import { courseExamOutcome } from './course-exam-grading';
+import { courseExamApprovalRules, courseExamOutcome } from './course-exam-grading';
+
+it('aplica el umbral de 6 sólo al recuperatorio del primer parcial de Diseño', () => {
+  const exam = 'dsprec1nov27001';
+  expect(courseExamOutcome(12, 20, exam)?.code).toBe('promote');
+  expect(courseExamOutcome(11, 20, exam)?.code).toBe('regularize');
+  expect(courseExamOutcome(8, 20, exam)?.code).toBe('regularize');
+  expect(courseExamOutcome(12, 20, 'dsprecabnov2701')?.code).toBe('regularize');
+  expect(courseExamApprovalRules(exam)).toContain('si no te presentás, quedás regular');
+});
 
 it.each([
   [0, 20, 'failed'], [7, 20, 'failed'], [8, 20, 'regularize'],
