@@ -19,6 +19,7 @@ export function DspMakeupNotice({ courseId, makeup }: { courseId: string; makeup
     </dl>}
     {remaining.length > 0 ? <>
       <p>Tu recuperatorio está publicado. {remaining.length > 1 ? 'Elegí uno de los turnos' : 'Podés rendir en el turno que queda'}. Los horarios son de Argentina y tenés un solo intento.</p>
+      <p>{integral ? 'Antes de rendir, completá las preparaciones de las unidades 1 a 6 y las dos simulaciones.' : 'Antes de rendir, completá las preparaciones de las unidades 1 a 4 y la simulación del primer parcial.'} Consultá qué actividades te faltan en el enlace al recuperatorio.</p>
       <ul className="list-disc pl-5">
         {remaining.map(turn => <li key={turn.id}>
           {date.format(new Date(turn.opensAt.replace(' ', 'T')))}, de <strong>{examLocalDate(turn.opensAt).slice(11, 16)} a {examLocalDate(turn.closesAt).slice(11, 16)}</strong>

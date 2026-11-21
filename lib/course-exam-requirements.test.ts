@@ -7,6 +7,8 @@ import { beginCourseExam } from './course-exam-service';
 import { finalizePractice } from './preparation-service';
 vi.mock('./preparation-service', () => ({ finalizePractice: vi.fn(async () => ({ id: 'finished' })) }));
 const course = 'tceqb7atji66fmd', examId = 'fiasecondexam01';
+const designCourse = '6taf9vkwwi8oxlz';
+let fixtureCourse = course;
 let completed: Set<string>;
 let pending: Record<string, unknown[]>;
 const create = vi.fn(async () => ({ id: 'new-attempt' }));
@@ -16,14 +18,14 @@ const queries: Array<{ expression: string; values: Record<string, string> }> = [
 const service = {
   filter: (expression: string, values: Record<string, string>) => { queries.push({ expression, values }); return JSON.stringify(values); },
   collection: (name: string) => ({
-    getOne: async () => ({ id: examId, course, status: 'published', title: 'Segundo parcial', description: '', opensAt, closesAt, questions: [{ id: 'q', prompt: 'Pregunta', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOptionId: 'a' }] }),
+    getOne: async (id: string) => ({ id, course: fixtureCourse, status: 'published', title: 'Segundo parcial', description: '', opensAt, closesAt, questions: [{ id: 'q', prompt: 'Pregunta', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }], correctOptionId: 'a' }] }),
     getList: async (_p: number, _n: number, options: { filter: string }) => { const scope = JSON.parse(options.filter); return { items: name === 'practice_results' && scope.student === 'student' && completed.has(scope.quiz) ? [{ id: 'result', correct: 0 }] : [] }; },
     getFullList: async (options: { filter: string }) => pending[JSON.parse(options.filter).quiz] || [],
     create,
   }),
 } as unknown as PocketBase;
 const pb = { authStore: { isValid: true, record: { id: 'student' } }, filter: () => '', collection: () => ({ getOne: async () => ({ examsEnabled: true }), getList: async () => ({ items: [{ id: 'enrolled' }] }) }) } as unknown as PocketBase;
-beforeEach(() => { vi.clearAllMocks(); completed = new Set(); pending = {}; queries.length = 0; opensAt = new Date(Date.now() - 1000).toISOString(); closesAt = new Date(Date.now() + 3600000).toISOString(); });
+beforeEach(() => { vi.clearAllMocks(); fixtureCourse = course; completed = new Set(); pending = {}; queries.length = 0; opensAt = new Date(Date.now() - 1000).toISOString(); closesAt = new Date(Date.now() + 3600000).toISOString(); });
 it('distingue ninguno, parcial y todos, incluyendo resultados con cero aciertos', async () => {
   expect((await readExamRequirements(service, course, examId, 'student')).filter(r => r.completed)).toHaveLength(0);
   completed.add('fiaunit4prep001');
@@ -76,18 +78,24 @@ it('cumplir todos los requisitos no permite iniciar antes del horario', async ()
 });
 const firstIds = ['tl4b9pb7e7gqz3f', 'mh23hheij070ihr', 'os879pp9uhqfb4r', 'qozqi36bw5qepfw'];
 const secondIds = ['fiaunit4prep001', 'fiaunit5prep001', 'nqcx3so0zz4o86y'];
+const dspFirstIds = ['zmsiwu0dvl39dr2', '80k4y4bohec367i', 'oc0cc63508rd599', '5879paug4rnx6an', 'yosn18rr9o0ej2h'];
+const dspSecondIds = ['dspunit5prep001', 'dspunit6prep001', 'javvc3ngddo3ow2'];
 it.each([
-  ['fiarec1nov24001', firstIds],
-  ['fiarec2nov24001', secondIds],
-  ['fiarecabnov2401', [...firstIds, ...secondIds]],
-] as const)('controla las actividades del recuperatorio %s antes de iniciar', async (id, required) => {
-  expect(examRequirements(course, id).map(r => r.quizId)).toEqual(required);
+  ['fiarec1nov24001', course, firstIds],
+  ['fiarec2nov24001', course, secondIds],
+  ['fiarecabnov2401', course, [...firstIds, ...secondIds]],
+  ['dsprec1nov27001', designCourse, dspFirstIds],
+  ['dsprecabnov2701', designCourse, [...dspFirstIds, ...dspSecondIds]],
+] as const)('controla las actividades del recuperatorio %s antes de iniciar', async (id, courseId, required) => {
+  fixtureCourse = courseId;
+  expect(examRequirements(courseId, id).map(r => r.quizId)).toEqual(required);
+  expect(examRequirements('other', id)).toEqual([]);
   const last = required[required.length - 1];
   completed = new Set(required.slice(0, -1));
-  const progress = await readExamRequirements(service, course, id, 'student');
+  const progress = await readExamRequirements(service, courseId, id, 'student');
   expect(progress.filter(item => !item.completed).map(item => item.quizId)).toEqual([last]);
-  await expect(beginCourseExam(pb, service, course, id, true, capture)).rejects.toThrow(progress[progress.length - 1].label);
+  await expect(beginCourseExam(pb, service, courseId, id, true, capture)).rejects.toThrow(progress[progress.length - 1].label);
   expect(capture).not.toHaveBeenCalled();
   completed.add(last);
-  await expect(beginCourseExam(pb, service, course, id, true, capture)).resolves.toBe('new-attempt');
+  await expect(beginCourseExam(pb, service, courseId, id, true, capture)).resolves.toBe('new-attempt');
 });
