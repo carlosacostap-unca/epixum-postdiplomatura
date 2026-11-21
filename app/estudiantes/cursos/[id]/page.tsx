@@ -18,6 +18,7 @@ import { getPendingDspMakeup } from "@/lib/course-makeup-notice";
 import { DspMakeupNotice } from "@/components/student/DspMakeupNotice";
 import { SingleMakeupOutcomeNotice } from "@/components/student/SingleMakeupOutcomeNotice";
 import { getSingleMakeupOutcome } from "@/lib/single-makeup-outcome";
+import { getFinalMakeupFeedback } from "@/lib/final-makeup-feedback";
 
 export const dynamic = "force-dynamic";
 
@@ -65,21 +66,23 @@ export default async function EstudianteCoursePage({ params, searchParams }: { p
 
   const activeGroup = visibleGroups.find((group) => group.assignments.some((item) => item.id === nextAssignment?.id) || group.classes.some((item) => item.id === nextClass?.id)) || visibleGroups[0];
 
-  const [makeup, fiaEnrollment, dspMakeup, makeupOutcome] = await Promise.all([
+  const [makeup, fiaEnrollment, dspMakeup, singleOutcome, finalFeedback] = await Promise.all([
     getPendingFiaMakeup(course.id, user.id),
     course.id === fiaCourseId ? createServiceClient().then(service => getFiaEnrollment(service, user.id)) : null,
     getPendingDspMakeup(course.id, user.id),
     getSingleMakeupOutcome(course.id, user.id),
+    getFinalMakeupFeedback(course.id, user.id),
   ]);
+  const makeupOutcome = finalFeedback || singleOutcome;
   return <StudentCourseOverview
     notice={<>
-      {makeupOutcome ? <SingleMakeupOutcomeNotice courseId={course.id} surveysEnabled={course.surveysEnabled} outcome={makeupOutcome} /> : <>
+      {makeupOutcome ? <SingleMakeupOutcomeNotice courseId={course.id} surveysEnabled={course.surveysEnabled} outcome={makeupOutcome} feedbackSurvey={finalFeedback?.survey} assigned={finalFeedback?.assigned} /> : <>
         {makeup && <FiaMakeupNotice makeup={makeup} />}
         {dspMakeup && <DspMakeupNotice courseId={course.id} makeup={dspMakeup} />}
       </>}
       {fiaEnrollment && <FiaDegreeForm degree={fiaEnrollment.fiaDegree} />}
     </>}
-    course={makeup ? { ...course, surveysEnabled: false } : course}
+    course={makeup && !finalFeedback ? { ...course, surveysEnabled: false } : course}
     classes={sortedClasses}
     assignments={assignments}
     pendingAssignments={pendingAssignments}

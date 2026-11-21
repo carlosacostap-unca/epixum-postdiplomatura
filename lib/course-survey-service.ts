@@ -4,9 +4,10 @@ import { randomBytes } from 'node:crypto';
 import type PocketBase from 'pocketbase';
 import type { Course, User } from '@/types';
 import { aggregateSurvey, parseSurveyAnswers, surveyDesignSchema, surveyIsOpen, surveyPublicDto, SurveyError, type CourseSurvey, type SurveyResponse, type SurveyResults, type SurveySummary } from './course-surveys';
-import { matchesSurveyAudience } from './survey-audience';
+import { isMakeupSurveyAudience, matchesSurveyAudience } from './survey-audience';
 import { getPendingFiaMakeup } from './fia-makeup';
 import { getSingleMakeupSurveyGrades } from './single-makeup-outcome';
+import { getFinalMakeupFeedback, isFinalMakeupSurvey, isIntegralPromotionSurvey, readFinalFeedback } from './final-makeup-feedback';
 
 export type SurveyMode = 'manager' | 'student';
 const nonce = () => randomBytes(16).toString('hex');
@@ -15,10 +16,13 @@ type GradePair = { first: number; second: number };
 type WithRoster = CourseSurvey & { promotionGrades?: Record<string, GradePair> | null };
 type StoredSurvey = WithRoster & { opening: string };
 
-async function ownGrades(service: PocketBase, survey: WithRoster, student: string): Promise<GradePair | null> {
+async function ownGrades(service: PocketBase, survey: WithRoster, student: string): Promise<GradePair | { integral: number } | null> {
   if (survey.audience !== 'promotion_roster') return null;
   if (survey.promotionGrades && Object.hasOwn(survey.promotionGrades, student)) return survey.promotionGrades[student];
-  return getSingleMakeupSurveyGrades(service, survey.course, survey.id, student);
+  const grades = await getSingleMakeupSurveyGrades(service, survey.course, survey.id, student);
+  if (grades || !isIntegralPromotionSurvey(survey.course, survey.id)) return grades;
+  const final = await readFinalFeedback(service, survey.course, student);
+  return final?.integralGrade === undefined ? null : { integral: final.integralGrade };
 }
 const conflict = () => new SurveyError('La encuesta cambió o no pudimos confirmar la operación. Actualizá la página e intentá nuevamente.');
 
@@ -39,7 +43,7 @@ export async function requireSurveyAccess(pb: PocketBase, courseId: string, mode
     if (teacher || !canViewCourseDraft(course,user)) throw new SurveyError('No tenés acceso estudiantil a las encuestas de este curso.');
     const enrollment = await first(pb, 'course_enrollments', pb.filter('course = {:course} && student = {:student}', { course: courseId, student: user.id }));
     if (!enrollment) throw new SurveyError('Necesitás una matrícula vigente en este curso.');
-    if (await getPendingFiaMakeup(courseId, user.id)) throw new SurveyError('Las encuestas todavía no están disponibles para tu matrícula.');
+    if (await getPendingFiaMakeup(courseId, user.id) && !await getFinalMakeupFeedback(courseId, user.id)) throw new SurveyError('Las encuestas todavía no están disponibles para tu matrícula.');
   }
   return { course, user };
 }
@@ -62,9 +66,20 @@ async function requireSurveyAudience(service: PocketBase, survey: WithRoster, ac
     if (!grades) throw new SurveyError('Esta encuesta no está disponible para tu matrícula.');
     return grades;
   }
+  if (isMakeupSurveyAudience(survey.audience)) {
+    if (!await matchesFinalMakeupSurvey(service, survey, access.user.id)) throw new SurveyError('Esta encuesta no está disponible para tu resultado de cursada.');
+    return null;
+  }
   const status = survey.audience === 'all' || !survey.audience ? null : await publishedStudentStatus(service, access.course, access.user.id);
   if (!matchesSurveyAudience(survey.audience, status, Boolean(access.course.outcomesEnabled))) throw new SurveyError('Esta encuesta no está disponible para tu resultado de cursada.');
   return null;
+}
+
+async function matchesFinalMakeupSurvey(service: PocketBase, survey: CourseSurvey, student: string) {
+  if (!isMakeupSurveyAudience(survey.audience)) return false;
+  const condition = survey.audience === 'makeup_regular' ? 'regular' : 'free';
+  if (!isFinalMakeupSurvey(survey.course, survey.id, condition)) return false;
+  return (await readFinalFeedback(service, survey.course, student))?.condition === condition;
 }
 
 export async function readCourseSurvey(pb: PocketBase, service: PocketBase, courseId: string, surveyId: string, mode: SurveyMode) {
@@ -81,9 +96,10 @@ export async function listCourseSurveys(pb: PocketBase, service: PocketBase, cou
   const records = await service.collection('course_surveys').getFullList<WithRoster>({ filter, sort: '-created,-id' });
   const status = mode === 'student' && records.some(record => record.audience === 'approved' || record.audience === 'not_approved_or_incomplete') ? await publishedStudentStatus(service, access.course, access.user.id) : null;
   const visible = mode === 'manager' ? records : (await Promise.all(records.map(async record => {
-    const eligible = record.audience === 'promotion_roster'
-      ? Boolean(await ownGrades(service, record, access.user.id))
-      : matchesSurveyAudience(record.audience, status, Boolean(access.course.outcomesEnabled));
+    let eligible: boolean;
+    if (record.audience === 'promotion_roster') eligible = Boolean(await ownGrades(service, record, access.user.id));
+    else if (isMakeupSurveyAudience(record.audience)) eligible = await matchesFinalMakeupSurvey(service, record, access.user.id);
+    else eligible = matchesSurveyAudience(record.audience, status, Boolean(access.course.outcomesEnabled));
     return eligible ? record : null;
   }))).filter(record => record !== null);
   const surveys: SurveySummary[] = await Promise.all(visible.map(async record => {
@@ -107,12 +123,16 @@ export async function saveCourseSurvey(pb: PocketBase, service: PocketBase, cour
   const parsed = surveyDesignSchema.safeParse(input);
   if (!parsed.success) throw new SurveyError(parsed.error.issues[0].message);
   if (!surveyId) {
+    if (isMakeupSurveyAudience(parsed.data.audience)) throw new SurveyError('Los destinatarios de cierre de recuperatorios requieren una encuesta configurada para este curso.');
     if (parsed.data.audience === 'promotion_roster') throw new SurveyError('Se necesita una nómina de promoción.');
     const created = await service.collection('course_surveys').create<CourseSurvey>({ ...parsed.data, course: courseId, status: 'draft', revision: nonce() });
     return created.id;
   }
   const survey = await scopedSurvey(service, courseId, surveyId, 'manager');
   if (survey.status !== 'draft') throw new SurveyError('El diseño ya está publicado. Duplicá la encuesta para modificarlo.');
+  if (isMakeupSurveyAudience(survey.audience) || isMakeupSurveyAudience(parsed.data.audience)) {
+    if (parsed.data.audience !== survey.audience) throw new SurveyError('Los destinatarios de cierre de recuperatorios quedan fijos.');
+  }
   if ((parsed.data.audience === 'promotion_roster') !== (survey.audience === 'promotion_roster')) throw new SurveyError('La nómina de promoción queda fija.');
   if (survey.revision !== expectedRevision) throw conflict();
   const batch = guardedBatch(service, survey);
@@ -136,7 +156,7 @@ export async function commandCourseSurvey(pb: PocketBase, service: PocketBase, c
     if (command === 'close' ? survey.status !== 'published' : survey.status !== 'draft') throw new SurveyError('La operación no está disponible en el estado actual de la encuesta.');
     if (command !== 'close' && survey.revision !== expectedRevision) throw conflict();
     if (command === 'publish') {
-      if (survey.audience !== 'all' && survey.audience !== 'promotion_roster' && !course.outcomesEnabled) throw new SurveyError('La administración debe habilitar los resultados de cursada antes de publicar una encuesta segmentada.');
+      if (survey.audience !== 'all' && survey.audience !== 'promotion_roster' && !isMakeupSurveyAudience(survey.audience) && !course.outcomesEnabled) throw new SurveyError('La administración debe habilitar los resultados de cursada antes de publicar una encuesta segmentada.');
       surveyDesignSchema.parse({ title: survey.title, description: survey.description, anonymous: survey.anonymous, audience: survey.audience, closesAt: survey.closesAt, questions: survey.questions });
       if (survey.closesAt && Date.parse(survey.closesAt) <= Date.now()) throw new SurveyError('La fecha de cierre debe estar en el futuro.');
     }

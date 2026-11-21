@@ -5,6 +5,7 @@ import { studentCourseNavigation } from "@/lib/course-navigation";
 import FormattedDate from "@/components/FormattedDate";
 import { fiaCourseId, getPendingFiaMakeup } from "@/lib/fia-makeup";
 import { getCurrentUser } from "@/lib/pocketbase-server";
+import { getFinalMakeupFeedback } from "@/lib/final-makeup-feedback";
 
 export type StudentCourseSection = "resumen" | "clases" | "trabajos" | "contenidos" | "consultas" | "preparacion" | "parciales" | "revisiones" | "encuestas";
 
@@ -13,7 +14,8 @@ const labels: Record<StudentCourseSection, string> = { resumen: "Resumen", clase
 async function FiaCourseTabs({ course, current }: { course: Course; current: StudentCourseSection }) {
   const user = await getCurrentUser();
   const pending = user && await getPendingFiaMakeup(course.id, user.id);
-  return <Tabs label={`Secciones de ${course.title}`} items={studentCourseNavigation(pending ? { ...course, surveysEnabled: false } : course, current)} />;
+  const blocked = pending && user && !await getFinalMakeupFeedback(course.id, user.id);
+  return <Tabs label={`Secciones de ${course.title}`} items={studentCourseNavigation(blocked ? { ...course, surveysEnabled: false } : course, current)} />;
 }
 
 export function StudentCourseContext({ actions, compact = false, course, current, description, title }: { actions?: ReactNode; compact?: boolean; course: Course; current: StudentCourseSection; description?: ReactNode; title?: ReactNode }) {

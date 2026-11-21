@@ -3,6 +3,7 @@ import type PocketBase from 'pocketbase';
 import { commandCourseSurvey, listCourseSurveys, readCourseSurvey, readSurveyResults, requireSurveyAccess, saveCourseSurvey, submitCourseSurvey } from './course-survey-service';
 import type { CourseSurvey } from './course-surveys';
 import * as makeupOutcome from './single-makeup-outcome';
+import * as finalMakeupFeedback from './final-makeup-feedback';
 
 const courseId = 'course000000001';
 const surveyId = 'survey000000001';
@@ -96,6 +97,26 @@ it('incorpora la promoción por recuperatorio y muestra las notas sólo después
     expect(grades).toHaveBeenCalledWith(f.service, course, id, 'student');
   } finally {
     grades.mockRestore();
+  }
+});
+
+it('habilita la encuesta de cierre sólo para la condición final correcta', async () => {
+  const course = '6taf9vkwwi8oxlz', id = 'dspfreedomnov01';
+  const f = fixture(course, id);
+  f.survey().audience = 'makeup_free';
+  const student = f.actor('student');
+  const feedback = vi.spyOn(finalMakeupFeedback, 'readFinalFeedback').mockResolvedValue(null);
+  try {
+    expect((await listCourseSurveys(student, f.service, course, 'student')).surveys).toEqual([]);
+    await expect(readCourseSurvey(student, f.service, course, id, 'student')).rejects.toThrow('resultado de cursada');
+    feedback.mockResolvedValue({ condition: 'regular', survey: 'dspregularnov01', recovered: 5, assigned: true });
+    await expect(submitCourseSurvey(student, f.service, course, id, { q: 'Comentario' })).rejects.toThrow('resultado de cursada');
+    feedback.mockResolvedValue({ condition: 'free', survey: id, recovered: null, assigned: true });
+    expect((await listCourseSurveys(student, f.service, course, 'student')).surveys).toHaveLength(1);
+    await submitCourseSurvey(student, f.service, course, id, { q: 'Comentario' });
+    expect(await readCourseSurvey(student, f.service, course, id, 'student')).toMatchObject({ submitted: true, grades: null });
+  } finally {
+    feedback.mockRestore();
   }
 });
 

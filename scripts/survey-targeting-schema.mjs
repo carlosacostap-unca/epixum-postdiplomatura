@@ -1,4 +1,4 @@
-export const SURVEY_AUDIENCES = ['all', 'approved', 'not_approved_or_incomplete', 'promotion_roster'];
+export const SURVEY_AUDIENCES = ['all', 'approved', 'not_approved_or_incomplete', 'promotion_roster', 'makeup_regular', 'makeup_free'];
 export const surveyAudienceField = { name: 'audience', type: 'select', required: false, maxSelect: 1, values: SURVEY_AUDIENCES };
 
 export const promotionGradesField = { name: 'promotionGrades', type: 'json', maxSize: 200000 };

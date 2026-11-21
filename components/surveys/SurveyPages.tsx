@@ -93,10 +93,12 @@ export async function SurveyDetailPage({ courseId, surveyId, workspace }: Props 
       {grades && <Card><CardContent className="space-y-3">
         <h2 className="text-xl font-bold">Tu resultado de cursada</h2>
         <p>Condición: <strong>Promocionado</strong></p>
-        <dl className="space-y-1">{[
+        <dl className="space-y-1">{('integral' in grades ? [
+          ['Recuperatorio integral', grades.integral], ['Nota final', Math.ceil(grades.integral)],
+        ] : [
           ['Primer parcial', grades.first], ['Segundo parcial', grades.second],
           ['Nota final', Math.ceil((grades.first + grades.second) / 2)],
-        ].map(([label, value]) => <div key={label} className="flex gap-4"><dt>{label}</dt><dd className="font-bold">{value.toLocaleString('es-AR')}</dd></div>)}</dl>
+        ]).map(([label, value]) => <div key={label} className="flex gap-4"><dt>{label}</dt><dd className="font-bold">{value.toLocaleString('es-AR')}</dd></div>)}</dl>
         <p>La promoción de esta materia es informal. En el acta de cursada vas a figurar como regular. Inscribite en una mesa de examen para que el docente pueda registrar tu nota de aprobación.</p>
       </CardContent></Card>}
     </>}

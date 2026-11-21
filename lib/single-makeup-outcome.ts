@@ -39,7 +39,7 @@ const grade = (result?: Result) => result && result.total > 0 ? (result.correct 
 async function readFinalOutcome(service: PocketBase, course: string, student: string, policy: Policy) {
   const { exam, retainedExam, partial, survey } = policy;
   const scheduled = await service.collection('course_exams').getList<ScheduledExam>(1, 1, {
-    filter: service.filter('id = {:exam} && course = {:course} && status = "published"', { exam, course }),
+    filter: service.filter('id = {:exam} && course = {:course} && (status = "published" || status = "archived")', { exam, course }),
     fields: 'studentRoster,opensAt,closesAt,sessions.id,sessions.label,sessions.opensAt,sessions.closesAt',
   });
   const [record] = scheduled.items;
@@ -79,4 +79,9 @@ export async function getSingleMakeupSurveyGrades(service: PocketBase, course: s
   const policy = forCourse(course);
   if (!policy || survey !== policy.survey) return null;
   return (await readFinalOutcome(service, course, student, policy))?.grades ?? null;
+}
+
+export async function readSingleMakeupOutcome(service: PocketBase, course: string, student: string) {
+  const policy = forCourse(course);
+  return policy ? readFinalOutcome(service, course, student, policy) : null;
 }
