@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type PocketBase from 'pocketbase';
 import { commandCourseSurvey, listCourseSurveys, readCourseSurvey, readSurveyResults, requireSurveyAccess, saveCourseSurvey, submitCourseSurvey } from './course-survey-service';
 import type { CourseSurvey } from './course-surveys';
+import * as makeupOutcome from './single-makeup-outcome';
 
 const courseId = 'course000000001';
 const surveyId = 'survey000000001';
@@ -9,13 +10,13 @@ const design = { title: 'Consulta', description: '', anonymous: true, closesAt: 
 type Row = Record<string, unknown> & { id: string };
 type Operation = { collection: string; method: string; id?: string; data?: Record<string, unknown> };
 
-function fixture() {
+function fixture(course = courseId, survey = surveyId) {
   let db: Record<string, Row[]> = {
-    courses: [{ id: courseId, title: 'Curso', status: 'en curso', surveysEnabled: true, teachers: ['teacher'] }],
+    courses: [{ id: course, title: 'Curso', status: 'en curso', surveysEnabled: true, teachers: ['teacher'] }],
     users: [{ id: 'student', name: 'Nombre privado' }],
-    course_enrollments: [{ id: 'enrollment', course: courseId, student: 'student' }],
-    course_surveys: [{ ...design, id: surveyId, course: courseId, status: 'published', revision: 'v1', opening: 'opening1' }],
-    course_survey_openings: [{ id: 'opening1', survey: surveyId }],
+    course_enrollments: [{ id: 'enrollment', course, student: 'student' }],
+    course_surveys: [{ ...design, id: survey, course, status: 'published', revision: 'v1', opening: 'opening1' }],
+    course_survey_openings: [{ id: 'opening1', survey }],
     course_survey_participations: [], course_survey_responses: [], course_survey_revisions: [],
     course_outcomes: [],
   };
@@ -77,6 +78,26 @@ function fixture() {
   const actor = (id: string, role = 'estudiante', valid = true) => ({ ...service, authStore: { isValid: valid, record: { id, role } } }) as unknown as PocketBase;
   return { service, actor, rows: (name: string) => db[name], survey: () => db.course_surveys[0] as unknown as CourseSurvey, fail: () => { failNext = true; }, before: (callback: () => Promise<void>) => { beforeSend = callback; } };
 }
+
+it('incorpora la promoción por recuperatorio y muestra las notas sólo después de responder', async () => {
+  const course = '6taf9vkwwi8oxlz', id = 'dsppromofinal01';
+  const f = fixture(course, id);
+  f.survey().audience = 'promotion_roster';
+  const student = f.actor('student');
+  const grades = vi.spyOn(makeupOutcome, 'getSingleMakeupSurveyGrades').mockResolvedValue(null);
+  try {
+    expect((await listCourseSurveys(student, f.service, course, 'student')).surveys).toEqual([]);
+    await expect(submitCourseSurvey(student, f.service, course, id, { q: 'Comentario' })).rejects.toThrow('matrícula');
+    grades.mockResolvedValue({ first: 6, second: 9.5 });
+    expect((await listCourseSurveys(student, f.service, course, 'student')).surveys.map(survey => survey.id)).toEqual([id]);
+    expect((await readCourseSurvey(student, f.service, course, id, 'student')).grades).toBeNull();
+    await submitCourseSurvey(student, f.service, course, id, { q: 'Comentario' });
+    expect((await readCourseSurvey(student, f.service, course, id, 'student')).grades).toEqual({ first: 6, second: 9.5 });
+    expect(grades).toHaveBeenCalledWith(f.service, course, id, 'student');
+  } finally {
+    grades.mockRestore();
+  }
+});
 
 describe('servicio de encuestas', () => {
   let f: ReturnType<typeof fixture>;

@@ -6,6 +6,7 @@ import type { Course, User } from '@/types';
 import { aggregateSurvey, parseSurveyAnswers, surveyDesignSchema, surveyIsOpen, surveyPublicDto, SurveyError, type CourseSurvey, type SurveyResponse, type SurveyResults, type SurveySummary } from './course-surveys';
 import { matchesSurveyAudience } from './survey-audience';
 import { getPendingFiaMakeup } from './fia-makeup';
+import { getSingleMakeupSurveyGrades } from './single-makeup-outcome';
 
 export type SurveyMode = 'manager' | 'student';
 const nonce = () => randomBytes(16).toString('hex');
@@ -14,9 +15,10 @@ type GradePair = { first: number; second: number };
 type WithRoster = CourseSurvey & { promotionGrades?: Record<string, GradePair> | null };
 type StoredSurvey = WithRoster & { opening: string };
 
-function ownGrades(survey: WithRoster, student: string) {
-  return survey.audience === 'promotion_roster' && survey.promotionGrades && Object.hasOwn(survey.promotionGrades, student)
-    ? survey.promotionGrades[student] : null;
+async function ownGrades(service: PocketBase, survey: WithRoster, student: string): Promise<GradePair | null> {
+  if (survey.audience !== 'promotion_roster') return null;
+  if (survey.promotionGrades && Object.hasOwn(survey.promotionGrades, student)) return survey.promotionGrades[student];
+  return getSingleMakeupSurveyGrades(service, survey.course, survey.id, student);
 }
 const conflict = () => new SurveyError('La encuesta cambió o no pudimos confirmar la operación. Actualizá la página e intentá nuevamente.');
 
@@ -56,19 +58,21 @@ async function publishedStudentStatus(service: PocketBase, course: Course, stude
 
 async function requireSurveyAudience(service: PocketBase, survey: WithRoster, access: Awaited<ReturnType<typeof requireSurveyAccess>>) {
   if (survey.audience === 'promotion_roster') {
-    if (!ownGrades(survey, access.user.id)) throw new SurveyError('Esta encuesta no está disponible para tu matrícula.');
-    return;
+    const grades = await ownGrades(service, survey, access.user.id);
+    if (!grades) throw new SurveyError('Esta encuesta no está disponible para tu matrícula.');
+    return grades;
   }
   const status = survey.audience === 'all' || !survey.audience ? null : await publishedStudentStatus(service, access.course, access.user.id);
   if (!matchesSurveyAudience(survey.audience, status, Boolean(access.course.outcomesEnabled))) throw new SurveyError('Esta encuesta no está disponible para tu resultado de cursada.');
+  return null;
 }
 
 export async function readCourseSurvey(pb: PocketBase, service: PocketBase, courseId: string, surveyId: string, mode: SurveyMode) {
   const access = await requireSurveyAccess(pb, courseId, mode);
   const survey = await scopedSurvey(service, courseId, surveyId, mode);
-  if (mode === 'student') await requireSurveyAudience(service, survey, access);
+  const grades = mode === 'student' ? await requireSurveyAudience(service, survey, access) : null;
   const submitted = mode === 'student' && Boolean(await first(service, 'course_survey_participations', service.filter('survey = {:survey} && student = {:student}', { survey: surveyId, student: access.user.id })));
-  return { ...access, survey: surveyPublicDto(survey), submitted, grades: submitted ? ownGrades(survey, access.user.id) : null };
+  return { ...access, survey: surveyPublicDto(survey), submitted, grades: submitted ? grades : null };
 }
 
 export async function listCourseSurveys(pb: PocketBase, service: PocketBase, courseId: string, mode: SurveyMode) {
@@ -76,8 +80,12 @@ export async function listCourseSurveys(pb: PocketBase, service: PocketBase, cou
   const filter = service.filter(mode === 'student' ? 'course = {:course} && status != "draft"' : 'course = {:course}', { course: courseId });
   const records = await service.collection('course_surveys').getFullList<WithRoster>({ filter, sort: '-created,-id' });
   const status = mode === 'student' && records.some(record => record.audience === 'approved' || record.audience === 'not_approved_or_incomplete') ? await publishedStudentStatus(service, access.course, access.user.id) : null;
-  const visible = mode === 'student' ? records.filter(record => record.audience === 'promotion_roster'
-    ? Boolean(ownGrades(record, access.user.id)) : matchesSurveyAudience(record.audience, status, Boolean(access.course.outcomesEnabled))) : records;
+  const visible = mode === 'manager' ? records : (await Promise.all(records.map(async record => {
+    const eligible = record.audience === 'promotion_roster'
+      ? Boolean(await ownGrades(service, record, access.user.id))
+      : matchesSurveyAudience(record.audience, status, Boolean(access.course.outcomesEnabled));
+    return eligible ? record : null;
+  }))).filter(record => record !== null);
   const surveys: SurveySummary[] = await Promise.all(visible.map(async record => {
     const filter = service.filter(mode === 'student' ? 'survey = {:survey} && student = {:student}' : 'survey = {:survey}', { survey: record.id, student: access.user.id });
     const participation = await service.collection('course_survey_participations').getList(1, 1, { filter, fields: 'id' });

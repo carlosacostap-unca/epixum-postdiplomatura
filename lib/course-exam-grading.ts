@@ -3,11 +3,15 @@ export const COURSE_EXAM_PROMOTION_GRADE = 7;
 const dspFirstMakeup = 'dsprec1nov27001';
 const fiaSecondMakeup = 'fiarec2nov24001';
 
+export function fiaSecondMakeupPromotionGrade(firstGrade: number | null) {
+  return firstGrade === 6.5 ? 7.5 : firstGrade === 6 ? 8 : null;
+}
+
 export function fiaSecondMakeupRules(firstGrade: number | null) {
-  const promotionGrade = firstGrade === 6.5 ? '7,5' : firstGrade === 6 ? '8' : null;
+  const promotionGrade = fiaSecondMakeupPromotionGrade(firstGrade);
   if (!promotionGrade) return courseExamApprovalRules(fiaSecondMakeup);
   const regularLimit = firstGrade === 6.5 ? '7' : '7,5';
-  return `Con ${promotionGrade} o más en el recuperatorio, promocionás. Con una nota de 4 a ${regularLimit}, quedás regular. Si no te presentás, quedás libre.`;
+  return `Con ${promotionGrade.toLocaleString('es-AR')} o más en el recuperatorio, promocionás. Con una nota de 4 a ${regularLimit}, quedás regular. Si no te presentás, quedás libre.`;
 }
 
 export function courseExamApprovalRules(examId?: string) {
