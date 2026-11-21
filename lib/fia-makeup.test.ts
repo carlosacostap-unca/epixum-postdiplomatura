@@ -35,7 +35,10 @@ it('retira el aviso cuando consta la entrega del recuperatorio asignado', async 
 
 it('muestra las dos notas de Diseño sólo a una cuenta de la nómina de su recuperatorio', async () => {
   const course = '6taf9vkwwi8oxlz';
-  examList.mockResolvedValue([{ id: 'dsprec1nov27001', studentRoster: { students: ['assigned', 'another'] } }]);
+  examList.mockResolvedValue([
+    { id: 'dsprec1nov27001', studentRoster: { students: ['assigned', 'another'] } },
+    { id: 'dsprecabnov2701', studentRoster: { students: ['integral'] } },
+  ]);
   results.mockResolvedValue([{ exam: 'dspfirstexam001', correct: 11, total: 20 }, { exam: 'dspsecondexam01', correct: 20, total: 20 }]);
   expect(await getPendingDspMakeup(course, 'unassigned')).toBeNull();
   expect(results).not.toHaveBeenCalled();
@@ -43,4 +46,6 @@ it('muestra las dos notas de Diseño sólo a una cuenta de la nómina de su recu
   expect(notice).toMatchObject({ examId: 'dsprec1nov27001', first: 5.5, second: 10 });
   expect(JSON.parse(results.mock.calls[0][0].filter)).toEqual({ course, student: 'assigned' });
   expect(JSON.stringify(notice)).not.toContain('another');
+  results.mockResolvedValue([]);
+  expect(await getPendingDspMakeup(course, 'integral')).toMatchObject({ examId: 'dsprecabnov2701', subject: 'ambos parciales' });
 });

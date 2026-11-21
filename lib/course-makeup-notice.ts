@@ -29,7 +29,10 @@ export async function readPendingMakeup(course: string, student: string, makeups
   return { examId: id, subject: makeups[id], first: grade(originals[0]), second: grade(originals[1]), schedule: { opensAt, closesAt, sessions } };
 }
 
-const dspMakeups = { dsprec1nov27001: 'el primer parcial' };
+const dspMakeups = {
+  dsprec1nov27001: 'el primer parcial',
+  dsprecabnov2701: 'ambos parciales',
+};
 
 export function getPendingDspMakeup(course: string, student: string) {
   if (course !== '6taf9vkwwi8oxlz') return null;
