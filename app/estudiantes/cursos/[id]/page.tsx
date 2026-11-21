@@ -14,6 +14,8 @@ import { FiaDegreeForm } from "@/components/student/FiaDegreeForm";
 import { fiaCourseId } from "@/lib/fia-degree";
 import { getFiaEnrollment } from "@/lib/fia-degree-data";
 import { createServiceClient } from "@/lib/pocketbase-service";
+import { getPendingDspMakeup } from "@/lib/course-makeup-notice";
+import { DspMakeupNotice } from "@/components/student/DspMakeupNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -61,12 +63,13 @@ export default async function EstudianteCoursePage({ params, searchParams }: { p
 
   const activeGroup = visibleGroups.find((group) => group.assignments.some((item) => item.id === nextAssignment?.id) || group.classes.some((item) => item.id === nextClass?.id)) || visibleGroups[0];
 
-  const [makeup, fiaEnrollment] = await Promise.all([
+  const [makeup, fiaEnrollment, dspMakeup] = await Promise.all([
     getPendingFiaMakeup(course.id, user.id),
     course.id === fiaCourseId ? createServiceClient().then(service => getFiaEnrollment(service, user.id)) : null,
+    getPendingDspMakeup(course.id, user.id),
   ]);
   return <StudentCourseOverview
-    notice={<>{makeup && <FiaMakeupNotice makeup={makeup} />}{fiaEnrollment && <FiaDegreeForm degree={fiaEnrollment.fiaDegree} />}</>}
+    notice={<>{makeup && <FiaMakeupNotice makeup={makeup} />}{dspMakeup && <DspMakeupNotice courseId={course.id} makeup={dspMakeup} />}{fiaEnrollment && <FiaDegreeForm degree={fiaEnrollment.fiaDegree} />}</>}
     course={makeup ? { ...course, surveysEnabled: false } : course}
     classes={sortedClasses}
     assignments={assignments}
