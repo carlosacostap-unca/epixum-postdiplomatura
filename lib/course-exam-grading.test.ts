@@ -1,5 +1,12 @@
 import { expect, it } from 'vitest';
-import { courseExamApprovalRules, courseExamOutcome } from './course-exam-grading';
+import { courseExamApprovalRules, courseExamOutcome, fiaSecondMakeupRules } from './course-exam-grading';
+
+it('informa los mínimos particulares del segundo recuperatorio de IA', () => {
+  expect(fiaSecondMakeupRules(6.5)).toBe('Con 7,5 o más en el recuperatorio, promocionás. Con una nota de 4 a 7, quedás regular. Si no te presentás, quedás libre.');
+  expect(fiaSecondMakeupRules(6)).toBe('Con 8 o más en el recuperatorio, promocionás. Con una nota de 4 a 7,5, quedás regular. Si no te presentás, quedás libre.');
+  expect(courseExamOutcome(14, 20, 'fiarec2nov24001')?.condition).toBeNull();
+  expect(courseExamOutcome(14, 20, 'fiasecondexam01')?.code).toBe('promote');
+});
 
 it('aplica el umbral de 6 sólo al recuperatorio del primer parcial de Diseño', () => {
   const exam = 'dsprec1nov27001';

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { fiaCourseId, type getPendingFiaMakeup } from '@/lib/fia-makeup';
+import { fiaSecondMakeupRules } from '@/lib/course-exam-grading';
 
 type Makeup = NonNullable<Awaited<ReturnType<typeof getPendingFiaMakeup>>>;
 const format = (grade: number | null) => grade === null ? 'Ausente' : grade.toLocaleString('es-AR');
@@ -13,6 +14,7 @@ export function FiaMakeupNotice({ makeup }: { makeup: Makeup }) {
       <div><dt>Primer parcial</dt><dd className="font-bold">{format(makeup.first)}</dd></div>
       <div><dt>Segundo parcial</dt><dd className="font-bold">{format(makeup.second)}</dd></div>
     </dl>
+    {makeup.examId === 'fiarec2nov24001' && <p>{fiaSecondMakeupRules(makeup.first)}</p>}
     {closed ? <p>Los turnos del martes 24 de noviembre ya finalizaron.</p> : <p>Tu recuperatorio ya está publicado. El martes 24 de noviembre de 2026 podés rendirlo de <strong>08:00 a 09:00</strong> o de <strong>20:00 a 21:00</strong> (hora argentina). Elegí uno de los dos turnos. El examen se activa al comenzar cada turno y tenés un solo intento.</p>}
     {!closed && <p>
       {makeup.subject === 'ambos parciales'
