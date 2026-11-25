@@ -108,7 +108,7 @@ export default async function TeacherCourseManagementPage({ params }: { params: 
       )}
 
       {organization ? (
-        <TeacherWeeklyCourseManager courseId={course.id} weeks={organization.weeks} groups={organization.groups} unassigned={organization.unassigned} />
+        <TeacherWeeklyCourseManager modular={course.sprintsEnabled} modules={organization.modules} courseId={course.id} weeks={organization.weeks} groups={organization.groups} unassigned={organization.unassigned} />
       ) : <><section id="clases" aria-labelledby="classes-title" className="scroll-mt-6 space-y-5">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><h2 id="classes-title" className="font-headline text-2xl font-bold md:text-3xl">Clases</h2><p className="mt-1 text-[var(--color-on-surface-variant)]">Sesiones y materiales del curso.</p></div>

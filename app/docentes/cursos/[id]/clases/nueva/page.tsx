@@ -16,6 +16,6 @@ export default async function NewClassPage({ params, searchParams }: { params: P
 
   return <div className="page-container space-y-8">
     <TeacherCourseContext course={course} current="clases" title="Programar nueva clase" description={`Añadí una nueva sesión a ${course.title}.`} />
-    <Card className="max-w-3xl"><CardContent><NewClassForm courseId={course.id} weeks={weeks} initialWeekId={semana} /></CardContent></Card>
+    <Card className="max-w-3xl"><CardContent><NewClassForm modular={course.sprintsEnabled} courseId={course.id} weeks={weeks} initialWeekId={semana} /></CardContent></Card>
   </div>;
 }

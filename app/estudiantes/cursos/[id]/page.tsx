@@ -88,6 +88,7 @@ export default async function EstudianteCoursePage({ params, searchParams }: { p
     pendingAssignments={pendingAssignments}
     pendingInquiries={pendingInquiries}
     deliveryByAssignment={deliveryByAssignment}
+    modules={organization?.modules}
     visibleGroups={visibleGroups}
     activeGroupId={activeGroup?.week.id}
     nextClass={nextClass}

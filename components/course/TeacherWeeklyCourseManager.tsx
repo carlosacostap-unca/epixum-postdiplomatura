@@ -1,5 +1,7 @@
 "use client";
 
+import { ModuleEditor } from './ModuleEditor';
+import { ModuleGroups } from './ModuleGroups';
 import { PublicationBadge } from './PublicationBadge';
 import Link from "next/link";
 import { CourseUnit } from "./CourseUnit";
@@ -11,7 +13,7 @@ import {
   deleteCourseWeek,
   updateCourseWeek,
 } from "@/lib/actions-course-weeks";
-import type { Assignment, Class, CourseWeek, Inquiry } from "@/types";
+import type { Assignment, Class, CourseWeek, CourseModule, Inquiry } from "@/types";
 import { Badge, Button, Card, CardContent, ConfirmDialog, Dialog, EmptyState, useToast } from "@/components/ui";
 
 type WeeklyItem =
@@ -27,6 +29,8 @@ interface WeekGroup {
 }
 
 interface Props {
+  modules?: CourseModule[];
+  modular?: boolean;
   courseId: string;
   groups: WeekGroup[];
   unassigned: { classes: Class[]; assignments: Assignment[]; inquiries: Inquiry[] };
@@ -68,10 +72,11 @@ function FieldError({ children }: { children?: string }) {
   return children ? <span role="alert" className="block text-sm font-normal text-[var(--color-error)]">{children}</span> : null;
 }
 
-function WeekFields({ week, errors }: { week?: CourseWeek; errors: Record<string, string> }) {
+function WeekFields({ week, errors, modules }: { modules?: CourseModule[]; week?: CourseWeek; errors: Record<string, string> }) {
   const [status, setStatus] = useState<CourseWeek["status"]>(week?.status || "borrador");
   return (
     <div className="grid gap-5 sm:grid-cols-2">
+      {modules && <label className="space-y-2 text-sm font-bold">Módulo<select className={fieldClass} name="module" required defaultValue={week?.module || ""}><option value="">Elegí un módulo</option>{modules.map(m => <option key={m.id} value={m.id}>Módulo {m.number} · {m.title}</option>)}</select></label>}
       <label className="space-y-2 text-sm font-bold">Número
         <input className={fieldClass} name="number" type="number" min="0" step="1" required defaultValue={week?.number} aria-invalid={Boolean(errors.number)} />
         <FieldError>{errors.number}</FieldError>
@@ -91,8 +96,8 @@ function WeekFields({ week, errors }: { week?: CourseWeek; errors: Record<string
       <label className="space-y-2 text-sm font-bold">Estado
         <select className={fieldClass} name="status" value={status} onChange={(event) => setStatus(event.target.value as CourseWeek["status"])}>
           <option value="borrador">Borrador</option>
-          <option value="publicada">Publicada</option>
-          <option value="programada">Programada</option>
+          <option value="publicada">{modules ? "Publicado" : "Publicada"}</option>
+          <option value="programada">{modules ? "Programado" : "Programada"}</option>
         </select>
         <FieldError>{errors.status}</FieldError>
       </label>
@@ -106,7 +111,7 @@ function WeekFields({ week, errors }: { week?: CourseWeek; errors: Record<string
   );
 }
 
-function ContentMover({ courseId, item, weeks, currentWeek }: { courseId: string; item: WeeklyItem; weeks: CourseWeek[]; currentWeek?: string }) {
+function ContentMover({ courseId, item, weeks, currentWeek, modular }: { modular?: boolean; courseId: string; item: WeeklyItem; weeks: CourseWeek[]; currentWeek?: string }) {
   const router = useRouter();
   const [target, setTarget] = useState(currentWeek || "");
   const [pending, setPending] = useState(false);
@@ -117,24 +122,24 @@ function ContentMover({ courseId, item, weeks, currentWeek }: { courseId: string
     const result = await assignContentToWeek(courseId, item.type, item.id, target || undefined);
     setPending(false);
     if (!result.success) return notify({ title: result.error || "No se pudo mover el contenido", tone: "error" });
-    notify({ title: target ? "Contenido asignado a la unidad" : "Contenido dejado sin unidad", tone: "success" });
+    notify({ title: target ? "Contenido asignado" : "Contenido sin asignar", tone: "success" });
     router.refresh();
   }
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-outline-variant)] p-4 sm:flex-row sm:items-center">
       <Link className="flex min-w-0 flex-1 items-start gap-3 font-semibold hover:text-[var(--color-primary)]" href={item.href}><span className="material-symbols-outlined shrink-0 text-xl text-[var(--color-info)]" aria-hidden="true">{item.type === "class" ? "menu_book" : item.type === "assignment" ? "assignment" : "forum"}</span><span><span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">{item.type === "class" ? "Clase" : item.type === "assignment" ? "Trabajo práctico" : "Consulta"}</span>{item.title}{item.type !== "inquiry" && <span className="ml-2"><PublicationBadge status={item.publicationStatus} publishAt={item.publishAt} /></span>}</span></Link>
-      <label className="sr-only" htmlFor={`week-${item.type}-${item.id}`}>Unidad para {item.title}</label>
+      <label className="sr-only" htmlFor={`week-${item.type}-${item.id}`}>{modular ? "Sprint" : "Unidad"} para {item.title}</label>
       <select id={`week-${item.type}-${item.id}`} className={`${fieldClass} sm:w-52`} value={target} onChange={(event) => setTarget(event.target.value)}>
-        <option value="">Sin unidad</option>
-        {weeks.map((week) => <option key={week.id} value={week.id}>Unidad {week.number}</option>)}
+        <option value="">{modular ? "Sin sprint" : "Sin unidad"}</option>
+        {weeks.map((week) => <option key={week.id} value={week.id}>{modular ? "Sprint" : "Unidad"} {week.number}</option>)}
       </select>
       <Button variant="secondary" size="sm" onClick={move} isPending={pending} pendingLabel="Moviendo…">Mover</Button>
     </div>
   );
 }
 
-export default function TeacherWeeklyCourseManager({ courseId, groups, unassigned, weeks }: Props) {
+export default function TeacherWeeklyCourseManager({ courseId, groups, unassigned, weeks, modules = [], modular = false }: Props) {
   const router = useRouter();
   const { notify } = useToast();
   const [formWeek, setFormWeek] = useState<CourseWeek | "new" | null>(null);
@@ -161,7 +166,7 @@ export default function TeacherWeeklyCourseManager({ courseId, groups, unassigne
       return;
     }
     setFormWeek(null);
-    notify({ title: formWeek === "new" ? "Unidad creada" : "Unidad actualizada", tone: "success" });
+    notify({ title: modular ? "Sprint guardado" : formWeek === "new" ? "Unidad creada" : "Unidad actualizada", tone: "success" });
     router.refresh();
   }
 
@@ -172,7 +177,7 @@ export default function TeacherWeeklyCourseManager({ courseId, groups, unassigne
     setPending(false);
     if (!result.success) return notify({ title: result.error || "No se pudo eliminar la unidad", tone: "error" });
     setDeleteWeek(null);
-    notify({ title: "Unidad eliminada; su contenido quedó sin asignar", tone: "success" });
+    notify({ title: modular ? "Sprint eliminado" : "Unidad eliminada; su contenido quedó sin asignar", tone: "success" });
     router.refresh();
   }
 
@@ -180,20 +185,21 @@ export default function TeacherWeeklyCourseManager({ courseId, groups, unassigne
     <section id="semanas" aria-labelledby="weeks-title" className="scroll-mt-6 space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h2 id="weeks-title" className="font-headline text-2xl font-bold md:text-3xl">Organización por unidades</h2>
-          <p className="mt-1 text-[var(--color-on-surface-variant)]">Creá las unidades y ubicá clases, trabajos prácticos y consultas en cada una.</p>
+          <h2 id="weeks-title" className="font-headline text-2xl font-bold md:text-3xl">{modular ? "Módulos y sprints" : "Organización por unidades"}</h2>
+          <p className="mt-1 text-[var(--color-on-surface-variant)]">{modular ? "Organizá los sprints dentro de cada módulo." : "Creá las unidades y ubicá clases, trabajos prácticos y consultas en cada una."}</p>
         </div>
-        <Button onClick={() => { setFormError(null); setFieldErrors({}); setFormWeek("new"); }} leadingIcon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}>Nueva unidad</Button>
+        <Button disabled={modular && modules.length === 0} onClick={() => { setFormError(null); setFieldErrors({}); setFormWeek("new"); }} leadingIcon={<span className="material-symbols-outlined" aria-hidden="true">add</span>}>{modular ? "Nuevo sprint" : "Nueva unidad"}</Button>
       </div>
 
-      {weeks.length === 0 ? (
-        <EmptyState icon="calendar_view_week" title="Todavía no hay unidades" description="Creá la primera unidad para comenzar a organizar el contenido." action={<Button onClick={() => setFormWeek("new")}>Crear primera unidad</Button>} />
+      {modular && <ModuleEditor courseId={courseId} modules={modules} assignments={[...groups.flatMap(g => g.assignments), ...unassigned.assignments]} />}
+      {weeks.length === 0 && (!modular || !modules.length) ? (
+        <EmptyState icon="calendar_view_week" title={modular ? "Todavía no hay módulos" : "Todavía no hay unidades"} description={modular ? "Creá un módulo para organizar sus sprints." : "Creá la primera unidad para comenzar a organizar el contenido."} action={modular ? undefined : <Button onClick={() => setFormWeek("new")}>Crear primera unidad</Button>} />
       ) : (
         <div className="space-y-5">
-          {groups.map((group, index) => {
+          <ModuleGroups assignmentHref={id => `/docentes/cursos/${courseId}/tps/${id}`} modules={modular ? modules : undefined} includeEmpty groups={groups} render={(group, index) => {
             const items = weekItems(courseId, group);
             return (
-              <CourseUnit key={group.week.id} id={group.week.id} number={group.week.number} title={group.week.title} open={index === 0} counts={`${group.classes.length} clases · ${group.assignments.length} trabajos · ${group.inquiries.length} consultas`} metadata={<Badge tone={statusTone(group.week.status)}>{statusLabel(group.week.status)}</Badge>}>
+              <CourseUnit sprint={modular} key={group.week.id} id={group.week.id} number={group.week.number} title={group.week.title} open={index === 0} counts={`${group.classes.length} clases · ${group.assignments.length} trabajos · ${group.inquiries.length} consultas`} metadata={<Badge tone={statusTone(group.week.status)}>{modular && group.week.status !== "borrador" ? (group.week.status === "publicada" ? "Publicado" : "Programado") : statusLabel(group.week.status)}</Badge>}>
                 <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
                   <div className="text-sm text-[var(--color-on-surface-variant)]">
                     <p>{group.week.startDate || group.week.endDate ? `${group.week.startDate ? new Date(group.week.startDate).toLocaleDateString("es-AR") : "Sin inicio"} — ${group.week.endDate ? new Date(group.week.endDate).toLocaleDateString("es-AR") : "Sin finalización"}` : "Sin fechas definidas"}</p>
@@ -206,40 +212,40 @@ export default function TeacherWeeklyCourseManager({ courseId, groups, unassigne
                     <Button variant="ghost" size="sm" className="text-[var(--color-error)]" onClick={() => setDeleteWeek(group.week)}>Eliminar</Button>
                   </div>
                 </div>
-                {items.length ? <div className="space-y-2">{items.map((item) => <ContentMover key={`${item.type}-${item.id}`} courseId={courseId} item={item} weeks={weeks} currentWeek={group.week.id} />)}</div> : <p className="rounded-xl bg-[var(--color-surface-container)] p-4 text-sm text-[var(--color-on-surface-variant)]">Esta unidad todavía no contiene clases, trabajos ni consultas.</p>}
+                {items.length ? <div className="space-y-2">{items.map((item) => <ContentMover modular={modular} key={`${item.type}-${item.id}`} courseId={courseId} item={item} weeks={weeks} currentWeek={group.week.id} />)}</div> : <p className="rounded-xl bg-[var(--color-surface-container)] p-4 text-sm text-[var(--color-on-surface-variant)]">{modular ? "Este sprint" : "Esta unidad"} todavía no contiene clases, trabajos ni consultas.</p>}
               </CourseUnit>
             );
-          })}
+          }} />
         </div>
       )}
 
       <Card>
         <CardContent className="space-y-5">
-          <div><h3 className="font-headline text-xl font-bold">Contenido sin unidad</h3><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Solo lo ve el equipo docente hasta que lo asignes a una unidad publicada o programada.</p></div>
-          {orphanItems.length ? <div className="space-y-3">{orphanItems.map((item) => <ContentMover key={`${item.type}-${item.id}`} courseId={courseId} item={item} weeks={weeks} />)}</div> : <p className="text-sm text-[var(--color-on-surface-variant)]">Todo el contenido está asignado.</p>}
+          <div><h3 className="font-headline text-xl font-bold">{modular ? "Contenido sin sprint" : "Contenido sin unidad"}</h3><p className="mt-1 text-sm text-[var(--color-on-surface-variant)]">Solo lo ve el equipo docente hasta que lo asignes y publiques.</p></div>
+          {orphanItems.length ? <div className="space-y-3">{orphanItems.map((item) => <ContentMover modular={modular} key={`${item.type}-${item.id}`} courseId={courseId} item={item} weeks={weeks} />)}</div> : <p className="text-sm text-[var(--color-on-surface-variant)]">Todo el contenido está asignado.</p>}
         </CardContent>
       </Card>
 
       <Dialog
         open={Boolean(formWeek)}
         onOpenChange={(open) => { if (!open) setFormWeek(null); }}
-        title={formWeek === "new" ? "Crear unidad" : "Editar unidad"}
+        title={`${formWeek === "new" ? "Crear" : "Editar"} ${modular ? "sprint" : "unidad"}`}
         description="El estado controla cuándo podrán verla los estudiantes. Las fechas del período son opcionales."
         dismissible={!pending}
       >
         <form action={saveWeek} className="space-y-6 pb-6">
           {formError ? <p role="alert" className="rounded-xl bg-[var(--color-error)]/10 p-4 text-sm text-[var(--color-error)]">{formError}</p> : null}
-          <WeekFields key={formWeek === "new" ? "new" : formWeek?.id} week={formWeek === "new" ? undefined : formWeek || undefined} errors={fieldErrors} />
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setFormWeek(null)} disabled={pending}>Cancelar</Button><Button type="submit" isPending={pending} pendingLabel="Guardando…">Guardar unidad</Button></div>
+          <WeekFields modules={modular ? modules : undefined} key={formWeek === "new" ? "new" : formWeek?.id} week={formWeek === "new" ? undefined : formWeek || undefined} errors={fieldErrors} />
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><Button variant="ghost" onClick={() => setFormWeek(null)} disabled={pending}>Cancelar</Button><Button type="submit" isPending={pending} pendingLabel="Guardando…">{modular ? "Guardar sprint" : "Guardar unidad"}</Button></div>
         </form>
       </Dialog>
 
       <ConfirmDialog
         open={Boolean(deleteWeek)}
         onOpenChange={(open) => { if (!open) setDeleteWeek(null); }}
-        title={`Eliminar ${deleteWeek ? `Unidad ${deleteWeek.number}` : "unidad"}`}
-        description="La unidad se eliminará, pero sus clases, trabajos prácticos y consultas se conservarán como contenido sin unidad."
-        confirmLabel="Eliminar unidad"
+        title={`Eliminar ${deleteWeek ? `${modular ? "Sprint" : "Unidad"} ${deleteWeek.number}` : "unidad"}`}
+        description="Sus clases, trabajos prácticos y consultas se conservarán como contenido sin asignar."
+        confirmLabel={modular ? "Eliminar sprint" : "Eliminar unidad"}
         tone="danger"
         isPending={pending}
         onConfirm={confirmDelete}

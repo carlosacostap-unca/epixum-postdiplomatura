@@ -163,11 +163,12 @@ export default function CourseForm({
         <select
           id="organizationMode"
           name="organizationMode"
-          defaultValue={course?.organizationMode || 'tradicional'}
+          defaultValue={course?.sprintsEnabled && course.organizationMode === 'semanal' ? 'sprints' : course?.organizationMode || 'tradicional'}
           className={inputClass}
         >
           <option value="tradicional">Tradicional · listas de clases, trabajos y consultas</option>
-          <option value="semanal">Por unidades · estructura administrada por los docentes</option>
+          <option value="semanal">Por unidades</option>
+          <option value="sprints">Por módulos y sprints</option>
         </select>
         <p className="mt-2 text-sm text-[var(--color-on-surface-variant)]">
           Cambiar la modalidad no crea ni elimina contenido. La organización por unidades existente se conserva si después volvés a activarla.

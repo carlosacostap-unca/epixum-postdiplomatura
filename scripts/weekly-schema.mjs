@@ -148,6 +148,12 @@ function weekFields(coursesId) {
   ];
 }
 
+export function withSprintScope(rules, fields) {
+  if (!fields.some(field => field.name === 'module')) return rules;
+  const scope = '(module = "" || module.course.id = course.id)';
+  return { ...rules, createRule: '(' + rules.createRule + ') && ' + scope, updateRule: '(' + rules.updateRule + ') && ' + scope + ' && @request.body.course:changed = false' };
+}
+
 async function ensureWeeksCollection(pb, courses) {
   let weeks = await getCollection(pb, 'course_weeks');
   const index = 'CREATE UNIQUE INDEX idx_course_weeks_number ON course_weeks (course, number)';
@@ -170,7 +176,7 @@ async function ensureWeeksCollection(pb, courses) {
   const indexes = weeks.indexes?.some((candidate) => candidate.includes('idx_course_weeks_number'))
     ? weeks.indexes
     : [...(weeks.indexes || []), index];
-  weeks = await pb.collections.update(weeks.id, { fields, indexes, ...WEEK_RULES });
+  weeks = await pb.collections.update(weeks.id, { fields, indexes, ...withSprintScope(WEEK_RULES, fields) });
   return weeks;
 }
 

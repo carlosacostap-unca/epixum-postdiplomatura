@@ -59,6 +59,20 @@ describe("TeacherWeeklyCourseManager", () => {
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 
+  it("agrupa el sprint por módulo y conserva su identificador al organizarlo", async () => {
+    const user = userEvent.setup();
+    const module = { ...base, id: 'module-1', course: week.course, number: 1, title: 'Inicio' };
+    const sprint = { ...week, module: module.id };
+    render(<ToastProvider><TeacherWeeklyCourseManager modular courseId={week.course}
+      modules={[module]} weeks={[sprint]} groups={[{ week: sprint, classes: [classItem], assignments: [], inquiries: [] }]}
+      unassigned={{ classes: [], assignments: [], inquiries: [] }} /></ToastProvider>);
+    expect(screen.getByRole('heading', { name: 'Módulo 1 · Inicio' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sprint 1 · Fundamentos' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Sprint para Introducción' })).toHaveValue(sprint.id);
+    await user.click(screen.getByRole('button', { name: 'Editar' }));
+    expect(screen.getByLabelText('Módulo')).toHaveValue(module.id);
+  });
+
   it("expone la bandeja sin asignar con selector y acción táctil", () => {
     renderManager();
     expect(screen.getByRole("heading", { name: "Contenido sin unidad" })).toBeInTheDocument();

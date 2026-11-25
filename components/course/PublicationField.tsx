@@ -24,7 +24,7 @@ export function PublicationField({ status, publishAt, scheduling = false, existi
       <input id={`${id}-date`} type="datetime-local" required disabled={disabled} value={date} onChange={event => setDate(event.target.value)}
         aria-describedby={`${id}-timezone`} className="min-h-11 w-full rounded-xl border border-[var(--color-outline)] bg-[var(--color-surface-container)] px-4 py-3" />
       <input type="hidden" name="publishAt" value={instant} disabled={disabled} />
-      <p id={`${id}-timezone`} className="text-sm text-[var(--color-on-surface-variant)]">Hora local de tu dispositivo. Se hará visible automáticamente al llegar esa fecha, siempre que su unidad esté disponible.</p>
+      <p id={`${id}-timezone`} className="text-sm text-[var(--color-on-surface-variant)]">Hora local de tu dispositivo. Se hará visible automáticamente al llegar esa fecha, cuando la organización del curso permita el acceso.</p>
     </div>}
     <p id={`${id}-help`} className="text-sm text-[var(--color-on-surface-variant)]">
       {scheduling

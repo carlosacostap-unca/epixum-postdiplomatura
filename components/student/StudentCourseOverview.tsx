@@ -1,3 +1,4 @@
+import { ModuleGroups } from "@/components/course/ModuleGroups";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import FormattedDate from "@/components/FormattedDate";
@@ -6,7 +7,7 @@ import { Badge, EmptyState } from "@/components/ui";
 import { studentCourseNavigation } from "@/lib/course-navigation";
 import { getDeadlineState } from "@/lib/student-learning";
 import { studentDeliveryPresentation } from "@/lib/delivery-presentation";
-import type { Assignment, Class, Course, CourseWeek, Delivery, Inquiry } from "@/types";
+import type { Assignment, Class, Course, CourseModule, CourseWeek, Delivery, Inquiry } from "@/types";
 import StudentCourseNavigation from "./StudentCourseNavigation";
 import { StudentAction, StudentIcon, StudentInquiries, StudentMetrics, StudentPanel, studentPlainText, type StudentNextAction } from "./StudentLearningUI";
 
@@ -27,6 +28,7 @@ export interface StudentCourseGroup { week: CourseWeek; classes: Class[]; assign
 
 interface StudentCourseOverviewProps {
   course: Course;
+  modules?: CourseModule[];
   classes: Class[];
   assignments: Assignment[];
   pendingAssignments: Assignment[];
@@ -42,7 +44,7 @@ interface StudentCourseOverviewProps {
   notice?: ReactNode;
 }
 
-export default function StudentCourseOverview({ course, classes, assignments, pendingAssignments, pendingInquiries, deliveryByAssignment, visibleGroups, activeGroupId, nextClass, nextAction, now, onboarding, outcome, notice }: StudentCourseOverviewProps) {
+export default function StudentCourseOverview({ course, modules, classes, assignments, pendingAssignments, pendingInquiries, deliveryByAssignment, visibleGroups, activeGroupId, nextClass, nextAction, now, onboarding, outcome, notice }: StudentCourseOverviewProps) {
   const weekly = course.organizationMode === "semanal";
   const base = `/estudiantes/cursos/${course.id}`;
   const showNextClass = nextClass && nextAction?.icon === "assignment";
@@ -61,13 +63,13 @@ export default function StudentCourseOverview({ course, classes, assignments, pe
         {showNextClass && <section className="student-next-class" aria-label="Próxima clase"><p className="student-eyebrow">Próxima clase</p><h2>{nextClass.title}</h2><p className="student-secondary">{nextClass.date && <FormattedDate date={nextClass.date} showTime />}</p><Link href={`${base}/clases/${nextClass.id}`} className="student-text-action">Abrir clase <StudentIcon name="arrow_forward" /></Link></section>}
       </div>
       <div className="student-content-grid">
-        {weekly ? <StudentPanel id="semanas" title="Unidades del curso" action={<span className="student-secondary">{visibleGroups.length} publicadas</span>}>
-          {visibleGroups.length ? <div className="student-units">{visibleGroups.map(group => <details key={group.week.id} id={`unit-${group.week.id}`} className="student-unit" open={group.week.id === activeGroupId}>
-            <summary><span className="student-unit-number">{String(group.week.number).padStart(2, "0")}</span><div><h3>{group.week.title}</h3><p className="student-secondary">{group.classes.length} clases · {group.assignments.length} trabajos · {group.inquiries.length} consultas</p>{(group.week.startDate || group.week.endDate) && <p className="student-secondary">{group.week.startDate && <FormattedDate date={group.week.startDate} />}{group.week.endDate && <> — <FormattedDate date={group.week.endDate} /></>}</p>}</div><StudentIcon name="expand_more" /></summary>
-            <div className="student-unit-content">{group.classes.map(item => <StudentClassRow key={item.id} courseId={course.id} item={item} nextClass={nextClass?.id} now={now} />)}{group.assignments.map(assignment => <StudentAssignmentRow key={assignment.id} courseId={course.id} assignment={assignment} delivery={deliveryByAssignment.get(assignment.id)} now={now} />)}{!group.classes.length && !group.assignments.length && !group.inquiries.length && <p className="student-empty-text">Esta unidad todavía no tiene contenido.</p>}
+        {weekly ? <StudentPanel id="semanas" title={course.sprintsEnabled ? "Módulos y sprints" : "Unidades del curso"} action={<span className="student-secondary">{visibleGroups.length} {course.sprintsEnabled ? "sprints" : "publicadas"}</span>}>
+          {visibleGroups.length ? <div className="student-units"><ModuleGroups assignmentHref={id => `${base}/tps/${id}`} modules={course.sprintsEnabled ? modules : undefined} groups={visibleGroups} render={group => <details key={group.week.id} id={`unit-${group.week.id}`} className="student-unit" open={group.week.id === activeGroupId}>
+            <summary>{!course.sprintsEnabled && <span className="student-unit-number">{String(group.week.number).padStart(2, "0")}</span>}<div><h3>{course.sprintsEnabled && `Sprint ${group.week.number} · `}{group.week.title}</h3><p className="student-secondary">{group.classes.length} clases · {group.assignments.length} trabajos · {group.inquiries.length} consultas</p>{(group.week.startDate || group.week.endDate) && <p className="student-secondary">{group.week.startDate && <FormattedDate date={group.week.startDate} />}{group.week.endDate && <> — <FormattedDate date={group.week.endDate} /></>}</p>}</div><StudentIcon name="expand_more" /></summary>
+            <div className="student-unit-content">{group.classes.map(item => <StudentClassRow key={item.id} courseId={course.id} item={item} nextClass={nextClass?.id} now={now} />)}{group.assignments.map(assignment => <StudentAssignmentRow key={assignment.id} courseId={course.id} assignment={assignment} delivery={deliveryByAssignment.get(assignment.id)} now={now} />)}{!group.classes.length && !group.assignments.length && !group.inquiries.length && <p className="student-empty-text">{course.sprintsEnabled ? "Este sprint" : "Esta unidad"} todavía no tiene contenido.</p>}
               <div className="student-unit-actions"><Link className="student-text-action" href={`${base}/consultas/nueva?semana=${group.week.id}`}><StudentIcon name="chat_bubble_outline" />Hacer una consulta</Link>{group.inquiries.length > 0 && <Link className="student-text-action" href={`${base}/consultas?semana=${group.week.id}`}>Ver {group.inquiries.length} {group.inquiries.length === 1 ? "consulta" : "consultas"}<StudentIcon name="arrow_forward" /></Link>}</div>
             </div>
-          </details>)}</div> : <EmptyState icon="view_agenda" title="Todavía no hay unidades publicadas" description="El contenido aparecerá cuando el docente publique la primera unidad." />}
+          </details>} /></div> : <EmptyState icon="view_agenda" title={course.sprintsEnabled ? "Todavía no hay sprints publicados" : "Todavía no hay unidades publicadas"} description="El contenido aparecerá cuando el docente lo publique." />}
         </StudentPanel> : <div className="student-traditional-content">
           <StudentPanel id="clases" title="Clases y materiales">{classes.length ? classes.map(item => <StudentClassRow key={item.id} courseId={course.id} item={item} nextClass={nextClass?.id} now={now} />) : <p className="student-empty-text">Todavía no hay clases publicadas.</p>}</StudentPanel>
           <StudentPanel id="trabajos" title="Trabajos prácticos">{assignments.length ? assignments.map(assignment => <StudentAssignmentRow key={assignment.id} courseId={course.id} assignment={assignment} delivery={deliveryByAssignment.get(assignment.id)} now={now} />) : <p className="student-empty-text">Todavía no hay trabajos disponibles.</p>}</StudentPanel>

@@ -7,7 +7,7 @@ import { updateClass } from "@/lib/actions";
 import { Class, CourseWeek } from "@/types";
 import { format } from "date-fns";
 
-export default function EditClassForm({ courseId, classData, weeks }: { courseId: string; classData: Class; weeks: CourseWeek[] }) {
+export default function EditClassForm({ modular, courseId, classData, weeks }: { modular?: boolean; courseId: string; classData: Class; weeks: CourseWeek[] }) {
   const [title, setTitle] = useState(classData.title || "");
   const [description, setDescription] = useState(classData.description || "");
   
@@ -123,10 +123,10 @@ export default function EditClassForm({ courseId, classData, weeks }: { courseId
         </div>
 
         {weeks.length > 0 ? <div>
-          <label htmlFor="week" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-on-surface-variant)] mb-3">Unidad</label>
+          <label htmlFor="week" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[var(--color-on-surface-variant)] mb-3">{modular ? "Sprint" : "Unidad"}</label>
           <select id="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full bg-[var(--color-surface-container-lowest)] border border-[var(--color-outline-variant)]/30 rounded-[1.5rem] px-6 py-4 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-all outline-none">
-            <option value="">Sin unidad</option>
-            {weeks.map((item) => <option key={item.id} value={item.id}>Unidad {item.number}: {item.title}</option>)}
+            <option value="">{modular ? "Sin sprint" : "Sin unidad"}</option>
+            {weeks.map((item) => <option key={item.id} value={item.id}>{modular ? "Sprint" : "Unidad"} {item.number}: {item.title}</option>)}
           </select>
         </div> : null}
       </div>

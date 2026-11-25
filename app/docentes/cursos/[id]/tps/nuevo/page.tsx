@@ -18,6 +18,6 @@ export default async function NuevoTpPage(props: { params: Promise<{ id: string 
 
   return <div className="page-container space-y-8">
     <TeacherCourseContext course={course} current="trabajos" title="Crear trabajo práctico" description="Definí el enunciado, los recursos y la fecha de entrega." />
-    <NuevoTpForm courseId={course.id} weeks={weeks} initialWeekId={semana} />
+    <NuevoTpForm modular={course.sprintsEnabled} courseId={course.id} weeks={weeks} initialWeekId={semana} />
   </div>;
 }

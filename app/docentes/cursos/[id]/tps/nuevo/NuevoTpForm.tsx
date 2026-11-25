@@ -9,7 +9,7 @@ import { Button } from "@/components/ui";
 import type { CourseWeek } from "@/types";
 import { PublicationField } from '@/components/course/PublicationField';
 
-export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { courseId: string; weeks: CourseWeek[]; initialWeekId?: string }) {
+export default function NuevoTpForm({ modular, courseId, weeks, initialWeekId }: { modular?: boolean; courseId: string; weeks: CourseWeek[]; initialWeekId?: string }) {
   const router = useRouter();
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -61,12 +61,12 @@ export default function NuevoTpForm({ courseId, weeks, initialWeekId }: { course
       </div>
 
       {weeks.length > 0 ? <div className="flex flex-col gap-2">
-        <label htmlFor="week" className="text-sm font-semibold text-[var(--color-on-surface)]">Unidad</label>
+        <label htmlFor="week" className="text-sm font-semibold text-[var(--color-on-surface)]">{modular ? "Sprint" : "Unidad"}</label>
         <select id="week" name="week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full px-4 py-3 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-low)] border border-[var(--color-outline)] text-[var(--color-on-surface)] focus:outline-none focus:border-[var(--color-primary)] transition-colors">
-          <option value="">Sin unidad</option>
-          {weeks.map((item) => <option key={item.id} value={item.id}>Unidad {item.number}: {item.title}</option>)}
+          <option value="">{modular ? "Sin sprint" : "Sin unidad"}</option>
+          {weeks.map((item) => <option key={item.id} value={item.id}>{modular ? "Sprint" : "Unidad"} {item.number}: {item.title}</option>)}
         </select>
-        <p className="text-sm text-[var(--color-on-surface-variant)]">El contenido sin unidad no se muestra a los estudiantes.</p>
+        <p className="text-sm text-[var(--color-on-surface-variant)]">Solo se muestra a los estudiantes el contenido asignado y publicado.</p>
       </div> : null}
 
       <div className="flex flex-col gap-2">

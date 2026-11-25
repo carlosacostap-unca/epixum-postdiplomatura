@@ -1,5 +1,5 @@
 import { COURSE_RULES } from './course-schema-rules.mjs';
-import { WEEK_RULES, CLASS_RULES, ASSIGNMENT_RULES, DELIVERY_RULES, INQUIRY_RULES, INQUIRY_RESPONSE_RULES } from './weekly-schema.mjs';
+import { withSprintScope, WEEK_RULES, CLASS_RULES, ASSIGNMENT_RULES, DELIVERY_RULES, INQUIRY_RULES, INQUIRY_RESPONSE_RULES } from './weekly-schema.mjs';
 import { withResourcePublicationFields, withScheduledPublicationFields } from './publication-fields.mjs';
 import { COURSE_CONTENT_RULES, LINK_RULES } from './course-content-schema.mjs';
 import { ASSIGNMENT_AI_CONFIG_RULES, AI_PREEVALUATION_RULES } from './ai-preevaluation-schema.mjs';
@@ -42,7 +42,7 @@ export async function applyCourseRoleRules(pb) {
       throw error;
     }
     await pb.collections.update(collection.id, {
-      ...rules,
+      ...(name === 'course_weeks' ? withSprintScope(rules, collection.fields || []) : rules),
       ...(name === 'links' ? { fields: withResourcePublicationFields(collection.fields) } : {}),
     });
     updatedCollections.push(name);

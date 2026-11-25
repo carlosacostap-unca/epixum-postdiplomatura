@@ -41,7 +41,7 @@ export default async function TeacherTpDetailPage({ params, searchParams }: { pa
         current="trabajos"
         title={assignment.title}
         description={assignment.dueDate ? <>Fecha límite: <FormattedDate date={assignment.dueDate} showTime /></> : "Trabajo sin fecha límite."}
-        actions={<TpManagementActions assignment={assignment} courseId={course.id} weeks={weeks} />}
+        actions={<TpManagementActions modular={course.sprintsEnabled} assignment={assignment} courseId={course.id} weeks={weeks} />}
       />
 
       <div className="flex flex-wrap gap-3">

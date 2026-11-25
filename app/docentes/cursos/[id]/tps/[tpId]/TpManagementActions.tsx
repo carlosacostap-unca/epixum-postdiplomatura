@@ -11,7 +11,7 @@ import { ConfirmDialog, useToast } from "@/components/ui";
 
 interface TpManagementActionsProps {
   assignment: Assignment;
-  courseId: string;
+  modular?: boolean; courseId: string;
   weeks: CourseWeek[];
 }
 
@@ -23,7 +23,7 @@ function getLocalDateTime(isoDate?: string) {
   return localDate.toISOString().slice(0, 16);
 }
 
-export default function TpManagementActions({ assignment, courseId, weeks }: TpManagementActionsProps) {
+export default function TpManagementActions({ modular, assignment, courseId, weeks }: TpManagementActionsProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(assignment.description || "");
@@ -159,10 +159,10 @@ export default function TpManagementActions({ assignment, courseId, weeks }: TpM
               </div>
 
               {weeks.length > 0 ? <div className="flex flex-col gap-2">
-                <label htmlFor="tp-week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">Unidad</label>
+                <label htmlFor="tp-week" className="text-sm font-bold uppercase tracking-widest text-[var(--color-on-surface-variant)]">{modular ? "Sprint" : "Unidad"}</label>
                 <select id="tp-week" value={week} onChange={(event) => setWeek(event.target.value)} className="w-full rounded-2xl border border-[var(--color-outline-variant)] bg-[var(--color-surface-container)] px-5 py-4 text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none">
-                  <option value="">Sin unidad</option>
-                  {weeks.map((item) => <option key={item.id} value={item.id}>Unidad {item.number}: {item.title}</option>)}
+                  <option value="">{modular ? "Sin sprint" : "Sin unidad"}</option>
+                  {weeks.map((item) => <option key={item.id} value={item.id}>{modular ? "Sprint" : "Unidad"} {item.number}: {item.title}</option>)}
                 </select>
               </div> : null}
 

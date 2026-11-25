@@ -30,7 +30,7 @@ export default async function EstudianteNewInquiryPage({ params, searchParams }:
         course={course}
         current="consultas"
         title="Nueva consulta"
-        description={weekly ? "Elegí la unidad y describí tu duda para que el curso pueda ayudarte." : "Describí tu duda para que el curso pueda ayudarte."}
+        description={weekly ? "Elegí dónde publicar tu duda para que el curso pueda ayudarte." : "Describí tu duda para que el curso pueda ayudarte."}
       />
       <Card className="max-w-3xl">
         <CardContent>
@@ -38,7 +38,7 @@ export default async function EstudianteNewInquiryPage({ params, searchParams }:
             courseId={course.id}
             classes={classes}
             weeks={weeks}
-            weekly={weekly}
+            weekly={weekly} modular={course.sprintsEnabled}
             initialClassId={initialClassId}
             initialWeekId={initialWeekId}
             basePath={`/estudiantes/cursos/${course.id}/consultas?autor=mis-consultas`}

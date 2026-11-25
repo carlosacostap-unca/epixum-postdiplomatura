@@ -20,9 +20,9 @@ export function studentCourseNavigation(course: Course, current = "resumen"): St
 }
 
 /** Match the destinations rendered by each course organization mode. */
-export function courseLearningNavigation(course: Pick<Course, "organizationMode">, base: string, current: string) {
+export function courseLearningNavigation(course: Pick<Course, "organizationMode" | "sprintsEnabled">, base: string, current: string) {
   if (course.organizationMode === "semanal") {
-    return [{ href: `${base}#semanas`, label: "Unidades", icon: "view_agenda", isActive: current === "clases" || current === "trabajos" }];
+    return [{ href: `${base}#semanas`, label: course.sprintsEnabled ? "Sprints" : "Unidades", icon: "view_agenda", isActive: current === "clases" || current === "trabajos" }];
   }
   return [
     { href: `${base}#clases`, label: "Clases", icon: "menu_book", isActive: current === "clases" },

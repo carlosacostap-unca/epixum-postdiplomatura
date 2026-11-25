@@ -15,7 +15,7 @@ function requireAdmin(pb: Awaited<ReturnType<typeof createServerClient>>) {
 }
 
 function parseOrganizationMode(value: FormDataEntryValue | null) {
-  return value === 'semanal' ? 'semanal' as const : 'tradicional' as const;
+  return value === 'semanal' || value === 'sprints' ? 'semanal' as const : 'tradicional' as const;
 }
 
 function parseEnrollmentMode(value: FormDataEntryValue | null) {
@@ -77,6 +77,7 @@ export async function createCourse(formData: FormData) {
     endDate,
     status: status || 'borrador',
     organizationMode,
+    sprintsEnabled: formData.get('organizationMode') === 'sprints',
     enrollmentMode,
     contentsEnabled,
     surveysEnabled,
@@ -142,6 +143,7 @@ async function updateCourseOrThrow(id: string, formData: FormData) {
     endDate,
     status: status || 'borrador',
     organizationMode,
+    sprintsEnabled: formData.get('organizationMode') === 'sprints',
     contentsEnabled,
     surveysEnabled,
     outcomesEnabled,

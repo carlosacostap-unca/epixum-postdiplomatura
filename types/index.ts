@@ -223,6 +223,7 @@ export interface Course extends BaseModel {
   startDate?: string;
   endDate?: string;
   status: 'borrador' | 'en curso' | 'finalizado';
+  sprintsEnabled?: boolean;
   organizationMode?: CourseOrganizationMode;
   enrollmentMode?: CourseEnrollmentMode;
   contentsEnabled?: boolean;
@@ -366,7 +367,15 @@ export interface CourseContent extends BaseModel {
   };
 }
 
+export interface CourseModule extends BaseModel {
+  course: string;
+  number: number;
+  title: string;
+  assignment?: string;
+}
+
 export interface CourseWeek extends BaseModel {
+  module?: string;
   course: string;
   number: number;
   title: string;

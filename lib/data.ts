@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 import { extractEnrolledCourses } from './student-learning';
 import { filterContentForCourseMode, groupContentByWeek, isWeekEffectivelyVisible, unassignedContent } from './course-weeks';
 import { buildUserParticipationSummaries } from './user-participations';
+import type { CourseModule } from '@/types';
 import { canSubmitAssignment } from './assignment-deadline';
 
 // Helper to create client with token for cached functions
@@ -394,6 +395,7 @@ export interface CourseWeekGroup {
 }
 
 export interface CourseOrganizationData {
+  modules: CourseModule[];
   weeks: CourseWeek[];
   groups: CourseWeekGroup[];
   allClasses: Class[];
@@ -408,14 +410,15 @@ export interface CourseOrganizationData {
 export async function getCourseOrganizationData(course: Course, now = new Date()): Promise<CourseOrganizationData> {
   const pb = await createServerClient();
   const filter = pb.filter('course = {:courseId}', { courseId: course.id });
-  const [weeks, classes, assignments, inquiries] = await Promise.all([
+  const [weeks, classes, assignments, inquiries, modules] = await Promise.all([
     pb.collection('course_weeks').getFullList<CourseWeek>({ filter, expand: 'course' }),
     pb.collection('classes').getFullList<Class>({ filter }),
     pb.collection('assignments').getFullList<Assignment>({ filter }),
     pb.collection('inquiries').getFullList<Inquiry>({ filter, expand: 'author,class,assignment,week' }),
+    course.sprintsEnabled ? pb.collection('course_modules').getFullList<CourseModule>({ filter, sort: 'number,id' }) : [],
   ]);
   weeks.sort((a, b) => a.number - b.number || a.title.localeCompare(b.title, 'es'));
-  classes.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  classes.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (course.sprintsEnabled ? a.title.localeCompare(b.title, 'es', { numeric: true }) : 0));
   assignments.sort((a, b) => String(a.dueDate || '').localeCompare(String(b.dueDate || '')));
   inquiries.sort((a, b) => String(b.created || '').localeCompare(String(a.created || '')));
 
@@ -428,6 +431,7 @@ export async function getCourseOrganizationData(course: Course, now = new Date()
 
   return {
     weeks,
+    modules,
     groups: weeks.map((week) => ({
       week,
       classes: classGroups.get(week.id) || [],

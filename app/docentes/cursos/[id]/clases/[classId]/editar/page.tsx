@@ -14,6 +14,6 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
 
   return <div className="page-container space-y-8">
     <TeacherCourseContext course={course} current="clases" title={`Editar ${classData.title}`} description="Actualizá la información y la programación de esta clase." />
-    <EditClassForm courseId={course.id} classData={classData} weeks={weeks} />
+    <EditClassForm modular={course.sprintsEnabled} courseId={course.id} classData={classData} weeks={weeks} />
   </div>;
 }
