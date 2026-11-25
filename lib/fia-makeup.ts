@@ -8,6 +8,7 @@ const makeups: Record<string, string> = {
   fiarec1nov24001: 'el primer parcial',
   fiarec2nov24001: 'el segundo parcial',
   fiarecabnov2401: 'ambos parciales',
+  fiarecabnov2501: 'ambos parciales',
 };
 
 export function isFiaMakeup(course: string, exam: string) {

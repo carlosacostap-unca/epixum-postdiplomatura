@@ -1,6 +1,6 @@
 import { CourseExamRequirements } from '@/components/exams/CourseExamRequirements';
 import { ExamListRefresh } from '@/components/exams/ExamListRefresh';
-import { examAvailability } from '@/lib/course-exams';
+import { examAvailability, examDateLabel, examLocalDate, examSchedule } from '@/lib/course-exams';
 import { getCourseExamStart } from '@/lib/course-exam-data';
 import { StudentCourseContext } from '@/components/course/StudentCourseContext';
 import { CourseExamStart } from '@/components/exams/CourseExamRunner';
@@ -17,7 +17,8 @@ export default async function Page({ params }: { params: Promise<{ id: string; e
     <p>{availability}</p>
     {makeup && <section className="space-y-2">
       <h2 className="text-xl font-bold">{availability === 'Cerrado' ? 'Los turnos de este recuperatorio finalizaron' : ready ? 'Estás habilitado para rendir este recuperatorio' : 'Tenés este recuperatorio asignado'}</h2>
-      <p>Turnos del martes 24 de noviembre de 2026 (hora argentina): <strong>08:00 a 09:00</strong> o <strong>20:00 a 21:00</strong>. Tenés un solo intento entre los dos turnos.</p>
+      <p>Horarios de Argentina. Tenés un solo intento.</p>
+      <ul className="list-disc pl-5">{examSchedule(exam).map(turn => <li key={turn.id}>{examDateLabel(turn.opensAt)} a {examLocalDate(turn.closesAt).slice(11, 16)}</li>)}</ul>
       <p>Para empezar, encendé la cámara y aceptá la foto inicial. Mantené la cámara encendida mientras rendís.</p>
     </section>}
     <ExamListRefresh label={requirements.length ? 'Actualizar requisitos' : 'Actualizar estado'} />

@@ -84,6 +84,7 @@ it.each([
   ['fiarec1nov24001', course, firstIds],
   ['fiarec2nov24001', course, secondIds],
   ['fiarecabnov2401', course, [...firstIds, ...secondIds]],
+  ['fiarecabnov2501', course, [...firstIds, ...secondIds]],
   ['dsprec1nov27001', designCourse, dspFirstIds],
   ['dsprecabnov2701', designCourse, [...dspFirstIds, ...dspSecondIds]],
 ] as const)('controla las actividades del recuperatorio %s antes de iniciar', async (id, courseId, required) => {

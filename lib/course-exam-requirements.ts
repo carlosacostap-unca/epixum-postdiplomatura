@@ -37,7 +37,8 @@ export function examRequirements(courseId: string, examId: string) {
     case 'fiarec1nov24001': return firstPartial;
     case 'fiasecondexam01':
     case 'fiarec2nov24001': return secondPartial;
-    case 'fiarecabnov2401': return [...firstPartial, ...secondPartial];
+    case 'fiarecabnov2401':
+    case 'fiarecabnov2501': return [...firstPartial, ...secondPartial];
     default: return [];
   }
 }

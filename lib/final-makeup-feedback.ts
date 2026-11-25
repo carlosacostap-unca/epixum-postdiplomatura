@@ -7,11 +7,11 @@ import { readSingleMakeupOutcome } from './single-makeup-outcome';
 
 const courses = {
   '6taf9vkwwi8oxlz': {
-    single: ['dsprec1nov27001'], integral: 'dsprecabnov2701', originals: ['dspfirstexam001', 'dspsecondexam01'],
+    single: ['dsprec1nov27001'], integral: 'dsprecabnov2701', additional: [], originals: ['dspfirstexam001', 'dspsecondexam01'],
     promoted: 'dsppromofinal01', regular: 'dspregularnov01', free: 'dspfreedomnov01',
   },
   tceqb7atji66fmd: {
-    single: ['fiarec1nov24001', 'fiarec2nov24001'], integral: 'fiarecabnov2401', originals: ['fiafirstexam001', 'fiasecondexam01'],
+    single: ['fiarec1nov24001', 'fiarec2nov24001'], integral: 'fiarecabnov2401', additional: ['fiarecabnov2501'], originals: ['fiafirstexam001', 'fiasecondexam01'],
     promoted: 'fiapromofinal01', regular: 'fiaregularnov01', free: 'fiafreedomnov01',
   },
 } as const;
@@ -32,16 +32,18 @@ export function integralCondition(grade: number | null): Condition {
 export const readFinalFeedback = cache(async (service: PocketBase, course: string, student: string): Promise<Feedback | null> => {
   if (!Object.hasOwn(courses, course)) return null;
   const policy = courses[course as keyof typeof courses];
-  const keys = [...policy.single, policy.integral];
-  const examIds = keys.map(exam => service.filter('id = {:exam}', { exam })).join(' || ');
-  const exams = await service.collection('course_exams').getFullList<Exam>({
+  const standard = [...policy.single, policy.integral] as string[];
+  const examIds = [...standard, ...policy.additional].map(exam => service.filter('id = {:exam}', { exam })).join(' || ');
+  const records = await service.collection('course_exams').getFullList<Exam>({
     filter: service.filter('course = {:course}', { course }) + ` && (${examIds})`,
     fields: 'id,status,studentRoster,opensAt,closesAt,sessions.id,sessions.label,sessions.opensAt,sessions.closesAt',
   });
-  if (exams.length !== keys.length || exams.some(exam => exam.status !== 'published' && exam.status !== 'archived')) return null;
+  if (!standard.every(id => records.some(exam => exam.id === id))) return null;
+  const exams = records.filter(exam => standard.includes(exam.id) || exam.studentRoster?.students?.includes(student));
+  if (exams.some(exam => exam.status !== 'published' && exam.status !== 'archived')) return null;
   const now = Date.now();
   if (exams.some(exam => examSchedule(exam).some(turn => !(Date.parse(turn.closesAt.replace(' ', 'T')) <= now)))) return null;
-  const examFilter = keys.map(exam => service.filter('exam = {:exam}', { exam })).join(' || ');
+  const examFilter = exams.map(row => service.filter('exam = {:exam}', { exam: row.id })).join(' || ');
   const scope = service.filter('course = {:course}', { course });
   const unfinished = await service.collection('course_exam_attempts').getList(1, 1, {
     filter: scope + ` && (${examFilter}) && course_exam_results_via_attempt.id = ""`, fields: 'id',
@@ -49,11 +51,11 @@ export const readFinalFeedback = cache(async (service: PocketBase, course: strin
   if (unfinished.items.length) return null;
 
   const assigned = exams.find(exam => exam.studentRoster?.students?.includes(student));
-  if (assigned && assigned.id !== policy.integral) {
+  if (assigned && (policy.single as readonly string[]).includes(assigned.id)) {
     const final = await readSingleMakeupOutcome(service, course, student);
     return final && { condition: final.condition, recovered: final.recovered, survey: policy[final.condition], assigned: true };
   }
-  const requested = assigned ? [policy.integral] : policy.originals;
+  const requested = assigned ? [assigned.id] : policy.originals;
   const resultFilter = requested.map(exam => service.filter('exam = {:exam}', { exam })).join(' || ');
   const results = await service.collection('course_exam_results').getFullList<{ correct: number; total: number }>({
     filter: service.filter('course = {:course} && student = {:student}', { course, student }) + ` && (${resultFilter})`,
