@@ -2,6 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import type PocketBase from 'pocketbase';
 import { examSchedule, type CourseExamSummary } from './course-exams';
+import { validIntegralGradeAdjustment, type IntegralGradeAdjustment } from './course-exam-grading';
 import { createServiceClient } from './pocketbase-service';
 import { readSingleMakeupOutcome } from './single-makeup-outcome';
 
@@ -57,7 +58,7 @@ export const readFinalFeedback = cache(async (service: PocketBase, course: strin
   }
   const requested = assigned ? [assigned.id] : policy.originals;
   const resultFilter = requested.map(exam => service.filter('exam = {:exam}', { exam })).join(' || ');
-  const results = await service.collection('course_exam_results').getFullList<{ correct: number; total: number; integralGradeAdjustment?: { points: number; original: number } | null }>({
+  const results = await service.collection('course_exam_results').getFullList<{ correct: number; total: number; integralGradeAdjustment?: IntegralGradeAdjustment | null }>({
     filter: service.filter('course = {:course} && student = {:student}', { course, student }) + ` && (${resultFilter})`,
     fields: 'correct,total,integralGradeAdjustment',
   });
@@ -65,10 +66,7 @@ export const readFinalFeedback = cache(async (service: PocketBase, course: strin
   const [result] = results;
   if (results.length > 1 || (result && result.total <= 0)) return null;
   const original = result ? (10 * result.correct) / result.total : null;
-  const stored = result?.integralGradeAdjustment;
-  const adjustment = original !== null && stored && stored.original === original &&
-    Number.isFinite(stored.points) && stored.points > 0 && original + stored.points <= 10
-    ? { original, points: stored.points } : undefined;
+  const adjustment = validIntegralGradeAdjustment(original, result?.integralGradeAdjustment);
   const recovered = adjustment ? adjustment.original + adjustment.points : original;
   const condition = integralCondition(recovered);
   return {

@@ -13,6 +13,7 @@ vi.mock('./pocketbase-server', () => ({ createServerClient: async () => ({
     if (name === 'courses') return { getOne: async () => ({ id: 'course', teachers: mocks.teachers }) };
     if (name === 'users') return { getFullList: async () => mocks.users };
     if (name === 'course_enrollments') return { getList: async () => ({ totalItems: mocks.enrolled ? 1 : 0 }) };
+    if (name === 'course_visiting_teachers') return { getFullList: async () => [] };
     if (name !== 'course_bedels') throw new Error('unexpected collection');
     return {
       create: async (data: Record<string, string>) => {

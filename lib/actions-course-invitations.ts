@@ -12,6 +12,7 @@ import {
 } from "./course-invitations";
 import { hashInvitationPassword } from "./course-invitation-password";
 import { assertNotCourseBedel } from './course-bedel-access';
+import { assertNotVisitingTeacher } from './course-visiting-teacher-access';
 
 export interface InvitationImportResult {
   success: boolean;
@@ -175,6 +176,7 @@ export async function activateCourseInvitation(
     }
 
     await assertNotCourseBedel(servicePb, courseId, user.email);
+    await assertNotVisitingTeacher(servicePb, courseId, user.id);
 
     const existingEnrollment = await findExistingEnrollment(pb, courseId, user.id);
     if (existingEnrollment && invitation.status !== "revocada") {

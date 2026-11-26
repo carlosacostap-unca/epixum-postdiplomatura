@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   course: { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena", teachers: [] as string[] },
   email: "Alumno@Epixum.com",
   bedel: false,
+  visitor: false,
   enrollmentExists: false,
   concurrentEnrollment: false,
   enrollmentCreate: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("./pocketbase-service", () => ({
         if (!mocks.bedel) throw { status: 404 };
         return { id: 'bedel-assignment' };
       } };
+      if (name === 'course_visiting_teachers') return { getFullList: async () => mocks.visitor ? [{ id: 'visitor-assignment' }] : [] };
       if (name === "courses") return {
         getFirstListItem: mocks.coursePasswordCheck.mockImplementation(async (filter: { params: { passwordHash: string } }) => {
           if (filter.params.passwordHash !== "hash:Correcta-1") throw Object.assign(new Error("not found"), { status: 404 });
@@ -107,6 +109,7 @@ describe("activación de invitaciones", () => {
     mocks.course = { id: "course-1", title: "Node.js", status: "en curso", enrollmentMode: "invitacion_contrasena", teachers: [] };
     mocks.email = "Alumno@Epixum.com";
     mocks.bedel = false;
+    mocks.visitor = false;
     mocks.enrollmentExists = false;
     mocks.concurrentEnrollment = false;
   });
@@ -124,6 +127,13 @@ describe("activación de invitaciones", () => {
 
   it('no activa una invitación de estudiante para el bedel del mismo curso', async () => {
     mocks.bedel = true;
+    expect(await activateCourseInvitation('inv-1', 'course-1', 'Correcta-1')).toMatchObject({ success: false });
+    expect(mocks.enrollmentCreate).not.toHaveBeenCalled();
+    expect(mocks.invitationUpdate).not.toHaveBeenCalled();
+  });
+
+  it('no activa una matrícula para el docente visitante del mismo curso', async () => {
+    mocks.visitor = true;
     expect(await activateCourseInvitation('inv-1', 'course-1', 'Correcta-1')).toMatchObject({ success: false });
     expect(mocks.enrollmentCreate).not.toHaveBeenCalled();
     expect(mocks.invitationUpdate).not.toHaveBeenCalled();

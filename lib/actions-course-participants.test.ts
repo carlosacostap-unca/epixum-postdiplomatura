@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 function collection(name: string, service = false) {
+  if (name === 'course_visiting_teachers') return { getFullList: async () => [] };
   if (name === 'course_bedels') return {
     getFirstListItem: vi.fn(async (filter: { email: string }) => {
       if (!mocks.bedels.has(filter.email)) throw notFound();

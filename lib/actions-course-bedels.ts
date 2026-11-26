@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerClient } from '@/lib/pocketbase-server';
 import { courseBedelSchema, type BedelInput, type CourseBedel } from '@/lib/course-bedels';
 import { getErrorStatus } from '@/lib/errors';
+import { assertNotVisitingTeacher } from '@/lib/course-visiting-teacher-access';
 import type { Course, User } from '@/types';
 
 async function requireAdmin() {
@@ -34,6 +35,7 @@ export async function addCourseBedel(courseId: string, input: BedelInput) {
       return { success: false, error: 'Esta cuenta ya tiene permisos de edición en el curso. Retirá esos permisos antes de asignarla como bedel.' };
     }
     for (const user of accounts) {
+      await assertNotVisitingTeacher(pb, courseId, user.id);
       const enrollments = await pb.collection('course_enrollments').getList(1, 1, {
         filter: pb.filter('course = {:courseId} && student = {:userId}', { courseId, userId: user.id }), fields: 'id',
       });

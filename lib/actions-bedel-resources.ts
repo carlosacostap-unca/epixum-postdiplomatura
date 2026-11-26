@@ -3,18 +3,28 @@
 import { createServerClient } from '@/lib/pocketbase-server';
 import { createServiceClient } from '@/lib/pocketbase-service';
 import { requireBedelAssignment } from '@/lib/course-bedel-access';
+import { requireVisitingTeacherAssignment } from '@/lib/course-visiting-teacher-access';
 import { getExclusiveResourceParent } from '@/lib/resource-parent';
 import { getPresignedDownloadUrl } from '@/lib/s3';
 import { isSharedResource } from '@/lib/resource-audience';
 import type { Link } from '@/types';
 
 export async function getBedelResourceDownloadUrl(courseId: string, linkId: string) {
+  return getReadOnlyResourceDownloadUrl(courseId, linkId, false);
+}
+
+export async function getVisitingTeacherResourceDownloadUrl(courseId: string, linkId: string) {
+  return getReadOnlyResourceDownloadUrl(courseId, linkId, true);
+}
+
+async function getReadOnlyResourceDownloadUrl(courseId: string, linkId: string, visitingTeacher: boolean) {
   try {
     const pb = await createServerClient();
-    await requireBedelAssignment(pb, courseId);
+    if (visitingTeacher) await requireVisitingTeacherAssignment(pb, courseId);
+    else await requireBedelAssignment(pb, courseId);
     const service = await createServiceClient();
     const link = await service.collection('links').getOne<Link>(linkId, { fields: 'id,url,type,class,assignment,content,audience' });
-    if (!isSharedResource(link)) throw new Error('Recurso reservado al equipo docente.');
+    if (!visitingTeacher && !isSharedResource(link)) throw new Error('Recurso reservado al equipo docente.');
     const parent = getExclusiveResourceParent({ classId: link.class, assignmentId: link.assignment, contentId: link.content });
     if (!parent) throw new Error('Recurso inválido.');
     const collection = parent.type === 'class' ? 'classes' : parent.type === 'assignment' ? 'assignments' : 'course_contents';

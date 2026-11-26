@@ -5,6 +5,7 @@ import { cache } from "react";
 import type { Course, User } from "@/types";
 import { createServerClient } from "@/lib/pocketbase-server";
 import { hasBedelCourses } from "@/lib/course-bedel-access";
+import { getVisitingTeacherAssignments } from "@/lib/course-visiting-teacher-access";
 import { resolveCourseParticipation, resolveWorkspaceAccess, type WorkspaceAccess } from "@/lib/course-roles";
 
 function isNotFound(error: unknown) {
@@ -32,11 +33,15 @@ export async function isEnrolledInCourse(pb: PocketBase, userId: string, courseI
   }
 }
 
-export const getWorkspaceAccess = cache(async (user: Pick<User, "id" | "role">): Promise<WorkspaceAccess> => {
-  const pb = await createServerClient();
-  const [teaches, bedel] = await Promise.all([hasTeachingCourses(pb, user.id), hasBedelCourses(pb)]);
-  return resolveWorkspaceAccess(user, teaches, bedel);
-});
+export async function getWorkspaceAccessWithClient(pb: PocketBase, user: Pick<User, "id" | "role">): Promise<WorkspaceAccess> {
+  const [teaches, bedel, visitor] = await Promise.all([
+    hasTeachingCourses(pb, user.id), hasBedelCourses(pb), getVisitingTeacherAssignments(pb),
+  ]);
+  return resolveWorkspaceAccess(user, teaches, bedel, visitor.length > 0);
+}
+
+export const getWorkspaceAccess = cache(async (user: Pick<User, "id" | "role">) =>
+  getWorkspaceAccessWithClient(await createServerClient(), user));
 
 export async function getCourseParticipation(user: Pick<User, "id" | "role">, course: Pick<Course, "id" | "teachers">) {
   const pb = await createServerClient();

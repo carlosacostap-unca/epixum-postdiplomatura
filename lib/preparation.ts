@@ -52,7 +52,7 @@ export function gradePractice(questions: PracticeQuestion[], input: unknown) {
 }
 
 /** Zero preserves the existing untimed practice mode and historical snapshots. */
-export function practiceDeadline(attempt: Pick<PracticeAttempt, 'created' | 'snapshot'>) {
+export function practiceDeadline(attempt: { created: string; snapshot: Pick<PracticeQuizInput, 'durationMinutes'> }) {
   const minutes = attempt.snapshot.durationMinutes || 0;
   if (!minutes) return null;
   const started = Date.parse(attempt.created.replace(' ', 'T'));

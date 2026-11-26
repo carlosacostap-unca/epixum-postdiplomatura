@@ -29,6 +29,12 @@ describe("roles contextuales por curso", () => {
   });
 });
 describe("espacios disponibles", () => {
+  it('selecciona Docencia visitante al entrar cuando la cuenta tiene cursos asignados', () => {
+    expect(resolveWorkspaceAccess({ role: 'estudiante' }, false, false, true)).toEqual({
+      available: ['docente_visitante', 'estudiante'], preferred: 'docente_visitante',
+    });
+    expect(workspaceFromPath('/visitantes/cursos/a')).toBe('docente_visitante');
+  });
   it('habilita Bedelía únicamente cuando hay cursos asignados y la prioriza al ingresar', () => {
     expect(resolveWorkspaceAccess({ role: 'estudiante' }, false, true)).toEqual({ available: ['bedel', 'estudiante'], preferred: 'bedel' });
     expect(resolveWorkspaceAccess({ role: 'docente' }, true, true)).toEqual({ available: ['docente', 'bedel', 'estudiante'], preferred: 'docente' });

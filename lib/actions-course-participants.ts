@@ -6,6 +6,7 @@ import { createServerClient } from '@/lib/pocketbase-server';
 import { createServiceClient } from '@/lib/pocketbase-service';
 import { getErrorStatus } from '@/lib/errors';
 import { assertNotCourseBedel } from '@/lib/course-bedel-access';
+import { assertNotVisitingTeacher } from '@/lib/course-visiting-teacher-access';
 import { searchCourseParticipantCandidatesWithClient } from '@/lib/course-participant-data';
 import type {
   Course,
@@ -83,12 +84,15 @@ async function enrollmentFor(pb: PocketBase, courseId: string, studentId: string
   }
 }
 
-async function assertNoBedels(pb: PocketBase, courseId: string, userIds: string[]) {
+async function assertNoReadOnlyParticipants(pb: PocketBase, courseId: string, userIds: string[]) {
   for (const id of userIds) {
     const user = await pb.collection('users').getOne(id, { fields: 'id,email' });
-    try { await assertNotCourseBedel(pb, courseId, user.email); }
+    try {
+      await assertNotCourseBedel(pb, courseId, user.email);
+      await assertNotVisitingTeacher(pb, courseId, id);
+    }
     catch (error) {
-      if (error instanceof Error && error.message.startsWith('Esta persona es bedel')) {
+      if (error instanceof Error && (error.message.startsWith('Esta persona es bedel') || error.message.startsWith('Esta persona es docente visitante'))) {
         throw new ParticipantActionError('conflict', error.message);
       }
       throw error;
@@ -141,7 +145,7 @@ export async function addCourseStudents(courseId: string, requestedUserIds: stri
     if (existing.some(Boolean)) throw new ParticipantActionError('conflict', 'Una de las personas seleccionadas ya es alumna de este curso.');
 
     const servicePb = await createServiceClient();
-    await assertNoBedels(servicePb, courseId, userIds);
+    await assertNoReadOnlyParticipants(servicePb, courseId, userIds);
     const batch = servicePb.createBatch();
     userIds.forEach((student) => batch.collection('course_enrollments').create({ course: courseId, student }));
     await batch.send();
@@ -181,7 +185,7 @@ export async function addCourseGuest(courseId: string, email: string): Promise<C
     const course = await pb.collection('courses').getOne<Course>(courseId, { fields:'id,teachers' });
     const student = await service.collection('users').getFirstListItem(service.filter('email:lower = {:email}', {email:normalized}), {fields:'id,email'});
     if (course.teachers?.includes(student.id)) throw new ParticipantActionError('conflict', 'Esta cuenta ya es docente del curso y puede ver sus borradores.');
-    await assertNoBedels(service,courseId,[student.id]);
+    await assertNoReadOnlyParticipants(service, courseId, [student.id]);
     if (!(await enrollmentFor(service,courseId,student.id))) {
       await service.collection('course_enrollments').create({course:courseId,student:student.id});
     }
@@ -221,7 +225,7 @@ export async function addCourseTeachers(courseId: string, requestedUserIds: stri
     }
 
     const servicePb = await createServiceClient();
-    await assertNoBedels(servicePb, courseId, userIds);
+    await assertNoReadOnlyParticipants(servicePb, courseId, userIds);
     await servicePb.collection('courses').update(courseId, { 'teachers+': userIds });
     await verifyTeachers(servicePb, courseId, userIds, true);
     revalidateParticipantSurfaces(courseId);

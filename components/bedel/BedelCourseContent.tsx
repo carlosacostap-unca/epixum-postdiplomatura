@@ -7,13 +7,18 @@ import type { Link } from '@/types';
 import { ResourceReader } from '@/components/course/ResourceReader';
 import { getBedelResourceDownloadUrl } from '@/lib/actions-bedel-resources';
 
-function Resources({ links, courseId }: { links: Link[]; courseId: string }) {
+type DownloadResource = typeof getBedelResourceDownloadUrl;
+
+function Resources({ links, courseId, downloadResource }: { links: Link[]; courseId: string; downloadResource: DownloadResource }) {
   const safe = links.filter(link => link.type === 'file' || /^https?:\/\//i.test(link.url));
   if (!safe.length) return null;
-  return <div className="mt-5"><ResourceReader links={safe} showHeading={false} downloadResource={getBedelResourceDownloadUrl.bind(null, courseId)} /></div>;
+  return <div className="mt-5"><ResourceReader links={safe} showHeading={false} downloadResource={downloadResource.bind(null, courseId)} /></div>;
 }
 
-export default function BedelCourseContent({ data }: { data: Awaited<ReturnType<typeof getBedelCourse>> }) {
+export default function BedelCourseContent({ data, downloadResource = getBedelResourceDownloadUrl }: {
+  data: Awaited<ReturnType<typeof getBedelCourse>>;
+  downloadResource?: DownloadResource;
+}) {
   const { course, classes, assignments, contents, weeks, lessons, links } = data;
   const groups = [
     { title: 'Clases', kind: 'class' as const, items: classes.map(item => ({ ...item, date: item.date })) },
@@ -30,7 +35,7 @@ export default function BedelCourseContent({ data }: { data: Awaited<ReturnType<
           <h3 className="mt-2 font-headline text-xl font-bold">{item.title}</h3>
           {item.date && <p className="mt-2 text-sm text-[var(--color-text-muted)]"><FormattedDate date={item.date} showTime /></p>}
           {item.description && <div className="reading-content prose prose-invert mt-4 max-w-none" dangerouslySetInnerHTML={{ __html: item.description }} />}
-          <Resources courseId={course.id} links={links.filter(link => link[group.kind] === item.id)} />
+          <Resources courseId={course.id} links={links.filter(link => link[group.kind] === item.id)} downloadResource={downloadResource} />
         </CardContent></Card>;
       })}
     </section>)}

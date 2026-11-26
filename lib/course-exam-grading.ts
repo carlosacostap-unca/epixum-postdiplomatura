@@ -1,5 +1,13 @@
 export const COURSE_EXAM_PASS_GRADE = 4;
 export const COURSE_EXAM_PROMOTION_GRADE = 7;
+
+export type IntegralGradeAdjustment = { original: number; points: number };
+
+export function validIntegralGradeAdjustment(original: number | null, stored?: IntegralGradeAdjustment | null) {
+  return original !== null && stored && stored.original === original &&
+    Number.isFinite(stored.points) && stored.points > 0 && original + stored.points <= 10
+    ? { original, points: stored.points } : undefined;
+}
 const dspFirstMakeup = 'dsprec1nov27001';
 const fiaSecondMakeup = 'fiarec2nov24001';
 

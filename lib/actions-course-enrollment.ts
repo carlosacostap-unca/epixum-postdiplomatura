@@ -8,6 +8,7 @@ import { hashEnrollmentKey, validateEnrollmentKey } from "./course-enrollment-ke
 import { validateInvitationPassword } from "./course-invitations";
 import { hashInvitationPassword } from "./course-invitation-password";
 import { assertNotCourseBedel } from './course-bedel-access';
+import { assertNotVisitingTeacher } from './course-visiting-teacher-access';
 
 export type EnrollmentActionResult = {
   success: boolean;
@@ -74,6 +75,7 @@ export async function joinCourseByKey(key: string): Promise<EnrollmentActionResu
     }
 
     await assertNotCourseBedel(servicePb, course.id, user.email);
+    await assertNotVisitingTeacher(servicePb, course.id, user.id);
 
     try {
       await pb.collection("course_enrollments").getFirstListItem(

@@ -1,4 +1,5 @@
 import 'server-only';
+import type PocketBase from 'pocketbase';
 import { createServerClient } from '@/lib/pocketbase-server';
 import { createServiceClient } from '@/lib/pocketbase-service';
 import { requireBedelAssignment } from '@/lib/course-bedel-access';
@@ -36,6 +37,10 @@ export async function getBedelCourse(courseId: string) {
   const pb = await createServerClient();
   await requireBedelAssignment(pb, courseId);
   const service = await createServiceClient();
+  return readCourseTeachingContent(service, courseId);
+}
+
+export async function readCourseTeachingContent(service: PocketBase, courseId: string, includeTeacherResources = false) {
   const course = await service.collection('courses').getOne<Course>(courseId, { fields: COURSE_FIELDS });
   const filter = service.filter('course = {:courseId}', { courseId });
   const [classes, assignments, contents, weeks, lessons, links] = await Promise.all([
@@ -49,7 +54,7 @@ export async function getBedelCourse(courseId: string) {
       fields: 'id,title,url,type,class,assignment,content,audience',
     }),
   ]);
-  return { course, classes, assignments, contents, weeks, lessons, links: links.filter(isSharedResource) };
+  return { course, classes, assignments, contents, weeks, lessons, links: includeTeacherResources ? links : links.filter(isSharedResource) };
 }
 
 export interface BedelAttendance {

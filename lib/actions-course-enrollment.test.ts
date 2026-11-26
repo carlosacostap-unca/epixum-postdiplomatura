@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
   user: { id: "student-a", role: "estudiante", email: 'student@example.com' },
   bedel: false,
+  visitor: false,
   course: { id: "course-a", title: "Curso A", teachers: [] as string[] },
 }));
 
@@ -23,6 +24,7 @@ describe("matrícula inmediata por clave", () => {
     vi.clearAllMocks();
     mocks.user = { id: "student-a", role: "estudiante", email: 'student@example.com' };
     mocks.bedel = false;
+    mocks.visitor = false;
     mocks.course = { id: "course-a", title: "Curso A", teachers: [] };
     process.env.COURSE_ENROLLMENT_SECRET = "test-secret-with-at-least-thirty-two-characters";
     const notFound = Object.assign(new Error("not found"), { status: 404 });
@@ -42,6 +44,7 @@ describe("matrícula inmediata por clave", () => {
           if (!mocks.bedel) throw notFound;
           return { id: 'bedel-assignment' };
         } };
+        if (name === 'course_visiting_teachers') return { getFullList: async () => mocks.visitor ? [{ id: 'visitor-assignment' }] : [] };
         if (name === "courses") return { getFirstListItem: vi.fn().mockResolvedValue(mocks.course) };
         if (name === "course_enrollments") return {
           create: mocks.serviceCreate.mockResolvedValue({ id: "enrollment-a" }),
@@ -61,6 +64,12 @@ describe("matrícula inmediata por clave", () => {
 
   it('rechaza la automatrícula del bedel en su curso', async () => {
     mocks.bedel = true;
+    expect(await joinCourseByKey('CLAVE-VALIDA')).toMatchObject({ success: false });
+    expect(mocks.serviceCreate).not.toHaveBeenCalled();
+  });
+
+  it('rechaza la automatrícula del docente visitante en su curso', async () => {
+    mocks.visitor = true;
     expect(await joinCourseByKey('CLAVE-VALIDA')).toMatchObject({ success: false });
     expect(mocks.serviceCreate).not.toHaveBeenCalled();
   });

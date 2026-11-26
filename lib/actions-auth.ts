@@ -9,9 +9,7 @@ import {
   missingOAuthProfileFields,
   type OAuthProfile,
 } from "@/lib/auth-login";
-import { hasTeachingCourses } from "@/lib/course-role-access";
-import { hasBedelCourses } from "@/lib/course-bedel-access";
-import { resolveWorkspaceAccess } from "@/lib/course-roles";
+import { getWorkspaceAccessWithClient } from "@/lib/course-role-access";
 import { getHomeForWorkspace } from "@/lib/navigation";
 import type { User } from "@/types";
 
@@ -113,8 +111,7 @@ export async function setAuthCookieAndRedirect(
     httpOnly: true,
   });
 
-  const [teaches, bedel] = await Promise.all([hasTeachingCourses(serverPb, user.id), hasBedelCourses(serverPb)]);
-  const workspaceAccess = resolveWorkspaceAccess(user, teaches, bedel);
+  const workspaceAccess = await getWorkspaceAccessWithClient(serverPb, user);
   redirect(safeInteractiveReturn(returnTo) || getHomeForWorkspace(workspaceAccess.preferred));
 }
 
