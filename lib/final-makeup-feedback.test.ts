@@ -26,6 +26,12 @@ it('espera el turno adicional únicamente para la matrícula que lo tiene asigna
   results.mockResolvedValue([{ correct: 14, total: 20 }]);
   expect(await readFinalFeedback(service, course, 'extra')).toMatchObject({ condition: 'promoted', integralGrade: 7, survey: 'fiapromofinal01' });
   expect(results).toHaveBeenLastCalledWith(expect.objectContaining({ filter: expect.stringContaining('fiarecabnov2501') }));
+  results.mockResolvedValue([{ correct: 13, total: 20 }]);
+  expect(await readFinalFeedback(service, course, 'extra')).toMatchObject({ condition: 'regular', recovered: 6.5 });
+  results.mockResolvedValue([{ correct: 13, total: 20, integralGradeAdjustment: { original: 6.5, points: 0.5 } }]);
+  expect(await readFinalFeedback(service, course, 'extra')).toMatchObject({
+    condition: 'promoted', integralGrade: 7, adjustment: { original: 6.5, points: 0.5 }, survey: 'fiapromofinal01',
+  });
 });
 
 it.each([[null, 'free'], [3.5, 'free'], [4, 'regular'], [6.5, 'regular'], [7, 'promoted']] as const)(

@@ -94,7 +94,10 @@ export async function SurveyDetailPage({ courseId, surveyId, workspace }: Props 
         <h2 className="text-xl font-bold">Tu resultado de cursada</h2>
         <p>Condición: <strong>Promocionado</strong></p>
         <dl className="space-y-1">{('integral' in grades ? [
-          ['Recuperatorio integral', grades.integral], ['Nota final', Math.ceil(grades.integral)],
+          ...(grades.adjustment ? [
+            ['Nota original del recuperatorio integral', grades.adjustment.original], ['Ajuste docente', grades.adjustment.points],
+          ] : [['Recuperatorio integral', grades.integral]]),
+          ['Nota final', Math.ceil(grades.integral)],
         ] : [
           ['Primer parcial', grades.first], ['Segundo parcial', grades.second],
           ['Nota final', Math.ceil((grades.first + grades.second) / 2)],

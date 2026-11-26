@@ -16,13 +16,13 @@ type GradePair = { first: number; second: number };
 type WithRoster = CourseSurvey & { promotionGrades?: Record<string, GradePair> | null };
 type StoredSurvey = WithRoster & { opening: string };
 
-async function ownGrades(service: PocketBase, survey: WithRoster, student: string): Promise<GradePair | { integral: number } | null> {
+async function ownGrades(service: PocketBase, survey: WithRoster, student: string): Promise<GradePair | { integral: number; adjustment?: { original: number; points: number } } | null> {
   if (survey.audience !== 'promotion_roster') return null;
   if (survey.promotionGrades && Object.hasOwn(survey.promotionGrades, student)) return survey.promotionGrades[student];
   const grades = await getSingleMakeupSurveyGrades(service, survey.course, survey.id, student);
   if (grades || !isIntegralPromotionSurvey(survey.course, survey.id)) return grades;
   const final = await readFinalFeedback(service, survey.course, student);
-  return final?.integralGrade === undefined ? null : { integral: final.integralGrade };
+  return final?.integralGrade === undefined ? null : { integral: final.integralGrade, adjustment: final.adjustment };
 }
 const conflict = () => new SurveyError('La encuesta cambió o no pudimos confirmar la operación. Actualizá la página e intentá nuevamente.');
 
