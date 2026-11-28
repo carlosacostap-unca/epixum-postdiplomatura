@@ -1,6 +1,7 @@
 import type { AICriterionResult, AIEvaluationCriterion, AIPreevaluationResult, RepositoryCoverage } from '@/types';
 
 export interface AIPreevaluationReportInput {
+  automaticPublication?: boolean;
   result: AIPreevaluationResult;
   commitSha: string;
   sourceType?: 'github' | 'documents';
@@ -35,7 +36,9 @@ export function buildAIPreevaluationFeedback(input: AIPreevaluationReportInput):
       `Versión de la rúbrica: ${input.configVersion}`,
       `Sugerencia inicial de la preevaluación: ${result.verdict}. Nota sugerida: ${result.suggestedGrade === null ? 'sin nota numérica' : result.suggestedGrade}.`,
       documents ? 'La preevaluación asistida por IA lee los informes adjuntos y los contrasta con el enunciado y la rúbrica docente. No comprueba fuentes externas ni demuestra la autoría o el orden temporal declarado. Los PDF incluyen texto e imágenes; en DOCX se extrae texto y las imágenes y la paginación requieren revisión docente.' : 'La preevaluación asistida por IA analiza de forma estática el código y la documentación seleccionados del commit entregado y los contrasta con el enunciado y la rúbrica docente. No ejecuta, compila ni prueba la aplicación.',
-      'Las observaciones que siguen son las justificaciones registradas por criterio. La nota y el veredicto oficiales son los confirmados por el docente; no se inventan puntajes por criterio ni pasos internos del modelo.',
+      input.automaticPublication
+        ? 'La evaluación se publicó automáticamente según la rúbrica configurada para este trabajo.'
+        : 'Las observaciones que siguen son las justificaciones registradas por criterio. La nota y el veredicto oficiales son los confirmados por el docente; no se inventan puntajes por criterio ni pasos internos del modelo.',
     ].join('\n'),
     'RESULTADOS POR CRITERIO',
   ];

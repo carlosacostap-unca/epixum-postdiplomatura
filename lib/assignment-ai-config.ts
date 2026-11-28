@@ -18,6 +18,7 @@ export function assignmentAIConfigDTO(record: Partial<AssignmentAIConfig>): Assi
   return {
     id: record.id,
     active: Boolean(record.active),
+    autoPublish: record.autoPublish === true,
     criteria: Array.isArray(record.criteria) ? record.criteria : [],
     requiredChecks: Array.isArray(record.requiredChecks) ? record.requiredChecks : [],
     allowedVerdicts: Array.isArray(record.allowedVerdicts) ? record.allowedVerdicts : [],

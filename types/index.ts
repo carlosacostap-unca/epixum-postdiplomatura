@@ -273,6 +273,7 @@ export interface AIEvaluationCriterion {
 }
 
 export interface AssignmentAIConfig extends BaseModel {
+  autoPublish?: boolean;
   assignment: string;
   active: boolean;
   criteria: AIEvaluationCriterion[];

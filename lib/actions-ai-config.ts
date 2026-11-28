@@ -54,7 +54,11 @@ export async function saveAssignmentAIConfig(assignmentId: string, input: Assign
     const record = existing
       ? await context.pb.collection('assignment_ai_configs').update<AssignmentAIConfig>(existing.id, data)
       : await context.pb.collection('assignment_ai_configs').create<AssignmentAIConfig>(data);
+    if (parsed.data.autoPublish && record.autoPublish !== true) {
+      return { success: false as const, error: 'La publicación automática no se guardó. Verificá que el esquema de IA de PocketBase esté actualizado.' };
+    }
     revalidatePath(`/docentes/cursos/${context.course.id}/tps/${assignmentId}`);
+    revalidatePath(`/admin/automatizaciones/${assignmentId}`);
     return { success: true as const, config: assignmentAIConfigDTO(record) };
   } catch (error) {
     const message = error instanceof Error ? error.message : '';

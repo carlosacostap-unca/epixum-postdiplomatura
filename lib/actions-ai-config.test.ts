@@ -51,8 +51,13 @@ describe('configuración docente de preevaluación', () => {
 
   it('crea una configuración válida y activa', async () => {
     const result = await saveAssignmentAIConfig('assignment-1', { ...valid, allowedVerdicts: [...valid.allowedVerdicts] });
-    expect(result).toMatchObject({ success: true, config: { active: true, version: 1 } });
+    expect(result).toMatchObject({ success: true, config: { active: true, autoPublish: false, version: 1 } });
     expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ assignment: 'assignment-1', version: 1 }));
+  });
+
+  it('guarda la publicación automática solo por elección explícita', async () => {
+    const result = await saveAssignmentAIConfig('assignment-1', { ...valid, autoPublish: true, allowedVerdicts: [...valid.allowedVerdicts] });
+    expect(result).toMatchObject({ success: true, config: { autoPublish: true } });
   });
 
   it('guarda y devuelve la elección de mensaje breve del trabajo', async () => {

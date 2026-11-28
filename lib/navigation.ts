@@ -31,6 +31,7 @@ export const roleNavigation: Record<AppWorkspace, RoleNavigationConfig> = {
       { href: "/admin", label: "Inicio", icon: "space_dashboard" },
       { href: "/admin/courses", label: "Cursos", icon: "school" },
       { href: "/admin/users", label: "Usuarios", icon: "group" },
+      { href: "/admin/automatizaciones", label: "Automatizaciones", icon: "schedule" },
     ],
   },
   docente: {

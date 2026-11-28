@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   attemptCreate: vi.fn(),
   attemptUpdate: vi.fn(),
   processing: null as Record<string, unknown> | null,
+  deliveryStatus: 'pending',
   repositoryUrl: JSON.stringify({ type: 'url', url: 'https://github.com/epixum/tp' }),
 }));
 
@@ -21,7 +22,7 @@ vi.mock('./pocketbase-server', () => ({
     authStore: { get model() { return mocks.user; } },
     collection: (name: string) => ({
       getOne: vi.fn(async () => {
-        if (name === 'deliveries') return { id: 'delivery0000001', assignment: 'assignment-a', repositoryUrl: mocks.repositoryUrl, created: '', updated: '' };
+        if (name === 'deliveries') return { id: 'delivery0000001', assignment: 'assignment-a', status: mocks.deliveryStatus, repositoryUrl: mocks.repositoryUrl, created: '', updated: '' };
         if (name === 'assignments') return { id: 'assignment-a', course: 'course-a', title: 'TP', description: 'Resolver' };
         return mocks.course;
       }),
@@ -48,7 +49,7 @@ vi.mock('openai', () => {
   return { default: FakeOpenAI };
 });
 
-import { requestAIPreevaluationForDelivery } from './ai-preevaluation-service';
+import { automaticallyPreevaluateDelivery, requestAIPreevaluationForDelivery } from './ai-preevaluation-service';
 
 describe('autorización previa a efectos externos', () => {
   beforeEach(() => {
@@ -56,6 +57,7 @@ describe('autorización previa a efectos externos', () => {
     mocks.course = { id: 'course-a', teachers: ['teacher-1'], aiPreevaluationEnabled: true };
     mocks.config = null;
     mocks.processing = null;
+    mocks.deliveryStatus = 'pending';
     mocks.repositoryUrl = JSON.stringify({ type: 'url', url: 'https://github.com/epixum/tp' });
     mocks.resolve.mockReset();
     mocks.download.mockReset();
@@ -67,7 +69,12 @@ describe('autorización previa a efectos externos', () => {
     mocks.serviceClient.mockReset().mockImplementation(async () => ({
       filter: (value: string) => value,
       collection: (name: string) => ({
-        getOne: vi.fn(async () => ({ id: 'delivery0000001', repositoryUrl: mocks.repositoryUrl, submissionVersion: 1 })),
+        getOne: vi.fn(async () => {
+          if (name === 'assignments') return { id: 'assignment-a', course: 'course-a', title: 'TP' };
+          if (name === 'courses') return mocks.course;
+          return { id: 'delivery0000001', assignment: 'assignment-a', status: mocks.deliveryStatus, repositoryUrl: mocks.repositoryUrl, submissionVersion: 1 };
+        }),
+        getList: vi.fn(async () => ({ items: mocks.processing ? [mocks.processing] : [] })),
         getFirstListItem: vi.fn(async () => {
           if (name === 'assignment_ai_configs' && mocks.config) return mocks.config;
           if (name === 'ai_preevaluations' && mocks.processing) return mocks.processing;
@@ -79,19 +86,65 @@ describe('autorización previa a efectos externos', () => {
     }));
   });
 
-  it('deduplica un intento equivalente todavía activo', async () => {
+  it.each(['completed', 'failed'])('omite el proveedor al encontrar un intento automático reutilizable o en espera (%s)', async status => {
+    vi.stubEnv('OPENAI_API_KEY', 'test-key');
+    try {
+      mocks.config = { active: true, version: 2, criteria: [{ id: 'c1', title: 'Calidad', description: 'Argumentación', weight: null }], requiredChecks: [], allowedVerdicts: ['Aprobado'], gradeEnabled: false };
+      mocks.repositoryUrl = JSON.stringify([{ name: 'informe.pdf', url: 'https://storage.example.com/informe.pdf' }]);
+      mocks.processing = { id: 'prior-attempt', status };
+      const result = await automaticallyPreevaluateDelivery(await mocks.serviceClient(), 'delivery0000001');
+      expect(result).toMatchObject(status === 'completed' ? { success: true, attempt: { id: 'prior-attempt' } } : { success: false, error: 'Reintento diferido.' });
+      expect(mocks.prepareDocuments).not.toHaveBeenCalled();
+      expect(mocks.attemptCreate).not.toHaveBeenCalled();
+      expect(mocks.openaiParse).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it.each([false, true])('publica desde el worker únicamente con el modo completo (%s)', async autoPublish => {
+    vi.stubEnv('OPENAI_API_KEY', 'test-key');
+    try {
+      const sha = 'a'.repeat(40);
+      mocks.repositoryUrl = JSON.stringify({ type: 'url', url: 'https://github.com/epixum/tp', provider: 'github', repositoryFullName: 'epixum/tp', commitSha: sha, commitCapturedAt: new Date().toISOString(), captureSource: 'student-submission' });
+      mocks.config = { active: true, autoPublish, version: 2, criteria: [{ id: 'c1', title: 'Calidad', description: 'Argumentación', weight: null }], requiredChecks: [], allowedVerdicts: ['Aprobado'], gradeEnabled: false };
+      mocks.processing = { id: 'prior-report', status: 'completed', configSnapshot: { ...mocks.config, studentFeedbackMode: 'message_only' }, configVersion: 2, submissionVersion: 1, commitSha: sha, result: { suggestedGrade: null, verdict: 'Aprobado', proposedMessage: 'Bien fundamentado.' } };
+      const service = await mocks.serviceClient();
+      service.send = vi.fn().mockResolvedValue({ published: true });
+      expect((await automaticallyPreevaluateDelivery(service, 'delivery0000001')).success).toBe(true);
+      if (autoPublish) {
+        expect(service.send).toHaveBeenCalledWith('/api/epixum/publish-ai-evaluation', expect.objectContaining({ body: expect.objectContaining({ feedback: 'Bien fundamentado.', grade: null, verdict: 'Aprobado' }) }));
+      } else expect(service.send).not.toHaveBeenCalled();
+      expect(mocks.openaiParse).not.toHaveBeenCalled();
+    } finally { vi.unstubAllEnvs(); }
+  });
+
+  it('reserva la preevaluación del centro para administración', async () => {
+    expect(await requestAIPreevaluationForDelivery('delivery0000001', 'center')).toEqual({ success: false, error: 'No autorizado' });
+    expect(mocks.serviceClient).not.toHaveBeenCalled();
+  });
+
+  it('descarta una entrega publicada después de abrir el centro', async () => {
+    mocks.user = { id: 'admin-1', role: 'admin' };
+    mocks.deliveryStatus = 'published';
+    expect(await requestAIPreevaluationForDelivery('delivery0000001', 'center')).toMatchObject({ success: false, error: expect.stringContaining('publicada') });
+    expect(mocks.serviceClient).not.toHaveBeenCalled();
+  });
+
+  it.each(['processing', 'completed'] as const)('reutiliza un intento equivalente en estado %s', async status => {
+    mocks.user = { id: 'admin-1', role: 'admin' };
     process.env.OPENAI_API_KEY = 'test-key';
     mocks.config = { id: 'config-1', active: true, version: 2, criteria: [{ id: 'c1', title: 'Código', description: 'Calidad', weight: null }], requiredChecks: [], allowedVerdicts: ['Aprobado'], gradeEnabled: false, gradeMin: null, gradeMax: null, messageGuidance: '', additionalInstructions: '' };
     mocks.repositoryUrl = JSON.stringify({ type: 'url', url: 'https://github.com/epixum/tp', provider: 'github', repositoryFullName: 'epixum/tp', commitSha: 'a'.repeat(40), commitCapturedAt: new Date().toISOString(), captureSource: 'student-submission' });
-    mocks.processing = { id: 'attempt-active', status: 'processing', delivery: 'delivery0000001', commitSha: 'a'.repeat(40), model: 'gpt-5.6-luna', configVersion: 2, created: new Date().toISOString(), updated: new Date().toISOString() };
-    const result = await requestAIPreevaluationForDelivery('delivery0000001');
-    expect(result).toMatchObject({ success: true, attempt: { id: 'attempt-active', status: 'processing' } });
+    mocks.processing = { id: 'attempt-active', status, delivery: 'delivery0000001', commitSha: 'a'.repeat(40), model: 'gpt-5.6-luna', configVersion: 2, created: new Date().toISOString(), updated: new Date().toISOString() };
+    const result = await requestAIPreevaluationForDelivery('delivery0000001', status === 'completed' ? 'center' : 'review');
+    expect(result).toMatchObject({ success: true, attempt: { id: 'attempt-active', status } });
     expect(mocks.download).not.toHaveBeenCalled();
     expect(mocks.openaiParse).not.toHaveBeenCalled();
     delete process.env.OPENAI_API_KEY;
   });
 
-  it('persiste el intento y usa Responses con el contrato exacto del piloto', async () => {
+  it.each(['docente', 'automático'])('persiste el intento %s y usa Responses con el contrato exacto del piloto', async origin => {
     process.env.OPENAI_API_KEY = 'test-key';
     mocks.config = {
       id: 'config-1', active: true, version: 3,
@@ -109,7 +162,11 @@ describe('autorización previa a efectos externos', () => {
       output_parsed: { verdict: 'Aprobado', suggestedGrade: null, criteria: [{ criterionId: 'c1', criterion: 'Código', outcome: 'cumple', observation: 'Correcto' }], strengths: ['Claro'], corrections: [], warnings: [], proposedMessage: 'Buen trabajo.' },
     });
 
-    const result = await requestAIPreevaluationForDelivery('delivery0000001');
+    if (origin === 'automático') mocks.user = null;
+    const result = origin === 'automático'
+      ? await automaticallyPreevaluateDelivery(await mocks.serviceClient(), 'delivery0000001')
+      : await requestAIPreevaluationForDelivery('delivery0000001');
+    expect(mocks.attemptCreate).toHaveBeenCalledWith(expect.objectContaining({ requestedBy: origin === 'automático' ? '' : 'teacher-1' }));
     expect(result).toMatchObject({ success: true, attempt: { status: 'completed', model: 'gpt-5.6-luna', configVersion: 3 } });
     if (result.success) {
       expect(result.attempt.studentFeedbackMode).toBe('message_only');

@@ -99,7 +99,7 @@ export default function AIPreevaluationClient(props: Props) {
     try {
       const result = await updateDeliveryEvaluation(props.deliveryId, numericGrade, feedback.trim(), verdict || undefined, status, props.submissionVersion, attempt?.status === 'completed' ? attempt.id : undefined);
       if (!result.success) { setError(result.error || 'No se pudo guardar la evaluación.'); return; }
-      if (attempt?.status === 'completed') setAttempt({ ...attempt, adoptedAt: new Date().toISOString(), adoptedAs: status });
+      if (attempt?.status === 'completed') setAttempt({ ...attempt, adoptedAt: new Date().toISOString(), adoptedAs: status, publishedAutomatically: false });
       setSavedEvaluation({ feedback, grade, verdict });
       setCurrentStatus(status);
       notify(status === 'published' ? { title: 'Evaluación publicada', tone: 'success' } : { title: 'Borrador guardado', tone: 'info' });
@@ -147,7 +147,7 @@ export default function AIPreevaluationClient(props: Props) {
           {attempt.result.warnings.length > 0 && <div><h3 className="font-bold">Advertencias</h3><ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{attempt.result.warnings.map((item) => <li key={item}>{item}</li>)}</ul></div>}
           <div><h3 className="font-bold">Mensaje propuesto</h3><div className="reading-content prose prose-invert mt-2 rounded-[var(--epixum-radius-md)] bg-[var(--color-surface-container-high)] p-4 text-sm"><ReactMarkdown remarkPlugins={[remarkGfm]}>{attempt.result.proposedMessage}</ReactMarkdown></div></div>
           <Button variant="ghost" disabled={busy} onClick={() => { setAttempt(null); setFeedback(savedEvaluation.feedback); setGrade(savedEvaluation.grade); setVerdict(savedEvaluation.verdict as AIVerdict | ''); }}>Descartar sugerencia</Button>
-          {attempt.adoptedAt && <p className="text-sm text-[var(--color-on-surface-variant)]">Esta sugerencia fue adoptada como {attempt.adoptedAs === 'published' ? 'evaluación publicada' : 'borrador'}.</p>}
+          {attempt.adoptedAt && <p className="text-sm text-[var(--color-on-surface-variant)]">{attempt.publishedAutomatically ? 'La evaluación se publicó automáticamente.' : `Esta sugerencia fue adoptada como ${attempt.adoptedAs === 'published' ? 'evaluación publicada' : 'borrador'}.`}</p>}
         </section>}
       </CardContent>
     </Card>}

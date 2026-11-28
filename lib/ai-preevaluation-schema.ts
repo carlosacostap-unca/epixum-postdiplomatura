@@ -11,6 +11,7 @@ export const aiCriterionSchema = z.object({
 }).strict();
 
 export const assignmentAIConfigInputSchema = z.object({
+  autoPublish: z.boolean().optional(),
   active: z.boolean(),
   criteria: z.array(aiCriterionSchema).max(30),
   requiredChecks: z.array(z.string().trim().min(1).max(500)).max(50),

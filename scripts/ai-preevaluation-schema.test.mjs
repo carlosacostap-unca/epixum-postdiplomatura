@@ -62,6 +62,7 @@ test('crea el esquema, mantiene cursos deshabilitados y migra prompts como inact
   const deliveriesBefore = structuredClone(records.deliveries);
   const result = await applyAIPreevaluationSchema(pb);
   assert.equal(result.migratedPrompts, 1);
+  assert.equal(collections.get('ai_preevaluations').fields.find(field => field.name === 'requestedBy').required, false);
   assert.equal(collections.get('courses').fields.find((field) => field.name === 'aiPreevaluationEnabled').type, 'bool');
   assert.equal(Boolean(records.courses[0].aiPreevaluationEnabled), false);
   assert.equal(collections.get('courses').updateRule, COURSE_UPDATE_RULE);

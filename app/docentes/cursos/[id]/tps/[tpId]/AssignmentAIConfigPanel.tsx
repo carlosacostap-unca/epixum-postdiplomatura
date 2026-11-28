@@ -34,6 +34,7 @@ export default function AssignmentAIConfigPanel({ assignmentId, courseEnabled, i
     setError('');
     const payload = {
       active: courseEnabled && config.active,
+      autoPublish: Boolean(config.active && config.autoPublish),
       criteria: parseCriteria(criteria),
       requiredChecks: checks.split('\n').map((line) => line.trim()).filter(Boolean),
       allowedVerdicts: config.allowedVerdicts,
@@ -68,6 +69,17 @@ export default function AssignmentAIConfigPanel({ assignmentId, courseEnabled, i
       <label className="flex items-start gap-3">
         <input type="checkbox" checked={courseEnabled && config.active} disabled={!courseEnabled} onChange={(event) => setConfig((current) => ({ ...current, active: event.target.checked }))} className="mt-1 size-5" />
         <span><span className="block font-bold">Activar para este trabajo práctico</span><span className="text-sm text-[var(--color-on-surface-variant)]">La acción aparecerá en informes PDF/DOCX, documentos públicos compatibles y repositorios GitHub elegibles.</span></span>
+      </label>
+
+      <label className="block space-y-2">
+        <span className="block text-sm font-bold">Automatización de la evaluación</span>
+        <select value={config.autoPublish ? 'publish' : 'review'} disabled={!courseEnabled || !config.active}
+          onChange={event => setConfig(current => ({ ...current, autoPublish: event.target.value === 'publish' }))}
+          className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] p-3">
+          <option value="review">Generar preevaluación para revisión docente</option>
+          <option value="publish">Evaluar y publicar automáticamente</option>
+        </select>
+        {config.autoPublish && <span className="block text-sm">Al guardar, las entregas pendientes y futuras podrán recibir una devolución visible para el estudiante, con veredicto y nota si activaste la escala. Los borradores docentes quedan para revisión.</span>}
       </label>
 
       <div className="space-y-2"><label htmlFor="ai-criteria" className="text-sm font-bold">Rúbrica</label><textarea id="ai-criteria" rows={6} value={criteria} onChange={(event) => setCriteria(event.target.value)} placeholder={'Calidad del código | Evalúa legibilidad y diseño | 40\nCumplimiento | Resuelve todos los requisitos | 60'} className="w-full rounded-[var(--epixum-radius-md)] border border-[var(--color-outline)] bg-[var(--color-surface-container-lowest)] p-4" /><p className="text-xs text-[var(--color-on-surface-variant)]">Un criterio por línea: título | descripción | peso opcional.</p></div>

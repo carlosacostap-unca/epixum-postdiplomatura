@@ -50,6 +50,7 @@ function configFields(assignmentsId) {
   return [
     { name: 'assignment', type: 'relation', required: true, collectionId: assignmentsId, cascadeDelete: true, maxSelect: 1 },
     { name: 'active', type: 'bool', required: false },
+    { name: 'autoPublish', type: 'bool', required: false },
     { name: 'criteria', type: 'json', required: false, maxSize: 64_000 },
     { name: 'requiredChecks', type: 'json', required: false, maxSize: 32_000 },
     { name: 'allowedVerdicts', type: 'json', required: false, maxSize: 2_000 },
@@ -69,7 +70,7 @@ function attemptFields(collections) {
     { name: 'course', type: 'relation', required: true, collectionId: collections.courses.id, cascadeDelete: true, maxSelect: 1 },
     { name: 'assignment', type: 'relation', required: true, collectionId: collections.assignments.id, cascadeDelete: true, maxSelect: 1 },
     { name: 'delivery', type: 'relation', required: true, collectionId: collections.deliveries.id, cascadeDelete: true, maxSelect: 1 },
-    { name: 'requestedBy', type: 'relation', required: true, collectionId: collections.users.id, cascadeDelete: false, maxSelect: 1 },
+    { name: 'requestedBy', type: 'relation', required: false, collectionId: collections.users.id, cascadeDelete: false, maxSelect: 1 },
     { name: 'status', type: 'select', required: true, maxSelect: 1, values: ['processing', 'completed', 'failed'] },
     { name: 'commitSha', type: 'text', required: false, min: 0, max: 40, pattern: '^[a-f0-9]{40}$' },
     ...DOCUMENT_ATTEMPT_FIELDS,
